@@ -14,7 +14,14 @@ using DelimitedFiles
 ###################################################################
 ### Point type
 
-"Point in N dimensions"
+"""
+    Point
+
+    Point in N dimensions. Implemented currently as a struct with
+    StaticArray for values. It is templated, with `N` for dimension,
+    and `T` for underlying type.
+
+"""
 mutable struct Point{N,T}
     x::MVector{N,T}
 
@@ -198,9 +205,13 @@ end
 ###############################################33
 
 
-"Line in N dimensions. `p` is a point on the line and `u`
-is the direction vector
-(not necessarily normalized). Parametrised as \$p + ut\$"
+"""
+    Line in N dimensions.
+
+    `p` is a point on the line and `u` is the direction vector (not
+    necessarily normalized). Parametrised as \$p + ut\$
+
+"""
 struct Line{N,T}
     p::MVector{N,T}
     u::MVector{N,T}
