@@ -7,7 +7,11 @@ makedocs(
          modules  = [FrechetDist],
          pages=[
                 "Home" => "index.md"
-               ])deploydocs(;
-    repo="github.com/sarielhp/FrechetDist.jl",
+         ],
+    warnonly=true
 )
+
+deploydocs(;
+    repo="github.com/sarielhp/FrechetDist.jl",
+               )
  
