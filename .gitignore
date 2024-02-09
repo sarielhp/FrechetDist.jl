@@ -1,0 +1,6 @@
+*.jl.*.cov
+*.jl.cov
+*.jl.mem
+/Manifest.toml
+distributions
+# DEL_THIS_LINE 10288
