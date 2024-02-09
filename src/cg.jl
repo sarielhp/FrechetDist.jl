@@ -129,6 +129,12 @@ end
 ######################################################################
 ######################################################################
 # Bounding box
+"""
+    BBox
+
+Axis parallel bounding box.
+"""
+
 @with_kw mutable struct BBox{N,T}
     f_init::Bool = false
     mini::MVector{N,T} = zeros( T, N );
@@ -183,7 +189,13 @@ function  BBox_expand( bb::BBox{N,T}, factor ) where  {N,T}
 end
 
 
+"""
+    point( args... )
 
+A flexible constructor for a point specified by the arguments. Thus
+point( 2.0, 3.0, 4.0 ) defined the 3d point (2.0, 3.0, 4.0).
+
+"""
 function point( args...)
     N=length(args);
     T=typeof( first( args ) )
@@ -222,6 +234,11 @@ end
 ### Segment type
 ###############################################33
 
+"""
+    Segment
+
+Specifies a *directed* segment by two endpoints.
+"""
 struct Segment{N,T}
     p::Point{N,T}
     q::Point{N,T}
@@ -271,6 +288,13 @@ function  Segment_get_convex_coef( s::Segment{N,T}, qr::Point{N,T} ) where{N,T}
 end
 
 # Get nearest point on segment...
+"""
+    induced_seg_nn_point
+
+Returns the closest point to the segment induced by the first two
+points, to the query point. By avoiding creating the segment iself, it
+is hopeflly more efficient.
+"""
 function  induced_seg_nn_point( s_p::Point{N,T}, s_q::Point{N,T},
                                 qr::Point{N,T} ) where {N, T}
     # v(t) = p*(1-t) + q * t
@@ -315,8 +339,15 @@ end
 # s_p - s_q : the segment
 # qr : the query point.
 #############################################
-function  dist_seg_nn_point( s_p::Point{N,T}, s_q::Point{N,T},
-                             qr::Point{N,T} ) where {N, T}
+"""
+    dist_seg_nn_point
+
+Returns the *distance* to the closest point lying on the segment induced by
+the first two points, to the query point. By avoiding creating the
+segment iself, it is hopeflly more efficient.
+"""
+function dist_seg_nn_point( s_p::Point{N,T}, s_q::Point{N,T}, qr::Point{N,T}
+)  where {N,T}
     # v(t) = p*(1-t) + q * t
     #      = p + t*(q-p)
     # v( [0,1] ) = segment.
@@ -352,49 +383,34 @@ function  dist_seg_nn_point( s_p::Point{N,T}, s_q::Point{N,T},
 end
 
 
+"""
+    Segment_nn_point
 
+Returns the closest point on the segment `s` to the query point `qr`.
 
-# Get nearest point on segment...
+"""
 function  Segment_nn_point( s::Segment{N,T}, qr::Point{N,T} ) where {N, T}
-    # v(t) = p*(1-t) + q * t
-    #      = p + t*(q-p)
-    # v( [0,1] ) = segment.
-    # u(t) = v(t) - qr = (p-qr) + t * (q-p)
-    # D(t) = ||u(t)||^2 = ||p-qr||^2 + 2t <p-qr,q-p> + t^2 ||q-p||^2
-    # Settig: a =  ||q-p||^2  and  b =  2 <p-qr,q-p>
-    #        So D(t) = a*t^2 + b t + c
-    # The minimum distance is achived at
-    #    t^* = -b/(2a).
-    a = DistSq( s.p, s.q );
-    b = 2.0* dot( s.p-qr, s.q - s.p );
-    t = -b /(2.0 * a);
-
-    if  ( t < 0 )
-        t = 0;
-    end
-    if  ( t > 1 )
-        t = 1;
-    end
-    pon = s.p*(1-t) + s.q * t;
-
-    lon = DistSq(qr, pon);
-    lp = DistSq(qr, s.p);
-    lq = DistSq(qr, s.q);
-
-    if  (( lon < lp )  &&  ( lon < lq ) )
-        return  pon;
-    end
-    if  ( lp <= lq )
-        return  s.p;
-    else
-        return  s.q;
-    end
+    return   induced_seg_nn_point( s.p, s.q, qr );
 end
+
 
 #######################################################################
 # Check if the plane bisector of p and q intersect seg, and if so where...
 #f_on,t,p
 #######################################################################
+"""
+    Segment_get_bisection_point -> Bool, Real, Point
+
+    Computes the intersection point of the segment `seg` with the
+bisector plane between `p` and `q`.
+
+# Returns
+
+The first argument returns whether the segment intersects the
+bisector, the pramaterized location (tm), and the intersection piont
+itself.
+
+"""
 function  Segment_get_bisection_point( seg::Segment{N,T}, p, q  ) where {N,T}
     # Consider the segment going through p and q, and its middle point (mid).
     dir = q - p;

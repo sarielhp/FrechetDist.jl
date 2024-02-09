@@ -6,7 +6,9 @@ makedocs(
          sitename = "FrechetDist.jl",
          modules  = [FrechetDist],
          pages=[
-                "Home" => "index.md"
+             "Home" => "index.md",
+             "cg.md",
+             "morphing.md"
          ],
     warnonly=true
 )

@@ -41,6 +41,12 @@ end
 
 # leash = maximum length of an edge in the encoded matching.
 #         (That is, the Frechet distance.)
+"""
+    Morphing
+
+Encoding of a moprhing (i.e., matching) between two polygonal cuves.
+
+"""
 @with_kw mutable struct  Morphing{N,T}
     P::Polygon{N,T}
     Q::Polygon{N,T}
@@ -241,6 +247,14 @@ end
 ##########################################################3
 # Turn the morphing into monotone morphing...
 ##########################################################3
+"""
+    Morphing_monotonize
+
+Turns a morphing into a monotone morphing, by simply not going back,
+staying in place if necessary.
+
+"""
+
 function  Morphing_monotonize( m::Morphing{N,T} ) where {N,T}
     if  Morphing_is_monotone( m )
         return  deepcopy( m );
@@ -949,7 +963,15 @@ function  Morphing_verify_valid( m::Morphing{N,T} ) where {N,T}
 end
 
 
+"""
+    extract_param_inner
 
+Takes the sequence of events (i.e., sequence of points along the
+curve), and outputs a corresponding sequence of real numbers, where
+the ith nubmer if the distance of the ith point in sequence from the
+beginning of the curve. Here, distance means the total distance of the
+subcurve from the start point, to the current point.
+"""
 function  extract_param_inner( P::Polygon{N,T},
                                V::Vector{EventPoint{N,T}} ) where {N,T}
     lens::Vector{Float64} = Polygon_prefix_lengths( P )
@@ -957,9 +979,7 @@ function  extract_param_inner( P::Polygon{N,T},
     check_times( V );
 
     n = cardin( P );
-#    println( length( lens ) );
     for  i in eachindex( V )
-#        println( i, " : ", V[i].t );
         ev::EventPoint{N,T} = V[ i ];
         if  ev.type == PT_VERTEX
             push!( out, lens[ ev.i ] );
@@ -1021,14 +1041,18 @@ function    frechet_c_mono_approx_subcurve(
     return  Morphing_init( P, Q, pes, qes );
 end
 
-###############################################################################
-# A parameterization is a polygonal line that starts at (0,0) and end
-# at (m,n).  The polygonal curve ither have positive slope edge, or
-# vertical or horizontla edges. It can be taught of as a piecewise
-# liena function from [0,m] to [0,n]. Here m and n are the lengths of
-# the two given polygons of P and Q in m.
-###############################################################################
-function  Morphing_extract_prm( m::Morphing{N,T} ) where {N,T}
+
+"""
+    Morphing_extract_prm
+
+    A parameterization is a polygonal curve that starts at (0,0) and
+    end at (m,n).  The polygonal curve ither have positive slope edge,
+    or vertical or horizontla edges. It can be thought of as a
+    piecewise linear function from [0,m] to [0,n]. Here m and n are the
+    lengths of the two given polygons of P and Q, respectively.
+
+"""
+function  Morphing_extract_prm( m::Morphing{N,T} )::Polygon2F where {N,T}
     P::Polygon{N,T} = m.P;
     Q::Polygon{N,T} = m.Q;
     peout::Vector{EventPoint{N,T}} = m.pes;
@@ -1037,8 +1061,10 @@ function  Morphing_extract_prm( m::Morphing{N,T} ) where {N,T}
     check_times( m.pes );
 
     check_times( m.qes );
-    pps = extract_param_inner( P, peout );
-    qps = extract_param_inner( Q, qeout );
+
+    # pps and qps are two
+    pps::Vector{Float64} = extract_param_inner( P, peout );
+    qps::Vector{Float64} = extract_param_inner( Q, qeout );
 
     @assert( length( pps ) == length( qps ) )
 
@@ -1104,11 +1130,7 @@ end
 # parameterization_combine
 # Given two parameterization f, g, compute f(g( . ))
 ###############################################################
-function   parameterization_combine( f::Polygon{2,Float64}, g::Polygon{2,Float64} )
-#    println( "-------------------" );
-#    println( last( f ), " --- ",  last( g ) );
-#    println( "-------------------" );
-#    exit( -1 );
+function   parameterization_combine( f::Polygon2F, g::Polygon2F )
     if  ( ! floating_equal( last( g )[2], last( f )[ 1 ] ) )
         println( last( g )[2], " != ",  last( f )[ 1 ] );
         @assert( floating_equal( last( g )[2], last( f )[ 1 ] ) )
@@ -1120,56 +1142,46 @@ function   parameterization_combine( f::Polygon{2,Float64}, g::Polygon{2,Float64
     l_f = cardin( f )
     l_g = cardin( g )
 
-#    println( "X IN" );
-
+    # x = dim(g,1)
+    # y = dim(g,2) = dim(f, 1)
+    # z = dim(f,2)
     while (true)
         check_monotone_top( out );
 
+        # The two points under consideration, on the y axis
         yf = f[ idf ][1];
         yg = g[ idg ][2];
         f_equal_yf_yg::Bool = floating_equal( yf, yg )
-#        println( "idf: ", idf,"/",l_f, " ",
-#            idg,"/",l_g, " yf: ", yf, " yg: ", yg );
         if  ( f_equal_yf_yg )  &&  ( idf == l_f )  &&  ( idg == l_g )
-            #println( "A" );
             push!( out, point( g[ idg ][1], f[ idf ][2] ) )
             break;
         end
         if  ( f_equal_yf_yg   &&  ( idf < l_f )
               &&  ( f[ idf + 1 ][1] == yf ) )
-            #println( "B" );
             push!( out, point( g[ idg ][1], f[ idf ][2] ) )
             idf = idf + 1
             continue;
         end
         if  ( f_equal_yf_yg   &&  ( idg < l_g )
               &&  ( floating_equal( g[ idg + 1 ][2], yg ) ) )
-            # println( "C" );
             push!( out, point( g[ idg ][1], f[ idf ][2] ) )
             idg = idg + 1
             continue;
         end
         if  f_equal_yf_yg
-            #println( "D" );
             push!( out, point( g[ idg ][1], f[ idf ][2] ) )
             idf = min( idf + 1, l_f );
             idg = min( idg + 1, l_g );
             continue;
         end
         if  ( yf < yg )
-            #= println( "E" );
-            println( "===============================================" );
-            println( g[idg - 1] );
-            println( g[ idg ] );
-            println( yf );
-            println( "===============================================" );
-            =#
             # compute g( yf )...
             xg = eval_inv_pl_func( g[idg - 1], g[ idg ], yf )
     #        println( "xg: ", xg );
 
             # A bit of a hack... Because of floating point errors,
-            # things can go a bit backward, which we really should not allow.
+            # things can go a bit backward, which we really should not
+            # allow.
             if  ( xg < g[ idg - 1 ][ 1 ] )
                 xg = g[ idg - 1 ][ 1 ]
             end
@@ -1178,7 +1190,6 @@ function   parameterization_combine( f::Polygon{2,Float64}, g::Polygon{2,Float64
             continue;
         end
         if  ( yf > yg )
-            #println( "F" );
             zf = eval_pl_func( f[idf - 1], f[ idf ], yg )
             push!( out, point( g[ idg ][ 1 ], zf ) )
             idg = min( idg + 1, l_g );
@@ -1187,12 +1198,10 @@ function   parameterization_combine( f::Polygon{2,Float64}, g::Polygon{2,Float64
         @assert( false );
     end
 
-#    println( "X OUT" );
-    # TODO: We need to monotone the output because of floating
-    # point error...
-
+    # We monotononize the output because of floating point error...
+    # Should really just get rid of tiny flatting point jitters.
     curr::Point2F = deepcopy( out[ 1 ] );
-    for  i in 2:cardin(out )
+    for  i in 2:cardin( out )
         for  j in 1:2
             curr[ j ] = max( curr[ j ], out[ i ][ j ] )
             out[ i ][ j ] = curr[ j ];
@@ -1609,13 +1618,18 @@ end
 # Compute the morphing src(v) -> trg(u): That is u(v(t))
 ###########################################################################
 
-function  Morphing_combine( u::Morphing{N,T}, v::Morphing{N,T} ) where {N,T}
-#    Morphing_verify_valid( u );
-    #println( "a1234" );
-    u_prm = Morphing_extract_prm( u );
-    #println( "a5678" );
-#    Morphing_verify_valid( v );
+"""
+    Morphing_combine
 
+Gets two morphings u, v (i.e., two parameterizations) and combine them
+into a single morphing u(v(.)).
+
+For example, if u: γ → δ  and  v: δ → ξ, then the returned morphing is
+u(v(⋅)): γ → ξ.
+
+"""
+function  Morphing_combine( u::Morphing{N,T}, v::Morphing{N,T} ) where {N,T}
+    u_prm = Morphing_extract_prm( u );
     v_prm = Morphing_extract_prm( v );
 
     #println( "b5678" );
