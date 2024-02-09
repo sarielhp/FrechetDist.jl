@@ -528,7 +528,8 @@ function  output_frechet_movie_mp4( m::Morphing{N,T},
     options = [ "-r", "10", "-i",
                cm.dir * "/" * "%06d.png",
                "-c:v", "libx264", tmp_filename ];
-    output = read(pipeline( `ffmpeg $options`, stderr="errs.txt" ), String);
+    output = read(pipeline( `ffmpeg $options`, stderr="/tmp/errs.txt" ),
+        String);
 
     println( "Rencoding with handbrake..." );
 
@@ -536,7 +537,7 @@ function  output_frechet_movie_mp4( m::Morphing{N,T},
     options_2 = [ "-Z", "Android 1080p30", "-i", tmp_filename,
                  "-o", filename ];
     output_2 = read(pipeline( `HandBrakeCLI $options_2`,
-                            stderr="errs.txt" ), String);
+                            stderr="/tmp/errs_2.txt" ), String);
     rmx( tmp_filename );
     if  isfile( filename )
         println( "Created... ", filename );
