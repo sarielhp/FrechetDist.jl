@@ -13,6 +13,8 @@ using .cg
 #using .cg
 #using  cg;  # A submodule?
 
+include( "morphing.jl" );
+include( "frechet_discrete.jl" );
 include( "frechet.jl" );
 
 ##########################################################################
@@ -29,10 +31,14 @@ export  Morphing_combine, Morphing_extract_prm
 export  Morphing_as_polygons
 export  Morphing_extract_vertex_radii, Morphing_extract_offsets
 
-################
-export  frechet_ve_r_compute
+
+#####################################################################
 export  frechet_d_compute
 export  frechet_d_r_compute
+export  frechet_d_r_compute_sample
+
+################
+export  frechet_ve_r_compute
 export  frechet_width_approx
 export  frechet_offsets
 

@@ -1,4 +1,4 @@
-# FrechetDist.jl / Computational Geometry
+# / Computational Geometry Primitives
     The package provides some basic geometric types in the cg submodule.
 ## Package Features
 - Provides types: Point, Segment, Line, Polygon.

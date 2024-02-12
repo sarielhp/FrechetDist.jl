@@ -8,6 +8,7 @@ makedocs(
          pages=[
              "Home" => "index.md",
              "cg.md",
+             "frechet_discrete.md",
              "morphing.md"
          ],
     warnonly=true
