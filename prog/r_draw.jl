@@ -40,13 +40,13 @@ function  draw_polygon_vertices( cr, P, r::Float64 )
     nv::Int64 = cardin( P );
     #r = Polygon_length( P ) / (100.0*cardin( P ));
     for  i in 1:nv
-        p = P.pnts[ i ];        
+        p = P.pnts[ i ];
 #        set_line_width(cr, 2.00);
 #        Cairo.set_source_rgb( cr, 0, 0, 0);
 #        println( "RRR = ", r );
-        Cairo.arc( cr, p[1], p[2], r, 0.0, 2 * pi);        
+        Cairo.arc( cr, p[1], p[2], r, 0.0, 2 * pi);
         Cairo.fill(cr);
-#        Cairo.arc( cr, p[1], p[2], r, 0.0, 2 * pi);        
+#        Cairo.arc( cr, p[1], p[2], r, 0.0, 2 * pi);
 #        Cairo.set_source_rgb( cr, 1.0, 1.0, 0);
     end
     Cairo.stroke( cr );
@@ -86,20 +86,35 @@ function  compute_bounding_boxes( list::VecPolygon2F )
 end
 
 function  get_image_dims( bbo )
-    width = 1024.0;
-    scal = width / BBox_width( bbo, 1 );
-    theight = width * BBox_width( bbo, 2 ) / BBox_width( bbo, 1 );
 
+    width::Float64 = 1024.0;
+    theight::Float64 = 0.0;
+
+    while ( true )
+        theight = width * BBox_width( bbo, 2 ) / BBox_width( bbo, 1 );
+        if  theight < 2048.0
+            break;
+        end
+        
+        width = width / 2.0;
+    end
+        
     iheight::Int64 = convert( Int64, 16 * ceil( theight / 16 ) )
     iwidth::Int64 = convert( Int64, 16 * ceil( width / 16 ) )
 
     return  iheight,iwidth;
 end
 
-function  set_transform( cr, iwidth::Int64, bbo::BBox2F )
-    scal = convert( Float64, iwidth) / BBox_width( bbo, 1 );
+function  set_transform( cr, iwidth::Int64, iheight::Int64,
+                         bbo::BBox2F )
+    xcal = convert( Float64, iwidth) / BBox_width( bbo, 1 );
 
-    Cairo.scale( cr, scal, scal );
+#        ycal = convert( Float64, iheight) / BBox_width( bbo, 2 );
+#    if  ( ( (xcal / 5.0 ) < ycal ) && ( ycal <= (xcal * 5.0 ) ) )
+#        ycal = xcal;
+#    end
+
+    Cairo.scale( cr, xcal, xcal );
     bl = BBox_bottom_left( bbo );
     Cairo.translate( cr, -bl[ 1 ], -bl[ 2 ]);
 end
@@ -119,7 +134,7 @@ function  cairo_setup( filename::String, list::VecPolygon2F,
     end
     cr = CairoContext(c);
 
-    set_transform( cr, iwidth, bbo );
+    set_transform( cr, iwidth, iheight, bbo );
 
     if  ( ! f_pdf )
         set_source_rgb(cr, 1, 1, 1);
@@ -136,8 +151,9 @@ function  output_polygons_to_file(  list::VecPolygon2F, filename,
     f_draw_vertices::Bool = false )
     c,cr,bb = cairo_setup( filename, list, f_pdf );
 
+    BBox_print( bb );
     set_source_rgb(cr,0.9,0.9,0.9);    # light gray
-    set_line_width(cr, 1.0);
+    set_line_width(cr, 10.0);
     set_source_rgba(cr, 1, 0.2, 0.2, 0.6);
 
     len = length( list );
@@ -147,7 +163,7 @@ function  output_polygons_to_file(  list::VecPolygon2F, filename,
         #println( count, " ", len );
         set_line_width(cr, 2.00);
         if  len == 2  &&  count == 2
-            set_source_rgb(cr, 0.0, 0.0, 1.0 );            
+            set_source_rgb(cr, 0.0, 0.0, 1.0 );
         else
             set_source_rgb( cr, 0.0, 1.0, 0.0 );
         end
@@ -382,7 +398,7 @@ function   draw_image_frame( cm::ContextMovie, P, Q, rf::RecFrame )
     set_source_rgb(cr, 1, 1, 1);
     paint(cr);
 
-    set_transform( cr, cm.iwidth, cm.bbo );
+    set_transform( cr, cm.iwidth, cm.iheight, cm.bbo );
 
     set_line_width(cr, 3.5);
     set_source_rgb(cr, 0.0, 0.8, 0.0 );
@@ -750,7 +766,7 @@ function  diagram_get_ve_loc( P::Polygon{N,T}, Q::Polygon{N,T},
     return point( x, y );
 end
 
-function  plot_curves_diagram( P, Q, filename_curves,
+function  plot_curves_diagram( P, Q,
     filename_diagram,
     f_draw_c::Bool = false,
     f_draw_ve::Bool = true,
@@ -879,10 +895,10 @@ function  plot_curves_diagram( P, Q, filename_curves,
     savefig( plt, filename_diagram );
 
     println( "Outputing the curves..." );
-    output_polygons_to_file(  [P, Q], filename_curves, true );
+#    output_polygons_to_file(  [P, Q], filename_curves, true );
     println( "Created: " );
+#    println( "   ", filename_curves );
     println( "   ", filename_diagram );
-    println( "   ", filename_curves );
 end
 
 function  do_example( polys )
@@ -920,36 +936,35 @@ function  create_demo( title::String, prefix, poly_a, poly_b,
     cardi = cardin( poly_a ) + cardin( poly_b );
     total_frames = min( 50 * (cardin( poly_a ) + cardin( poly_b )), 800 );
 
+    filename_curves = prefix*"curves.pdf";
+    println( "Outputing the curves..." );
+    output_polygons_to_file(  [poly_a, poly_b], filename_curves, true );
+    println( "Created: " );
+    println( "   ", filename_curves );
+
     m_c = create_movie( poly_a, poly_b,
         total_frames, prefix*"f_c_movie.mp4"  );
 
-    plot_curves_diagram( poly_a, poly_b, prefix*"curves.pdf",
-        prefix*"diagram.pdf",
+    plot_curves_diagram( poly_a, poly_b, prefix*"diagram.pdf",
         false, false, false
     );
-    plot_curves_diagram( poly_a, poly_b, prefix*"curves.pdf",
-        prefix*"diagram.png",
+    plot_curves_diagram( poly_a, poly_b, prefix*"diagram.png",
         false, false, false
     );
-    plot_curves_diagram( poly_a, poly_b, prefix*"curves.pdf",
-        prefix*"g_diagram.pdf",
+    plot_curves_diagram( poly_a, poly_b, prefix*"g_diagram.pdf",
         false, false, true
     );
-    plot_curves_diagram( poly_a, poly_b, prefix*"curves.pdf",
-        prefix*"c_diagram.pdf",
+    plot_curves_diagram( poly_a, poly_b, prefix*"c_diagram.pdf",
         true, false, false
     );
-    plot_curves_diagram( poly_a, poly_b, prefix*"curves.pdf",
-        prefix*"c_diagram.png",
+    plot_curves_diagram( poly_a, poly_b, prefix*"c_diagram.png",
         true, false, false
                          );
     if  f_draw_ve
-        plot_curves_diagram( poly_a, poly_b, prefix*"curves.pdf",
-                             prefix*"ve_r_diagram.pdf",
+        plot_curves_diagram( poly_a, poly_b, prefix*"ve_r_diagram.pdf",
                              false, true, true
                              );
-        plot_curves_diagram( poly_a, poly_b, prefix*"curves.pdf",
-                             prefix*"ve_r_diagram.png",
+        plot_curves_diagram( poly_a, poly_b, prefix*"ve_r_diagram.png",
                              false, true, true
                              );
     end
@@ -1076,10 +1091,10 @@ function  create_demo( title::String, prefix, poly_a, poly_b,
             write( fl, "\n\n <video controls autoplay " );
             write( fl, "   src=\"discrete_frechet.mp4\" type=\"video/mp4\" />\n" );
             write( fl, "</video>\n" );
-            
+
         end
 
-        
+
         write( fl, string( now() ) );
 
 

@@ -284,6 +284,9 @@ end
 function  Segment_get_convex_coef( s::Segment{N,T}, qr::Point{N,T} ) where{N,T}
     d = Dist( s.p, qr );
     len = Segment_length( s );
+    if  len == 0.0
+        return  0.0;
+    end
     return  d/len;
 end
 
@@ -316,11 +319,11 @@ function  induced_seg_nn_point( s_p::Point{N,T}, s_q::Point{N,T},
     if  ( t > 1 )
         t = 1;
     end
-    pon = s_p*(1-t) + s.q * t;
+    pon = s_p*(1-t) + s_q * t;
 
     lon = DistSq(qr, pon);
     lp = DistSq(qr, s_p);
-    lq = DistSq(qr, s.q);
+    lq = DistSq(qr, s_q);
 
     if  (( lon < lp )  &&  ( lon < lq ) )
         return  pon;
@@ -609,9 +612,11 @@ function  Polygon_simplify_ext( P::Polygon{N,T}, r ) where {N,T}
             end
         end
     end
-    if ( Polygon_push_smart( pout, P[ len ] ) )
-        push!( pindices, len );
-    end
+
+    # We push the last vertex in event if it is a repetition, for
+    # example if the curve is close, for example...
+    push!( pout, P[ len ] )
+    push!( pindices, len );
 
     return  pout, pindices;
 end

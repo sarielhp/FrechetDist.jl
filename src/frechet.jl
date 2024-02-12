@@ -436,7 +436,14 @@ function f_r_create_event( R::Polygon{N,T}, i::Int64,
     p = Segment_nn_point( seg, qr );
 
     t::Float64 = Segment_get_convex_coef( seg, p );
-    @assert( 0.0 <= t  &&  t <= 1.0 );
+
+    if  ( ! ( 0.0 <= t  &&  t <= 1.0 ) )
+        println( R[ i ] );
+        println( R[ i + 1 ] );
+        println( "qr: ", qr );
+        println( "t: ", t );
+        @assert( 0.0 <= t  &&  t <= 1.0 );
+    end
     if  ( 0 < t < 0.000001 )
         t = 0;
         p = R[ i ];
@@ -1142,6 +1149,10 @@ function   parameterization_combine( f::Polygon2F, g::Polygon2F )
     l_f = cardin( f )
     l_g = cardin( g )
 
+    @assert( l_f > 1 );
+    @assert( l_g > 1 );
+
+    
     # x = dim(g,1)
     # y = dim(g,2) = dim(f, 1)
     # z = dim(f,2)
@@ -1175,6 +1186,12 @@ function   parameterization_combine( f::Polygon2F, g::Polygon2F )
             continue;
         end
         if  ( yf < yg )
+#            println( "idf :", idf  );
+#            println( "idg :", idg );
+#            println( "yf :" ,yf );
+#            println( "yg :" ,yg );
+#            println( g );
+            
             # compute g( yf )...
             xg = eval_inv_pl_func( g[idg - 1], g[ idg ], yf )
     #        println( "xg: ", xg );
@@ -1632,6 +1649,9 @@ function  Morphing_combine( u::Morphing{N,T}, v::Morphing{N,T} ) where {N,T}
     u_prm = Morphing_extract_prm( u );
     v_prm = Morphing_extract_prm( v );
 
+    @assert( cardin( u_prm ) > 1 );
+    @assert( cardin( v_prm ) > 1 );
+    
     #println( "b5678" );
     prm = parameterization_combine( v_prm, u_prm );
 
@@ -1699,6 +1719,7 @@ rough approximation.
 function  frechet_c_approx( poly_a::Polygon{N,T},
     poly_b::Polygon{N,T}, approx::Float64 ) where {N,T}
 
+    @assert( ( cardin( poly_a ) > 1 )  &&  ( cardin( poly_b ) > 1 ) )
     f_debug::Bool = false;
     @assert( approx > 1.0 )
 
@@ -1722,6 +1743,8 @@ function  frechet_c_approx( poly_a::Polygon{N,T},
             P, p_indices = Polygon_simplify_ext( poly_a, r )
             Q, q_indices = Polygon_simplify_ext( poly_b, r )
 
+            @assert( ( cardin( P ) > 1 )  &&  ( cardin( Q ) > 1 ) )
+            
             f_debug &&  println( "before" );
             m = frechet_mono_via_refinement( P, Q,
                                              3.0/4.0 + approx / 4.0 )[1];
