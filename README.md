@@ -26,7 +26,7 @@ To generate examples, you can run:
 
 This generates movies/etc in the subdirectory output/01/, output/02/,...
 
-# Research project
+## Research project
 
 This software was written as part of a research project involving
 Sariel Har-Peled, Benjamin Raichel, and Eliot Robson. A paper
