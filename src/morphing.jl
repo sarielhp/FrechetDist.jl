@@ -1,21 +1,18 @@
-##############################################################
+# Originally contributed by S. Har-Peled
+# under MIT License
+
+#---------------------------------------------------------
 # Morphing
 #
 # A morphing is the matching between two polygons as computed by by
-# the Frechet distance. 
-###############################################################
+# the Frechet distance.
+#---------------------------------------------------------
 
 using Parameters
 using DataStructures
 using Printf
 
-#push!(LOAD_PATH, pwd())
-#using cg
 
-#########################################################################3
-############################################################################
-# Retractable Frechet distance
-############################################################################
 
 @enum FPointType begin
     PT_VERTEX = 1
@@ -445,7 +442,7 @@ function   parameterization_combine( f::Polygon2F, g::Polygon2F )
     @assert( l_f > 1 );
     @assert( l_g > 1 );
 
-    
+
     # x = dim(g,1)
     # y = dim(g,2) = dim(f, 1)
     # z = dim(f,2)
@@ -484,7 +481,7 @@ function   parameterization_combine( f::Polygon2F, g::Polygon2F )
 #            println( "yf :" ,yf );
 #            println( "yg :" ,yg );
 #            println( g );
-            
+
             # compute g( yf )...
             xg = eval_inv_pl_func( g[idg - 1], g[ idg ], yf )
     #        println( "xg: ", xg );
@@ -721,7 +718,7 @@ function  Morphing_combine( u::Morphing{N,T}, v::Morphing{N,T} ) where {N,T}
 
     @assert( cardin( u_prm ) > 1 );
     @assert( cardin( v_prm ) > 1 );
-    
+
     #println( "b5678" );
     prm = parameterization_combine( v_prm, u_prm );
 
@@ -733,10 +730,6 @@ function  Morphing_combine( u::Morphing{N,T}, v::Morphing{N,T} ) where {N,T}
 end
 
 
-
-
 #
 # End of file
-##########################################################################
-##########################################################################
 ##########################################################################

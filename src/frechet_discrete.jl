@@ -1,9 +1,12 @@
-#############################################################
+# Originally contributed by S. Har-Peled
+# under MIT License
+
+#---------------------------------------------------------------
 # Code to compute discrete Frechet. Both the standard type,
 # and the retractable type. Note, that the retractable version
 # still allocates the quadratic size table (unlike the ve version
 # which uses hashing to avoid this).
-#############################################################
+#---------------------------------------------------------------
 
 
 function   d_frechet_extract_solution( P::Polygon{N,T}, Q,
@@ -273,6 +276,4 @@ end
 
 #
 # End of file
-##########################################################################
-##########################################################################
 ##########################################################################

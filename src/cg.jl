@@ -1,9 +1,13 @@
-module cg
-############################################################
-# Basic computational geometry entities
+# Originally contributed by S. Har-Peled
+# under MIT License
+
+#---------------------------------------------------------
+# Basic computational geometry library
 #
 # Points, segments, etc
-############################################################
+#---------------------------------------------------------
+
+module cg
 
 #using PrecompileTools
 using Parameters

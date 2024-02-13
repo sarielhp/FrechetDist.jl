@@ -1,3 +1,6 @@
+# Originally contributed by S. Har-Peled
+# under MIT License
+
 module FrechetDist
 
 using Parameters

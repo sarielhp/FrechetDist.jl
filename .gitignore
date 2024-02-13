@@ -3,4 +3,5 @@
 *.jl.mem
 /Manifest.toml
 distributions
+scripts
 # DEL_THIS_LINE 10288

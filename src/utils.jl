@@ -1,3 +1,7 @@
+# Originally contributed by S. Har-Peled
+# under MIT License
+
+# Not currently used by anything...
 
 function  print_int_w_commas( n::Int64 )
     if  ( abs( n ) < 1000 )
