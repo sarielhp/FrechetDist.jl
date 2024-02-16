@@ -20,6 +20,8 @@ variant, a retractable variant, a continuous monotone variant, etc.
 
 [Documentation](docs/build/)
 
+[Visual examples of output](  https://sarielhp.org/p/24/frechet_ve/examples/)
+
 ## Examples
 
 To generate examples, you can run:
