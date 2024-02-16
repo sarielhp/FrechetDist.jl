@@ -1,4 +1,7 @@
-name: Documentationon:
+name: 'FrechetDist documentation'
+description: 'Build and deploy the documentation for a Julia package.'
+author: Sariel Har-Peled
+on:
   push:
     branches:
       - master
@@ -12,7 +15,8 @@ name: Documentationon:
         with:
           version: '1'
       - name: Install dependencies
-        run: julia --project=docs/ -e 'using Pkg; Pkg.develop(PackageSpec(path=pwd())); Pkg.instantiate()'
+        run: julia --project=docs/ -e 'using Pkg;\
+                     Pkg.develop(PackageSpec(path=pwd())); Pkg.instantiate()'
       - run: |
           julia --project=docs -e '
             using Documenter: doctest
@@ -21,6 +25,6 @@ name: Documentationon:
       - run: julia --project=docs docs/make.jl
       - name: Build and deploy
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # For authentication with GitHub Actions token
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # For authentication with GitHub Actions token
         run: julia --project=docs/ docs/make.jl
-        
