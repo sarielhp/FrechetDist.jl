@@ -18,6 +18,8 @@ This library is written in Julia and implements a number of different
 algorithms for the Fréchet distance, including the "easy" discrete
 variant, a retractable variant, a continuous monotone variant, etc.
 
+[Documentation](build/docs/)
+
 ## Examples
 
 To generate examples, you can run:
