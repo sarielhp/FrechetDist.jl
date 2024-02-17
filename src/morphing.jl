@@ -644,6 +644,7 @@ function  event_sequences_extract( prm::Polygon2F, P::Polygon{N,T},
                  ||  ( qes[ i ].type != PT_ON_EDGE ) );
     end
     =#
+
     return  pes, qes
 end
 
