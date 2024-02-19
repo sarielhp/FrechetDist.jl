@@ -4,5 +4,6 @@
 /Manifest.toml
 distributions
 scripts
+.ignore/
 docs/build/
 # DEL_THIS_LINE 10288
