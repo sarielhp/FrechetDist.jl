@@ -1124,6 +1124,8 @@ function  create_demo( title::String, prefix, poly_a, poly_b,
                 *" leash " * "is shown as moving continuously, by \n"
                 * " interpolating between the discrete locations.\n"
                 * "<p>\n\n" );
+
+            println( fl, "<hr>\n\n" );
             println( fl, "<h3>The discrete retractable version</h3>\n\n" );
             write( fl, "\n\n <video controls autoplay " );
             write( fl, "   src=\"discrete_r_frechet.mp4\" "
