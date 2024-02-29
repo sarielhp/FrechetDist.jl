@@ -5,5 +5,7 @@
 distributions
 scripts
 .ignore/
+data/
+data
 docs/build/
 # DEL_THIS_LINE 10288

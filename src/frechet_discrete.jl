@@ -57,10 +57,12 @@ function   frechet_d_compute_inner( P::Polygon{N,T}, Q::Polygon{N,T},
     n_p::Int64 = cardin( P );
     n_q::Int64 = cardin( Q );
 
+    iters::Int64 = 0;
     dp[ 1, 1 ] = Dist( P[ 1 ], Q[ 1 ] );
     for  i::Int64 in 1:n_p
         ip = max( i - 1, 1 );
         for  j in 1:n_q
+            iters = iters + 1;
             d = Dist( P[ i ], Q[ j ] );
             jp = max( j - 1, 1 );
 
@@ -88,6 +90,8 @@ function   frechet_d_compute_inner( P::Polygon{N,T}, Q::Polygon{N,T},
             end
         end
     end
+
+    return  iters;
 end
 
 
@@ -107,9 +111,12 @@ function   frechet_d_compute( P::Polygon{N,T},
     dp::Array{Float64, 2} = Array{Float64, 2}(undef, n_p,n_q);
     dp_dec_i = falses( n_p, n_q );
 
-    frechet_d_compute_inner( P, Q, dp, dp_dec_i );
+    iters = frechet_d_compute_inner( P, Q, dp, dp_dec_i );
 
-    return  d_frechet_extract_solution( P, Q, dp_dec_i, n_p, n_q );
+    m = d_frechet_extract_solution( P, Q, dp_dec_i, n_p, n_q );
+    m.iters = iters;
+
+    return  m;
 end
 
 
@@ -222,7 +229,10 @@ function   frechet_d_r_compute( P::Polygon{N,T}, Q::Polygon{N,T}
     end
 
     #println( "Iters: ", iters, " : ", n_p * n_q );
-    return   d_frechet_extract_solution( P, Q, dp_dec_i, n_p, n_q );
+    m = d_frechet_extract_solution( P, Q, dp_dec_i, n_p, n_q );
+    m.iters = iters;
+
+    return  m;
 end
 
 """
@@ -242,8 +252,9 @@ picked.
   number of vertices computed might be larger (but hopefully not much
   larger).
 
-- f_lopt = true: Use standard discrete Frechet or the retractable
-  version.
+- f_lopt
+     true: Use the rectractable Frechet distance version
+     false: Use the standard discrete Frechet version.
 """
 function   frechet_d_r_compute_sample( polya::Polygon{N,T},
                                        polyb::Polygon{N,T},
