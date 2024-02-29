@@ -164,7 +164,7 @@ function   frechet_d_r_compute( P::Polygon{N,T}, Q::Polygon{N,T}
     heap = BinaryMinHeap( x );
     in_heap[ 1, 1 ] = true;
 
-    iters = 0;
+    iters::Int64 = 0;
     while  ! isempty( heap )
         ele = pop!( heap );
         iters = iters + 1;
@@ -228,7 +228,6 @@ function   frechet_d_r_compute( P::Polygon{N,T}, Q::Polygon{N,T}
         end
     end
 
-    #println( "Iters: ", iters, " : ", n_p * n_q );
     m = d_frechet_extract_solution( P, Q, dp_dec_i, n_p, n_q );
     m.iters = iters;
 

@@ -972,7 +972,7 @@ function  create_demo( title::String, prefix, poly_a, poly_b,
     );
 
     println( "Cardinality of both curves : ", cardi );
-    f_graph_drawn::Bool = false; 
+    f_graph_drawn::Bool = false;
     if  ( cardi < 100 )
         f_graph_drawn = true;
         plot_curves_diagram( poly_a, poly_b, prefix*"g_diagram.pdf",
@@ -1009,8 +1009,8 @@ function  create_demo( title::String, prefix, poly_a, poly_b,
     local P, Q, m_d, m_d_r
     f_computed_d::Bool = false;
     f_sampled_10::Bool = false;
-    if  ( cardi < 1000 )
-        if  ( cardi < 5000 )
+    if  ( cardi < 5000 )
+        if  ( cardi < 100 )
             f_sampled_10 = true;
             P = Polygon_sample_uniformly( poly_a, 10*cardin( poly_a ) );
             Q = Polygon_sample_uniformly( poly_b, 10*cardin( poly_a ) );
@@ -1031,15 +1031,14 @@ function  create_demo( title::String, prefix, poly_a, poly_b,
 
     open( prefix * "index.html", "w" ) do fl
         println( "Writing file\n\n\n\n\n" );
-        write( fl, "<head><TITLE>$prefix</TITLE>\n"
+        write( fl, "<head>\n<TITLE>$prefix</TITLE>\n"
                    *"<script type=\"text/x-mathjax-config\">\n"
                    * "MathJax.Hub.Config({ tex2jax: "
                    * "{inlineMath: [[\'\$\',\'\$\'], [\'\\(','\\)']]}"
                    * "});\n"
-                   * "</script>"
+                   * "</script>\n"
                    * "<script type=\"text/javascript\"\n"
-                   * "src=\"https://cdnjs.cloudflare.com/ajax/"
-                   * "libs/mathjax/2.7.0/MathJax.js?"
+                   * "src=\"http://cdn.mathjax.org/mathjax/latest/MathJax.js"
                    * "config=TeX-AMS-MML_HTMLorMML\">\n"
                    * "</script>\n"
                    * "</head>" )
@@ -1150,7 +1149,14 @@ function  create_demo( title::String, prefix, poly_a, poly_b,
             write( fl, "   src=\"discrete_r_frechet.mp4\" "
                    * " type=\"video/mp4\" />\n" );
             write( fl, "</video>\n" );
+
+            println( fl, "<hr>" );
+            println( fl, "P # vertices: ", cardin( P ), "<br>" );
+            println( fl, "P # vertices: ", cardin( Q ), "<br>" );
+            println( fl, "DFréchet iters         : ", m_d.iters, "<br>" );
+            println( fl, "Retract DFréchet iters : ", m_d_r.iters, "<br>" );
         end
+
 
 
         println( fl, "<hr>\n" );
@@ -1167,12 +1173,15 @@ function  create_demo( title::String, prefix, poly_a, poly_b,
 end
 
 
-function  create_demo_files( prefix, f_a, f_b,
+function  create_demo_files( title::String,
+                             prefix::String,
+                             f_a::String,
+                             f_b::String,
                              f_draw_c::Bool = false,
                              f_draw_ve::Bool = true )
     poly_a = Polygon_read_plt_file( f_a );
     poly_b = Polygon_read_plt_file( f_b );
-    create_demo( prefix, prefix, poly_a, poly_b, f_draw_c, f_draw_ve );
+    create_demo( title, prefix, poly_a, poly_b, f_draw_c, f_draw_ve );
 
 end
 
@@ -1207,11 +1216,21 @@ function  generate_examples()
     create_demo( "Example 10", "output/10/", poly_a,poly_b );
 
     if  ( isfile( "data/010/trajectory/20080928160000.plt" ) )
-        create_demo_files( "Example (unnamed)", "output/big/",
+        create_demo_files( "Example of big curves (GPS tracks)",
+            "output/11/",
             "data/010/trajectory/20080928160000.plt",
             "data/010/trajectory/20081219114010.plt",
             true, false );
     end
+    if  ( isfile( "data/041/trajectory/20090429225015.plt" ) )
+        create_demo_files( "Example of close curves (GPS tracks)",
+            "output/12/",
+            "data/041/trajectory/20090429225015.plt",
+            "data/041/trajectory/20090531225725.plt",
+            true, false );
+    end
+
+
 end
 
 if  ! isdir( "output" );
@@ -1225,12 +1244,13 @@ if   num_args == 0
 end
 
 if   num_args == 2
-    create_demo_files( "output/test/", ARGS[1], ARGS[2], true, false );
+    create_demo_files( "output/test/", "output/test/",
+                       ARGS[1], ARGS[2], true, false );
     exit( 0 );
 end
 
 if   num_args == 3
-    create_demo_files( ARGS[1], ARGS[2], ARGS[3], true, false );
+    create_demo_files( "empty_title", ARGS[1], ARGS[2], ARGS[3], true, false );
     exit( 0 );
 end
 
