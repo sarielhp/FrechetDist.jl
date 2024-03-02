@@ -1083,7 +1083,7 @@ function  create_demo( title::String, prefix, poly_a, poly_b,
             write( fl, "\n" )
             write( fl, "<hr>\n" )
         end
-        
+
         ############################################################
         # Table...
         row_a = [ "<a href=\"poly_a.txt\">P</a>"
@@ -1222,6 +1222,28 @@ function  create_demo_files( title::String,
 
 end
 
+gurl = "https://www.microsoft.com/en-us/research/publication/"*
+       *"geolife-gps-trajectory-dataset-user-guide/";
+gemb = "<a href=\"", gurl, "\">GeoLife GPS Trajectories</a>";
+
+function  gen_example_12()
+    if  ( isfile( "data/041/trajectory/20090429225015.plt" ) )
+        create_demo_files( "Example of close curves (GPS tracks)",
+            "output/12/",
+            "data/041/trajectory/20090429225015.plt",
+            "data/041/trajectory/20090531225725.plt",
+            true, false,
+            "An example of two GPS tracks from "
+                * gemb * " that are close together. \n"
+                * "This is an example where the retractable Fréchet\n"
+                * " algorithm axplores only tiny fraction of the diagam, \n"
+                * "yielding a near linear running time in this case.\n"
+        );
+    end
+end
+
+
+
 function  generate_examples()
     poly_a,poly_b = example_1();
     create_demo( "Example 1", "output/01/", poly_a,poly_b );
@@ -1259,15 +1281,7 @@ function  generate_examples()
             "data/010/trajectory/20081219114010.plt",
             true, false );
     end
-    if  ( isfile( "data/041/trajectory/20090429225015.plt" ) )
-        create_demo_files( "Example of close curves (GPS tracks)",
-            "output/12/",
-            "data/041/trajectory/20090429225015.plt",
-            "data/041/trajectory/20090531225725.plt",
-            true, false );
-    end
-
-
+    gen_example_12();
 end
 
 if  ! isdir( "output" );
@@ -1276,7 +1290,9 @@ end
 
 num_args = length( ARGS );
 if   num_args == 0
-    generate_examples();
+    gen_example_12();
+
+#    generate_examples();
     exit( 0 );
 end
 
