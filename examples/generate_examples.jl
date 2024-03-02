@@ -1218,7 +1218,7 @@ function  create_demo_files( title::String,
                              )
     poly_a = Polygon_read_plt_file( f_a );
     poly_b = Polygon_read_plt_file( f_b );
-    create_demo( title, prefix, poly_a, poly_b, f_draw_c, f_draw_ve );
+    create_demo( title, prefix, poly_a, poly_b, f_draw_c, f_draw_ve, note );
 
 end
 
