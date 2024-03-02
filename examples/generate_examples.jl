@@ -1031,7 +1031,9 @@ function  create_demo( title::String, prefix, poly_a, poly_b,
 
     open( prefix * "index.html", "w" ) do fl
         println( "Writing file\n\n\n\n\n" );
-        write( fl, "<head>\n<TITLE>$prefix</TITLE>\n"
+        write( fl, "<head>\n"
+                   *"<meta charset=\"UTF-8\">"
+                   *"<TITLE>$prefix</TITLE>\n"
                    *"<script type=\"text/x-mathjax-config\">\n"
                    * "MathJax.Hub.Config({ tex2jax: "
                    * "{inlineMath: [[\'\$\',\'\$\'], [\'\\(','\\)']]}"
