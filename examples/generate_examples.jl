@@ -1222,9 +1222,12 @@ function  create_demo_files( title::String,
 
 end
 
-gurl = "https://www.microsoft.com/en-us/research/publication/"*
-       *"geolife-gps-trajectory-dataset-user-guide/";
-gemb = "<a href=\"", gurl, "\">GeoLife GPS Trajectories</a>";
+gurl_base::String = "https://www.microsoft.com/en-us/research/publication/";
+gurl_suffix::String = "geolife-gps-trajectory-dataset-user-guide/";
+
+gurl::String = gurl_base * gurl_suffix;
+
+gemb::String = "<a href=\"" * gurl * "\">GeoLife GPS Trajectories</a>";
 
 function  gen_example_12()
     if  ( isfile( "data/041/trajectory/20090429225015.plt" ) )
@@ -1233,11 +1236,11 @@ function  gen_example_12()
             "data/041/trajectory/20090429225015.plt",
             "data/041/trajectory/20090531225725.plt",
             true, false,
-            "An example of two GPS tracks from "
-                * gemb * " that are close together. \n"
-                * "This is an example where the retractable Fréchet\n"
-                * " algorithm axplores only tiny fraction of the diagam, \n"
-                * "yielding a near linear running time in this case.\n"
+            "An example of two GPS tracks from " *
+                gemb * " that are close together. \n" *
+                 "This is an example where the retractable Fréchet\n" *
+                 " algorithm axplores only tiny fraction of the diagam, \n" *
+                 "yielding a near linear running time in this case.\n"
         );
     end
 end
