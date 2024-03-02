@@ -929,9 +929,8 @@ end
 
 
 function  create_movie( P::Polygon{N,T}, Q::Polygon{N,T},
-    total_frames, filename ) where {N,T}
+    total_frames, filename, m ) where {N,T}
 #    println( "About to compute the Frechet distance..." );
-    m = frechet_c_compute( P, Q )
 #    println( "Done!" );
     output_frechet_movie_mp4( m, filename, total_frames );
 #    println( "Created  : ", filename );
@@ -943,7 +942,8 @@ end
 
 function  create_demo( title::String, prefix, poly_a, poly_b,
                        f_draw_c::Bool = false,
-                       f_draw_ve::Bool = true )
+                       f_draw_ve::Bool = true,
+                       note::String = "" )
     if  ! isdir( prefix )
         mkdir( prefix );
     end
@@ -961,8 +961,44 @@ function  create_demo( title::String, prefix, poly_a, poly_b,
     println( "Created: " );
     println( "   ", filename_curves );
 
-    m_c = create_movie( poly_a, poly_b,
-        total_frames, prefix*"f_c_movie.mp4"  );
+    local P, Q, m_d, m_d_r, m_ve_r
+    f_computed_d::Bool = false;
+    f_sampled_10::Bool = false;
+
+    #####################################################################
+    # Computes distances
+    #
+    # m_c: Continuous monotone Frechet
+    # m_d: Discrete Frecheet (potentially sampled)
+    # m_d_r: Discrete restructured Frechet
+    #####################################################################
+    m_c = frechet_c_compute( poly_a, poly_b )
+    if  f_draw_ve
+        m_ve_r = frechet_ve_r_compute( poly_a, poly_b );
+    end
+
+    if  ( cardi < 5000 )
+        if  ( cardi < 100 )
+            f_sampled_10 = true;
+            P = Polygon_sample_uniformly( poly_a, 10*cardin( poly_a ) );
+            Q = Polygon_sample_uniformly( poly_b, 10*cardin( poly_a ) );
+        else
+            P = poly_a;
+            Q = poly_b;
+        end
+        m_d = frechet_d_compute( P, Q );
+        m_d_r = frechet_d_r_compute( P, Q );
+        f_computed_d = true;
+    end
+
+
+
+    #####################################################################
+    # Creating movies/diagrams/etc
+    #####################################################################
+
+    output_polygons_to_file(  [poly_a, poly_b], prefix * "curves.png", false );
+    create_movie( poly_a, poly_b, total_frames, prefix*"f_c_movie.mp4", m_c );
 
     plot_curves_diagram( poly_a, poly_b, prefix*"diagram.pdf",
         false, false, false
@@ -971,7 +1007,6 @@ function  create_demo( title::String, prefix, poly_a, poly_b,
         false, false, false
     );
 
-    println( "Cardinality of both curves : ", cardi );
     f_graph_drawn::Bool = false;
     if  ( cardi < 100 )
         f_graph_drawn = true;
@@ -999,31 +1034,14 @@ function  create_demo( title::String, prefix, poly_a, poly_b,
     println( "   ", prefix*"f_c_movie.mp4" );
 
 
-    png_fl = prefix*"curves.png"
-    #replace( filename_curves, ".pdf" => ".png" )
-    output_polygons_to_file(  [poly_a, poly_b], png_fl, false );
 
     Polygon_write_to_file( poly_a, prefix * "poly_a.txt" );
     Polygon_write_to_file( poly_a, prefix * "poly_b.txt" );
 
-    local P, Q, m_d, m_d_r
-    f_computed_d::Bool = false;
-    f_sampled_10::Bool = false;
-    if  ( cardi < 5000 )
-        if  ( cardi < 100 )
-            f_sampled_10 = true;
-            P = Polygon_sample_uniformly( poly_a, 10*cardin( poly_a ) );
-            Q = Polygon_sample_uniformly( poly_b, 10*cardin( poly_a ) );
-        else
-            P = poly_a;
-            Q = poly_b;
-        end
-        m_d = frechet_d_compute( P, Q );
-        m_d_r = frechet_d_r_compute( P, Q );
-        f_computed_d = true;
+    if  f_computed_d
         output_polygons_to_file(  [P, Q],
-            prefix * "polygons_sampled.png", false,
-            true  );
+                                  prefix * "polygons_sampled.png", false,
+                                  true  );
     end
     #########################################################
     # Html file...
@@ -1032,36 +1050,40 @@ function  create_demo( title::String, prefix, poly_a, poly_b,
     open( prefix * "index.html", "w" ) do fl
         println( "Writing file\n\n\n\n\n" );
         write( fl, "<head>\n"
-                   *"<meta charset=\"UTF-8\">"
-                   *"<TITLE>$prefix</TITLE>\n"
-                   *"<script type=\"text/x-mathjax-config\">\n"
-                   * "MathJax.Hub.Config({ tex2jax: "
-                   * "{inlineMath: [[\'\$\',\'\$\'], [\'\\(','\\)']]}"
-                   * "});\n"
-                   * "</script>\n"
-                   * "<script type=\"text/javascript\"\n"
-                   * "src=\"http://cdn.mathjax.org/mathjax/latest/MathJax.js"
-                   * "config=TeX-AMS-MML_HTMLorMML\">\n"
-                   * "</script>\n"
-                   * "</head>" )
+               *"<meta charset=\"UTF-8\">"
+               *"<TITLE>$prefix</TITLE>\n"
+               *"<script type=\"text/x-mathjax-config\">\n"
+               * "MathJax.Hub.Config({ tex2jax: "
+               * "{inlineMath: [[\'\$\',\'\$\'], [\'\\(','\\)']]}"
+               * "});\n"
+               * "</script>\n"
+               * "<script type=\"text/javascript\"\n"
+               * "src=\"http://cdn.mathjax.org/mathjax/latest/MathJax.js"
+               * "config=TeX-AMS-MML_HTMLorMML\">\n"
+               * "</script>\n"
+               * "<meta charset=\"UTF-8\">\n"
+               * "</head>" )
         write( fl, "<body>\n" );
         write( fl, "<h1>", title, "</h1>\n" );
-        write( fl, "<hr>\b\b" );
+
+
+        println( "Cardinality of both curves : ", cardi );
+
+
+
+        # Image of curves
+
+        write( fl, "<hr>\n\n" );
         write( fl, "<img src=\"curves.png\" />\n" )
         write( fl, "<hr>\n" )
 
-        ###########################################################
-        # Movie
-        write( fl, "\n\n<h2>Animation of the Frechet morphing</h2>" );
-        write( fl, "\n\n <video controls autoplay " );
-        write( fl, "   src=\"f_c_movie.mp4\" type=\"video/mp4\" />\n" );
-        write( fl, "</video>\n" );
-        println( fl, "<p>\n"
-        * "This is the anomation of the morphing computed \n"
-        * " that is both continuous and monotone.<p>\n" );
-
-
-        write( fl, "\n\n\n<hr>\n" )
+        if  ( length( note ) > 0 )
+            write( fl, "\n" )
+            write( fl, note )
+            write( fl, "\n" )
+            write( fl, "<hr>\n" )
+        end
+        
         ############################################################
         # Table...
         row_a = [ "<a href=\"poly_a.txt\">P</a>"
@@ -1083,12 +1105,7 @@ function  create_demo( title::String, prefix, poly_a, poly_b,
                             backend = Val(:html) )
         write( fl, "\n<hr>\n" )
 
-
         if  f_draw_ve
-            m_ve_r = frechet_ve_r_compute( poly_a, poly_b );
-            #println( fl, "<br>VE Fréchet retractable distance: ",
-            #         m_ve_r.leash );
-
             B=fill("", (2,2) )
             B[1,1] = "Fréchet";
             B[1,2] = string( m_c.leash );
@@ -1102,6 +1119,22 @@ function  create_demo( title::String, prefix, poly_a, poly_b,
             println( fl, "Fréchet distance: ", m_c.leash, "\n\n" );
         end
         write( fl, "\n<hr>\n" )
+
+
+
+        ###########################################################
+        # Movie
+        write( fl, "\n\n<h2>Animation of the Frechet morphing</h2>" );
+        write( fl, "\n\n <video controls autoplay " );
+        write( fl, "   src=\"f_c_movie.mp4\" type=\"video/mp4\" />\n" );
+        write( fl, "</video>\n" );
+        println( fl, "<p>\n"
+        * "This is the anomation of the morphing computed \n"
+        * " that is both continuous and monotone.<p>\n" );
+
+
+        write( fl, "\n\n\n<hr>\n" )
+
 
         write( fl, "<h2>Free space diagram heatmap:</h2>" )
         write( fl, "<img src=\"diagram.png\">\n" );
@@ -1180,7 +1213,9 @@ function  create_demo_files( title::String,
                              f_a::String,
                              f_b::String,
                              f_draw_c::Bool = false,
-                             f_draw_ve::Bool = true )
+                             f_draw_ve::Bool = true,
+                             note::String = ""
+                             )
     poly_a = Polygon_read_plt_file( f_a );
     poly_b = Polygon_read_plt_file( f_b );
     create_demo( title, prefix, poly_a, poly_b, f_draw_c, f_draw_ve );
