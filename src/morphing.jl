@@ -730,6 +730,7 @@ function  Morphing_combine( u::Morphing{N,T}, v::Morphing{N,T} ) where {N,T}
     return  m;
 end
 
+Morphing2F = Morphing{2,Float64};
 
 #
 # End of file

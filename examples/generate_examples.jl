@@ -22,6 +22,17 @@ using FrechetDist.cg
 include( "fr_examples.jl" )
 
 
+FrechetStr::String = "Fréchet";
+
+
+function  is_mkdir( dir )
+    if  ! isdir( dir )
+        mkdir( dir );
+    end
+end
+
+
+
 function  draw_polygon( cr, P )
     nv::Int64 = cardin( P );
     for  i in 2:nv
@@ -780,11 +791,24 @@ function  diagram_get_ve_loc( P::Polygon{N,T}, Q::Polygon{N,T},
     return point( x, y );
 end
 
-function  plot_curves_diagram( P, Q,
-    filename_diagram,
-    f_draw_c::Bool = false,
-    f_draw_ve::Bool = true,
-    f_draw_graph::Bool = true )
+
+m = Vector{FrechetDist.Morphing2F}();
+
+
+
+
+
+
+
+function  plot_curves_diagram( P::Polygon2F, Q::Polygon2F,
+                               filename_diagram,
+                               f_draw_c::Bool = false,
+                               f_draw_ve::Bool = true,
+                               f_draw_graph::Bool = true,
+                               f_m_out_defined = false,
+                               m_out = nothing,
+                               title::String = ""
+                               )
 
     println( "Getting ready to draw heatmap/graph/curves..." );
 
@@ -809,7 +833,11 @@ function  plot_curves_diagram( P, Q,
                    left_margin = 0 * Plots.mm,
                    bottom_margin=0*Plots.mm,
                    right_margin = 0.02 * Plots.mm,
-        ticks = false, showaxis = false, framestyle=:none)
+                   ticks = false, showaxis = false, framestyle=:none,
+                   dpi = 200 )
+    if  ( length( title ) > 0 )
+        title!( plt, title );
+    end
     println( "Heat map drawing done..." );
 
     function  draw_solution( plt )
@@ -905,6 +933,15 @@ function  plot_curves_diagram( P, Q,
         draw_solution( plt )
     end
 
+    if  ( f_m_out_defined )
+        p_c_diag = Morphing_extract_prm( m_out );
+        m_c_diag = Polygon_as_matrix( p_c_diag );
+        plot!(plt, m_c_diag[1,:], m_c_diag[2,:],
+              linewidth=2, label=:none, ticks=false,
+              showaxis=false, grid=:false,
+              legend=false, framestyle=:none, lc=:red);
+    end
+
     println( "Saving heatmap/graph... ", filename_diagram );
     savefig( plt, filename_diagram );
 
@@ -937,13 +974,20 @@ function  create_movie( P::Polygon{N,T}, Q::Polygon{N,T},
     return  m;
 end
 
+function chop_it( s::String, c )
+    while ( last( s) == c )
+        s= chop(s,tail=1);
+    end
+    return  String( s );
+end
 
-
-
-function  create_demo( title::String, prefix, poly_a, poly_b,
+function  create_demo( title::String,
+                       prefix::String,
+                       poly_a, poly_b,
                        f_draw_c::Bool = false,
                        f_draw_ve::Bool = true,
-                       note::String = "" )
+                       note::String = "",
+                       f_refinements = false )
     if  ! isdir( prefix )
         mkdir( prefix );
     end
@@ -961,9 +1005,11 @@ function  create_demo( title::String, prefix, poly_a, poly_b,
     println( "Created: " );
     println( "   ", filename_curves );
 
-    local P, Q, m_d, m_d_r, m_ve_r
+    local P, Q, m_d, m_d_r, m_ve_r, m_refinments;
     f_computed_d::Bool = false;
     f_sampled_10::Bool = false;
+
+    println( "1.BOGI!\n\n\n\n" );
 
     #####################################################################
     # Computes distances
@@ -991,7 +1037,15 @@ function  create_demo( title::String, prefix, poly_a, poly_b,
         f_computed_d = true;
     end
 
-
+    local m_refinements::Vector{Morphing2F} = Vector{Morphing2F}();
+    println( "BOGI!\n\n\n\n" );
+    if   f_refinements
+        m_refinemenets = Vector{Morphing2F}();
+        frechet_mono_via_refinement_ext( poly_a, poly_b, m_refinements, true,
+                                         1.000000001
+                                      );
+        println( "m_refinements.len: ", length(m_refinements ) );
+    end
 
     #####################################################################
     # Creating movies/diagrams/etc
@@ -1006,6 +1060,45 @@ function  create_demo( title::String, prefix, poly_a, poly_b,
     plot_curves_diagram( poly_a, poly_b, prefix*"diagram.png",
         false, false, false
     );
+
+    if   f_refinements
+        dir =  prefix * "steps/";
+        is_mkdir( dir );
+        for  i in eachindex( m_refinements )
+            mx = m_refinements[ i ];
+            mm = Morphing_monotonize( mx );
+
+            err::Float64 = 100.0 * ((mm.leash - mx.leash) / mx.leash)
+            if  ( ( err > 1.0 )  ||  ( err == 0 ) )
+                s= @sprintf( "%.2f", err)
+            else
+                digs::Int64 = 2 + convert(Int64, ceil(log10(1/err)) )
+                s= @sprintf( "%-40.*f", digs, err)
+
+                s = chop_it( s, ' ' );
+#                s= chop_it( s, '0' );
+            end
+
+            title = @sprintf( "Frame %02d   Monotonicity error: %s%%",
+                              i, s )
+            png_out = dir*@sprintf( "%06d.png", i );
+            plot_curves_diagram( poly_a, poly_b,
+                                 png_out,
+                                 false, false, false, true,
+                                 mm,
+                                 title
+                                 );
+        end
+        # convert -delay 50 -loop 0 "output/06/steps/*.png"
+        #                   output/06/refinement.gif
+
+        println( "Generating gif..." );
+
+        options = [ "-delay", "50", "-loop", "0", dir * "*.png",
+                    prefix * "refinement.gif" ];
+        outx = read(pipeline( `convert $options`, stderr="/tmp/errs.txt" ),
+                    String );
+    end
 
     f_graph_drawn::Bool = false;
     if  ( cardi < 100 )
@@ -1079,8 +1172,10 @@ function  create_demo( title::String, prefix, poly_a, poly_b,
 
         if  ( length( note ) > 0 )
             write( fl, "\n" )
+            write( fl, "<!--- NOTE START --->\n" )
             write( fl, note )
             write( fl, "\n" )
+            write( fl, "<!--- NOTE END --->\n" )
             write( fl, "<hr>\n" )
         end
 
@@ -1192,7 +1287,26 @@ function  create_demo( title::String, prefix, poly_a, poly_b,
             println( fl, "Retract DFréchet iters : ", m_d_r.iters, "<br>" );
         end
 
+        if  ( f_refinements )
+            println( fl, "<hr>" * "\n" );
+            println( fl, "<h2>Refinement for removing monotonicity</h2>\n" );
 
+            println( fl, "Bin introducing vertices in the middle of "
+                     * "parts of the curves that are being traversed in "
+                     * "the wrong direction, one can refine the solution, "
+                     * "till effectively reaching the optimal monotone "
+                     * "solution. This process is demonstrated below. "
+                     * "As one can see, the error is negligible after a few "
+                     * "(say four) iterations. After that, it becomes a bit "
+                     * "pointless. \n" );
+            println( fl, "<br>We emphasize that a monotone morphing can \n"
+                     * "always\n"
+                     * " be extracted, by monotonizing the current \n"
+                     * "solution. \n"
+                     * "This is easy and fast to do, and is the error \n"
+                     * "accounted for in the below graphics.<br>" );
+            write( fl, "<img src=\"refinements.gif\"><br>\n\n\n" );
+        end
 
         println( fl, "<hr>\n" );
         dt=now();
@@ -1201,6 +1315,7 @@ function  create_demo( title::String, prefix, poly_a, poly_b,
 
 
         write( fl, "</body>\n" );
+
 
     end
 
@@ -1246,10 +1361,29 @@ function  gen_example_12()
 end
 
 
+function  gen_example_6()
+    poly_a,poly_b = example_6();
+    create_demo( "Example 6: Refinement in action",
+                 "output/06/",
+                 poly_a,poly_b,
+                 true, true,
+                 "Zig-zag heavy example that shows the algorithm computing\n"
+                 * " the exact continuous monotone " * FrechetStr
+                 * " morphing, using refinement.\n",
+                 true
+                 );
+end
 
 function  generate_examples()
     poly_a,poly_b = example_1();
-    create_demo( "Example 1", "output/01/", poly_a,poly_b );
+    create_demo( "Example 1", "output/01/", poly_a,poly_b,
+                 "A simple example demonstrating the main drawback \n"
+                 * " of the regular discrete "*FrechetStr*" morphing \n"
+                 * "which keeps the long leash after hitting the maximum \n"
+                 * "length. The retractable discrete version on the other \n"
+                 * "hand"
+                 * " happily yields the \"correct\" result.\n"
+                 );
 
     poly_a,poly_b = example_2();
     create_demo( "Example 2", "output/02/", poly_a,poly_b );
@@ -1263,8 +1397,8 @@ function  generate_examples()
     poly_a,poly_b = example_5();
     create_demo( "Example 5", "output/05/", poly_a,poly_b );
 
-    poly_a,poly_b = example_6();
-    create_demo( "Example 6", "output/06/", poly_a,poly_b );
+    gen_example_6()
+
     poly_a,poly_b = example_7();
     create_demo( "Example 7", "output/07/", poly_a,poly_b );
     poly_a,poly_b = example_8_ext(3);
@@ -1293,7 +1427,7 @@ end
 
 num_args = length( ARGS );
 if   num_args == 0
-    gen_example_12();
+    gen_example_6();
 
 #    generate_examples();
     exit( 0 );

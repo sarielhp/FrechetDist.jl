@@ -27,6 +27,7 @@ include( "frechet.jl" );
 
 #-- Types -----------------------------------------------------
 export Morphing, FPointType, EventPoint, PointType
+export Morphing2F
 
 # Morphing stuff
 export  Morphing_monotonize, Morphing_empty, Morphing_verify_valid
@@ -45,7 +46,7 @@ export  frechet_ve_r_compute
 export  frechet_width_approx
 export  frechet_offsets
 
-export  frechet_mono_via_refinement
+export  frechet_mono_via_refinement, frechet_mono_via_refinement_ext
 
 export  frechet_ve_r_compute_ext
 
