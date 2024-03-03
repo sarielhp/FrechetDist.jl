@@ -1089,13 +1089,11 @@ function  create_demo( title::String,
                                  title
                                  );
         end
-        # convert -delay 50 -loop 0 "output/06/steps/*.png"
-        #                   output/06/refinement.gif
 
         println( "Generating gif..." );
 
         options = [ "-delay", "50", "-loop", "0", dir * "*.png",
-                    prefix * "refinement.gif" ];
+                    prefix * "refinements.gif" ];
         outx = read(pipeline( `convert $options`, stderr="/tmp/errs.txt" ),
                     String );
     end
