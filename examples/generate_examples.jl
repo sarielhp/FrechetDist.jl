@@ -1085,7 +1085,7 @@ function  create_demo( title::String,
             plot_curves_diagram( poly_a, poly_b,
                                  png_out,
                                  false, false, false, true,
-                                 mm,
+                                 mx,
                                  title
                                  );
         end
