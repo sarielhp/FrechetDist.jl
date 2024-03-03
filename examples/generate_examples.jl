@@ -1427,9 +1427,9 @@ end
 
 num_args = length( ARGS );
 if   num_args == 0
-    gen_example_6();
+#    gen_example_6();
 
-#    generate_examples();
+    generate_examples();
     exit( 0 );
 end
 
