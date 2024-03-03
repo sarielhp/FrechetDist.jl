@@ -987,7 +987,7 @@ function  create_demo( title::String,
                        f_draw_c::Bool = false,
                        f_draw_ve::Bool = true,
                        note::String = "",
-                       f_refinements = false )
+                       f_refinements::Bool = false )
     if  ! isdir( prefix )
         mkdir( prefix );
     end
@@ -1376,7 +1376,11 @@ end
 
 function  generate_examples()
     poly_a,poly_b = example_1();
-    create_demo( "Example 1", "output/01/", poly_a,poly_b,
+    
+    create_demo( "Example 1", "output/01/",
+                 poly_a,
+                 poly_b,
+                 false, true,
                  "A simple example demonstrating the main drawback \n"
                  * " of the regular discrete "*FrechetStr*" morphing \n"
                  * "which keeps the long leash after hitting the maximum \n"
