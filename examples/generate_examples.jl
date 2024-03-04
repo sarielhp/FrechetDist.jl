@@ -1079,14 +1079,14 @@ function  create_demo( title::String,
 #                s= chop_it( s, '0' );
             end
 
-            title = @sprintf( "Frame %02d   Monotonicity error: %s%%",
+            title_frm = @sprintf( "Frame %02d   Monotonicity error: %s%%",
                               i, s )
             png_out = dir*@sprintf( "%06d.png", i );
             plot_curves_diagram( poly_a, poly_b,
                                  png_out,
                                  false, false, false, true,
                                  mx,
-                                 title
+                                 title_frm
                                  );
         end
 
