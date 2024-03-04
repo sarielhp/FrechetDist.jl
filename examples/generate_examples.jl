@@ -1009,7 +1009,7 @@ function  create_demo( title::String,
     f_computed_d::Bool = false;
     f_sampled_10::Bool = false;
 
-    println( "1.BOGI!\n\n\n\n" );
+    #println( "1.BOGI!\n\n\n\n" );
 
     #####################################################################
     # Computes distances
@@ -1038,7 +1038,7 @@ function  create_demo( title::String,
     end
 
     local m_refinements::Vector{Morphing2F} = Vector{Morphing2F}();
-    println( "BOGI!\n\n\n\n" );
+    #println( "BOGI!\n\n\n\n" );
     if   f_refinements
         m_refinemenets = Vector{Morphing2F}();
         frechet_mono_via_refinement_ext( poly_a, poly_b, m_refinements, true,
@@ -1372,9 +1372,8 @@ function  gen_example_6()
                  );
 end
 
-function  generate_examples()
+function  gen_example_1()
     poly_a,poly_b = example_1();
-    
     create_demo( "Example 1", "output/01/",
                  poly_a,
                  poly_b,
@@ -1386,42 +1385,80 @@ function  generate_examples()
                  * "hand"
                  * " happily yields the \"correct\" result.\n"
                  );
-
-    poly_a,poly_b = example_2();
-    create_demo( "Example 2", "output/02/", poly_a,poly_b );
-
-    poly_a,poly_b = example_3();
-    create_demo( "Example 3", "output/03/", poly_a,poly_b );
-
-    poly_a,poly_b = example_4();
-    create_demo( "Example 4", "output/04/", poly_a,poly_b );
-
-    poly_a,poly_b = example_5();
-    create_demo( "Example 5", "output/05/", poly_a,poly_b );
-
-    gen_example_6()
-
-    poly_a,poly_b = example_7();
-    create_demo( "Example 7", "output/07/", poly_a,poly_b );
-    poly_a,poly_b = example_8_ext(3);
-    create_demo( "Example 8 (3)", "output/08/", poly_a,poly_b );
-
-    poly_a,poly_b = example_9(  3, 4 );
-    create_demo( "Example 9 (double zig-zag 3+4)", "output/09/",
-                 poly_a,poly_b );
-
-    poly_a,poly_b = example_10( 3, 4);
-    create_demo( "Example 10", "output/10/", poly_a,poly_b );
-
-    if  ( isfile( "data/010/trajectory/20080928160000.plt" ) )
-        create_demo_files( "Example of big curves (GPS tracks)",
-            "output/11/",
-            "data/010/trajectory/20080928160000.plt",
-            "data/010/trajectory/20081219114010.plt",
-            true, false );
-    end
-    gen_example_12();
 end
+
+function  is_rebuild( s::String )
+    if  ( isdir( s ) )
+        println( s, " already built." );
+        return  false;
+    end
+    return  true
+end
+
+function  generate_examples()
+    if  is_rebuild( "output/01" )
+        gen_example_1()
+    end
+    if  is_rebuild( "output/02" )
+        poly_a,poly_b = example_2();
+        create_demo( "Example 2", "output/02/", poly_a,poly_b );
+    end
+
+    if  is_rebuild( "output/03" )
+        poly_a,poly_b = example_3();
+        create_demo( "Example 3", "output/03/", poly_a,poly_b );
+    end
+
+    if  is_rebuild( "output/04" )
+        poly_a,poly_b = example_4();
+        create_demo( "Example 4", "output/04/", poly_a,poly_b );
+    end
+
+    if  is_rebuild( "output/05" ) 
+        poly_a,poly_b = example_5();
+        create_demo( "Example 5", "output/05/", poly_a,poly_b );
+    end
+
+    if  is_rebuild( "output/06" )
+        gen_example_6()
+    end
+
+    if  is_rebuild( "output/07" ) 
+        poly_a,poly_b = example_7();
+        create_demo( "Example 7", "output/07/", poly_a,poly_b );
+    end
+
+    if  is_rebuild( "output/08" )
+        poly_a,poly_b = example_8_ext(3);
+        create_demo( "Example 8 (3)", "output/08/", poly_a,poly_b );
+    end
+
+    if  is_rebuild( "output/09" )
+        poly_a,poly_b = example_9(  3, 4 );
+        create_demo( "Example 9 (double zig-zag 3+4)", "output/09/",
+                     poly_a,poly_b );
+    end
+
+    if  is_rebuild( "output/10" ) 
+        poly_a,poly_b = example_10( 3, 4);
+        create_demo( "Example 10", "output/10/", poly_a,poly_b );
+    end
+
+    if   is_rebuild( "output/11" )
+        if  ( isfile( "data/010/trajectory/20080928160000.plt" ) )
+            create_demo_files( "Example of big curves (GPS tracks)",
+                               "output/11/",
+                               "data/010/trajectory/20080928160000.plt",
+                               "data/010/trajectory/20081219114010.plt",
+                               true, false );
+        end
+    end
+
+    if  is_rebuild( "output/12" ) 
+        gen_example_12();
+    end
+end
+
 
 if  ! isdir( "output" );
     mkdir( "output" );
