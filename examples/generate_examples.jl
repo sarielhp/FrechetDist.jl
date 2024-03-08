@@ -912,7 +912,8 @@ function  plot_curves_diagram( P::Polygon2F, Q::Polygon2F,
         println( m_pnts[2,:] );
         println( "-------------------------------" );
         =#
-        scatter!( plt, m_pnts[1,:], m_pnts[2,:], mc=:green, ms=2, ma=0.5 );
+        scatter!( plt, m_pnts[1,:], m_pnts[2,:], mc=:yellow, lc=:darkgreen,
+            ms=4, ma=1.0 );
 
         # Copy the first and last point of m to u...
         u = hcat( m_pnts[:,1], m_pnts[ :, size( m_pnts, 2 ) ] );
@@ -1227,7 +1228,6 @@ function  create_demo( title::String,
 
 
         write( fl, "\n\n\n<hr>\n" )
-
 
         write( fl, "<h2>Free space diagram heatmap:</h2>" )
         write( fl, "<img src=\"diagram.png\">\n" );
