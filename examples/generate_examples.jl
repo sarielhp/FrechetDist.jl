@@ -753,13 +753,25 @@ function  do_example_1()
     r_frechet_with_refinement( poly_a, poly_b, 40, true, false );
 end
 
-function  draw_arrow( plt, p::Point2F, q::Point2F )
+function  collect_arrows( xs, ys, vx, vy,
+                          p::Point2F, q::Point2F )
+    if  ( Dist(p, q ) == 0 )
+        return;
+    end
+    push!( xs, p[1] );
+    push!( ys, p[2] );
+
+    push!( vx, q[1] - p[1] );
+    push!( vy, q[2] - p[2] );
+end
+
+function  draw_arrow( plt, p::Point2F, q::Point2F, width = 1, ucolor=:pink )
     plot!(plt, [p[1],q[1]],[p[2],q[2]],
-        color=:pink,
-        linewidth=1,
+        color=ucolor,
+        linewidth=width,
         label=:none, ticks=false, showaxis=false, grid=:false,
         legend=false, framestyle=:none,
-        arrow=false
+        arrow=true
     )
 end
 
@@ -807,7 +819,8 @@ function  plot_curves_diagram( P::Polygon2F, Q::Polygon2F,
                                f_draw_graph::Bool = true,
                                f_m_out_defined = false,
                                m_out = nothing,
-                               title::String = ""
+                               title::String = "",
+                               f_draw_graph_only::Bool = false
                                )
 
     println( "Getting ready to draw heatmap/graph/curves..." );
@@ -829,12 +842,23 @@ function  plot_curves_diagram( P::Polygon2F, Q::Polygon2F,
     end
 
     println( "Computing heat map..." );
-    plt = heatmap( x_range, y_range, fz, color = :haline,#:copper, #:thermal,
-                   left_margin = 0 * Plots.mm,
-                   bottom_margin=0*Plots.mm,
-                   right_margin = 0.02 * Plots.mm,
-                   ticks = false, showaxis = false, framestyle=:none,
-                   dpi = 200 )
+    ### f_draw_graph_only
+    if  f_draw_graph_only
+        plt = plot( x_range, y_range, 0,
+                    left_margin = 0 * Plots.mm,
+                    bottom_margin=0*Plots.mm,
+                    right_margin = 0.02 * Plots.mm,
+                    ticks = false, showaxis = false, framestyle=:none,
+                    dpi = 200 );
+    else
+        plt = heatmap( x_range, y_range, fz,
+                       color = :haline,
+                       left_margin = 0 * Plots.mm,
+                       bottom_margin=0*Plots.mm,
+                       right_margin = 0.02 * Plots.mm,
+                       ticks = false, showaxis = false, framestyle=:none,
+                       dpi = 200 );
+    end
     if  ( length( title ) > 0 )
         title!( plt, title );
     end
@@ -866,8 +890,15 @@ function  plot_curves_diagram( P::Polygon2F, Q::Polygon2F,
         qlx = (ql[2:end-1])'
         plx = (pl[2:end-1])'
 
-        plot!( plt, [0; len_P], [qlx;qlx], lw=2, lc=:black, legend=false)
-        plot!( plt,  [plx;plx], [0; len_Q], lw=2, lc=:black, legend=false)
+        if  f_draw_graph_only
+            plot!( plt, [0; len_P], [qlx;qlx], lw=0.5, lc=:lightblue,
+                   legend=false)
+            plot!( plt,  [plx;plx], [0; len_Q], lw=0.5, lc=:lightblue,
+                   legend=false)
+        else
+            plot!( plt, [0; len_P], [qlx;qlx], lw=2, lc=:black, legend=false)
+            plot!( plt,  [plx;plx], [0; len_Q], lw=2, lc=:black, legend=false)
+        end
     end
     function  draw_graph( plt )
         draw_solution( plt )
@@ -880,6 +911,17 @@ function  plot_curves_diagram( P::Polygon2F, Q::Polygon2F,
         t_a = point( 0.0, 0.0 );
         t_b = point( 0.0, 0.0 );
         counter::Int64 = 0;
+        width = 1;
+        ucolor = :pink;
+        if   f_draw_graph_only
+            width = 2;
+            ucolor = :black;
+        end
+
+        xs = Float64[];
+        ys = Float64[];
+        vx = Float64[];
+        vy = Float64[];
         for i in 1:p_last
             for j in 1:q_last
                 if  ( i == 0 ) &&  ( j == 0 )
@@ -894,14 +936,26 @@ function  plot_curves_diagram( P::Polygon2F, Q::Polygon2F,
                     t_a = diagram_get_ev_loc( P, Q, pl, ql, i, j + 1 )
                     t_b = diagram_get_ve_loc( P, Q, pl, ql, i + 1, j  )
                 end
-                draw_arrow( plt, s_a, t_a );
-                draw_arrow( plt, s_a, t_b );
-                draw_arrow( plt, s_b, t_a );
-                draw_arrow( plt, s_b, t_b );
+                collect_arrows( xs, ys, vx, vy, s_a, t_a );
+                collect_arrows( xs, ys, vx, vy, s_a, t_b );
+                collect_arrows( xs, ys, vx, vy, s_b, t_a );
+                collect_arrows( xs, ys, vx, vy, s_b, t_a );
+
+                #draw_arrow( plt, s_a, t_a, width, ucolor );
+                #draw_arrow( plt, s_a, t_b, width, ucolor );
+                #draw_arrow( plt, s_b, t_a, width, ucolor );
+                #draw_arrow( plt, s_b, t_b, width, ucolor );
 
                 push!( pnts, s_a, s_b, t_a, t_b );
             end
         end
+        println( xs );
+        quiver!(plt, xs, ys, quiver=(vx, vy), 
+                color=ucolor,
+                linewidth=width,
+                label=:none, ticks=false, showaxis=false, grid=:false,
+                legend=false, framestyle=:none );
+
         sort!( pnts );
         unique!( pnts );
 
@@ -1107,7 +1161,11 @@ function  create_demo( title::String,
         );
         plot_curves_diagram( poly_a, poly_b, prefix*"g_diagram.png",
             false, false, true
-        );
+                             );
+        plot_curves_diagram( poly_a, poly_b, prefix*"graph_only.pdf",
+                             false, false, true, false, nothing, "", true );
+        plot_curves_diagram( poly_a, poly_b, prefix*"graph_only.png",
+                             false, false, true, false, nothing, "", true );
     end
     plot_curves_diagram( poly_a, poly_b, prefix*"c_diagram.pdf",
         true, false, false
@@ -1414,7 +1472,7 @@ function  generate_examples()
         create_demo( "Example 4", "output/04/", poly_a,poly_b );
     end
 
-    if  is_rebuild( "output/05" ) 
+    if  is_rebuild( "output/05" )
         poly_a,poly_b = example_5();
         create_demo( "Example 5", "output/05/", poly_a,poly_b );
     end
@@ -1423,7 +1481,7 @@ function  generate_examples()
         gen_example_6()
     end
 
-    if  is_rebuild( "output/07" ) 
+    if  is_rebuild( "output/07" )
         poly_a,poly_b = example_7();
         create_demo( "Example 7", "output/07/", poly_a,poly_b );
     end
@@ -1439,7 +1497,7 @@ function  generate_examples()
                      poly_a,poly_b );
     end
 
-    if  is_rebuild( "output/10" ) 
+    if  is_rebuild( "output/10" )
         poly_a,poly_b = example_10( 3, 4);
         create_demo( "Example 10", "output/10/", poly_a,poly_b );
     end
@@ -1454,7 +1512,7 @@ function  generate_examples()
         end
     end
 
-    if  is_rebuild( "output/12" ) 
+    if  is_rebuild( "output/12" )
         gen_example_12();
     end
 end
