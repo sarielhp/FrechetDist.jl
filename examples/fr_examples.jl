@@ -298,3 +298,28 @@ function  example_10( zigs_a::Int64, zigs_b::Int64 )
     return  P, Q;
 end
 
+# Example 13: Based on example 7 - with additional fake vertices in
+# the begining and end, to make the graph look nice...
+function  example_13()
+    polya = Polygon2F(  );
+    polyb = Polygon2F(  );
+
+    xs::Float64 = 4.0;
+
+    push!( polya,
+           point( 0.0, 0.0 ), 
+           point( 0.1*xs, 0.0 ),
+           point( 1.1*xs, xs * 1.0 ),
+           point( 1.2*xs, xs * 1.0 ),
+           );
+    
+    push!( polyb,
+           point( 1.2 * xs, 0.0 ),
+           point( 1.1 * xs, 0.0 ),
+           point( 0.1 * xs, xs * 1.0 ),
+           point( 0.0 * xs, xs * 1.0 )
+           );
+    return  polya, polyb;
+end
+
+

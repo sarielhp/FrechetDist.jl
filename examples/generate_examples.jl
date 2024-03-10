@@ -158,13 +158,16 @@ end
 
 
 function  output_polygons_to_file(  list::VecPolygon2F, filename,
-    f_pdf::Bool,
-    f_draw_vertices::Bool = false )
+                                    f_pdf::Bool,
+                                    f_draw_vertices::Bool = false
+                                    )
     c,cr,bb = cairo_setup( filename, list, f_pdf );
+
+    u_width::Float64 = 1024.0 * (BBox_width( bb) / 200.0);
 
     BBox_print( bb );
     set_source_rgb(cr,0.9,0.9,0.9);    # light gray
-    set_line_width(cr, 10.0);
+#    set_line_width(cr, 10.0);
     set_source_rgba(cr, 1, 0.2, 0.2, 0.6);
 
     len = length( list );
@@ -172,7 +175,7 @@ function  output_polygons_to_file(  list::VecPolygon2F, filename,
     for  poly in  list
         count = count + 1;
         #println( count, " ", len );
-        set_line_width(cr, 2.00);
+        set_line_width(cr, u_width );
         if  len == 2  &&  count == 2
             set_source_rgb(cr, 0.0, 0.0, 1.0 );
         else
@@ -181,7 +184,7 @@ function  output_polygons_to_file(  list::VecPolygon2F, filename,
 
         draw_polygon( cr, poly );
         if  ( f_draw_vertices )
-            set_line_width(cr, 8.00);
+            set_line_width(cr, 2.0*u_width);
             set_source_rgb( cr, 1.0, 0.0, 0.0 );
             draw_polygon_vertices( cr, poly, BBox_width( bb) / 200  );
         end
@@ -905,6 +908,10 @@ function  plot_curves_diagram( P::Polygon2F, Q::Polygon2F,
 
         p_last = cardin(P)-1;
         q_last = cardin(Q)-1;
+
+        pnt_start::Point2F = point( 0.0, 0.0 );
+        pnt_end::Point2F = point( Polygon_length( P ), Polygon_length( Q ) );
+
         pnts = Vector{Point2F}();
         s_a = point( 0.0, 0.0 );
         s_b = point( 0.0, 0.0 );
@@ -924,33 +931,45 @@ function  plot_curves_diagram( P::Polygon2F, Q::Polygon2F,
         vy = Float64[];
         for i in 1:p_last
             for j in 1:q_last
-                if  ( i == 0 ) &&  ( j == 0 )
-                    s_a = s_b = point( 0.0, 0.0 );
-                else
-                    s_a = diagram_get_ev_loc( P, Q, pl, ql, i, j )
-                    s_b = diagram_get_ve_loc( P, Q, pl, ql, i, j )
-                end
+                s_a = diagram_get_ev_loc( P, Q, pl, ql, i, j )
+                s_b = diagram_get_ve_loc( P, Q, pl, ql, i, j )
+#                end
+
+                f_use_s_b::Bool = ( i > 1 )  ||  ( j == 1 );
+
+                f_use_t_a::Bool = (j < q_last);
+                f_use_t_b::Bool = (i < p_last);
                 if  ( i == p_last )  &&  ( j == q_last )
                     t_a = t_b = point( last( pl ), last( ql ) );
+                    f_use_t_a = f_use_t_b = true;
                 else
                     t_a = diagram_get_ev_loc( P, Q, pl, ql, i, j + 1 )
                     t_b = diagram_get_ve_loc( P, Q, pl, ql, i + 1, j  )
                 end
-                collect_arrows( xs, ys, vx, vy, s_a, t_a );
-                collect_arrows( xs, ys, vx, vy, s_a, t_b );
-                collect_arrows( xs, ys, vx, vy, s_b, t_a );
-                collect_arrows( xs, ys, vx, vy, s_b, t_a );
 
+                f_use_t_a && collect_arrows( xs, ys, vx, vy, s_a, t_a );
+                f_use_t_b && collect_arrows( xs, ys, vx, vy, s_a, t_b );
+                f_use_t_a && f_use_s_b && collect_arrows( xs, ys, vx, vy, s_b, t_a );
+                f_use_t_b && f_use_s_b && collect_arrows( xs, ys, vx, vy, s_b, t_b );
+
+                if  ( i == 1 ) &&  ( j == 1 )
+                    collect_arrows( xs, ys, vx, vy, pnt_start, s_a );
+                    collect_arrows( xs, ys, vx, vy, pnt_start, s_b );
+                end
                 #draw_arrow( plt, s_a, t_a, width, ucolor );
                 #draw_arrow( plt, s_a, t_b, width, ucolor );
                 #draw_arrow( plt, s_b, t_a, width, ucolor );
                 #draw_arrow( plt, s_b, t_b, width, ucolor );
 
-                push!( pnts, s_a, s_b, t_a, t_b );
+                push!( pnts, s_a )
+                f_use_s_b  &&  push!( pnts, s_b )
+                f_use_t_a  &&  push!( pnts, t_a )
+                f_use_t_b  &&  push!( pnts, t_b );
             end
         end
+
         println( xs );
-        quiver!(plt, xs, ys, quiver=(vx, vy), 
+        quiver!(plt, xs, ys, quiver=(vx, vy),
                 color=ucolor,
                 linewidth=width,
                 label=:none, ticks=false, showaxis=false, grid=:false,
@@ -969,10 +988,14 @@ function  plot_curves_diagram( P::Polygon2F, Q::Polygon2F,
         scatter!( plt, m_pnts[1,:], m_pnts[2,:], mc=:yellow, lc=:darkgreen,
             ms=4, ma=1.0 );
 
-        # Copy the first and last point of m to u...
-        u = hcat( m_pnts[:,1], m_pnts[ :, size( m_pnts, 2 ) ] );
+        end_pnts = Vector{Point2F}();
+        push!( end_pnts, pnt_start, pnt_end );
 
-        scatter!( plt, u[1,:], u[2,:], mc=:red, ms=4, ma=3.5 );
+        m_end_pnts = VecPnts_as_matrix( end_pnts );
+
+
+        scatter!( plt, m_end_pnts[1,:], m_end_pnts[2,:], mc=:red,
+                  ms=4, ma=3.5 );
         #    display( plt )
     end
     cardi::Int64 = cardin(P) + cardin( Q );
@@ -1109,6 +1132,11 @@ function  create_demo( title::String,
     output_polygons_to_file(  [poly_a, poly_b], prefix * "curves.png", false );
     create_movie( poly_a, poly_b, total_frames, prefix*"f_c_movie.mp4", m_c );
 
+    if  f_draw_ve
+        create_movie( poly_a, poly_b, total_frames,
+                      prefix*"f_ve_r_movie.mp4", m_ve_r );
+    end
+
     plot_curves_diagram( poly_a, poly_b, prefix*"diagram.pdf",
         false, false, false
     );
@@ -1181,7 +1209,7 @@ function  create_demo( title::String,
                              false, true, true
                              );
     end
-    println( "   ", prefix*"f_c_movie.mp4" );
+    # println( "   ", prefix*"f_c_movie.mp4" );
 
 
 
@@ -1197,95 +1225,116 @@ function  create_demo( title::String,
     # Html file...
     #########################################################
 
-    open( prefix * "index.html", "w" ) do fl
-        println( "Writing file\n\n\n\n\n" );
-        write( fl, "<head>\n"
-               *"<meta charset=\"UTF-8\">"
-               *"<TITLE>$prefix</TITLE>\n"
-               *"<script type=\"text/x-mathjax-config\">\n"
-               * "MathJax.Hub.Config({ tex2jax: "
-               * "{inlineMath: [[\'\$\',\'\$\'], [\'\\(','\\)']]}"
-               * "});\n"
-               * "</script>\n"
-               * "<script type=\"text/javascript\"\n"
-               * "src=\"http://cdn.mathjax.org/mathjax/latest/MathJax.js"
-               * "config=TeX-AMS-MML_HTMLorMML\">\n"
-               * "</script>\n"
-               * "<meta charset=\"UTF-8\">\n"
-               * "</head>" )
-        write( fl, "<body>\n" );
-        write( fl, "<h1>", title, "</h1>\n" );
+    fl = open( prefix * "index.html", "w" )
+    
+    println( "Writing file\n\n\n\n\n" );
 
-
-        println( "Cardinality of both curves : ", cardi );
-
-
-
-        # Image of curves
-
-        write( fl, "<hr>\n\n" );
-        write( fl, "<img src=\"curves.png\" />\n" )
+    write( fl, "<head>\n"
+           *"<meta charset=\"UTF-8\">"
+           *"<TITLE>$prefix</TITLE>\n"
+           *"<script type=\"text/x-mathjax-config\">\n"
+           * "MathJax.Hub.Config({ tex2jax: "
+           * "{inlineMath: [[\'\$\',\'\$\'], [\'\\(','\\)']]}"
+           * "});\n"
+           * "</script>\n"
+           * "<script type=\"text/javascript\"\n"
+           * "src=\"http://cdn.mathjax.org/mathjax/latest/MathJax.js"
+           * "config=TeX-AMS-MML_HTMLorMML\">\n"
+           * "</script>\n"
+           * "<meta charset=\"UTF-8\">\n"
+           * "</head>" )
+    write( fl, "<body>\n" );
+    write( fl, "<h1>", title, "</h1>\n" );
+    
+    
+    println( "Cardinality of both curves : ", cardi );
+    
+    
+    
+    # Image of curves
+    
+    write( fl, "<hr>\n\n" );
+    write( fl, "<img src=\"curves.png\" />\n" )
+    write( fl, "<hr>\n" )
+    
+    if  ( length( note ) > 0 )
+        write( fl, "\n" )
+        write( fl, "<!--- NOTE START --->\n" )
+        write( fl, note )
+        write( fl, "\n" )
+        write( fl, "<!--- NOTE END --->\n" )
         write( fl, "<hr>\n" )
-
-        if  ( length( note ) > 0 )
-            write( fl, "\n" )
-            write( fl, "<!--- NOTE START --->\n" )
-            write( fl, note )
-            write( fl, "\n" )
-            write( fl, "<!--- NOTE END --->\n" )
-            write( fl, "<hr>\n" )
-        end
-
-        ############################################################
-        # Table...
-        row_a = [ "<a href=\"poly_a.txt\">P</a>"
-                           string( cardin( poly_a ) )
-                  string( Polygon_length( poly_a ) ) ]
-        row_a_x = permutedims( row_a );
-
-        row_b =  ["<a href=\"poly_b.txt\">Q</a>"
-                          string( cardin( poly_b ) )
-                          string( Polygon_length( poly_b ) )
-                          ];
-        row_b_x = permutedims( row_b );
-
-        data = vcat( row_a_x, row_b_x  );
-
-        pretty_table(fl, data;
-                            header = (["Curves", "# Vertices", "Length"]),
-                            allow_html_in_cells = true,
-                            backend = Val(:html) )
-        write( fl, "\n<hr>\n" )
-
-        if  f_draw_ve
-            B=fill("", (2,2) )
-            B[1,1] = "Fréchet";
-            B[1,2] = string( m_c.leash );
-            B[2,1] = "VE Fréchet";
-            B[2,2] = string( m_ve_r.leash ) ;
-            pretty_table(fl, B;
+    end
+    
+    ############################################################
+    # Table...
+    row_a = [ "<a href=\"poly_a.txt\">P</a>"
+              string( cardin( poly_a ) )
+              string( Polygon_length( poly_a ) ) ]
+    row_a_x = permutedims( row_a );
+    
+    row_b =  ["<a href=\"poly_b.txt\">Q</a>"
+              string( cardin( poly_b ) )
+              string( Polygon_length( poly_b ) )
+              ];
+    row_b_x = permutedims( row_b );
+    
+    data = vcat( row_a_x, row_b_x  );
+    
+    pretty_table(fl, data;
+                 header = (["Curves", "# Vertices", "Length"]),
+                 allow_html_in_cells = true,
+                 backend = Val(:html) )
+    write( fl, "\n<hr>\n" )
+    
+    if  f_draw_ve
+        B=fill("", (2,2) )
+        B[1,1] = "Fréchet";
+        B[1,2] = string( m_c.leash );
+        B[2,1] = "VE Fréchet";
+        B[2,2] = string( m_ve_r.leash ) ;
+        pretty_table(fl, B;
                      header = (["Distance",  "Value"]),
-                            allow_html_in_cells = true,
-                            backend = Val(:html) )
-        else
-            println( fl, "Fréchet distance: ", m_c.leash, "\n\n" );
-        end
-        write( fl, "\n<hr>\n" )
-
-
-
-        ###########################################################
+                     allow_html_in_cells = true,
+                     backend = Val(:html) )
+    else
+        println( fl, "Fréchet distance: ", m_c.leash, "\n\n" );
+    end
+    write( fl, "\n<hr>\n" )
+    
+    
+    
+    ###########################################################
         # Movie
-        write( fl, "\n\n<h2>Animation of the Frechet morphing</h2>" );
+        write( fl, "\n\n<h2>Animation: "*FrechetStr*" morphing</h2>" );
         write( fl, "\n\n <video controls autoplay " );
         write( fl, "   src=\"f_c_movie.mp4\" type=\"video/mp4\" />\n" );
         write( fl, "</video>\n" );
         println( fl, "<p>\n"
-        * "This is the anomation of the morphing computed \n"
+        * "This is the animation of the morphing computed \n"
         * " that is both continuous and monotone.<p>\n" );
 
-
         write( fl, "\n\n\n<hr>\n" )
+
+
+        ###########################################################
+        # Movie: ve_retractable
+        #        "f_ve_r_movie.mp4"
+
+        if  f_draw_ve
+            write( fl, "\n\n<h2>Animation: VE Retractable "
+                   * FrechetStr *"</h2>" );
+            write( fl, "\n\n <video controls autoplay " );
+            write( fl, "   src=\"f_ve_r_movie.mp4\" type=\"video/mp4\" />\n" );
+            write( fl, "</video>\n" );
+            println( fl, "<p>\n"
+                     * "This is the animation of the VE retractable morphing."
+                     * " It is potentially not monotone (but it is continuous."
+                     * "<p>\n"
+                     * "\n\n\n<hr>\n" );
+        end
+
+        #---------------------------------------------------------
 
         write( fl, "<h2>Free space diagram heatmap:</h2>" )
         write( fl, "<img src=\"diagram.png\">\n" );
@@ -1293,11 +1342,11 @@ function  create_demo( title::String,
         write( fl, "\n<hr>\n" )
 
         if  ( f_draw_ve  )
-            write( fl, "<h2>VE-Frechet Retractable solution:</h2>" )
+            write( fl, "<h2>VE-"*FrechetStr*" Retractable solution:</h2>" )
             write( fl, "<img src=\"ve_r_diagram.png\">\n" );
         end
 
-        write( fl, "<h2>Frechet cont+monotone solution:</h2>" )
+        write( fl, "<h2>" * FrechetStr * " cont+monotone solution:</h2>" )
 
 #        println( fl, "What the animation shows.<br>\n" );
         write( fl, "<img src=\"c_diagram.png\">\n" );
@@ -1309,7 +1358,7 @@ function  create_demo( title::String,
                 400, true );
             output_frechet_movie_mp4( m_d_r, prefix*"discrete_r_frechet.mp4",
                 400, true );
-            println( fl, "<h1>Discrete Frechet</h1>\n" );
+            println( fl, "<h1>Discrete " * FrechetStr * "</h1>\n" );
             if  ( f_sampled_10 )
                 println( fl,
                 "Generated by sampling 10 points along each edge...<br>\n\n" );
@@ -1373,8 +1422,7 @@ function  create_demo( title::String,
         write( fl, "</body>\n" );
 
 
-    end
-
+    close( fl );
 
 end
 
@@ -1515,6 +1563,13 @@ function  generate_examples()
     if  is_rebuild( "output/12" )
         gen_example_12();
     end
+
+    if  is_rebuild( "output/13" )
+        poly_a,poly_b = example_13();
+        create_demo( "Example 13 (7 fixed)", "output/13/", poly_a,poly_b );
+    end
+
+
 end
 
 
