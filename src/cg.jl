@@ -483,6 +483,21 @@ function  Polygon_translate!( P::Polygon{D,T}, v::Point{D,T} ) where {D,T}
 end
 
 
+function  Polygon_convex_comb( P::Polygon{D,T},
+                               Q::Polygon{D,T},
+                               t::Float64 ) where {D,T}
+    n = cardin( P );
+    @assert( n == cardin( Q ) );
+    O = Polygon{D,T}();
+
+    for i  in 1:n
+        push!( O, convex_comb( P[ i ], Q[ i ], t ) );
+    end
+
+    return  O;
+end
+
+
 function  Polygon_as_matrix( P::Polygon{D,T} ) where {D,T}
     m = zeros( T, D, length( P.pnts ) );
     for  i in 1:length( P.pnts )
@@ -973,6 +988,7 @@ export  Polygon_get_point_on
 export  Polygon_as_matrix
 export  Polygon_write_to_file
 export  Polygon_random
+export  Polygon_convex_comb
 
 export  VecPnts_as_matrix
 

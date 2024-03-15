@@ -159,11 +159,12 @@ end
 
 function  output_polygons_to_file(  list::VecPolygon2F, filename,
                                     f_pdf::Bool,
-                                    f_draw_vertices::Bool = false
+                                    f_draw_vertices::Bool = false,
+                                    f_matching::Bool = false
                                     )
     c,cr,bb = cairo_setup( filename, list, f_pdf );
 
-    u_width::Float64 = 1024.0 * (BBox_width( bb) / 200.0);
+    u_width::Float64 = 1024.0 * (BBox_width( bb) / 800.0);
 
     BBox_print( bb );
     set_source_rgb(cr,0.9,0.9,0.9);    # light gray
@@ -183,12 +184,31 @@ function  output_polygons_to_file(  list::VecPolygon2F, filename,
         end
 
         draw_polygon( cr, poly );
-        if  ( f_draw_vertices )
-            set_line_width(cr, 2.0*u_width);
-            set_source_rgb( cr, 1.0, 0.0, 0.0 );
+    end
+
+    if  ( f_matching )  &&  ( cardin( list[ 1 ] ) ==  cardin( list[ 2 ] ) )
+        P = list[ 1 ];
+        Q = list[ 2 ];
+        set_line_width(cr, 1.5*u_width);
+        set_source_rgb( cr, 1.0, 0.0, 1.0 );
+        for  i  in 1:cardin( P )
+            p = P[ i ];
+            q = Q[ i ];
+
+            move_to( cr, p[1], p[2] )
+            line_to( cr, q[1], q[2] );
+            Cairo.stroke( cr );
+        end
+    end
+
+    if  ( f_draw_vertices )
+        set_line_width(cr, 2.0*u_width);
+        set_source_rgb( cr, 1.0, 0.0, 0.0 );
+        for  poly in  list
             draw_polygon_vertices( cr, poly, BBox_width( bb) / 200  );
         end
     end
+
 
     if  ( ! f_pdf )
         Cairo.write_to_png( c, filename );
@@ -318,6 +338,11 @@ function  output_frechet_movie( m::Morphing{N,T},
     total_frames::Int64 = 800,
     f_show_vertices::Bool = false ) where {N,T}
 
+    if  isfile( filename )
+        println( "\n\n",  filename, " already exists...\n\n\n" );
+        return;
+    end
+    
     c,cr,bb = cairo_setup( filename, [ m.P, m.Q ], true );
 
     #   Cairo.save( cr );
@@ -472,6 +497,8 @@ function  frames_generate( cm::ContextMovie, P, Q, vec_rf )
     return  1
 end
 
+
+
 function  rmx( tmp_filename )
     if isfile( tmp_filename )
         rm( tmp_filename );
@@ -587,6 +614,144 @@ function  output_frechet_movie_mp4( m::Morphing{N,T},
         println( "Created... ", filename );
     end
 end
+
+
+mutable struct ORecFrame
+    frame::Int64
+    t::Float64
+    R::Polygon2F
+end
+
+
+function  frames_generate_o( cm::ContextMovie, P, Q, vec_rf )
+    for rf in vec_rf
+        draw_image_frame_o( cm::ContextMovie, P, Q, rf )
+    end
+    return  1
+end
+
+
+function   encode_to_mp4( dir, filename )
+    tmp_filename = "tmp.mp4";
+    rmx( filename );
+    rmx( tmp_filename );
+    println( "Encoding movie with ffmpeg..." );
+    options = [ "-r", "10", "-i",
+               dir * "/" * "%06d.png",
+               "-c:v", "libx264", tmp_filename ];
+    output = read(pipeline( `ffmpeg $options`, stderr="/tmp/errs.txt" ),
+        String);
+
+    println( "\n\n\n\n\n\n" );
+    println( "Rencoding with handbrake..." );
+    println( filename );
+    println( "\n\n\n\n\n\n" );
+
+    # HandBrakeCLI -Z  -i movie.mp4  -o movie_2.mp4
+    options_2 = [ "-Z", "Android 1080p30", "-i", tmp_filename,
+                 "-o", filename ];
+    output_2 = read(pipeline( `HandBrakeCLI $options_2`,
+                            stderr="/tmp/errs_2.txt" ), String);
+    rmx( tmp_filename );
+    if  isfile( filename )
+        println( "Created... ", filename );
+    end
+end
+
+
+"""
+    draw_image_frame_o
+"""
+function   draw_image_frame_o( cm::ContextMovie, P, Q, rf::ORecFrame )
+
+    filename = cm.dir * "/" * @sprintf( "%06d.png", rf.frame )
+
+    c = CairoRGBSurface(cm.iwidth, cm.iheight );
+    cr = CairoContext(c);
+
+
+    set_source_rgb(cr, 1, 1, 1);
+    paint(cr);
+
+    set_transform( cr, cm.iwidth, cm.iheight, cm.bbo );
+
+    set_line_width(cr, 1);
+    set_source_rgb(cr, 0.3, 0.3, 0.3 );
+    draw_polygon( cr, P );
+    draw_polygon( cr, Q );
+
+
+    set_line_width(cr, 4);
+    set_source_rgb(cr, 0.0, 0.8, 0.0 );
+    draw_polygon( cr, rf.R );
+    if   ( cm.f_show_vertices )
+        set_source_rgb(cr, 0.0, 1.0, 0.0 );
+        draw_polygon_vertices( cr, rf.R, BBox_width( cm.bb ) / 200 );
+    end
+    Cairo.stroke( cr );
+
+    Cairo.write_to_png( c, filename );
+end
+
+
+function  frames_generate_o( cm::ContextMovie, P, Q,
+                             vec_rf::Vector{ORecFrame} )
+    for rf in vec_rf
+        draw_image_frame_o( cm::ContextMovie, P, Q, rf )
+    end
+    return  1
+end
+
+
+
+
+function  output_ortho_frechet_movie_mp4( m::Morphing{N,T},
+                                          filename::String,
+                                          total_frames::Int64 = 200,
+                                          ) where {N,T}
+    cm = ContextMovie(BBox2F(), BBox2F(), 0, 0, 0, "/tmp/r_draw/",
+                      false  );
+    cm.bb, cm.bbo = compute_bounding_boxes( [ m.P, m.Q ] );
+    cm.iheight, cm.iwidth = get_image_dims( cm.bbo );
+
+    pout,qout = Morphing_as_polygons( m );
+
+    np::Int64 = cardin( pout );
+    nq::Int64 = cardin( qout );
+    @assert( np == nq );
+
+    if  isdir( cm.dir )
+        rm( cm.dir, recursive=true)
+    end
+    mkdir( cm.dir );
+
+    vec_rf = Vector{ORecFrame}();
+
+    delta = 1.0 / ( total_frames - 1 );
+    t::Float64 = 1.0;
+    
+    # We first calculate the frames we need... into vec_rf...
+    for  i in 1:total_frames
+        R = Polygon_convex_comb( pout, qout, t );
+
+        ofr = ORecFrame( i, t, R );
+        push!( vec_rf, ofr );
+        t = t - delta;
+    end
+
+    println( "Splitting to threads... Sit back ;)" );
+
+    println( Threads.nthreads() );
+
+    chunks = Iterators.partition(vec_rf, length(vec_rf) ÷ Threads.nthreads())
+    tasks = map(chunks) do chunk
+        Threads.@spawn frames_generate_o( cm, m.P, m.Q, chunk );
+    end
+    chunk_sums = fetch.(tasks)
+
+    encode_to_mp4( cm.dir, filename );
+end
+
 
 
 
@@ -1132,9 +1297,18 @@ function  create_demo( title::String,
     output_polygons_to_file(  [poly_a, poly_b], prefix * "curves.png", false );
     create_movie( poly_a, poly_b, total_frames, prefix*"f_c_movie.mp4", m_c );
 
+    is_mkdir( prefix*"ortho/" );
+
+    output_ortho_frechet_movie_mp4(  m_c, prefix*"ortho/c.mp4" );
+
     if  f_draw_ve
         create_movie( poly_a, poly_b, total_frames,
                       prefix*"f_ve_r_movie.mp4", m_ve_r );
+
+        PU, QU = Morphing_as_polygons( m_ve_r );
+        output_polygons_to_file(  [PU, QU], prefix*"ve_matching.pdf",
+                                  true, true, true );
+        #XXX
     end
 
     plot_curves_diagram( poly_a, poly_b, prefix*"diagram.pdf",
@@ -1226,7 +1400,7 @@ function  create_demo( title::String,
     #########################################################
 
     fl = open( prefix * "index.html", "w" )
-    
+
     println( "Writing file\n\n\n\n\n" );
 
     write( fl, "<head>\n"
@@ -1245,18 +1419,18 @@ function  create_demo( title::String,
            * "</head>" )
     write( fl, "<body>\n" );
     write( fl, "<h1>", title, "</h1>\n" );
-    
-    
+
+
     println( "Cardinality of both curves : ", cardi );
-    
-    
-    
+
+
+
     # Image of curves
-    
+
     write( fl, "<hr>\n\n" );
     write( fl, "<img src=\"curves.png\" />\n" )
     write( fl, "<hr>\n" )
-    
+
     if  ( length( note ) > 0 )
         write( fl, "\n" )
         write( fl, "<!--- NOTE START --->\n" )
@@ -1265,28 +1439,28 @@ function  create_demo( title::String,
         write( fl, "<!--- NOTE END --->\n" )
         write( fl, "<hr>\n" )
     end
-    
+
     ############################################################
     # Table...
     row_a = [ "<a href=\"poly_a.txt\">P</a>"
               string( cardin( poly_a ) )
               string( Polygon_length( poly_a ) ) ]
     row_a_x = permutedims( row_a );
-    
+
     row_b =  ["<a href=\"poly_b.txt\">Q</a>"
               string( cardin( poly_b ) )
               string( Polygon_length( poly_b ) )
               ];
     row_b_x = permutedims( row_b );
-    
+
     data = vcat( row_a_x, row_b_x  );
-    
+
     pretty_table(fl, data;
                  header = (["Curves", "# Vertices", "Length"]),
                  allow_html_in_cells = true,
                  backend = Val(:html) )
     write( fl, "\n<hr>\n" )
-    
+
     if  f_draw_ve
         B=fill("", (2,2) )
         B[1,1] = "Fréchet";
@@ -1301,9 +1475,9 @@ function  create_demo( title::String,
         println( fl, "Fréchet distance: ", m_c.leash, "\n\n" );
     end
     write( fl, "\n<hr>\n" )
-    
-    
-    
+
+
+
     ###########################################################
         # Movie
         write( fl, "\n\n<h2>Animation: "*FrechetStr*" morphing</h2>" );
@@ -1478,6 +1652,31 @@ function  gen_example_6()
                  );
 end
 
+
+function  gen_example_14()
+    poly_a,poly_b = example_14();
+    create_demo( "Example 14 the lone zigzag: Refinement in action",
+                 "output/14/",
+                 poly_a,poly_b,
+                 true, true,
+                 "Zig-zag heavy example that shows the algorithm computing\n"
+                 * " the exact continuous monotone " * FrechetStr
+                 * " morphing, using refinement.\n",
+                 true
+                 );
+end
+
+function  gen_example_15()
+    poly_a,poly_b = example_15();
+    create_demo( "Example 15",
+                 "output/15/",
+                 poly_a,poly_b,
+                 true, true,
+                 "Simple geometric shapes",
+                 true
+                 );
+end
+
 function  gen_example_1()
     poly_a,poly_b = example_1();
     create_demo( "Example 1", "output/01/",
@@ -1569,7 +1768,13 @@ function  generate_examples()
         create_demo( "Example 13 (7 fixed)", "output/13/", poly_a,poly_b );
     end
 
+    if  is_rebuild( "output/14" )
+        gen_example_14()
+    end
 
+    if  is_rebuild( "output/15" )
+        gen_example_15()
+    end
 end
 
 

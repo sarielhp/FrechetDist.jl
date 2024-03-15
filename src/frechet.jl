@@ -110,14 +110,23 @@ function  ve_event_value( c::FRContext{N,T}, id::Int64 ) where {N,T}
     j = EID_j( id );
     if  EID_i_is_vert( id )
         if  EID_j_is_vert( id )
-            return   Dist( P[ i ], Q[ j ] );
+            d = Dist( P[ i ], Q[ j ] );
+            # Old code: Bug? Missing if check
+            if  c.f_offsets
+                return  d -  c.p_offs[ i ] - c.q_offs[ j ];
+            else
+                return  Dist( P[ i ], Q[ j ] );
+            end
         end
         d = dist_seg_nn_point( Q[ j ], Q[ j + 1 ], c.P[ i ] );
         if  c.f_offsets
 #            if  ( c.q_offs[ j ] > 0 )
 #                println( "Larger than 0!" );
 #            end
-            return  d - c.q_offs[ j ];
+            #--------------------------------------------------------------
+# Old code: Bug?
+#            return  d - c.q_offs[ j ];
+            return  d - max(c.q_offs[ j ], c.q_offs[ j + 1 ] ) - c.p_offs[ i ];
         else
             return  d;
         end
@@ -126,7 +135,9 @@ function  ve_event_value( c::FRContext{N,T}, id::Int64 ) where {N,T}
     if  EID_j_is_vert( id )
         d = dist_seg_nn_point( P[ i ], P[ i + 1 ], Q[ j ] );
         if  c.f_offsets
-            return  d - c.p_offs[ i ];
+# Old code: Bug?
+#            return  d - c.p_offs[ i ];
+            return  d - max(c.p_offs[ i ], c.p_offs[ i + 1 ] ) - c.q_offs[ j ];
         else
             return  d;
         end

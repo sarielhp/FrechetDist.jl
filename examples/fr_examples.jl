@@ -307,12 +307,12 @@ function  example_13()
     xs::Float64 = 4.0;
 
     push!( polya,
-           point( 0.0, 0.0 ), 
+           point( 0.0, 0.0 ),
            point( 0.1*xs, 0.0 ),
            point( 1.1*xs, xs * 1.0 ),
            point( 1.2*xs, xs * 1.0 ),
            );
-    
+
     push!( polyb,
            point( 1.2 * xs, 0.0 ),
            point( 1.1 * xs, 0.0 ),
@@ -323,3 +323,59 @@ function  example_13()
 end
 
 
+
+function  example_14()
+    polya = Polygon2F(  );
+    polyb = Polygon2F(  );
+
+    max_x = 4.1;
+
+    push!( polya,
+           point( 0.0, 0 )
+           ,
+           point( max_x/3.5, 0 )
+           );
+    zig_zag_x( polya, -max_x/4.0, 0.03, 16 );
+    lp = last( polya );
+    push!( polya, point( max_x, lp[ 2 ] ) );
+
+    new_y = lp[ 2 ] + 0.3;
+    push!( polyb,
+           point( 0.0, new_y ),
+           point( max_x, new_y ) );
+#    pl = last( polyb );
+ #   push!( polyb, point( max_x, pl[ 2 ] ) );
+
+    return  polya, polyb;
+end
+
+function   spiral( cen::Point2F, r::Float64, k::Int64,
+                   shrink::Float64, range::Float64 )::Polygon2F
+    P = Polygon2F();
+
+    delta = range / k;
+
+    start = pi / 2.0;
+    for  i in 0:k
+        alpha = start + delta * i;
+        x = r * sin( alpha );
+        y = r * cos( alpha );
+        push!( P, point( cen[ 1 ] + x, cen[ 2 ] + y ) );
+        r = r * shrink;
+    end
+
+    return  P;
+end
+
+function  example_15()
+    max_x = 4.1;
+
+    mid::Float64 = max_x/2.0;
+    r = mid * 0.8;
+
+    cen = point( mid, mid );
+    polya = spiral( cen, 0.9*r, 6, 0.85, float(pi) );
+    polyb = spiral( cen,     r,  15, 0.98, float(pi) );
+
+    return  polya, polyb;
+end
