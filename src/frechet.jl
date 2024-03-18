@@ -711,7 +711,7 @@ function  frechet_mono_via_refinement_ext( Pa::Polygon{N,T}, Qa::Polygon{N,T},
         if  ( f_snapshots )
             push!( out, deepcopy( m ) );
         end
-        
+
         fr_retract = m.leash;
         fr_r_mono = mm.leash;
 
@@ -775,7 +775,7 @@ function  frechet_mono_via_refinement( Pa::Polygon{N,T}, Qa::Polygon{N,T},
     ot::Vector{Morphing{N,T}} = Vector{Morphing{N,T}}();
     return  frechet_mono_via_refinement_ext( Pa, Qa, ot, false, approx );
 end
-    
+
 ###########################################################################
 # Compute the morphing src(v) -> trg(u): That is u(v(t))
 ###########################################################################
@@ -862,7 +862,7 @@ function  frechet_c_approx( poly_a::Polygon{N,T},
             Q, q_indices = Polygon_simplify_ext( poly_b, r )
 
             @assert( ( cardin( P ) > 1 )  &&  ( cardin( Q ) > 1 ) )
-            
+
             f_debug &&  println( "before" );
             m = frechet_mono_via_refinement( P, Q,
                                              3.0/4.0 + approx / 4.0 )[1];
@@ -958,6 +958,13 @@ function  Polygon_simplify_radii_ext( P::Polygon{N,T}, r::Vector{T}
     end
 end
 
+mutable struct FrechetCExtraInfo
+    PSR::Polygon2F;
+    QSR::Polygon2F;
+    PSR_offs::Vector{Float64};
+    QSR_offs::Vector{Float64};
+    f_init::Bool
+end;
 
 ###########################################################################
 """
@@ -994,8 +1001,15 @@ simplification is computed using refinement, so tha the ve_r distance
 """
 function  frechet_c_compute( poly_a::Polygon{N,T},
                              poly_b::Polygon{N,T},
-                             f_accept_approx::Bool = true )  where {N,T}
+                             f_accept_approx::Bool = true,
+                             info = undef
+                             )  where {N,T}
     f_debug::Bool = false;
+    f_info::Bool = false;
+    if  @isdefined( info )
+        f_info = info isa FrechetCExtraInfo;
+        println( "f_info!" ); 
+    end
     aprx_refinement::Float64 = 1.001;
 
     f_debug && println( "#", cardin( poly_a ) )
@@ -1102,6 +1116,18 @@ function  frechet_c_compute( poly_a::Polygon{N,T},
         # Now we compute the distance, with offsets...
         PSR_offs = Morphing_extract_offsets( m_a )[2]
         QSR_offs = Morphing_extract_offsets( m_b )[1]
+
+        println( "BOGI MOGI!\n\n\n\n" );
+        println( f_info, "\n\n\n\n" );
+        println( info.f_init, "\n\n\n\n" );
+        if  ( f_info  &&  ( ! info.f_init ) )
+            println( "PSR: ", cardin( PSR ) );
+            info.PSR = deepcopy( PSR );
+            info.QSR = deepcopy( QSR );
+            info.PSR_offs = deepcopy( PSR_offs );
+            info.QSR_offs = deepcopy( QSR_offs );
+            info.f_init = true;
+        end
 
         m_final = frechet_ve_r_compute_ext( PSR, QSR, PSR_offs, QSR_offs,
                                             true );

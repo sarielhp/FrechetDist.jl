@@ -379,3 +379,17 @@ function  example_15()
 
     return  polya, polyb;
 end
+
+
+function  example_16()
+    max_x = 4.1;
+
+    mid::Float64 = max_x/2.0;
+    r = mid * 0.8;
+
+    cen = point( mid, mid );
+    polya = spiral( cen, 0.9*r, 35*6, 0.99, 35*float(pi) );
+    polyb = spiral( cen,     r,  40, 0.9, 3.999*float(pi) );
+
+    return  polya, polyb;
+end

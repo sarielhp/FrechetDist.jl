@@ -32,6 +32,61 @@ function  is_mkdir( dir )
 end
 
 
+VecFloat = Vector{Float64};
+VecVecFloat = Vector{VecFloat};
+
+function  draw_hippodrome( cr, p::Point2F, q::Point2F, r::Float64 )
+    r = r * 4.0;
+
+    arc( cr, p[1], p[2], r, 0.0, 2.0 * pi );
+    fill_preserve( cr );
+    arc( cr, q[1], q[2], r, 0.0, 2.0 * pi );
+    fill_preserve( cr );
+
+    v = (p - q) / Dist( p, q );
+    u = point( -v[2], v[1] );
+    px = p - r * u;
+    qx = q - r * u;
+    qy = q + r * u;
+    py = p + r * u;
+
+    move_to(cr, px[ 1 ], px[ 2 ] );
+    line_to(cr, qx[ 1 ], qx[ 2 ] );
+    line_to(cr, qy[ 1 ], qy[ 2 ] );
+    line_to(cr, py[ 1 ], py[ 2 ] );
+    line_to(cr, px[ 1 ], px[ 2 ] );
+    close_path(cr);
+    stroke_preserve(cr);
+    Cairo.fill(cr);
+    Cairo.stroke( cr );
+end
+
+function  draw_polygon_w_offs( cr, P::Polygon2F, offs::VecFloat )
+    nv::Int64 = cardin( P );
+    for  i in 2:nv
+        p = P.pnts[ i - 1 ];
+        #p = po.x;
+        q = P.pnts[ i ];
+        #q = qo.x;
+
+        r = max( offs[ i - 1 ], offs[ i ] );
+        #println( " r: ", r );
+
+        set_source_rgb(cr, 1.0, 0.0, 0.8);
+        #arc( cr, p[1], p[2], r, 0.0, 2.0 * pi );
+        #fill_preserve( cr );
+
+        draw_hippodrome( cr, p, q, r );
+
+        #Cairo.stroke( cr );
+        #cr->set_source_rgba(0.0, 0.0, 0.8, 1.0);
+        #move_to( cr,  p[1], p[2] )
+        #line_to( cr, q[1], q[2] );
+        #println( q[1], " ", q[2] );
+        Cairo.stroke( cr );
+    end
+end
+
 
 function  draw_polygon( cr, P )
     nv::Int64 = cardin( P );
@@ -156,7 +211,6 @@ function  cairo_setup( filename::String, list::VecPolygon2F,
 end
 
 
-
 function  output_polygons_to_file(  list::VecPolygon2F, filename,
                                     f_pdf::Bool,
                                     f_draw_vertices::Bool = false,
@@ -215,6 +269,84 @@ function  output_polygons_to_file(  list::VecPolygon2F, filename,
     end
     Cairo.finish(c);
 end
+
+
+function  output_polygons_to_file_with_offsets(
+    list::VecPolygon2F,
+    loffs::VecVecFloat,
+    filename,
+    f_pdf::Bool,
+    f_draw_vertices::Bool = false,
+    f_matching::Bool = false
+    )
+
+    c,cr,bb = cairo_setup( filename, list, f_pdf );
+
+    u_width::Float64 = 1024.0 * (BBox_width( bb) / 4500.0);
+
+    BBox_print( bb );
+    set_source_rgb(cr,0.9,0.9,0.9);    # light gray
+#    set_line_width(cr, 10.0);
+    set_source_rgba(cr, 1, 0.2, 0.2, 0.6);
+
+    len = length( list );
+    count::Int64 = 0;
+    off::VecFloat = VecFloat();
+    for  i in  eachindex(list)
+        poly = list[ i ];
+        f_off::Bool = false;
+        if  ( i <= length( loffs ) )
+            f_off = true;
+            off = loffs[ i ];
+        end
+        count = count + 1;
+        #println( count, " ", len );
+        set_line_width(cr, u_width );
+        if  len == 2  &&  count == 2
+            set_source_rgb(cr, 0.0, 0.0, 1.0 );
+        else
+            set_source_rgb( cr, 0.0, 1.0, 0.0 );
+        end
+
+        if  ( f_off )
+            draw_polygon_w_offs( cr, poly, off );
+        else
+            draw_polygon( cr, poly );
+        end
+    end
+
+    if  ( f_matching )  &&  ( cardin( list[ 1 ] ) ==  cardin( list[ 2 ] ) )
+        P = list[ 1 ];
+        Q = list[ 2 ];
+        set_line_width(cr, 1.5*u_width);
+        set_source_rgb( cr, 1.0, 0.0, 1.0 );
+        for  i  in 1:cardin( P )
+            p = P[ i ];
+            q = Q[ i ];
+
+            move_to( cr, p[1], p[2] )
+            line_to( cr, q[1], q[2] );
+            Cairo.stroke( cr );
+        end
+    end
+
+    if  ( f_draw_vertices )
+        set_line_width(cr, 2.0*u_width);
+        set_source_rgb( cr, 1.0, 0.0, 0.0 );
+        for  poly in  list
+            draw_polygon_vertices( cr, poly, BBox_width( bb) / 200  );
+        end
+    end
+
+
+    if  ( ! f_pdf )
+        Cairo.write_to_png( c, filename );
+    end
+    Cairo.finish(c);
+end
+
+
+
 
 
 #----------------------------------------------------------------
@@ -1261,10 +1393,25 @@ function  create_demo( title::String,
     # m_d: Discrete Frecheet (potentially sampled)
     # m_d_r: Discrete restructured Frechet
     #####################################################################
-    m_c = frechet_c_compute( poly_a, poly_b )
+
+    fcei = FrechetCExtraInfo( Polygon2F(), Polygon2F(), Vector{Float64}(),
+                              Vector{Float64}(), false );
+
+    m_c = frechet_c_compute( poly_a, poly_b, true, fcei )
     if  f_draw_ve
         m_ve_r = frechet_ve_r_compute( poly_a, poly_b );
     end
+
+    println( "PSR #: ", cardin( fcei.PSR ) );
+    println( "QSR #: ", cardin( fcei.QSR ) );
+    println( "P   #: ", cardin( poly_a ) );
+    println( "Q   #: ", cardin( poly_b ) );
+    output_polygons_to_file_with_offsets( [fcei.PSR, fcei.QSR, poly_a, poly_b ],
+                                          [fcei.PSR_offs, fcei.QSR_offs ],
+                                          prefix * "o_curves.pdf", true );
+    exit( -1 );
+
+
 
     if  ( cardi < 5000 )
         if  ( cardi < 100 )
@@ -1289,6 +1436,7 @@ function  create_demo( title::String,
                                       );
         println( "m_refinements.len: ", length(m_refinements ) );
     end
+
 
     #####################################################################
     # Creating movies/diagrams/etc
@@ -1683,6 +1831,16 @@ function  gen_example_15()
                  );
 end
 
+
+function  gen_example_16()
+    poly_a,poly_b = example_16();
+    create_demo( "Example 16", "output/16/", poly_a,poly_b,
+                 true, true,
+                 "Spirals",
+                 true
+                 );
+end
+
 function  gen_example_1()
     poly_a,poly_b = example_1();
     create_demo( "Example 1", "output/01/",
@@ -1780,6 +1938,10 @@ function  generate_examples()
 
     if  is_rebuild( "output/15" )
         gen_example_15()
+    end
+
+    if  is_rebuild( "output/16" )
+        gen_example_16()
     end
 end
 

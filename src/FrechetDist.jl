@@ -26,8 +26,10 @@ include( "frechet.jl" );
 
 
 #-- Types -----------------------------------------------------
-export Morphing, FPointType, EventPoint, PointType
-export Morphing2F
+export  Morphing, FPointType, EventPoint, PointType
+export  Morphing2F
+
+export  FrechetCExtraInfo;
 
 # Morphing stuff
 export  Morphing_monotonize, Morphing_empty, Morphing_verify_valid
