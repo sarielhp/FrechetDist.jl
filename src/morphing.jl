@@ -498,6 +498,13 @@ function   parameterization_combine( f::Polygon2F, g::Polygon2F )
         end
         if  ( yf > yg )
             zf = eval_pl_func( f[idf - 1], f[ idf ], yg )
+            # A bit of a hack again...
+            if  ( zf > f[ idf ][ 2 ] )
+                zf = f[ idf ][ 2 ]
+            end
+            if  ( zf < f[ idf - 1 ][ 2 ] )
+                zf = f[ idf - 1 ][ 2 ]
+            end
             push!( out, point( g[ idg ][ 1 ], zf ) )
             idg = min( idg + 1, l_g );
             continue;

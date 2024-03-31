@@ -1001,15 +1001,9 @@ simplification is computed using refinement, so tha the ve_r distance
 """
 function  frechet_c_compute( poly_a::Polygon{N,T},
                              poly_b::Polygon{N,T},
-                             f_accept_approx::Bool = true,
-                             info = undef
+                             f_accept_approx::Bool = true
                              )  where {N,T}
-    f_debug::Bool = false;
-    f_info::Bool = false;
-    if  @isdefined( info )
-        f_info = info isa FrechetCExtraInfo;
-        println( "f_info!" ); 
-    end
+    f_debug::Bool = true;
     aprx_refinement::Float64 = 1.001;
 
     f_debug && println( "#", cardin( poly_a ) )
@@ -1067,6 +1061,8 @@ function  frechet_c_compute( poly_a::Polygon{N,T},
     end
     factor::Float64 = 4.0
     while  true
+        f_debug  &&  println( "-------------------------------------------" );
+        f_debug  &&  println( "factor: ", factor, "                      " );
         pz = ( ( lower_bound * ones( length( pl ) ) ) - pl ) / factor
         qz = ( ( lower_bound * ones( length( ql ) ) ) - ql ) / factor
 
@@ -1083,6 +1079,8 @@ function  frechet_c_compute( poly_a::Polygon{N,T},
         QS, q_indices, f_QS_exact = Polygon_simplify_radii_ext( poly_b, qz );
 
         if  f_debug
+            println( "PS.len    : ", cardin( PS ); );
+            println( "QS.len    : ", cardin( QS ); );
             println( "p_count <0: ", p_count, " / ", length( pz ) );
             println( "q_count <0: ", q_count, " / ", length( qz ) );
             println( "|PS| = ", cardin( PS ) );
@@ -1097,6 +1095,9 @@ function  frechet_c_compute( poly_a::Polygon{N,T},
                                                               aprx_refinement );
 
         f_debug  &&  println( "frechet mono via refinment computed" );
+        f_debug  &&  println( "PSR.len: ", cardin( PSR ) );
+        f_debug  &&  println( "QSR.len: ", cardin( QSR ) );
+        
         m_a = frechet_ve_r_mono_compute( poly_a, PSR );
         mmu = Morphing_combine( m_a, m_mid );
         m_b = frechet_ve_r_mono_compute( QSR, poly_b );
@@ -1110,6 +1111,7 @@ function  frechet_c_compute( poly_a::Polygon{N,T},
                 println( "Diff         : ", m_mid.leash - mw.leash );
             end
             factor = factor * 2.0;
+            aprx_refinement = 1.0 + (aprx_refinement - 1.0) / 4.0;
             continue;
         end
 
@@ -1117,17 +1119,6 @@ function  frechet_c_compute( poly_a::Polygon{N,T},
         PSR_offs = Morphing_extract_offsets( m_a )[2]
         QSR_offs = Morphing_extract_offsets( m_b )[1]
 
-        println( "BOGI MOGI!\n\n\n\n" );
-        println( f_info, "\n\n\n\n" );
-        println( info.f_init, "\n\n\n\n" );
-        if  ( f_info  &&  ( ! info.f_init ) )
-            println( "PSR: ", cardin( PSR ) );
-            info.PSR = deepcopy( PSR );
-            info.QSR = deepcopy( QSR );
-            info.PSR_offs = deepcopy( PSR_offs );
-            info.QSR_offs = deepcopy( QSR_offs );
-            info.f_init = true;
-        end
 
         m_final = frechet_ve_r_compute_ext( PSR, QSR, PSR_offs, QSR_offs,
                                             true );
@@ -1145,7 +1136,7 @@ function  frechet_c_compute( poly_a::Polygon{N,T},
             println( "MW Leash length: ", mw.leash );
             println( "m_final.leash  : ", m_final.leash );
         end
-        if  f_accept_approx  &&  ( 1.000001 * mw.leash > m_final.leash )
+        if  f_accept_approx  &&  ( 1.00001 * m_final.leash > mw.leash )
             f_debug && println( "MW Leash length: ", mw.leash );
             f_debug && println( "m_final.leash  : ", m_final.leash );
 #            println( "We are done!" );

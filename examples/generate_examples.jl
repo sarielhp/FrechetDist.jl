@@ -1394,22 +1394,22 @@ function  create_demo( title::String,
     # m_d_r: Discrete restructured Frechet
     #####################################################################
 
-    fcei = FrechetCExtraInfo( Polygon2F(), Polygon2F(), Vector{Float64}(),
-                              Vector{Float64}(), false );
+#    fcei = FrechetCExtraInfo( Polygon2F(), Polygon2F(), Vector{Float64}(),
+#                              Vector{Float64}(), false );
 
-    m_c = frechet_c_compute( poly_a, poly_b, true, fcei )
+    m_c = frechet_c_compute( poly_a, poly_b, true )
     if  f_draw_ve
         m_ve_r = frechet_ve_r_compute( poly_a, poly_b );
     end
 
-    println( "PSR #: ", cardin( fcei.PSR ) );
-    println( "QSR #: ", cardin( fcei.QSR ) );
-    println( "P   #: ", cardin( poly_a ) );
-    println( "Q   #: ", cardin( poly_b ) );
-    output_polygons_to_file_with_offsets( [fcei.PSR, fcei.QSR, poly_a, poly_b ],
-                                          [fcei.PSR_offs, fcei.QSR_offs ],
-                                          prefix * "o_curves.pdf", true );
-    exit( -1 );
+    #println( "PSR #: ", cardin( fcei.PSR ) ); println( "QSR #: ",
+    #cardin( fcei.QSR ) ); println( "P #: ", cardin( poly_a ) );
+    #println( "Q #: ", cardin( poly_b ) );
+    #output_polygons_to_file_with_offsets( [fcei.PSR, fcei.QSR,
+    #poly_a, poly_b ],
+    #                                      [fcei.PSR_offs, fcei.QSR_offs ],
+    #                                      prefix * "o_curves.pdf", true );
+#    exit( -1 );
 
 
 
@@ -1536,7 +1536,7 @@ function  create_demo( title::String,
 
 
     Polygon_write_to_file( poly_a, prefix * "poly_a.txt" );
-    Polygon_write_to_file( poly_a, prefix * "poly_b.txt" );
+    Polygon_write_to_file( poly_b, prefix * "poly_b.txt" );
 
     if  f_computed_d
         output_polygons_to_file(  [P, Q],
