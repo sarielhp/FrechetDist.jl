@@ -18,7 +18,7 @@ function  EID(
     i_is_vert::Bool = false,
     j::Int64 = 0,
     j_is_vert::Bool = false
-)
+)::Int64
     #---
     val::Int64 = ( ( i << 32 )  |  ( j << 2 )
                    |  ( convert( Int64, i_is_vert ) << 1)
@@ -63,6 +63,7 @@ end
 
 #DictVERType = Dict{Int64, TreeVertex};
 DictVERType = Dict{Int64, Int64};
+DictHandledType = Dict{Int64, Bool};
 HeapVERType = BinaryMinHeap{TreeVertex};
 
 function  TreeVertex( _id::Int64 )
@@ -86,6 +87,7 @@ end
     Q::Polygon{N,T};
     p_offs::Vector{Float64};
     q_offs::Vector{Float64};
+    handled::DictHandledType;
     dict::DictVERType;
     heap::BinaryMinHeap{TreeVertex};
     f_offsets::Bool = false;
@@ -96,6 +98,7 @@ end
 function  FRContext(P::Polygon{N,T}, Q::Polygon{N,T}) where {N,T}
     return FRContext( P, Q, Vector{Float64}(),  Vector{Float64}(),
                       Dict{Int64, Int64}(),
+                      Dict{Int64, Float64}(),
                       BinaryMinHeap{TreeVertex}(),
                       false, cardin( P ), cardin( Q ) );
 end
@@ -286,10 +289,11 @@ function   frechet_ve_r_compute_ext( P::Polygon{N,T},
                                      Q::Polygon{N,T},
                                      p_offs::Vector{Float64},
                                      q_offs::Vector{Float64},
-                                     f_use_offsets::Bool = false
+                                     f_use_offsets::Bool = false,
                                      ) where {N,T}
     f_debug::Bool = false;
     c::FRContext{N,T} = FRContext( P, Q )
+
     if  f_use_offsets
         c.p_offs = p_offs;
         c.q_offs = q_offs;
@@ -306,6 +310,10 @@ function   frechet_ve_r_compute_ext( P::Polygon{N,T},
     heap = c.heap;
     while  ! isempty( heap )
         ev::TreeVertex = pop!( heap );
+        if  ( haskey( c.handled,  ev.id ) )
+            continue;
+        end
+        c.handled[ ev.id ] = true;
         iters = iters + 1;
 
         if  f_debug  &&  ( (iters % 1000000) == 0 )
@@ -358,6 +366,211 @@ function   frechet_ve_r_compute( P::Polygon{N,T}, Q::Polygon{N,T} ) where {N,T}
     return frechet_ve_r_compute_ext( P, Q, Vector{Float64}(),
                                      Vector{Float64}(), false );
 end
+
+
+
+
+###########################################################################
+###########################################################################
+###########################################################################
+# XXX
+
+DictVerticesType = Dict{Int64, TreeVertex};
+
+@with_kw mutable struct ADTWContext{N,T}
+    P::Polygon{N,T};
+    Q::Polygon{N,T};
+    vertices::DictVerticesType
+    handled::DictHandledType;
+    prev_map::DictVERType;
+    pq::PriorityQueue{Int64,Float64};
+
+    n_p::Int64 = 0
+    n_q::Int64 = 0
+end
+
+function  ADTWContext(P::Polygon{N,T}, Q::Polygon{N,T}) where {N,T}
+    return ADTWContext( P, Q, Vector{Float64}(),  Vector{Float64}(),
+                        DictHandledType(),
+                        DictVERType(),
+                        DictVerticesType(),
+                        PriorityQueue{Int64,Float64}(),
+                        cardin( P ), cardin( Q ) );
+end
+
+
+function  adtw_new_event_v( _id::Int64, c::ADTWContext{N,T},
+                            val::Float64 ) where {N,T}
+    ev = TreeVertex( _id );
+    ev.r = ev.val = 0.0;
+    return  ev;
+end
+
+
+function  get_event_points( c::ADTWContext{N,T}, id::Int64 ) where {N,T}
+    P = c.P
+    Q = c.Q
+    i = EID_i( id );
+    j = EID_j( id );
+    if  EID_i_is_vert( id )
+        if  EID_j_is_vert( id )
+            return  P[ i ], Q[ j ];
+        end
+
+        q = induced_seg_nn_point( Q[ j ], Q[ j + 1 ], P[ i ] );
+        return  P[ i ], q;
+    end
+
+    if  EID_j_is_vert( id )
+        p = induced_seg_nn_point( P[ i ], P[ i + 1 ], Q[ j ] );
+        return  p, Q[ j ];
+    end
+
+    println( "Error: This kind of event is not handled yet..." );
+    return  P[1], Q[1];
+end
+
+function  adtw_get_event_value( _id::Int64, _prev_id::Int64, prev_val::Float64,
+                                c::ADTWContext{N,T} ) where {N,T}
+    ev = TreeVertex( _id );
+
+    o_p, o_q = get_event_points( c, _prev_id );
+    n_p, n_q = get_event_points( c, _id );
+
+    l_p = Dist( o_p, n_p );
+    l_q = Dist( o_q, n_q );
+
+    l_n = Dist( n_p, n_q );
+    l_o = Dist( o_p, o_q );
+
+    l_avg = ( l_n + l_o ) / 2.0;
+
+    val = ( l_p + l_q ) * l_avg;
+
+    return   prev_val + val;;
+end
+
+
+function  adtw_new_event( id::Int64, id_prev::Int64, value::Float64,
+                          c::FRContext{N,T} ) where {N,T}
+    ev = TreeVertex( id );
+    ev.id_prev = id_prev;
+    ev.r = ev.val = value;
+
+    c.vertices[ id ] = ev;
+
+    return  ev;
+end
+
+function  adtw_schedule_event( id::Int64, id_prev::Int64,
+                               c::ADTWContext{N,T} ) where  {N,T}
+    if  ! is_schedule_event( c.handled, id, c.n_p, c.n_q )
+        return
+    end
+    ev_prev::TreeVertex = vertices[ id_prev ];
+    new_val = adtw_get_event_value( id, id_prev, ev_prev.val, c );
+    ev::TreeVertex;
+    if  haskey( vertices, id )
+        ev = vertices[ id ];
+        if  ( ev.val < new_val )  # already better event scheduled.
+            return;
+        end
+        ev.val = new_val;
+    else
+        ev = adtw_new_event( id, id_prev, new_val, c );
+    end
+
+    ev.id_prev = id_prev;
+    enqueue!( c.pq, id, new_val );
+
+    return  ev
+end
+
+
+
+##########################################################################
+# Compute retractable Frechet. Essentially Prim/Dijkstra algorithm
+#
+# Returns a Morphing that encodes the solution
+##########################################################################
+function   adtw_compute( P::Polygon{N,T}, Q::Polygon{N,T} ) where {N,T}
+    f_debug::Bool = false;
+    c::ADTWContext{N,T} = ADTWContext( P, Q )
+
+    start_id = EID( 1, true, 1, true );
+
+    id_end = EID( c.n_p, true, c.n_q, true );
+    start_event = adtw_new_event( start_id, stard_id, 0.0, c );
+
+    enqueue!( c.pq, start_id, start_event.val );
+
+    end_event::TreeVertex = start_event;
+    iters = 0;
+    pq = c.pq;
+    while  ! isempty( pq )
+        tp = peek( pq );
+        id = tp[1];
+        value = tp[ 2 ];
+        dequeue!( pq );
+
+        if  ( haskey( c.handled, id ) )
+            continue;
+        end
+
+        ev::TreeVertex = c.vertices[ id ];
+        c.handled[ id ] = true;
+        c.prev_map[ id ] = ev.id_prev;
+        iters = iters + 1;
+
+        if  f_debug  &&  ( (iters % 1000000) == 0 )
+            print( "Iters :" );
+            print_int_w_commas( iters );
+            print( "  ", length( pq ) );
+            print( "  " );
+            print_int_w_commas( c.n_p * c.n_q * 2 );
+            println( "" );
+        end
+
+        i = EID_i( id );
+        j = EID_j( id );
+
+        if  id == start_id
+            adtw_schedule_event( EID( 1, false, 1, true ), id, c );
+            adtw_schedule_event( EID( 1, true, 1, false ), id, c );
+            continue;
+        end
+
+        # Is it the *final* event?
+        if  ( i == c.n_p )  &&  ( j == c.n_q )
+            end_event = ev;
+            break;
+        end
+
+        # Is it on the boundary of the final cell?
+        if  is_final_cell( ev.id, c.n_p, c.n_q )
+            adtw_schedule_event( id_end, ev.id, c );
+            continue;
+        end
+        adtw_schedule_event( EID( i+1, true, j, false ), id, c );
+        adtw_schedule_event( EID( i, false, j+1, true ), id, c );
+    end
+
+    pes, qes = f_r_extract_solution( P, Q, id_end, c.prev_map );
+
+    morph::Morphing{N,T} = Morphing_init( P, Q, pes, qes );
+    morph.iters = iters;
+
+    return  morph
+end
+
+
+
+
+
+
+
+
+
 
 
 #####################################################################
@@ -1097,7 +1310,7 @@ function  frechet_c_compute( poly_a::Polygon{N,T},
         f_debug  &&  println( "frechet mono via refinment computed" );
         f_debug  &&  println( "PSR.len: ", cardin( PSR ) );
         f_debug  &&  println( "QSR.len: ", cardin( QSR ) );
-        
+
         m_a = frechet_ve_r_mono_compute( poly_a, PSR );
         mmu = Morphing_combine( m_a, m_mid );
         m_b = frechet_ve_r_mono_compute( QSR, poly_b );

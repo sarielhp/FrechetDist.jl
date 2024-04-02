@@ -349,15 +349,13 @@ function  example_14()
     return  polya, polyb;
 end
 
-function   spiral( cen::Point2F, r::Float64, k::Int64,
-                   shrink::Float64, range::Float64 )::Polygon2F
-    P = Polygon2F();
-
+function   spiral_ext( P::Polygon2F, cen::Point2F, r::Float64, k::Int64,
+                   shrink::Float64, range::Float64,
+                   start_range::Float64 = 0.0 )::Polygon2F
     delta = range / k;
 
-    start = pi / 2.0;
     for  i in 0:k
-        alpha = start + delta * i;
+        alpha = start_range + delta * i;
         x = r * sin( alpha );
         y = r * cos( alpha );
         push!( P, point( cen[ 1 ] + x, cen[ 2 ] + y ) );
@@ -366,6 +364,14 @@ function   spiral( cen::Point2F, r::Float64, k::Int64,
 
     return  P;
 end
+
+function   spiral( cen::Point2F, r::Float64, k::Int64,
+                   shrink::Float64, range::Float64 )::Polygon2F
+    P = Polygon2F();
+    spiral_ext( P, cen, r, k, shrink, range, pi / 2.0 );
+    return  P;
+end
+
 
 function  example_15()
     max_x = 4.1;
@@ -390,6 +396,25 @@ function  example_16()
     cen = point( mid, mid );
     polya = spiral( cen, 0.9*r, 35*6, 0.99, 35*float(pi) );
     polyb = spiral( cen,     r,  40, 0.9, 3.999*float(pi) );
+
+    return  polya, polyb;
+end
+
+
+function  example_17_dtw()
+    polya = Polygon2F(  );
+    polyb = Polygon2F(  );
+
+    k = 100;
+    
+    push!( polya, point(-1.0, -0.1 ), point( 8.0, -0.1 ) );
+
+    spiral_ext( polya, point(2.0,0.3), 1.0, k, 1.0, Float64(pi),
+                1.5 * Float64(pi) );
+
+    push!( polyb, point(-1.0, 0.6 ) );
+    spiral_ext( polyb, point(2.0,0.6), 1.1, k, 1.0, Float64(pi),
+                1.5* Float64(pi) );
 
     return  polya, polyb;
 end

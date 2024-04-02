@@ -1423,6 +1423,7 @@ function  create_demo( title::String,
             Q = poly_b;
         end
         m_d = frechet_d_compute( P, Q );
+        m_d_dtw = DTW_d_compute( P, Q );
         m_d_r = frechet_d_r_compute( P, Q );
         f_computed_d = true;
     end
@@ -1676,6 +1677,8 @@ function  create_demo( title::String,
 
 
     if  ( f_computed_d )
+        output_frechet_movie_mp4( m_d_dtw, prefix*"d_dtw.mp4",
+                                  400, true );
         output_frechet_movie_mp4( m_d, prefix*"discrete_frechet.mp4",
                                   400, true );
         output_frechet_movie_mp4( m_d_r, prefix*"discrete_r_frechet.mp4",
@@ -1694,7 +1697,7 @@ function  create_demo( title::String,
         write( fl, "</video>\n" );
 
         println( fl, "<p>\n"
-                 *"Specifically, to get a smooth animatino, the \n"
+                 *"Specifically, to get a smooth animation, the \n"
                  *" leash " * "is shown as moving continuously, by \n"
                  * " interpolating between the discrete locations.\n"
                  * "<p>\n\n" );
@@ -1707,6 +1710,16 @@ function  create_demo( title::String,
                * " type=\"video/mp4\" />\n" );
         write( fl, "</video>\n" );
 
+        println( fl, "<hr>\n\n" );
+        println( fl, "<h3>The discrete dynamic time warping</h3>\n\n" );
+        write( fl, "\n\n" );
+        write( fl, "<video controls autoplay " );
+        write( fl, "   src=\"d_dtw.mp4\" "
+               * " type=\"video/mp4\" />\n" );
+        write( fl, "</video>\n" );
+
+
+        
         println( fl, "<hr>" );
         println( fl, "P # vertices: ", cardin( P ), "<br>" );
         println( fl, "P # vertices: ", cardin( Q ), "<br>" );
@@ -1841,6 +1854,16 @@ function  gen_example_16()
                  );
 end
 
+function  gen_example_17()
+    poly_a,poly_b = example_17_dtw();
+    create_demo( "Example 17", "output/17/", poly_a,poly_b,
+                 true, true,
+                 "Example where DTW generates a different solution than"
+                 *" discrete " * FrechetStr,
+                 true
+                 );
+end
+
 function  gen_example_1()
     poly_a,poly_b = example_1();
     create_demo( "Example 1", "output/01/",
@@ -1942,6 +1965,9 @@ function  generate_examples()
 
     if  is_rebuild( "output/16" )
         gen_example_16()
+    end
+    if  is_rebuild( "output/17" )
+        gen_example_17()
     end
 end
 

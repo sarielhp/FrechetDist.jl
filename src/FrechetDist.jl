@@ -57,7 +57,8 @@ export  frechet_dist_upper_bound
 export  frechet_c_approx
 export  frechet_c_compute
 
+export  DTW_d_compute;
 
-# Write your package code here.
+
 
 end

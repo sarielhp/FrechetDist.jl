@@ -139,7 +139,7 @@ end
 ##########################################################################
 # _lopt_frechet
 """
-    frechet_dr__compute
+    frechet_d_r_compute
 
 Compute discrete frechet distance that is locally optimal
 Frechet. Essentially discrete frechet + Prim/Dijkstra algorithm For
@@ -233,6 +233,76 @@ function   frechet_d_r_compute( P::Polygon{N,T}, Q::Polygon{N,T}
 
     return  m;
 end
+
+
+function   DTW_d_compute( P::Polygon{N,T}, Q::Polygon{N,T}
+                          ) where {N,T}
+
+    pq = PriorityQueue{Tuple{Int64, Int64},Float64}();
+
+    n_p = cardin( P );
+    n_q = cardin( Q );
+
+    dp = zeros( n_p, n_q );
+    dp_dec_i = falses( n_p, n_q );
+    handled = falses( n_p, n_q );
+
+
+    function  push_value( ia, ja, val, i )
+        new_val = val + Dist( P[ ia ], Q[ ja ] )
+
+        if  ( ( dp[ ia, ja ] > 0.0 )
+              &&  ( dp[ ia, ja ] <= new_val ) )
+            return;
+        end
+        #dp[ ia, ja ] = new_val;
+        pq[ ia, ja ] = new_val;  # Push to queue
+        dp_dec_i[ ia, ja ] = ( i < ia );
+    end
+
+    dp[ 1, 1 ] = Dist( P[ 1 ] , Q[ 1 ] );
+    #handled[ 1, 1 ] = true;
+
+    enqueue!( pq, (1,1), dp[ 1, 1 ] );
+
+    iters::Int64 = 0;
+    while  ! isempty( pq )
+        iters = iters + 1;
+
+        ele = peek( pq );
+        i, j = ele[ 1 ];
+        value = ele[ 2 ];
+        dequeue!( pq );
+
+        if  handled[ i, j ]
+            continue;
+        end
+
+        
+        handled[ i, j ] = true;
+        if  ( ( i == n_p )  &&  ( j == n_q ) )
+            break;
+        end
+
+        # Now we need to schedule the next two adjacent entries..
+        if  ( i < n_p )
+            push_value( i + 1, j, dp[ i, j ], i );
+        end
+        if  ( j < n_q )
+            push_value( i, j+1, dp[ i, j ], i );
+        end
+    end
+
+    m = d_frechet_extract_solution( P, Q, dp_dec_i, n_p, n_q );
+    m.iters = iters;
+
+    return  m;
+end
+
+
+
+
+
 
 """
     frechet_d_compute_sample
