@@ -384,16 +384,15 @@ DictVerticesType = Dict{Int64, TreeVertex};
     handled::DictHandledType;
     prev_map::DictVERType;
     pq::PriorityQueue{Int64,Float64};
-
-    n_p::Int64 = 0
-    n_q::Int64 = 0
+    n_p::Int64 = 0;
+    n_q::Int64 = 0;
 end
 
 function  ADTWContext(P::Polygon{N,T}, Q::Polygon{N,T}) where {N,T}
-    return ADTWContext( P, Q, Vector{Float64}(),  Vector{Float64}(),
+    return ADTWContext( P, Q,
+                        DictVerticesType(),
                         DictHandledType(),
                         DictVERType(),
-                        DictVerticesType(),
                         PriorityQueue{Int64,Float64}(),
                         cardin( P ), cardin( Q ) );
 end
@@ -447,12 +446,12 @@ function  adtw_get_event_value( _id::Int64, _prev_id::Int64, prev_val::Float64,
 
     val = ( l_p + l_q ) * l_avg;
 
-    return   prev_val + val;;
+    return   prev_val + val;
 end
 
 
 function  adtw_new_event( id::Int64, id_prev::Int64, value::Float64,
-                          c::FRContext{N,T} ) where {N,T}
+                          c::ADTWContext{N,T} ) where {N,T}
     ev = TreeVertex( id );
     ev.id_prev = id_prev;
     ev.r = ev.val = value;
@@ -467,11 +466,11 @@ function  adtw_schedule_event( id::Int64, id_prev::Int64,
     if  ! is_schedule_event( c.handled, id, c.n_p, c.n_q )
         return
     end
-    ev_prev::TreeVertex = vertices[ id_prev ];
+    ev_prev::TreeVertex = c.vertices[ id_prev ];
     new_val = adtw_get_event_value( id, id_prev, ev_prev.val, c );
-    ev::TreeVertex;
-    if  haskey( vertices, id )
-        ev = vertices[ id ];
+    local ev;
+    if  haskey( c.vertices, id )
+        ev = c.vertices[ id ];
         if  ( ev.val < new_val )  # already better event scheduled.
             return;
         end
@@ -481,6 +480,9 @@ function  adtw_schedule_event( id::Int64, id_prev::Int64,
     end
 
     ev.id_prev = id_prev;
+    if  haskey( c.pq, id )
+        delete!( c.pq, id );
+    end
     enqueue!( c.pq, id, new_val );
 
     return  ev
@@ -493,14 +495,14 @@ end
 #
 # Returns a Morphing that encodes the solution
 ##########################################################################
-function   adtw_compute( P::Polygon{N,T}, Q::Polygon{N,T} ) where {N,T}
+function   ADTW_compute( P::Polygon{N,T}, Q::Polygon{N,T} ) where {N,T}
     f_debug::Bool = false;
     c::ADTWContext{N,T} = ADTWContext( P, Q )
 
     start_id = EID( 1, true, 1, true );
 
     id_end = EID( c.n_p, true, c.n_q, true );
-    start_event = adtw_new_event( start_id, stard_id, 0.0, c );
+    start_event = adtw_new_event( start_id, start_id, 0.0, c );
 
     enqueue!( c.pq, start_id, start_event.val );
 
@@ -562,11 +564,6 @@ function   adtw_compute( P::Polygon{N,T}, Q::Polygon{N,T} ) where {N,T}
 
     return  morph
 end
-
-
-
-
-
 
 
 

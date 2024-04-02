@@ -966,6 +966,7 @@ export  BBox_init, BBox_bound, BBox_expand, BBox_print, BBox_width
 export  cardin, Dist, DistSq, VecPolygon2F
 export  BBox_bottom_left, BBox_top_right
 
+export  induced_seg_nn_point
 
 export  Polygon_prefix_lengths
 

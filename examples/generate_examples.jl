@@ -1402,18 +1402,10 @@ function  create_demo( title::String,
         m_ve_r = frechet_ve_r_compute( poly_a, poly_b );
     end
 
-    #println( "PSR #: ", cardin( fcei.PSR ) ); println( "QSR #: ",
-    #cardin( fcei.QSR ) ); println( "P #: ", cardin( poly_a ) );
-    #println( "Q #: ", cardin( poly_b ) );
-    #output_polygons_to_file_with_offsets( [fcei.PSR, fcei.QSR,
-    #poly_a, poly_b ],
-    #                                      [fcei.PSR_offs, fcei.QSR_offs ],
-    #                                      prefix * "o_curves.pdf", true );
-#    exit( -1 );
 
-
-
+    f_adtw::Bool = false;
     if  ( cardi < 5000 )
+        f_adtw = true;
         if  ( cardi < 100 )
             f_sampled_10 = true;
             P = Polygon_sample_uniformly( poly_a, 10*cardin( poly_a ) );
@@ -1426,6 +1418,10 @@ function  create_demo( title::String,
         m_d_dtw = DTW_d_compute( P, Q );
         m_d_r = frechet_d_r_compute( P, Q );
         f_computed_d = true;
+    end
+
+    if  f_adtw
+        m_adtw = ADTW_compute( poly_a, poly_b );
     end
 
     local m_refinements::Vector{Morphing2F} = Vector{Morphing2F}();
@@ -1676,6 +1672,10 @@ function  create_demo( title::String,
     write( fl, "<hr>\n" );
 
 
+    if  ( f_adtw )
+        output_frechet_movie_mp4( m_adtw, prefix*"adtw.mp4",
+            400, true );
+    end
     if  ( f_computed_d )
         output_frechet_movie_mp4( m_d_dtw, prefix*"d_dtw.mp4",
                                   400, true );
@@ -1719,7 +1719,7 @@ function  create_demo( title::String,
         write( fl, "</video>\n" );
 
 
-        
+
         println( fl, "<hr>" );
         println( fl, "P # vertices: ", cardin( P ), "<br>" );
         println( fl, "P # vertices: ", cardin( Q ), "<br>" );
@@ -1753,6 +1753,13 @@ function  create_demo( title::String,
     write( fl, "   src=\"ortho/c.mp4\" type=\"video/mp4\" />\n" );
     write( fl, "</video>\n" );
 
+    if  f_adtw
+        println( fl, "<hr>" * "\n" );
+        println( fl, "<h2>ADTW</h2>\n" );
+        write( fl, "\n\n <video controls autoplay " );
+        write( fl, "   src=\"adtw.mp4\" type=\"video/mp4\" />\n" );
+        write( fl, "</video>\n" );
+    end
 
     println( fl, "<hr>\n" );
     dt=now();
