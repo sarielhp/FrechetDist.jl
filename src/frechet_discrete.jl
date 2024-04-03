@@ -255,7 +255,7 @@ function   DTW_d_compute( P::Polygon{N,T}, Q::Polygon{N,T}
               &&  ( dp[ ia, ja ] <= new_val ) )
             return;
         end
-        #dp[ ia, ja ] = new_val;
+        dp[ ia, ja ] = new_val;
         pq[ ia, ja ] = new_val;  # Push to queue
         dp_dec_i[ ia, ja ] = ( i < ia );
     end
@@ -272,13 +272,17 @@ function   DTW_d_compute( P::Polygon{N,T}, Q::Polygon{N,T}
         ele = peek( pq );
         i, j = ele[ 1 ];
         value = ele[ 2 ];
-        dequeue!( pq );
 
+        #println( "  VALUE   : ", value );
+        #println( "  dp[", i, ", ", j, "] : ", dp[ i, j ] );
+        #println( pq );
+
+        dequeue!( pq );
         if  handled[ i, j ]
             continue;
         end
 
-        
+
         handled[ i, j ] = true;
         if  ( ( i == n_p )  &&  ( j == n_q ) )
             break;
@@ -286,16 +290,17 @@ function   DTW_d_compute( P::Polygon{N,T}, Q::Polygon{N,T}
 
         # Now we need to schedule the next two adjacent entries..
         if  ( i < n_p )
-            push_value( i + 1, j, dp[ i, j ], i );
+            push_value( i + 1, j, value, i );
         end
         if  ( j < n_q )
-            push_value( i, j+1, dp[ i, j ], i );
+            push_value( i, j+1, value, i );
         end
     end
 
     m = d_frechet_extract_solution( P, Q, dp_dec_i, n_p, n_q );
     m.iters = iters;
 
+    #exit( -1 );
     return  m;
 end
 

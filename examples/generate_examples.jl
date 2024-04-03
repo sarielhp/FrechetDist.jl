@@ -1381,6 +1381,7 @@ function  create_demo( title::String,
     println( "   ", filename_curves );
 
     local P, Q, m_d, m_d_r, m_ve_r, m_refinments;
+    local m_d_dtw, m_adtw;
     f_computed_d::Bool = false;
     f_sampled_10::Bool = false;
 
@@ -1672,10 +1673,6 @@ function  create_demo( title::String,
     write( fl, "<hr>\n" );
 
 
-    if  ( f_adtw )
-        output_frechet_movie_mp4( m_adtw, prefix*"adtw.mp4",
-            400, true );
-    end
     if  ( f_computed_d )
         output_frechet_movie_mp4( m_d_dtw, prefix*"d_dtw.mp4",
                                   400, true );
@@ -1727,6 +1724,11 @@ function  create_demo( title::String,
         println( fl, "Retract DFréchet iters : ", m_d_r.iters, "<br>" );
     end
 
+    if  ( f_adtw )
+        output_frechet_movie_mp4( m_adtw, prefix*"adtw.mp4",
+            400, true );
+    end
+    
     if  ( f_refinements )
         println( fl, "<hr>" * "\n" );
         println( fl, "<h2>Refinement for removing monotonicity</h2>\n" );

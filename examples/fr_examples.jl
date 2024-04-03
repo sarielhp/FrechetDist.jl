@@ -405,9 +405,9 @@ function  example_17_dtw()
     polya = Polygon2F(  );
     polyb = Polygon2F(  );
 
-    k = 100;
+    k = 200;
     
-    push!( polya, point(-1.0, -0.1 ), point( 8.0, -0.1 ) );
+    push!( polya, point(-1.0, -0.1 ), point( 6.0, -0.1 ) );
 
     spiral_ext( polya, point(2.0,0.3), 1.0, k, 1.0, Float64(pi),
                 1.5 * Float64(pi) );
