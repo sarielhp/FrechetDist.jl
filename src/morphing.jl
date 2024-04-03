@@ -54,6 +54,7 @@ Encoding of a moprhing (i.e., matching) between two polygonal cuves.
 #    leash_offsets::Float64
     iters::Int64
     ratio::Float64
+    monotone_err::Float64
 end
 
 function   Morphing_init( P::Polygon{N,T}, Q::Polygon{N,T},
@@ -61,7 +62,8 @@ function   Morphing_init( P::Polygon{N,T}, Q::Polygon{N,T},
     qes::Vector{EventPoint{N,T}} ) where {N,T}
 
     @assert( length( pes ) == length( qes ) );
-    m = Morphing( P, Q, pes, qes, 0.0, 0, 0.0 );
+    m = Morphing( P, Q, pes, qes,
+                  0.0, 0, 0.0, 0.0 );
     Morphing_recompute_leash( m );
 
     return  m;
@@ -123,7 +125,7 @@ function   Morphing_empty( P::Polygon{N,T}, Q::Polygon{N,T} )  where {N,T}
     pes = Vector{EventPoint{N,T}}();
     qes = Vector{EventPoint{N,T}}()
     r::Float64 = -1;
-    return  Morphing( P, Q, pes, qes, r, 0, 0.0 );
+    return  Morphing( P, Q, pes, qes, r, 0, 0.0, 0.0 );
 end
 
 
@@ -175,6 +177,7 @@ function  events_seq_make_monotone( P::Polygon{N,T},
 
     len = length( s );
     i::Int64 = 1;
+    delta = 0.0;
     while  ( i <= len )
         ep = s[ i ];
         if  ep.type == PT_VERTEX
@@ -192,9 +195,11 @@ function  events_seq_make_monotone( P::Polygon{N,T},
             nep = deepcopy( s[ j ] );
             t = max( t, nep.t );
             if  ( t > nep.t )
-                nep.t = t;
                 ell = Dist( P[ nep.i ], P[ nep.i + 1 ] );
-                nep.p = convex_comb( P[ nep.i ], P[ nep.i + 1 ], t );
+                delta = max( delta, ( t - nep.t ) * ell );
+                nep.t = t;
+                nep.p = convex_comb( P[ nep.i ], P[ nep.i + 1 ],
+                                     t  );
             end
             push!( ns, nep );
             j = j + 1
@@ -202,9 +207,11 @@ function  events_seq_make_monotone( P::Polygon{N,T},
 
         nep = deepcopy( s[ j ] );
         if  ( t > nep.t )
-            nep.t = t;
-            nep.p = convex_comb( P[ nep.i ], P[ nep.i + 1 ], t );
             ell = Dist( P[ nep.i ], P[ nep.i + 1 ] );
+            delta = max( delta, ( t - nep.t ) * ell );
+            nep.t = t;
+            nep.p = convex_comb( P[ nep.i ], P[ nep.i + 1 ],
+                                 t );
         end
         push!( ns, nep );
 
@@ -212,7 +219,7 @@ function  events_seq_make_monotone( P::Polygon{N,T},
     end
 
     @assert( length( ns ) == length( s ) );
-    return  ns;
+    return  ns, delta;
 end
 
 function  Morphing_recompute_leash( m::Morphing{N,T} ) where  {N,T}
@@ -275,9 +282,15 @@ function  Morphing_monotonize( m::Morphing{N,T} ) where {N,T}
     P = m.P;
     Q = m.Q;
 
-    pes_new = events_seq_make_monotone( P, m.pes );
-    qes_new = events_seq_make_monotone( Q, m.qes );
-    return  Morphing_init( P, Q, pes_new, qes_new );
+    pes_new, da = events_seq_make_monotone( P, m.pes );
+    qes_new, db = events_seq_make_monotone( Q, m.qes );
+
+
+    m_out = Morphing_init( P, Q, pes_new, qes_new );
+
+    m_out.monotone_err = max( da, db );
+
+    return  m_out;
 end
 
 

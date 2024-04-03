@@ -1423,6 +1423,7 @@ function  create_demo( title::String,
 
     if  f_adtw
         m_adtw = ADTW_compute( poly_a, poly_b );
+        m_adtw_r_m = ADTW_compute_refine_mono( poly_a, poly_b );
     end
 
     local m_refinements::Vector{Morphing2F} = Vector{Morphing2F}();
@@ -1727,6 +1728,8 @@ function  create_demo( title::String,
     if  ( f_adtw )
         output_frechet_movie_mp4( m_adtw, prefix*"adtw.mp4",
             400, true );
+        output_frechet_movie_mp4( m_adtw_r_m, prefix*"adtw_r_m.mp4",
+            400, true );
     end
     
     if  ( f_refinements )
@@ -1760,6 +1763,10 @@ function  create_demo( title::String,
         println( fl, "<h2>ADTW</h2>\n" );
         write( fl, "\n\n <video controls autoplay " );
         write( fl, "   src=\"adtw.mp4\" type=\"video/mp4\" />\n" );
+        write( fl, "</video>\n" );
+        println( fl, "<h2>ADTW refined monotone</h2>\n" );
+        write( fl, "\n\n <video controls autoplay " );
+        write( fl, "   src=\"adtw_r_m.mp4\" type=\"video/mp4\" />\n" );
         write( fl, "</video>\n" );
     end
 
