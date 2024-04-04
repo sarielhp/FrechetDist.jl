@@ -954,6 +954,27 @@ function  Polygon_read_plt_file( filename )
 end
 
 
+"""
+    segs_match_price
+
+The price of matching the edge p_a-p_b to the edge q_a-q_b. 
+"""
+function  segs_match_price( p_a::Point{N,T},
+                      p_b::Point{N,T},
+                      q_a::Point{N,T},
+                      q_b::Point{N,T} ) where {N,T}
+
+    l_a = Dist( p_a, q_a );
+    l_b = Dist( p_b, q_b );
+
+    l_p = Dist( p_a, p_b );
+    l_q = Dist( q_a, q_b );
+
+    l_avg = ( l_a + l_b ) / 2.0;
+
+    return   ( l_p + l_q ) * l_avg;
+end
+
 #####################################################################
 
 export Segment
@@ -996,5 +1017,7 @@ export  VecPnts_as_matrix
 export  dist_seg_nn_point
 
 export  convex_comb
+
+export  segs_match_price
 
 end

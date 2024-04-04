@@ -1220,6 +1220,8 @@ function  get_event_points( c::ADTWContext{N,T}, id::Int64 ) where {N,T}
     return  P[1], Q[1];
 end
 
+
+
 function  adtw_get_event_value( _id::Int64, _prev_id::Int64, prev_val::Float64,
                                 c::ADTWContext{N,T} ) where {N,T}
     ev = TreeVertex( _id );
@@ -1227,17 +1229,7 @@ function  adtw_get_event_value( _id::Int64, _prev_id::Int64, prev_val::Float64,
     o_p, o_q = get_event_points( c, _prev_id );
     n_p, n_q = get_event_points( c, _id );
 
-    l_p = Dist( o_p, n_p );
-    l_q = Dist( o_q, n_q );
-
-    l_n = Dist( n_p, n_q );
-    l_o = Dist( o_p, o_q );
-
-    l_avg = ( l_n + l_o ) / 2.0;
-
-    val = ( l_p + l_q ) * l_avg;
-
-    return   prev_val + val;
+    return   prev_val + segs_match_price( o_p, n_p, o_q, n_q );
 end
 
 

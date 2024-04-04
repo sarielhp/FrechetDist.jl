@@ -750,6 +750,21 @@ function  Morphing_combine( u::Morphing{N,T}, v::Morphing{N,T} ) where {N,T}
     return  m;
 end
 
+
+function  Morphing_adtw_price( m::Morphing{N,T} ) where  {N,T}
+    P,Q = Morphing_as_polygons( m );
+
+    len = cardin( P );
+    price::Float64 = 0;
+    for  i in 1: len-1
+        price = price + segs_match_price( P[ i ], P[ i + 1 ],
+                                          Q[ i ], Q[ i + 1 ] );
+    end
+
+    return  price;
+end
+
+
 Morphing2F = Morphing{2,Float64};
 
 #
