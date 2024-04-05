@@ -1363,9 +1363,9 @@ function  html_open_w_file( filename::String, title::String )
     #println( "Writing file\n\n\n\n\n" );
 
     write( fl, "<head>\n"
-           *"<meta charset=\"UTF-8\">"
-           *"<TITLE>" *title* </TITLE>\n"
-           *"<script type=\"text/x-mathjax-config\">\n"
+           * "<meta charset=\"UTF-8\">"
+           * "<TITLE>" * title * "</TITLE>\n"
+           * "<script type=\"text/x-mathjax-config\">\n"
            * "MathJax.Hub.Config({ tex2jax: "
            * "{inlineMath: [[\'\$\',\'\$\'], [\'\\(','\\)']]}"
            * "});\n"
@@ -1610,6 +1610,8 @@ function  create_demo( title::String,
     write( fl, "<img src=\"curves.png\" />\n" )
     write( fl, "<hr>\n" )
 
+    write( fl, "<a href=\"ADTW/\">ADTW</a>\n<hr>\n\n" );
+    
     if  ( length( note ) > 0 )
         write( fl, "\n" )
         write( fl, "<!--- NOTE START --->\n" )
@@ -1762,34 +1764,37 @@ function  create_demo( title::String,
 
     if  ( f_adtw )
         is_mkdir( dir_ADTW )
-        fl_adtw = html_open_w_file( dir_ADTW, "ADTW distances/morhpings" );
+        fl_adtw = html_open_w_file( dir_ADTW * "index.html",
+                                    "ADTW distances/morhpings" );
 
-        output_frechet_movie_mp4( m_adtw, prefix_ADTW * "adtw.mp4",
+        output_frechet_movie_mp4( m_adtw, dir_ADTW * "adtw.mp4",
             400, true );
-        html_write_video_file( fl_adtw, prefix_ADTW * "adtw.mp4",
+        html_write_video_file( fl_adtw,  "adtw.mp4",
             "ADTW (not necessarily monotone)" );
 
-        output_frechet_movie_mp4( m_adtw_r_m, prefix_ADTW * "adtw_r_m.mp4",
+        output_frechet_movie_mp4( m_adtw_r_m, dir_ADTW * "adtw_r_m.mp4",
             400, true );
-        html_write_video_file( fl_adtw, prefix_ADTW * "adtw_r_m.mp4",
+        html_write_video_file( fl_adtw, "adtw_r_m.mp4",
             "ADTW monotonize via refinement" );
 
         for  i in eachindex( m_adtw_vec )
             str_num = @sprintf( "%06d", i )
-            mvname = prefix_ADTW * "/" * @sprintf( "%06d.mp4", i )
-            output_frechet_movie_mp4( m_adtw_vec[ i ], mvname, 400, true );
+            mvname = @sprintf( "%06d.mp4", i )
+            output_frechet_movie_mp4( m_adtw_vec[ i ], dir_ADTW * mvname,
+                                      400, true );
             html_write_video_file( fl_adtw, mvname,
                 "Level "*str_num* " of ADTW (splitting edges)<br>\n" );
         end
         
-        writeln( fl_adtw, "<hr>\n" );
+        println( fl_adtw, "<hr>\n" );
         for  i in eachindex( m_adtw_vec )
             m = m_adtw_vec[ i ];
-            write( fl_adtw, i );
-            writeln( fl_adtw, ": ", Morphing_adtw_price( m ) );
+            println( fl_adtw, i );
+            println( fl_adtw, ": ", Morphing_adtw_price( m ) );
+            println( fl_adtw, "<br>\n" );
 #            writeln( fl,adtw, "\n );
         end
-        writeln( fl_adtw, "\n\n<hr>\n" );
+        println( fl_adtw, "\n\n<hr>\n" );
         html_close( fl_adtw );
     end
 

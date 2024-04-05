@@ -36,6 +36,7 @@ export  Morphing_monotonize, Morphing_empty, Morphing_verify_valid
 export  Morphing_combine, Morphing_extract_prm
 export  Morphing_as_polygons
 export  Morphing_extract_vertex_radii, Morphing_extract_offsets
+export  Morphing_adtw_price
 
 
 #####################################################################
@@ -61,6 +62,6 @@ export  DTW_d_compute;
 
 export  ADTW_compute;
 export  ADTW_compute_refine_mono;
-
+export  ADTW_compute_split;
 
 end

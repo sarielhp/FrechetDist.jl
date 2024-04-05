@@ -1383,7 +1383,7 @@ function   ADTW_compute_split(
     poly_b::Polygon{N,T},
     out::Vector{Morphing{N,T}} ) where {N,T}
 
-    m = ADTW_compute_refine_mono( P, Q );
+    m = ADTW_compute_refine_mono( poly_a, poly_b );
     push!( out, m );
     P = m.P;
     Q = m.Q;

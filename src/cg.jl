@@ -614,12 +614,12 @@ introducing a vertex into it.
 """
 function  Polygon_split_edges( P::Polygon{D,T} ) where {D,T}
     l = cardin( P );
-    Q = Polygon{N,T}();
+    Q = Polygon{D,T}();
     if  l == 0
         return  Q;
     end;
     for  i in 1:l-1
-        p::Point{N,T} = ( P[ i ] + P[ i + 1 ] )/2.0;
+        p::Point{D,T} = ( P[ i ] + P[ i + 1 ] )/2.0;
         Polygon_push_smart( Q, P[ i ] );
         Polygon_push_smart( Q, p ); 
     end
