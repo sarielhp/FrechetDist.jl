@@ -1356,6 +1356,52 @@ function chop_it( s::String, c )
     return  String( s );
 end
 
+
+function  html_open_w_file( filename::String, title::String )
+    fl = open( filename, "w" )
+
+    #println( "Writing file\n\n\n\n\n" );
+
+    write( fl, "<head>\n"
+           *"<meta charset=\"UTF-8\">"
+           *"<TITLE>" *title* </TITLE>\n"
+           *"<script type=\"text/x-mathjax-config\">\n"
+           * "MathJax.Hub.Config({ tex2jax: "
+           * "{inlineMath: [[\'\$\',\'\$\'], [\'\\(','\\)']]}"
+           * "});\n"
+           * "</script>\n"
+           * "<script type=\"text/javascript\"\n"
+           * "src=\"http://cdn.mathjax.org/mathjax/latest/MathJax.js"
+           * "config=TeX-AMS-MML_HTMLorMML\">\n"
+           * "</script>\n"
+           * "<meta charset=\"UTF-8\">\n"
+           * "</head>" )
+    write( fl, "<body>\n" );
+
+    return  fl;
+end
+
+function  html_close( fl )
+    println( fl, "<hr>\n" );
+    dt=now();
+    date_str = Dates.format(dt, "yyyy-mm-dd HH:MM:SS")
+    write( fl, date_str );
+
+    write( fl, "\n\n</body>\n" );
+    close( fl );
+end
+
+function   html_write_video_file( fl, mvname::String,
+    title::String )
+
+    write( fl, "\n<h2>"*title*"</h2>\n\n" );
+
+    write( fl, "<video controls autoplay " );
+    write( fl, "   src=\""*mvname*"\" "
+               * " type=\"video/mp4\" />\n" );
+    write( fl, "</video>\n\n" );
+end
+
 function  create_demo( title::String,
                        prefix::String,
                        poly_a, poly_b,
@@ -1382,6 +1428,9 @@ function  create_demo( title::String,
 
     local P, Q, m_d, m_d_r, m_ve_r, m_refinments;
     local m_d_dtw, m_adtw;
+
+    m_adtw_vec = Vector{Morphing2F}();
+
     f_computed_d::Bool = false;
     f_sampled_10::Bool = false;
 
@@ -1424,6 +1473,7 @@ function  create_demo( title::String,
     if  f_adtw
         m_adtw = ADTW_compute( poly_a, poly_b );
         m_adtw_r_m = ADTW_compute_refine_mono( poly_a, poly_b );
+        ADTW_compute_split( poly_a, poly_b, m_adtw_vec );
     end
 
     local m_refinements::Vector{Morphing2F} = Vector{Morphing2F}();
@@ -1455,7 +1505,7 @@ function  create_demo( title::String,
         PU, QU = Morphing_as_polygons( m_ve_r );
         output_polygons_to_file(  [PU, QU], prefix*"ve_matching.pdf",
                                   true, true, true );
-        #XXX
+
     end
 
     plot_curves_diagram( poly_a, poly_b, prefix*"diagram.pdf",
@@ -1545,26 +1595,8 @@ function  create_demo( title::String,
     #########################################################
     # Html file...
     #########################################################
+    fl = html_open_w_file( prefix*"index.html", prefix );
 
-    fl = open( prefix * "index.html", "w" )
-
-    println( "Writing file\n\n\n\n\n" );
-
-    write( fl, "<head>\n"
-           *"<meta charset=\"UTF-8\">"
-           *"<TITLE>$prefix</TITLE>\n"
-           *"<script type=\"text/x-mathjax-config\">\n"
-           * "MathJax.Hub.Config({ tex2jax: "
-           * "{inlineMath: [[\'\$\',\'\$\'], [\'\\(','\\)']]}"
-           * "});\n"
-           * "</script>\n"
-           * "<script type=\"text/javascript\"\n"
-           * "src=\"http://cdn.mathjax.org/mathjax/latest/MathJax.js"
-           * "config=TeX-AMS-MML_HTMLorMML\">\n"
-           * "</script>\n"
-           * "<meta charset=\"UTF-8\">\n"
-           * "</head>" )
-    write( fl, "<body>\n" );
     write( fl, "<h1>", title, "</h1>\n" );
 
 
@@ -1725,13 +1757,42 @@ function  create_demo( title::String,
         println( fl, "Retract DFréchet iters : ", m_d_r.iters, "<br>" );
     end
 
+    dir_ADTW = prefix*"ADTW/";
+    local  fl_adtw;
+
     if  ( f_adtw )
-        output_frechet_movie_mp4( m_adtw, prefix*"adtw.mp4",
+        is_mkdir( dir_ADTW )
+        fl_adtw = html_open_w_file( dir_ADTW, "ADTW distances/morhpings" );
+
+        output_frechet_movie_mp4( m_adtw, prefix_ADTW * "adtw.mp4",
             400, true );
-        output_frechet_movie_mp4( m_adtw_r_m, prefix*"adtw_r_m.mp4",
+        html_write_video_file( fl_adtw, prefix_ADTW * "adtw.mp4",
+            "ADTW (not necessarily monotone)" );
+
+        output_frechet_movie_mp4( m_adtw_r_m, prefix_ADTW * "adtw_r_m.mp4",
             400, true );
+        html_write_video_file( fl_adtw, prefix_ADTW * "adtw_r_m.mp4",
+            "ADTW monotonize via refinement" );
+
+        for  i in eachindex( m_adtw_vec )
+            str_num = @sprintf( "%06d", i )
+            mvname = prefix_ADTW * "/" * @sprintf( "%06d.mp4", i )
+            output_frechet_movie_mp4( m_adtw_vec[ i ], mvname, 400, true );
+            html_write_video_file( fl_adtw, mvname,
+                "Level "*str_num* " of ADTW (splitting edges)<br>\n" );
+        end
+        
+        writeln( fl_adtw, "<hr>\n" );
+        for  i in eachindex( m_adtw_vec )
+            m = m_adtw_vec[ i ];
+            write( fl_adtw, i );
+            writeln( fl_adtw, ": ", Morphing_adtw_price( m ) );
+#            writeln( fl,adtw, "\n );
+        end
+        writeln( fl_adtw, "\n\n<hr>\n" );
+        html_close( fl_adtw );
     end
-    
+
     if  ( f_refinements )
         println( fl, "<hr>" * "\n" );
         println( fl, "<h2>Refinement for removing monotonicity</h2>\n" );
@@ -1770,17 +1831,7 @@ function  create_demo( title::String,
         write( fl, "</video>\n" );
     end
 
-    println( fl, "<hr>\n" );
-    dt=now();
-    date_str = Dates.format(dt, "yyyy-mm-dd HH:MM:SS")
-    write( fl, date_str );
-
-
-    write( fl, "</body>\n" );
-
-
-    close( fl );
-
+    html_close( fl );
 end
 
 

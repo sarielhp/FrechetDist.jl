@@ -1378,6 +1378,25 @@ function   ADTW_compute_refine_mono( poly_a::Polygon{N,T},
     return  m_new;
 end
 
+function   ADTW_compute_split(
+    poly_a::Polygon{N,T},
+    poly_b::Polygon{N,T},
+    out::Vector{Morphing{N,T}} ) where {N,T}
+
+    m = ADTW_compute_refine_mono( P, Q );
+    push!( out, m );
+    P = m.P;
+    Q = m.Q;
+    for  i in 1:5
+        P = Polygon_split_edges( P );
+        Q = Polygon_split_edges( Q );
+        mi = ADTW_compute_refine_mono( P, Q );
+        push!( out, mi );
+    end
+end
+
+
+
 #
 # End of file
 ##########################################################################

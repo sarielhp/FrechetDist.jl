@@ -474,6 +474,8 @@ function Polygon{D,T}()  where {D,T}
     return  Polygon{D,T}( vec );
 end
 
+
+
 function  Polygon_translate!( P::Polygon{D,T}, v::Point{D,T} ) where {D,T}
     for  p in P.pnts
         p.x = p.x - v.x;
@@ -601,6 +603,31 @@ function  Polygon_push_smart( pout::Polygon{D,T}, p::Point{D,T} ) where  {D,T}
     end
     return  false
 end
+
+
+
+"""
+    Polygon_split_edges
+
+Output a polygon, where each edge is split in the middle by
+introducing a vertex into it.
+"""
+function  Polygon_split_edges( P::Polygon{D,T} ) where {D,T}
+    l = cardin( P );
+    Q = Polygon{N,T}();
+    if  l == 0
+        return  Q;
+    end;
+    for  i in 1:l-1
+        p::Point{N,T} = ( P[ i ] + P[ i + 1 ] )/2.0;
+        Polygon_push_smart( Q, P[ i ] );
+        Polygon_push_smart( Q, p ); 
+    end
+    Polygon_push_smart( Q, P[ l ] );
+
+    return  Q;
+end
+
 
 function  Polygon_push( pout::Polygon{D,T}, p::Point{D,T} ) where  {D,T}
     push!( pout, deepcopy( p ) );
@@ -1011,6 +1038,7 @@ export  Polygon_as_matrix
 export  Polygon_write_to_file
 export  Polygon_random
 export  Polygon_convex_comb
+export  Polygon_split_edges
 
 export  VecPnts_as_matrix
 
