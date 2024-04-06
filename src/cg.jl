@@ -21,7 +21,7 @@ using DelimitedFiles
 """
     Point
 
-    Point in N dimensions. Implemented currently as a struct with
+    Point in D dimensions. Implemented currently as a struct with
     StaticArray for values. It is templated, with `N` for dimension,
     and `T` for underlying type.
 
@@ -234,7 +234,7 @@ end
 
 
 """
-    Line in N dimensions.
+    Line in D dimensions.
 
     `p` is a point on the line and `u` is the direction vector (not
     necessarily normalized). Parametrised as \$p + ut\$
@@ -297,6 +297,10 @@ function  Dist( s::Segment{D,T}, qr::Point{D,T} ) where {D,T}
     return  Dist( nn, qr );
 end
 
+function  Dist( a::Segment{D,T}, b::Segment{D,T} ) where {D,T}
+    return  iseg_iseg_dist( a.p, a.q, b.p, b.q );
+end
+
 function  Segment_get_convex_coef( s::Segment{D,T}, qr::Point{D,T} ) where{D,T}
     d = Dist( s.p, qr );
     len = Segment_length( s );
@@ -350,6 +354,96 @@ function  induced_seg_nn_point( s_p::Point{D,T}, s_q::Point{D,T},
         return  s_q;
     end
 end
+
+
+function  iseg_iseg_dist( a_p::Point{D,T}, a_q::Point{D,T},
+    b_p::Point{D,T}, b_q::Point{D,T} ) where {D,T}
+    # v(s,t) = a_p*(1-s) + a_q * s - b_p*(1-t) - b_q * t
+    #      = (a_p - b_p) + s*(a_q-a_p) + t*(b_p-b_q)
+    #      = v_1 + s * v_2 + t * v_3
+    v_1 = a_p - b_p;
+    v_2 = a_q - a_p;
+    v_3 = b_p - b_q;
+
+    #=
+
+    D(s,t)
+    = <v_1 + s*v_2 + t *v_3, v_1 + s*v_2 + t *v_3>
+    = ||v_1||^2 + 2* s <v_1, v_2> + 2*t<v_1,v_3>
+    + s^2 * ||v_2||^2 + 2*s*t*<v_2,v_3>  + t^2 ||v_3||^2
+    =
+    Need to solve the linear system:
+
+    0 = D'_s(s,t) = 2*<v_1,v_2> + 2*s*||V_2||^2 + 2*t<v_2,v_3>
+    0 = D'_t(s,t) = 2*<v_1,v_3> + 2*s*<v_2,v_3> + 2*t * ||v_3||^2
+
+    =#
+
+    # Coefficients
+    c = [ (-2.0 * dot( v_1, v_2 )),   (-2.0*dot( v_1, v_3 ) ) ];
+
+    m = [ (2.0*dot(v_2, v_2))  ( 2.0*dot(v_2, v_3) );
+         (2.0*dot(v_2, v_3))  ( 2.0*dot(v_3, v_3) ) ];
+
+    rk = rank( m );
+    @assert( rk > 0 );
+    s::Float64 = 0.0;
+    y::Float64 = 0.0;
+    println( "rk = ", rk );
+    if  ( rk == 1 )
+        println( "RK!" );
+        # m[1] * s + m[2] * t = c[ 1 ]
+        if  m[ 1] != 0.0
+            t = 0;
+            s = c[1] / m[1];
+        else
+            if  m[ 2 ] != 0.0
+                s = 0.0;
+                t = c[1] / m[2];
+            else
+                @assert( "m[1]=0 && m[2]=0???" );
+                s= t= 0.0;
+            end
+        end
+    else
+        println( "--- a, b --------------------" );
+        println( a_p, a_q );
+        println( b_p, b_q );
+
+        println( "--- v_1,2,3 --------------------" );
+
+        println( v_1 );
+        println( v_2 );
+        println( v_3 );
+
+        println( "\n\n--- m --------------------" );
+        println( "rank m: ", rank( m ) );
+        println( m );
+        println( "\n\n--- c --------------------" );
+        println( c );
+
+        println( "m.size: ", size( m ) );
+        println( "c.size: ", size( c ) );
+
+        # Solve the system...
+        b = m \ c;
+        println( "b.size: ", size( b ) );
+        s = b[ 1 ];
+        t = b[ 2 ];
+    end
+
+    # Snap solution if needed to the [0,1.0] interval....
+    s = max( min( s, 1.0 ), 0.0 )
+    t = max( min( t, 1.0 ), 0.0 )
+
+    d::Float64 =  Dist( convex_comb( a_p, a_q, s ),
+        convex_comb( b_p, b_q, t ) );
+
+    println( "d = ", d );
+
+    return  d;
+end
+
 
 
 #############################################
@@ -549,7 +643,7 @@ function Base.show(io::IO, p::Point{D,T}) where {D,T}
     print( io, "(" );
     for i in 1:D
         print( io, p.x[i] );
-        if   i < N
+        if   i < D
             print( io, ", " );
         end
     end
@@ -621,7 +715,7 @@ function  Polygon_split_edges( P::Polygon{D,T} ) where {D,T}
     for  i in 1:l-1
         p::Point{D,T} = ( P[ i ] + P[ i + 1 ] )/2.0;
         Polygon_push_smart( Q, P[ i ] );
-        Polygon_push_smart( Q, p ); 
+        Polygon_push_smart( Q, p );
     end
     Polygon_push_smart( Q, P[ l ] );
 
@@ -984,7 +1078,7 @@ end
 """
     segs_match_price
 
-The price of matching the edge p_a-p_b to the edge q_a-q_b. 
+The price of matching the edge p_a-p_b to the edge q_a-q_b.
 """
 function  segs_match_price( p_a::Point{N,T},
                       p_b::Point{N,T},
@@ -1015,6 +1109,8 @@ export  cardin, Dist, DistSq, VecPolygon2F
 export  BBox_bottom_left, BBox_top_right
 
 export  induced_seg_nn_point
+
+export  iseg_iseg_dist
 
 export  Polygon_prefix_lengths
 

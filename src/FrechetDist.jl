@@ -61,6 +61,7 @@ export  frechet_c_compute
 export  DTW_d_compute;
 
 export  ADTW_compute;
+export  ADTW_lb_compute;
 export  ADTW_compute_refine_mono;
 export  ADTW_compute_split;
 

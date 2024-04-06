@@ -55,6 +55,7 @@ Encoding of a moprhing (i.e., matching) between two polygonal cuves.
     iters::Int64
     ratio::Float64
     monotone_err::Float64
+    sol_value::Float64
 end
 
 function   Morphing_init( P::Polygon{N,T}, Q::Polygon{N,T},
@@ -63,7 +64,7 @@ function   Morphing_init( P::Polygon{N,T}, Q::Polygon{N,T},
 
     @assert( length( pes ) == length( qes ) );
     m = Morphing( P, Q, pes, qes,
-                  0.0, 0, 0.0, 0.0 );
+                  0.0, 0, 0.0, 0.0, 0.0 );
     Morphing_recompute_leash( m );
 
     return  m;
@@ -125,7 +126,7 @@ function   Morphing_empty( P::Polygon{N,T}, Q::Polygon{N,T} )  where {N,T}
     pes = Vector{EventPoint{N,T}}();
     qes = Vector{EventPoint{N,T}}()
     r::Float64 = -1;
-    return  Morphing( P, Q, pes, qes, r, 0, 0.0, 0.0 );
+    return  Morphing( P, Q, pes, qes, r, 0, 0.0, 0.0, 0.0 );
 end
 
 

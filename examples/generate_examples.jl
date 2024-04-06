@@ -220,7 +220,7 @@ function  output_polygons_to_file(  list::VecPolygon2F, filename,
 
     u_width::Float64 = 1024.0 * (BBox_width( bb) / 800.0);
 
-    BBox_print( bb );
+    #BBox_print( bb );
     set_source_rgb(cr,0.9,0.9,0.9);    # light gray
 #    set_line_width(cr, 10.0);
     set_source_rgba(cr, 1, 0.2, 0.2, 0.6);
@@ -460,7 +460,7 @@ function  compute_frames( pout, qout, total_frames )
         frames[ i ] = num_pnts;
     end
 
-    println( "Total frames #: ", sum( frames ) );
+    #println( "Total frames #: ", sum( frames ) );
     return  frames, steps
 end
 
@@ -595,7 +595,7 @@ function   draw_image_frame( cm::ContextMovie, P, Q, rf::RecFrame )
     line_to( cr, rf.q[1], rf.q[2] );
     Cairo.stroke( cr );
 
-    print( "filename :", filename, "\r" );
+    #print( "filename :", filename, "\r" );
     Cairo.write_to_png( c, filename );
     #Cairo.show_page( cr );
 end
@@ -643,6 +643,7 @@ function  output_frechet_movie_mp4( m::Morphing{N,T},
     total_frames::Int64 = 800,
     f_show_vertices::Bool = false
 ) where {N,T}
+    f_debug::Bool = false;
     cm = ContextMovie(BBox2F(), BBox2F(), 0, 0, 0, "/tmp/r_draw/",
         f_show_vertices );
     cm.bb, cm.bbo = compute_bounding_boxes( [ m.P, m.Q ] );
@@ -700,22 +701,14 @@ function  output_frechet_movie_mp4( m::Morphing{N,T},
     end
 
 
-    println( "Splitting to threads... Sit back ;)" );
-
-    println( Threads.nthreads() );
+    f_debug  &&  println( "Splitting to threads... Sit back ;)" );
+    f_debug  &&  println( Threads.nthreads() );
 
     chunks = Iterators.partition(vec_rf, length(vec_rf) ÷ Threads.nthreads())
     tasks = map(chunks) do chunk
         Threads.@spawn frames_generate( cm, m.P, m.Q, chunk );
     end
     chunk_sums = fetch.(tasks)
-    println( "" );
-    #exit( -1 );
-    # Then we generate the frames (but this can be parallelized!
-#    for  i in eachindex(vec_rf)
-#        draw_image_frame( cm::ContextMovie, m.P, m.Q, vec_rf[ i ] )
-#    end
-
 
     ####
     # We now call ffmpeg to create the movie...
@@ -727,14 +720,14 @@ function  output_frechet_movie_mp4( m::Morphing{N,T},
     rmx( filename );
     rmx( tmp_filename );
 #    println( "ffmpeg $options" );
-    println( "Encoding movie with ffmpeg..." );
+    f_debug && println( "Encoding movie with ffmpeg..." );
     options = [ "-r", "10", "-i",
                cm.dir * "/" * "%06d.png",
                "-c:v", "libx264", tmp_filename ];
     output = read(pipeline( `ffmpeg $options`, stderr="/tmp/errs.txt" ),
         String);
 
-    println( "Rencoding with handbrake..." );
+    f_debug &&  println( "Rencoding with handbrake..." );
 
     # HandBrakeCLI -Z  -i movie.mp4  -o movie_2.mp4
     options_2 = [ "-Z", "Android 1080p30", "-i", tmp_filename,
@@ -743,7 +736,7 @@ function  output_frechet_movie_mp4( m::Morphing{N,T},
                             stderr="/tmp/errs_2.txt" ), String);
     rmx( tmp_filename );
     if  isfile( filename )
-        println( "Created... ", filename );
+        println( "Created: ", filename );
     end
 end
 
@@ -767,17 +760,18 @@ function   encode_to_mp4( dir, filename )
     tmp_filename = "tmp.mp4";
     rmx( filename );
     rmx( tmp_filename );
-    println( "Encoding movie with ffmpeg..." );
+    #println( "Encoding movie with ffmpeg..." );
     options = [ "-r", "10", "-i",
                dir * "/" * "%06d.png",
                "-c:v", "libx264", tmp_filename ];
     output = read(pipeline( `ffmpeg $options`, stderr="/tmp/errs.txt" ),
         String);
 
-    println( "\n\n\n\n\n\n" );
-    println( "Rencoding with handbrake..." );
-    println( filename );
-    println( "\n\n\n\n\n\n" );
+
+    #println( "\n\n\n\n\n\n" );
+    #println( "Rencoding with handbrake..." );
+    #println( filename );
+    #println( "\n\n\n\n\n\n" );
 
     # HandBrakeCLI -Z  -i movie.mp4  -o movie_2.mp4
     options_2 = [ "-Z", "Android 1080p30", "-i", tmp_filename,
@@ -786,7 +780,7 @@ function   encode_to_mp4( dir, filename )
                             stderr="/tmp/errs_2.txt" ), String);
     rmx( tmp_filename );
     if  isfile( filename )
-        println( "Created... ", filename );
+        println( "Created: ", filename );
     end
 end
 
@@ -871,9 +865,9 @@ function  output_ortho_frechet_movie_mp4( m::Morphing{N,T},
         t = t - delta;
     end
 
-    println( "Splitting to threads... Sit back ;)" );
+    #println( "Splitting to threads... Sit back ;)" );
 
-    println( Threads.nthreads() );
+    #println( Threads.nthreads() );
 
     chunks = Iterators.partition(vec_rf, length(vec_rf) ÷ Threads.nthreads())
     tasks = map(chunks) do chunk
@@ -1122,8 +1116,9 @@ function  plot_curves_diagram( P::Polygon2F, Q::Polygon2F,
                                title::String = "",
                                f_draw_graph_only::Bool = false
                                )
+    f_debug::Bool = false;
 
-    println( "Getting ready to draw heatmap/graph/curves..." );
+    f_debug  && println( "Getting ready to draw heatmap/graph/curves..." );
 
     len_P = Polygon_length( P )
     len_Q = Polygon_length( Q )
@@ -1141,7 +1136,7 @@ function  plot_curves_diagram( P::Polygon2F, Q::Polygon2F,
         return Dist( p, q );
     end
 
-    println( "Computing heat map..." );
+    f_debug && println( "Computing heat map..." );
     ### f_draw_graph_only
     if  f_draw_graph_only
         plt = plot( x_range, y_range, 0,
@@ -1162,7 +1157,7 @@ function  plot_curves_diagram( P::Polygon2F, Q::Polygon2F,
     if  ( length( title ) > 0 )
         title!( plt, title );
     end
-    println( "Heat map drawing done..." );
+    f_debug && println( "Heat map drawing done..." );
 
     function  draw_solution( plt )
         if  ( f_draw_c )
@@ -1183,7 +1178,7 @@ function  plot_curves_diagram( P::Polygon2F, Q::Polygon2F,
                 label=:none, ticks=false, showaxis=false,
                 grid=:false, legend=false, framestyle=:none, lc=:red);
         end
-        println( "Drawing arrows..." );
+        f_debug  &&  println( "Drawing arrows..." );
     end
 
     function  draw_grid( plot )
@@ -1265,7 +1260,7 @@ function  plot_curves_diagram( P::Polygon2F, Q::Polygon2F,
             end
         end
 
-        println( xs );
+        f_debug && println( xs );
         quiver!(plt, xs, ys, quiver=(vx, vy),
                 color=ucolor,
                 linewidth=width,
@@ -1276,12 +1271,6 @@ function  plot_curves_diagram( P::Polygon2F, Q::Polygon2F,
         unique!( pnts );
 
         m_pnts = VecPnts_as_matrix( pnts );
-#=        println( "-------------------------------" );
-        println( m_pnts[1,:] );
-        println( "-------------------------------" );
-        println( m_pnts[2,:] );
-        println( "-------------------------------" );
-        =#
         scatter!( plt, m_pnts[1,:], m_pnts[2,:], mc=:yellow, lc=:darkgreen,
             ms=4, ma=1.0 );
 
@@ -1302,7 +1291,7 @@ function  plot_curves_diagram( P::Polygon2F, Q::Polygon2F,
         end
     end
     if  ( cardi < 2000 )  &&  f_draw_graph
-        println( "Drawing the graph..." );
+        f_debug  && println( "Drawing the graph..." );
         draw_graph( plt );
     else
         draw_solution( plt )
@@ -1317,14 +1306,14 @@ function  plot_curves_diagram( P::Polygon2F, Q::Polygon2F,
               legend=false, framestyle=:none, lc=:red);
     end
 
-    println( "Saving heatmap/graph... ", filename_diagram );
+    f_debug && println( "Saving heatmap/graph... ", filename_diagram );
     savefig( plt, filename_diagram );
 
-    println( "Outputing the curves..." );
+    f_debug && println( "Outputing the curves..." );
 #    output_polygons_to_file(  [P, Q], filename_curves, true );
-    println( "Created: " );
+    f_debug && println( "Created: " );
 #    println( "   ", filename_curves );
-    println( "   ", filename_diagram );
+    f_debug && println( "   ", filename_diagram );
 end
 
 function  do_example( polys )
@@ -1409,6 +1398,8 @@ function  create_demo( title::String,
                        f_draw_ve::Bool = true,
                        note::String = "",
                        f_refinements::Bool = false )
+    f_debug::Bool = false;
+
     if  ! isdir( prefix )
         mkdir( prefix );
     end
@@ -1416,21 +1407,21 @@ function  create_demo( title::String,
     total_frames = min( 50 * (cardin( poly_a ) + cardin( poly_b )), 800 );
 
     filename_curves = prefix*"curves.pdf";
-    println( "Outputing the curves..." );
+    f_debug && println( "Outputing the curves..." );
     output_polygons_to_file(  [poly_a, poly_b], filename_curves, true );
 
     options_svg = [ prefix*"curves.pdf", prefix*"curves.svg" ];
     output = read(pipeline( `pdf2svg $options_svg`, stderr="/tmp/errs.txt" ),
         String);
 
-    println( "Created: " );
-    println( "   ", filename_curves );
+    println( "Created: ", filename_curves );
 
     local P, Q, m_d, m_d_r, m_ve_r, m_refinments;
     local m_d_dtw, m_adtw;
 
     m_adtw_vec = Vector{Morphing2F}();
-
+    adtw_lb_vec = Vector{Float64}();
+    
     f_computed_d::Bool = false;
     f_sampled_10::Bool = false;
 
@@ -1448,10 +1439,13 @@ function  create_demo( title::String,
 #                              Vector{Float64}(), false );
 
     m_c = frechet_c_compute( poly_a, poly_b, true )
+    f_debug && println( "A0: frechet_c_compute done..." );
     if  f_draw_ve
+        f_debug && println( "A0: frechet_ve_r_compute about to be called..." );
         m_ve_r = frechet_ve_r_compute( poly_a, poly_b );
     end
 
+    f_debug && println( "A1..." );
 
     f_adtw::Bool = false;
     if  ( cardi < 5000 )
@@ -1464,16 +1458,29 @@ function  create_demo( title::String,
             P = poly_a;
             Q = poly_b;
         end
+        f_debug && println( "A2..." );
         m_d = frechet_d_compute( P, Q );
+        f_debug && println( "A3..." );
         m_d_dtw = DTW_d_compute( P, Q );
+        f_debug && println( "A4..." );
         m_d_r = frechet_d_r_compute( P, Q );
+        f_debug && println( "A5..." );
         f_computed_d = true;
     end
 
     if  f_adtw
+        f_debug && println( "A6..." );
         m_adtw = ADTW_compute( poly_a, poly_b );
+        f_debug && println( "A7..." );
         m_adtw_r_m = ADTW_compute_refine_mono( poly_a, poly_b );
+        f_debug && println( "A8..." );
         ADTW_compute_split( poly_a, poly_b, m_adtw_vec );
+
+        for  i in eachindex( m_adtw_vec )
+            mr = m_adtw_vec[ i ];
+            push!( adtw_lb_vec, ADTW_lb_compute( mr.P, mr.Q ) );
+        end
+        f_debug && println( "A9..." );
     end
 
     local m_refinements::Vector{Morphing2F} = Vector{Morphing2F}();
@@ -1483,19 +1490,23 @@ function  create_demo( title::String,
         frechet_mono_via_refinement_ext( poly_a, poly_b, m_refinements, true,
                                          1.000000001
                                       );
-        println( "m_refinements.len: ", length(m_refinements ) );
+        f_debug && println( "m_refinements.len: ", length(m_refinements ) );
     end
 
+    f_debug && println( "A10..." );
 
     #####################################################################
     # Creating movies/diagrams/etc
     #####################################################################
 
     output_polygons_to_file(  [poly_a, poly_b], prefix * "curves.png", false );
+    f_debug && println( "A10.a..." );
     create_movie( poly_a, poly_b, total_frames, prefix*"f_c_movie.mp4", m_c );
 
+    f_debug && println( "A10.b..." );
     is_mkdir( prefix*"ortho/" );
 
+    f_debug && println( "A11..." );
     output_ortho_frechet_movie_mp4(  m_c, prefix*"ortho/c.mp4" );
 
     if  f_draw_ve
@@ -1514,6 +1525,7 @@ function  create_demo( title::String,
     plot_curves_diagram( poly_a, poly_b, prefix*"diagram.png",
         false, false, false
     );
+    f_debug && println( "A12..." );
 
     if   f_refinements
         dir =  prefix * "steps/";
@@ -1600,7 +1612,7 @@ function  create_demo( title::String,
     write( fl, "<h1>", title, "</h1>\n" );
 
 
-    println( "Cardinality of both curves : ", cardi );
+    #println( "Cardinality of both curves : ", cardi );
 
 
 
@@ -1611,7 +1623,7 @@ function  create_demo( title::String,
     write( fl, "<hr>\n" )
 
     write( fl, "<a href=\"ADTW/\">ADTW</a>\n<hr>\n\n" );
-    
+
     if  ( length( note ) > 0 )
         write( fl, "\n" )
         write( fl, "<!--- NOTE START --->\n" )
@@ -1785,12 +1797,13 @@ function  create_demo( title::String,
             html_write_video_file( fl_adtw, mvname,
                 "Level "*str_num* " of ADTW (splitting edges)<br>\n" );
         end
-        
+
         println( fl_adtw, "<hr>\n" );
         for  i in eachindex( m_adtw_vec )
             m = m_adtw_vec[ i ];
             println( fl_adtw, i );
-            println( fl_adtw, ": ", Morphing_adtw_price( m ) );
+            println( fl_adtw, ": ", adtw_lb_vec[ i], "...",
+                Morphing_adtw_price( m ) );
             println( fl_adtw, "<br>\n" );
 #            writeln( fl,adtw, "\n );
         end

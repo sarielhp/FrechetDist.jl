@@ -1018,7 +1018,7 @@ function  frechet_c_compute( poly_a::Polygon{N,T},
                              poly_b::Polygon{N,T},
                              f_accept_approx::Bool = true
                              )  where {N,T}
-    f_debug::Bool = true;
+    f_debug::Bool = false;
     aprx_refinement::Float64 = 1.001;
 
     f_debug && println( "#", cardin( poly_a ) )
@@ -1138,7 +1138,7 @@ function  frechet_c_compute( poly_a::Polygon{N,T},
         m_final = frechet_ve_r_compute_ext( PSR, QSR, PSR_offs, QSR_offs,
                                             true );
         if  ( floating_equal( m_final.leash,  mw.leash ) )
-#            println( "We are done!" );
+            f_debug && println( "Return from frechet_c_compute" );
             return  mw
         end
 
@@ -1154,7 +1154,7 @@ function  frechet_c_compute( poly_a::Polygon{N,T},
         if  f_accept_approx  &&  ( 1.00001 * m_final.leash > mw.leash )
             f_debug && println( "MW Leash length: ", mw.leash );
             f_debug && println( "m_final.leash  : ", m_final.leash );
-#            println( "We are done!" );
+            f_debug && println( "Return (2) from frechet_c_compute" );
             return  mw
         end
     end  # While loop end
@@ -1365,7 +1365,8 @@ function   ADTW_compute_refine_mono( poly_a::Polygon{N,T},
         m_new =  Morphing_monotonize( m );
         rate = m_new.monotone_err / ell;
 
-        if  ( rate < 0.0000001 )
+        #println( "Rate: ", rate );
+        if  ( rate < 0.01 )
             break;
         end
         poly_a_2 = extract_refined_polygon( P, m.pes, 1 );
@@ -1375,6 +1376,7 @@ function   ADTW_compute_refine_mono( poly_a::Polygon{N,T},
         Q = poly_b_2;
     end
 
+    println( "Returning from ADTW_compute_refine_mono" );
     return  m_new;
 end
 
@@ -1390,7 +1392,8 @@ function   ADTW_compute_split(
     for  i in 1:5
         P = Polygon_split_edges( P );
         Q = Polygon_split_edges( Q );
-        mi = ADTW_compute_refine_mono( P, Q );
+        mi = ADTW_compute( P, Q );
+        #println( "i : ", i );
         push!( out, mi );
     end
 end
