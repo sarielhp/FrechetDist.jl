@@ -389,23 +389,25 @@ function  iseg_iseg_dist( a_p::Point{D,T}, a_q::Point{D,T},
     @assert( rk > 0 );
     s::Float64 = 0.0;
     y::Float64 = 0.0;
-    println( "rk = ", rk );
+    #println( "rk = ", rk );
     if  ( rk == 1 )
-        println( "RK!" );
-        # m[1] * s + m[2] * t = c[ 1 ]
-        if  m[ 1] != 0.0
+        #println( "RK!" );
+        # m[1,1] * s + m[1,2] * t = c[ 1 ]
+        if  m[ 1, 1 ] != 0.0
             t = 0;
-            s = c[1] / m[1];
+            s = c[1] / m[1,1];
         else
-            if  m[ 2 ] != 0.0
+            if  m[ 1, 2 ] != 0.0
                 s = 0.0;
-                t = c[1] / m[2];
+                t = c[1] / m[ 1,2 ];
             else
-                @assert( "m[1]=0 && m[2]=0???" );
+                println( "Error: m[1,2]=0 && m[1,2]=0???" );
+                @assert( false  );
                 s= t= 0.0;
             end
         end
     else
+        #=
         println( "--- a, b --------------------" );
         println( a_p, a_q );
         println( b_p, b_q );
@@ -424,10 +426,11 @@ function  iseg_iseg_dist( a_p::Point{D,T}, a_q::Point{D,T},
 
         println( "m.size: ", size( m ) );
         println( "c.size: ", size( c ) );
+        =#
 
         # Solve the system...
         b = m \ c;
-        println( "b.size: ", size( b ) );
+        #println( "b.size: ", size( b ) );
         s = b[ 1 ];
         t = b[ 2 ];
     end
@@ -439,7 +442,14 @@ function  iseg_iseg_dist( a_p::Point{D,T}, a_q::Point{D,T},
     d::Float64 =  Dist( convex_comb( a_p, a_q, s ),
         convex_comb( b_p, b_q, t ) );
 
-    println( "d = ", d );
+    da = Dist( a_p, b_p );
+    if  ( da < d )
+        println( "da < d? " );
+        println( "da: ", da );
+        println( "d ", d );        
+    end
+    
+    #println( "d = ", d );
 
     return  d;
 end

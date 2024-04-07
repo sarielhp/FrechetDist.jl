@@ -1478,7 +1478,8 @@ function  create_demo( title::String,
 
         for  i in eachindex( m_adtw_vec )
             mr = m_adtw_vec[ i ];
-            push!( adtw_lb_vec, ADTW_lb_compute( mr.P, mr.Q ) );
+            mlb = ADTW_lb_compute( mr.P, mr.Q )
+            push!( adtw_lb_vec, mlb.sol_value );
         end
         f_debug && println( "A9..." );
     end
@@ -1622,7 +1623,7 @@ function  create_demo( title::String,
     write( fl, "<img src=\"curves.png\" />\n" )
     write( fl, "<hr>\n" )
 
-    write( fl, "<a href=\"ADTW/\">ADTW</a>\n<hr>\n\n" );
+    write( fl, "<h2><a href=\"ADTW/\">ADTW</a></h2>\n<hr>\n\n" );
 
     if  ( length( note ) > 0 )
         write( fl, "\n" )
@@ -1648,8 +1649,12 @@ function  create_demo( title::String,
 
     data = vcat( row_a_x, row_b_x  );
 
+    style_tbl = Dict{String, String}();
+    style_tbl[ "border" ] = "4px solid green";
     pretty_table(fl, data;
                  header = (["Curves", "# Vertices", "Length"]),
+                 tf = tf_html_dark,
+                 table_style = style_tbl,
                  allow_html_in_cells = true,
                  backend = Val(:html) )
     write( fl, "\n<hr>\n" )
@@ -1663,6 +1668,7 @@ function  create_demo( title::String,
         pretty_table(fl, B;
                      header = (["Distance",  "Value"]),
                      allow_html_in_cells = true,
+                     table_style = style_tbl,
                      backend = Val(:html) )
     else
         println( fl, "Fréchet distance: ", m_c.leash, "\n\n" );
@@ -1837,6 +1843,7 @@ function  create_demo( title::String,
     write( fl, "   src=\"ortho/c.mp4\" type=\"video/mp4\" />\n" );
     write( fl, "</video>\n" );
 
+    #=
     if  f_adtw
         println( fl, "<hr>" * "\n" );
         println( fl, "<h2>ADTW</h2>\n" );
@@ -1848,7 +1855,8 @@ function  create_demo( title::String,
         write( fl, "   src=\"adtw_r_m.mp4\" type=\"video/mp4\" />\n" );
         write( fl, "</video>\n" );
     end
-
+    =#
+    
     html_close( fl );
 end
 

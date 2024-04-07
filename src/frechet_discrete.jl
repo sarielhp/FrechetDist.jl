@@ -333,12 +333,15 @@ function   ADTW_lb_compute( P::Polygon{D,T}, Q::Polygon{D,T}
     min( dist( PA[i, i+1], PB[ j-1, j ] ),
     dist( PA[i, i+1], PB[ j, j+1 ] ),
     """
-    function edge_lb( PA::Polygon{D,T}, i, PB::Polygon{D,T}, j ) where {D,T}    
-        lb::Float64 = Dist( P[ i ], PB[ j ] );
-
+    function edge_lb( PA::Polygon{D,T}, i, PB::Polygon{D,T}, j ) where {D,T}
+        #println( "i: ", i, "  [", cardin( PA ), "]" );
+        #println( "j: ", j, "  [", cardin( PB ), "]" );
+        #Dist( PA[ i ], PB[ j ] );
+        lb::Float64 = typemax(Float64);
         if  i == cardin( PA )
-            return  lb;
+            return  0.0;
         end
+
         if  j > 1
             lb = min( lb,
                 iseg_iseg_dist( PA[i ], PA[i + 1], PB[ j - 1 ], PB[ j ] )
@@ -357,6 +360,7 @@ function   ADTW_lb_compute( P::Polygon{D,T}, Q::Polygon{D,T}
         if  ( i == cardin( PA ) )
             return 0.0;
         end
+        #println( "edge_lb( ?, ", i, ", ?, ", j, ")" ); 
         lb = edge_lb( PA, i, PB, j );
         return  Dist( PA[ i ], PA[ i + 1 ] ) * lb;
     end
@@ -374,7 +378,7 @@ function   ADTW_lb_compute( P::Polygon{D,T}, Q::Polygon{D,T}
         dp_dec_i[ ia, ja ] = ( i < ia );
     end
 
-    dp[ 1, 1 ] = Dist( P[ 1 ] , Q[ 1 ] );
+    dp[ 1, 1 ] = 0.0;
     #handled[ 1, 1 ] = true;
 
     enqueue!( pq, (1,1), dp[ 1, 1 ] );
