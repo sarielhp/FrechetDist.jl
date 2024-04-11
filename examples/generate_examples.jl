@@ -1417,10 +1417,10 @@ function  create_demo( title::String,
     println( "Created: ", filename_curves );
 
     local P, Q, m_d, m_d_r, m_ve_r, m_refinments;
-    local m_d_dtw, m_adtw;
+    local m_d_dtw, m_SweepDist;
 
-    m_adtw_vec = Vector{Morphing2F}();
-    adtw_lb_vec = Vector{Float64}();
+    m_SweepDist_vec = Vector{Morphing2F}();
+    SweepDist_lb_vec = Vector{Float64}();
     
     f_computed_d::Bool = false;
     f_sampled_10::Bool = false;
@@ -1447,9 +1447,9 @@ function  create_demo( title::String,
 
     f_debug && println( "A1..." );
 
-    f_adtw::Bool = false;
+    f_SweepDist::Bool = false;
     if  ( cardi < 5000 )
-        f_adtw = true;
+        f_SweepDist = true;
         if  ( cardi < 100 )
             f_sampled_10 = true;
             P = Polygon_sample_uniformly( poly_a, 10*cardin( poly_a ) );
@@ -1468,18 +1468,18 @@ function  create_demo( title::String,
         f_computed_d = true;
     end
 
-    if  f_adtw
+    if  f_SweepDist
         f_debug && println( "A6..." );
-        m_adtw = ADTW_compute( poly_a, poly_b );
+        m_SweepDist = SweepDist_compute( poly_a, poly_b );
         f_debug && println( "A7..." );
-        m_adtw_r_m = ADTW_compute_refine_mono( poly_a, poly_b );
+        m_SweepDist_r_m = SweepDist_compute_refine_mono( poly_a, poly_b );
         f_debug && println( "A8..." );
-        ADTW_compute_split( poly_a, poly_b, m_adtw_vec );
+        SweepDist_compute_split( poly_a, poly_b, m_SweepDist_vec );
 
-        for  i in eachindex( m_adtw_vec )
-            mr = m_adtw_vec[ i ];
-            mlb = ADTW_lb_compute( mr.P, mr.Q )
-            push!( adtw_lb_vec, mlb.sol_value );
+        for  i in eachindex( m_SweepDist_vec )
+            mr = m_SweepDist_vec[ i ];
+            mlb = SweepDist_lb_compute( mr.P, mr.Q )
+            push!( SweepDist_lb_vec, mlb.sol_value );
         end
         f_debug && println( "A9..." );
     end
@@ -1623,7 +1623,7 @@ function  create_demo( title::String,
     write( fl, "<img src=\"curves.png\" />\n" )
     write( fl, "<hr>\n" )
 
-    write( fl, "<h2><a href=\"ADTW/\">ADTW</a></h2>\n<hr>\n\n" );
+    write( fl, "<h2><a href=\"SweepDist/\">SweepDist</a></h2>\n<hr>\n\n" );
 
     if  ( length( note ) > 0 )
         write( fl, "\n" )
@@ -1777,44 +1777,45 @@ function  create_demo( title::String,
         println( fl, "Retract DFréchet iters : ", m_d_r.iters, "<br>" );
     end
 
-    dir_ADTW = prefix*"ADTW/";
-    local  fl_adtw;
+    dir_SweepDist = prefix*"SweepDist/";
+    local  fl_SweepDist;
 
-    if  ( f_adtw )
-        is_mkdir( dir_ADTW )
-        fl_adtw = html_open_w_file( dir_ADTW * "index.html",
-                                    "ADTW distances/morhpings" );
+    if  ( f_SweepDist )
+        is_mkdir( dir_SweepDist )
+        fl_SweepDist = html_open_w_file( dir_SweepDist * "index.html",
+                                    "SweepDist distances/morhpings" );
 
-        output_frechet_movie_mp4( m_adtw, dir_ADTW * "adtw.mp4",
+        output_frechet_movie_mp4( m_SweepDist, dir_SweepDist * "SweepDist.mp4",
             400, true );
-        html_write_video_file( fl_adtw,  "adtw.mp4",
-            "ADTW (not necessarily monotone)" );
+        html_write_video_file( fl_SweepDist,  "SweepDist.mp4",
+            "SweepDist (not necessarily monotone)" );
 
-        output_frechet_movie_mp4( m_adtw_r_m, dir_ADTW * "adtw_r_m.mp4",
+        output_frechet_movie_mp4( m_SweepDist_r_m, dir_SweepDist * "SweepDist_r_m.mp4",
             400, true );
-        html_write_video_file( fl_adtw, "adtw_r_m.mp4",
-            "ADTW monotonize via refinement" );
+        html_write_video_file( fl_SweepDist, "SweepDist_r_m.mp4",
+            "SweepDist monotonize via refinement" );
 
-        for  i in eachindex( m_adtw_vec )
+        for  i in eachindex( m_SweepDist_vec )
             str_num = @sprintf( "%06d", i )
             mvname = @sprintf( "%06d.mp4", i )
-            output_frechet_movie_mp4( m_adtw_vec[ i ], dir_ADTW * mvname,
+            output_frechet_movie_mp4( m_SweepDist_vec[ i ], dir_SweepDist * mvname,
                                       400, true );
-            html_write_video_file( fl_adtw, mvname,
-                "Level "*str_num* " of ADTW (splitting edges)<br>\n" );
+            html_write_video_file( fl_SweepDist, mvname,
+                "Level "*str_num* " of SweepDist (splitting edges)<br>\n" );
         end
 
-        println( fl_adtw, "<hr>\n" );
-        for  i in eachindex( m_adtw_vec )
-            m = m_adtw_vec[ i ];
-            println( fl_adtw, i );
-            println( fl_adtw, ": ", adtw_lb_vec[ i], "...",
-                Morphing_adtw_price( m ) );
-            println( fl_adtw, "<br>\n" );
-#            writeln( fl,adtw, "\n );
+        println( fl_SweepDist, "<hr>\n" );
+        for  i in eachindex( m_SweepDist_vec )
+            m = m_SweepDist_vec[ i ];
+            println( fl_SweepDist, i );
+            println( fl_SweepDist, ": ", SweepDist_lb_vec[ i], "...",
+                Morphing_SweepDist_approx_price( m ), " Exact: ",
+                Morphing_SweepDist_price( m ) );
+            println( fl_SweepDist, "<br>\n" );
+            #            writeln( fl,SweepDist, "\n );
         end
-        println( fl_adtw, "\n\n<hr>\n" );
-        html_close( fl_adtw );
+        println( fl_SweepDist, "\n\n<hr>\n" );
+        html_close( fl_SweepDist );
     end
 
     if  ( f_refinements )
@@ -1844,15 +1845,15 @@ function  create_demo( title::String,
     write( fl, "</video>\n" );
 
     #=
-    if  f_adtw
+    if  f_SweepDist
         println( fl, "<hr>" * "\n" );
-        println( fl, "<h2>ADTW</h2>\n" );
+        println( fl, "<h2>SweepDist</h2>\n" );
         write( fl, "\n\n <video controls autoplay " );
-        write( fl, "   src=\"adtw.mp4\" type=\"video/mp4\" />\n" );
+        write( fl, "   src=\"SweepDist.mp4\" type=\"video/mp4\" />\n" );
         write( fl, "</video>\n" );
-        println( fl, "<h2>ADTW refined monotone</h2>\n" );
+        println( fl, "<h2>SweepDist refined monotone</h2>\n" );
         write( fl, "\n\n <video controls autoplay " );
-        write( fl, "   src=\"adtw_r_m.mp4\" type=\"video/mp4\" />\n" );
+        write( fl, "   src=\"SweepDist_r_m.mp4\" type=\"video/mp4\" />\n" );
         write( fl, "</video>\n" );
     end
     =#

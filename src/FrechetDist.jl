@@ -19,6 +19,7 @@ using .cg
 include( "morphing.jl" );
 include( "frechet_discrete.jl" );
 include( "frechet.jl" );
+include( "SweepDist.jl" );
 
 ##########################################################################
 
@@ -36,8 +37,9 @@ export  Morphing_monotonize, Morphing_empty, Morphing_verify_valid
 export  Morphing_combine, Morphing_extract_prm
 export  Morphing_as_polygons
 export  Morphing_extract_vertex_radii, Morphing_extract_offsets
-export  Morphing_adtw_price
 
+export  Morphing_SweepDist_price
+export  Morphing_SweepDist_approx_price
 
 #####################################################################
 export  frechet_d_compute
@@ -60,9 +62,9 @@ export  frechet_c_compute
 
 export  DTW_d_compute;
 
-export  ADTW_compute;
-export  ADTW_lb_compute;
-export  ADTW_compute_refine_mono;
-export  ADTW_compute_split;
+export  SweepDist_compute;
+export  SweepDist_lb_compute;
+export  SweepDist_compute_refine_mono;
+export  SweepDist_compute_split;
 
 end
