@@ -227,13 +227,14 @@ end
 function   SweepDist_compute_split(
     poly_a::Polygon{N,T},
     poly_b::Polygon{N,T},
-    out::Vector{Morphing{N,T}} ) where {N,T}
+    out::Vector{Morphing{N,T}},
+    iters::Int64 ) where {N,T}
 
     m = SweepDist_compute_refine_mono( poly_a, poly_b );
     push!( out, m );
     P = m.P;
     Q = m.Q;
-    for  i in 1:5
+    for  i in 1:iters
         P = Polygon_split_edges( P );
         Q = Polygon_split_edges( Q );
         mi = SweepDist_compute( P, Q );
@@ -272,7 +273,7 @@ function   SweepDist_lb_compute( P::Polygon{D,T}, Q::Polygon{D,T}
     elvation fucntion, in the two adjacent cells:
 
     min( dist( PA[i, i+1], PB[ j-1, j ] ),
-    dist( PA[i, i+1], PB[ j, j+1 ] ),
+         dist( PA[i, i+1], PB[ j, j+1 ] ),
     """
     function edge_lb( PA::Polygon{D,T}, i, PB::Polygon{D,T}, j ) where {D,T}
         #println( "i: ", i, "  [", cardin( PA ), "]" );
@@ -282,46 +283,53 @@ function   SweepDist_lb_compute( P::Polygon{D,T}, Q::Polygon{D,T}
         if  i == cardin( PA )
             return  0.0;
         end
-
+        #println( "PA[i,i+1]:", PA[i], PA[ i + 1 ]);
         if  j > 1
-            lb = min( lb,
-                iseg_iseg_dist( PA[i ], PA[i + 1], PB[ j - 1 ], PB[ j ] )
-            );
+            d = iseg_iseg_dist( PA[i ], PA[i + 1], PB[ j - 1 ], PB[ j ] );
+            lb = min( lb, d );
+            #println( "PB[j-1,j]:", PB[j-1], PB[ j ] );
+            #println( "d: ", d );
         end
         if  j < cardin( PB )
-            lb = min( lb,
-                iseg_iseg_dist( PA[ i ], PA[i + 1], PB[ j ], PB[ j + 1 ] )
-            );
+            d = iseg_iseg_dist( PA[ i ], PA[i + 1], PB[ j ], PB[ j + 1 ] )
+            lb = min( lb, d );
+            #println( "PB[j-1,j]:", PB[j], PB[ j + 1 ] );
+            #println( "d: ", d );
         end
+        #println( "LB: ", lb );
+        #println( "\n\n\n" );
         return  lb;
     end
 
     function edge_v( PA::Polygon{D,T}, i::Int64, PB::Polygon{D,T},
-        j::Int64 )::Float64 where {D,T}
+                     j::Int64 )::Float64 where {D,T}
         if  ( i == cardin( PA ) )
             return 0.0;
         end
-        #println( "edge_lb( ?, ", i, ", ?, ", j, ")" ); 
+        #println( "edge_lb( ?, ", i, ", ?, ", j, ")" );
         lb = edge_lb( PA, i, PB, j );
-        return  Dist( PA[ i ], PA[ i + 1 ] ) * lb;
+        len = Dist( PA[ i ], PA[ i + 1 ] );
+        #println( "Len: ", len );
+        return   len * lb;
     end
 
 
-    function  push_value( ia::Int64, ja, new_val::Float64, i )
+    function  push_value( i::Int64, j::Int64,
+        ia::Int64, ja, new_val::Float64 )
         #new_val = val + Dist( P[ ia ], Q[ ja ] )
 
         if  ( ( dp[ ia, ja ] > 0.0 )
               &&  ( dp[ ia, ja ] <= new_val ) )
             return;
         end
+        #println( "(", i, ", ", j, ") -> (", ia, ", ", ja, "): ",
+        #    new_val );
         dp[ ia, ja ] = new_val;
         pq[ ia, ja ] = new_val;  # Push to queue
         dp_dec_i[ ia, ja ] = ( i < ia );
     end
 
     dp[ 1, 1 ] = 0.0;
-    #handled[ 1, 1 ] = true;
-
     enqueue!( pq, (1,1), dp[ 1, 1 ] );
 
     iters::Int64 = 0;
@@ -332,6 +340,9 @@ function   SweepDist_lb_compute( P::Polygon{D,T}, Q::Polygon{D,T}
         i::Int64, j::Int64 = ele[ 1 ];
         value = ele[ 2 ];
 
+        #println( pq );
+        #println( "LOC: (", i, ": ", n_p, ", ",j ,":", n_q, " ): ",
+        #    value );
         #println( "  VALUE   : ", value );
         #println( "  dp[", i, ", ", j, "] : ", dp[ i, j ] );
         #println( pq );
@@ -350,10 +361,10 @@ function   SweepDist_lb_compute( P::Polygon{D,T}, Q::Polygon{D,T}
 
         # Now we need to schedule the next two adjacent entries..
         if  ( i < n_p )
-            push_value( i + 1, j, value + edge_v( P, i, Q, j ), i );
+            push_value( i, j, i + 1, j, value + edge_v( P, i, Q, j ) );
         end
         if  ( j < n_q )
-            push_value( i, j+1, value + edge_v( Q, j, P, i ), i );
+            push_value( i, j, i, j+1, value + edge_v( Q, j, P, i ) );
         end
     end
 
@@ -362,6 +373,7 @@ function   SweepDist_lb_compute( P::Polygon{D,T}, Q::Polygon{D,T}
 
     m.sol_value = dp[ n_p, n_q ];
 
+    #println( "sol_value: ", m.sol_value );
     #exit( -1 );
     return  m;
 end

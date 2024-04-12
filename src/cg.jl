@@ -359,8 +359,8 @@ end
 function  iseg_iseg_dist( a_p::Point{D,T}, a_q::Point{D,T},
     b_p::Point{D,T}, b_q::Point{D,T} ) where {D,T}
     # v(s,t) = a_p*(1-s) + a_q * s - b_p*(1-t) - b_q * t
-    #      = (a_p - b_p) + s*(a_q-a_p) + t*(b_p-b_q)
-    #      = v_1 + s * v_2 + t * v_3
+    #      = (a_p - b_p)  +  s * (a_q-a_p)  +  t * (b_p-b_q)
+    #      = v_1  +  s * v_2  +  t * v_3
     v_1 = a_p - b_p;
     v_2 = a_q - a_p;
     v_3 = b_p - b_q;
@@ -369,21 +369,26 @@ function  iseg_iseg_dist( a_p::Point{D,T}, a_q::Point{D,T},
 
     D(s,t)
     = <v_1 + s*v_2 + t *v_3, v_1 + s*v_2 + t *v_3>
-    = ||v_1||^2 + 2* s <v_1, v_2> + 2*t<v_1,v_3>
-    + s^2 * ||v_2||^2 + 2*s*t*<v_2,v_3>  + t^2 ||v_3||^2
+    = ||v_1||^2  +  2 * s * <v_1, v_2>  +  2 * t *<v_1,v_3>
+       + s^2 * ||v_2||^2 + 2*s*t*<v_2,v_3>  + t^2 ||v_3||^2
     =
     Need to solve the linear system:
 
-    0 = D'_s(s,t) = 2*<v_1,v_2> + 2*s*||V_2||^2 + 2*t<v_2,v_3>
+    0 = D'_s(s,t) = 2*<v_1,v_2> + 2*s*||V_2||^2  +  2*t<v_2,v_3>
     0 = D'_t(s,t) = 2*<v_1,v_3> + 2*s*<v_2,v_3> + 2*t * ||v_3||^2
+
+    or equivalently:
+
+    -<v_1,v_2> = s * ||V_2||^2  +  t * <v_2,v_3>
+    -<v_1,v_3> = s * <v_2,v_3>  +  t * ||v_3||^2
 
     =#
 
     # Coefficients
-    c = [ (-2.0 * dot( v_1, v_2 )),   (-2.0*dot( v_1, v_3 ) ) ];
+    c = [ (- cg.dot( v_1, v_2 )),   (-cg.dot( v_1, v_3 ) ) ];
 
-    m = [ (2.0*dot(v_2, v_2))  ( 2.0*dot(v_2, v_3) );
-         (2.0*dot(v_2, v_3))  ( 2.0*dot(v_3, v_3) ) ];
+    m = [ ( cg.dot(v_2, v_2))  ( cg.dot(v_2, v_3) );
+          ( cg.dot(v_2, v_3))  ( cg.dot(v_3, v_3) ) ];
 
     rk = rank( m );
     @assert( rk > 0 );
@@ -391,23 +396,15 @@ function  iseg_iseg_dist( a_p::Point{D,T}, a_q::Point{D,T},
     y::Float64 = 0.0;
     #println( "rk = ", rk );
     if  ( rk == 1 )
-        #println( "RK!" );
-        # m[1,1] * s + m[1,2] * t = c[ 1 ]
-        if  m[ 1, 1 ] != 0.0
-            t = 0;
-            s = c[1] / m[1,1];
-        else
-            if  m[ 1, 2 ] != 0.0
-                s = 0.0;
-                t = c[1] / m[ 1,2 ];
-            else
-                println( "Error: m[1,2]=0 && m[1,2]=0???" );
-                @assert( false  );
-                s= t= 0.0;
-            end
-        end
-    else
-        #=
+        # The minimum distance is realized by one of the endpoints.
+        d = min(
+            dist_seg_nn_point( a_p, a_q, b_p ),
+            dist_seg_nn_point( a_p, a_q, b_q ),
+            dist_seg_nn_point( b_p, b_q, a_p ),
+            dist_seg_nn_point( b_p, b_q, a_q ) );
+        return  d;
+    end
+    #=
         println( "--- a, b --------------------" );
         println( a_p, a_q );
         println( b_p, b_q );
@@ -428,13 +425,12 @@ function  iseg_iseg_dist( a_p::Point{D,T}, a_q::Point{D,T},
         println( "c.size: ", size( c ) );
         =#
 
-        # Solve the system...
-        b = m \ c;
-        #println( "b.size: ", size( b ) );
-        s = b[ 1 ];
-        t = b[ 2 ];
-    end
-
+    # Solve the system...
+    b = m \ c;
+    #println( "b.size: ", size( b ) );
+    s = b[ 1 ];
+    t = b[ 2 ];
+    
     # Snap solution if needed to the [0,1.0] interval....
     s = max( min( s, 1.0 ), 0.0 )
     t = max( min( t, 1.0 ), 0.0 )
@@ -442,13 +438,30 @@ function  iseg_iseg_dist( a_p::Point{D,T}, a_q::Point{D,T},
     d::Float64 =  Dist( convex_comb( a_p, a_q, s ),
         convex_comb( b_p, b_q, t ) );
 
+    d = min( d, dist_seg_nn_point( a_p, a_q, b_p ),
+                dist_seg_nn_point( a_p, a_q, b_q ),
+                dist_seg_nn_point( b_p, b_q, a_p ),
+                dist_seg_nn_point( b_p, b_q, a_q ) );
+
+    
     da = Dist( a_p, b_p );
-    if  ( da < d )
+    if  ( da < d )  &&  ( abs( da - d ) > (1e-8 * (d + da ) ) )
         println( "da < d? " );
         println( "da: ", da );
-        println( "d ", d );        
+        println( "d ", d );
+        println( "s: ", s );
+        println( "t: ", t );
+        println( "b: ", b );
+        exit( -1 );
+        
     end
-    
+    db = Dist( a_q, b_q );
+    if  ( db < d )  &&  ( abs( db - d ) > (1e-8 * (d + db ) ) )
+        println( "db < d? " );
+        println( "db: ", da );
+        println( "d ", d );
+    end
+
     #println( "d = ", d );
 
     return  d;

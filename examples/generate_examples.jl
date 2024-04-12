@@ -1351,6 +1351,38 @@ function  html_open_w_file( filename::String, title::String )
 
     #println( "Writing file\n\n\n\n\n" );
 
+    style = """
+      <style>
+      table {
+         position: relative;
+      }
+      table::before,
+      table::after {
+         border: 1px solid #FFF;
+         content: "";
+         height: 100%;
+         position: absolute;
+         top: 0;
+         width: 6px;
+      }
+      table::before {
+         border-right: 0px;
+         left: -6px;
+      }
+      table::after {
+         border-left: 0px;
+         right: -6px;
+      }
+      td {
+         padding: 2px;
+         text-align: center;
+    }
+    table, th, td {
+    border: 1px outset black;
+    }
+    </style>
+    """;
+
     write( fl, "<head>\n"
            * "<meta charset=\"UTF-8\">"
            * "<TITLE>" * title * "</TITLE>\n"
@@ -1364,6 +1396,7 @@ function  html_open_w_file( filename::String, title::String )
            * "config=TeX-AMS-MML_HTMLorMML\">\n"
            * "</script>\n"
            * "<meta charset=\"UTF-8\">\n"
+           * style
            * "</head>" )
     write( fl, "<body>\n" );
 
@@ -1421,7 +1454,7 @@ function  create_demo( title::String,
 
     m_SweepDist_vec = Vector{Morphing2F}();
     SweepDist_lb_vec = Vector{Float64}();
-    
+
     f_computed_d::Bool = false;
     f_sampled_10::Bool = false;
 
@@ -1474,12 +1507,13 @@ function  create_demo( title::String,
         f_debug && println( "A7..." );
         m_SweepDist_r_m = SweepDist_compute_refine_mono( poly_a, poly_b );
         f_debug && println( "A8..." );
-        SweepDist_compute_split( poly_a, poly_b, m_SweepDist_vec );
+        SweepDist_compute_split( poly_a, poly_b, m_SweepDist_vec, 7 );
 
         for  i in eachindex( m_SweepDist_vec )
             mr = m_SweepDist_vec[ i ];
             mlb = SweepDist_lb_compute( mr.P, mr.Q )
             push!( SweepDist_lb_vec, mlb.sol_value );
+#           exit( -1 );
         end
         f_debug && println( "A9..." );
     end
@@ -1646,12 +1680,14 @@ function  create_demo( title::String,
 
     style_tbl = Dict{String, String}();
     style_tbl[ "border" ] = "4px solid green";
+    style_tbl[ "bordercolor" ] = "blue";
     pretty_table(fl, data;
                  header = (["Curves", "# Vertices", "Length"]),
-                 tf = tf_html_dark,
                  table_style = style_tbl,
                  allow_html_in_cells = true,
-                 backend = Val(:html) )
+        backend = Val(:html)
+#        standalone=true
+    )
     write( fl, "\n<hr>\n" )
 
     if  f_draw_ve
@@ -1790,16 +1826,28 @@ function  create_demo( title::String,
         end
 
         println( fl_SweepDist, "<hr>\n" );
+        A = fill("", length( m_SweepDist_vec ), 4)
         for  i in eachindex( m_SweepDist_vec )
             m = m_SweepDist_vec[ i ];
-            println( fl_SweepDist, i );
+            A[i,1] = string( i )
+            A[i,2] = string( SweepDist_lb_vec[ i] );
+            A[i,3] = string( Morphing_SweepDist_approx_price( m ) );
+            A[i,4] = string( Morphing_SweepDist_price( m ) );
+            #=println( fl_SweepDist, i );
             println( fl_SweepDist, ": ", SweepDist_lb_vec[ i], "...",
                 Morphing_SweepDist_approx_price( m ), " Exact: ",
                 Morphing_SweepDist_price( m ) );
             println( fl_SweepDist, "<br>\n" );
+            =#
             #            writeln( fl,SweepDist, "\n );
         end
+
+        pretty_table(fl_SweepDist, A; header = (["Iteration", "Lower
+                 bound", "Upper bound", "Better UB"]),
+                 allow_html_in_cells = true, backend = Val(:html) );
+
         println( fl_SweepDist, "\n\n<hr>\n" );
+
         html_close( fl_SweepDist );
     end
 
@@ -1842,6 +1890,7 @@ function  create_demo( title::String,
         write( fl, "</video>\n" );
     end
     =#
+    html_close( fl );
 
     println( "Generating all the movie files..." );
     if  f_draw_ve
@@ -1855,7 +1904,7 @@ function  create_demo( title::String,
                                   400, true );
         output_frechet_movie_mp4( m_d, prefix*"discrete_frechet.mp4",
                                   400, true );
-        output_frechet_movie_mp4( m_d_r, prefix*"discrete_r_frechet.mp4",                                  400, true );        
+        output_frechet_movie_mp4( m_d_r, prefix*"discrete_r_frechet.mp4",                                  400, true );
     end;
     if   f_SweepDist
         output_frechet_movie_mp4( m_SweepDist,
@@ -1874,8 +1923,7 @@ function  create_demo( title::String,
                                       400, true );
         end
     end
-    
-    html_close( fl );
+
 end
 
 

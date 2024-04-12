@@ -55,23 +55,24 @@ function  eval( f::DistFunction{T}, x::T ) where {T}
 end
 
 function  integral( f::DistFunction{T}, x::T ) where {T}
+    f_debug::Bool = false;
     v = eval( f, x );
 
-    println( "FFF f_a: ", f.a );
-    println( "FFF f_b: ", f.b );
-    println( "FFF f_c: ", f.c );
+    f_debug && println( "FFF f_a: ", f.a );
+    f_debug && println( "FFF f_b: ", f.b );
+    f_debug && println( "FFF f_c: ", f.c );
     tmp_a = 4.0 * f.a * f.c;
     tmp_b = f.b*f.b;
 
     val::Float64 = tmp_a - tmp_b;
-    println( "tmp_a: ", tmp_a );
-    println( "tmp_b: ", tmp_b );
-    println( "__VVVVVVV: ", val );
+    f_debug  &&  println( "tmp_a: ", tmp_a );
+    f_debug  &&  println( "tmp_b: ", tmp_b );
+    f_debug  &&  println( "__VVVVVVV: ", val );
     if  ( abs( val ) < 1e-14 )
         val = 0.0;
     end
 
-    println( "VVVVVVV: ", val );
+    f_debug  &&  println( "VVVVVVV: ", val );
     t = (2.0*f.a*x + f.b ) / sqrt( val );
 
     as = asinh( t );
@@ -128,7 +129,7 @@ end
 
 function  integral_interval( f::DistFunction{T}, low, high ) where {T}
     @assert( low <= high );
-    
+
     if  ( low == high )
         return  0;
     end
@@ -144,7 +145,7 @@ function  integral_interval( f::DistFunction{T}, low, high ) where {T}
     end
     return  integral( f, high ) - integral( f, low );
     #ymin::Float64 = integral( f, 0.0 );
-        
+
 end
 
 
@@ -153,19 +154,20 @@ function  SweepDist_segs_p( p_a::Point{D,T},
                       q_a::Point{D,T},
                       q_b::Point{D,T} ) where {D,T}
 
+    f_debug::Bool = false;
     len_edge_p = Dist( p_a, p_b );
 
     if  ( len_edge_p == 0.0 )
         return  0.0;
     end
 
-    println( "len: ", len_edge_p );
+    f_debug  &&  println( "len: ", len_edge_p );
     @assert( len_edge_p > 0.0 );
 
-    println( "q_a: ", q_a );
-    println( "q_b: ", q_b );
-    println( "p_a: ", p_a );
-    println( "p_b: ", p_b );
+    f_debug  &&  println( "q_a: ", q_a );
+    f_debug  &&  println( "q_b: ", q_b );
+    f_debug  &&  println( "p_a: ", p_a );
+    f_debug  &&  println( "p_b: ", p_b );
     v_start = q_a - p_a ;
     v_end = q_b - p_b;
 
@@ -173,13 +175,13 @@ function  SweepDist_segs_p( p_a::Point{D,T},
         return  len_edge_p * cg.norm( v_start );
     end
 
-    println( "v_start: ", v_start );
-    println( "v_end: ", v_end );
+    f_debug  &&  println( "v_start: ", v_start );
+    f_debug  &&  println( "v_end: ", v_end );
     diff::Point{D,T} =  v_end - v_start;
 
-    println( "Diff: ", diff );
+    f_debug  &&  println( "Diff: ", diff );
     p_diff::Point{D,T} = (1.0 / len_edge_p) * diff;
-    println( "p_diff: ", p_diff );
+    f_debug  &&  println( "p_diff: ", p_diff );
     # Location of the point at time t along the edge p.
     # p(t) := (t / len_edge_p) * diff + v_start;
     # p(t) := t  * p_diff + v_start;
@@ -190,7 +192,7 @@ function  SweepDist_segs_p( p_a::Point{D,T},
     b = 2.0 * cg.dot( p_diff, v_start );
     c = cg.dot( v_start, v_start );
 
-    println( "a: ",  a, " b: ", b, " c: ", c );
+    f_debug  &&  println( "a: ",  a, " b: ", b, " c: ", c );
     f = dist_func( a, b, c );
 
     vl = integral_interval( f, 0.0, len_edge_p );
@@ -205,7 +207,7 @@ function  SweepDist_segs_p( p_a::Point{D,T},
         @assert( ! isnan( vl ) );
         println( "VL: ", vl );
     end
-    println( "VL: ", vl );
+    f_debug  &&  println( "VL: ", vl );
 
     return  vl;
 end

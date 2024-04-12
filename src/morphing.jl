@@ -775,10 +775,10 @@ function  Morphing_SweepDist_price( m::Morphing{N,T} ) where  {N,T}
         delta::Float64 = SweepDist_segs( P[ i ], P[ i + 1 ],
                                          Q[ i ], Q[ i + 1 ] )
         price = price + delta;
-        println( "DELTA: ", delta );
+        #println( "DELTA: ", delta );
     end
 
-    println( "PRICE: ", price );
+    #println( "PRICE: ", price );
     return  price;
 end
 
