@@ -770,12 +770,15 @@ function  Morphing_SweepDist_price( m::Morphing{N,T} ) where  {N,T}
     P,Q = Morphing_as_polygons( m );
 
     len = cardin( P );
-    price::Float64 = 0;
+    price::Float64 = 0.0;
     for  i in 1: len-1
-        price = price + SweepDist_segs( P[ i ], P[ i + 1 ],
-                                        Q[ i ], Q[ i + 1 ] );
+        delta::Float64 = SweepDist_segs( P[ i ], P[ i + 1 ],
+                                         Q[ i ], Q[ i + 1 ] )
+        price = price + delta;
+        println( "DELTA: ", delta );
     end
 
+    println( "PRICE: ", price );
     return  price;
 end
 

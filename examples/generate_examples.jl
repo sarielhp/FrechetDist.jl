@@ -1502,18 +1502,13 @@ function  create_demo( title::String,
 
     output_polygons_to_file(  [poly_a, poly_b], prefix * "curves.png", false );
     f_debug && println( "A10.a..." );
-    create_movie( poly_a, poly_b, total_frames, prefix*"f_c_movie.mp4", m_c );
 
     f_debug && println( "A10.b..." );
     is_mkdir( prefix*"ortho/" );
 
     f_debug && println( "A11..." );
-    output_ortho_frechet_movie_mp4(  m_c, prefix*"ortho/c.mp4" );
 
     if  f_draw_ve
-        create_movie( poly_a, poly_b, total_frames,
-                      prefix*"f_ve_r_movie.mp4", m_ve_r );
-
         PU, QU = Morphing_as_polygons( m_ve_r );
         output_polygons_to_file(  [PU, QU], prefix*"ve_matching.pdf",
                                   true, true, true );
@@ -1727,12 +1722,6 @@ function  create_demo( title::String,
 
 
     if  ( f_computed_d )
-        output_frechet_movie_mp4( m_d_dtw, prefix*"d_dtw.mp4",
-                                  400, true );
-        output_frechet_movie_mp4( m_d, prefix*"discrete_frechet.mp4",
-                                  400, true );
-        output_frechet_movie_mp4( m_d_r, prefix*"discrete_r_frechet.mp4",
-                                  400, true );
         println( fl, "<h1>Discrete " * FrechetStr * "</h1>\n" );
         if  ( f_sampled_10 )
             println( fl,
@@ -1785,21 +1774,17 @@ function  create_demo( title::String,
         fl_SweepDist = html_open_w_file( dir_SweepDist * "index.html",
                                     "SweepDist distances/morhpings" );
 
-        output_frechet_movie_mp4( m_SweepDist, dir_SweepDist * "SweepDist.mp4",
-            400, true );
         html_write_video_file( fl_SweepDist,  "SweepDist.mp4",
             "SweepDist (not necessarily monotone)" );
 
-        output_frechet_movie_mp4( m_SweepDist_r_m, dir_SweepDist * "SweepDist_r_m.mp4",
-            400, true );
         html_write_video_file( fl_SweepDist, "SweepDist_r_m.mp4",
             "SweepDist monotonize via refinement" );
 
         for  i in eachindex( m_SweepDist_vec )
             str_num = @sprintf( "%06d", i )
             mvname = @sprintf( "%06d.mp4", i )
-            output_frechet_movie_mp4( m_SweepDist_vec[ i ], dir_SweepDist * mvname,
-                                      400, true );
+            #output_frechet_movie_mp4( m_SweepDist_vec[ i ],
+            #                 dir_SweepDist * mvname, 400, true );
             html_write_video_file( fl_SweepDist, mvname,
                 "Level "*str_num* " of SweepDist (splitting edges)<br>\n" );
         end
@@ -1857,6 +1842,38 @@ function  create_demo( title::String,
         write( fl, "</video>\n" );
     end
     =#
+
+    println( "Generating all the movie files..." );
+    if  f_draw_ve
+        create_movie( poly_a, poly_b, total_frames,
+                      prefix*"f_ve_r_movie.mp4", m_ve_r );
+    end
+    create_movie( poly_a, poly_b, total_frames, prefix*"f_c_movie.mp4", m_c );
+    output_ortho_frechet_movie_mp4(  m_c, prefix*"ortho/c.mp4" );
+    if  ( f_computed_d )
+        output_frechet_movie_mp4( m_d_dtw, prefix*"d_dtw.mp4",
+                                  400, true );
+        output_frechet_movie_mp4( m_d, prefix*"discrete_frechet.mp4",
+                                  400, true );
+        output_frechet_movie_mp4( m_d_r, prefix*"discrete_r_frechet.mp4",                                  400, true );        
+    end;
+    if   f_SweepDist
+        output_frechet_movie_mp4( m_SweepDist,
+                                  dir_SweepDist * "SweepDist.mp4",
+                                  400, true );
+        output_frechet_movie_mp4( m_SweepDist_r_m,
+                                  dir_SweepDist * "SweepDist_r_m.mp4",
+                                  400, true );
+
+        is_mkdir( dir_SweepDist )
+        for  i in eachindex( m_SweepDist_vec )
+            str_num = @sprintf( "%06d", i )
+            mvname = @sprintf( "%06d.mp4", i )
+            output_frechet_movie_mp4( m_SweepDist_vec[ i ],
+                                      dir_SweepDist * mvname,
+                                      400, true );
+        end
+    end
     
     html_close( fl );
 end

@@ -14,11 +14,41 @@ using LinearAlgebra
 using DelimitedFiles
 
 
+#@with_kw
 mutable struct DistFunction{T}
     a::T;
     b::T;
     c::T;
+
+    disc::T;  # discriminant
+    f_linear::Bool;
+    root::T;
 end
+
+function DFunction( _a::T = 0.0, _b::T = 0.0, _c::T = 0.0,
+                       _disc::T = 0.0, _f_linear::Bool = false,
+                       _root::T = 0.0
+                       ) where {T}
+    return  DistFunction( _a, _b, _c, _disc, _f_linear, _root );
+end
+
+function normalize( f::DistFunction{T} ) where {T}
+    f.disc = f.b*f.b - 4.0*f.a*f.c;
+    if  ( abs( f.disc ) < 1e-13 )
+        f.f_linear = true;
+        root = -f.b/(2.0*f.a);
+    end
+    return  f;
+end
+
+function  dist_func( _a, _b, _c )
+    f = DFunction( _a, _b, _c );
+
+    return  normalize( f );
+end
+
+
+
 
 function  eval( f::DistFunction{T}, x::T ) where {T}
     return  sqrt( f.a*x*x + f.b*x + f.c );
@@ -27,7 +57,22 @@ end
 function  integral( f::DistFunction{T}, x::T ) where {T}
     v = eval( f, x );
 
-    t = (2.0*f.a*x + f.b ) / sqrt(4.0*f.a*f.c-f.b*f.b);
+    println( "FFF f_a: ", f.a );
+    println( "FFF f_b: ", f.b );
+    println( "FFF f_c: ", f.c );
+    tmp_a = 4.0 * f.a * f.c;
+    tmp_b = f.b*f.b;
+
+    val::Float64 = tmp_a - tmp_b;
+    println( "tmp_a: ", tmp_a );
+    println( "tmp_b: ", tmp_b );
+    println( "__VVVVVVV: ", val );
+    if  ( abs( val ) < 1e-14 )
+        val = 0.0;
+    end
+
+    println( "VVVVVVV: ", val );
+    t = (2.0*f.a*x + f.b ) / sqrt( val );
 
     as = asinh( t );
 
@@ -81,6 +126,27 @@ function  DistFunc_verify_integral_ext()
     DistFunc_verify_integral_2( 1.0, 2.0, 100.0 );
 end
 
+function  integral_interval( f::DistFunction{T}, low, high ) where {T}
+    @assert( low <= high );
+    
+    if  ( low == high )
+        return  0;
+    end
+    if  ( f.f_linear )
+        if  ( ( f.root <= low )  ||  ( f.root >= high ) )
+            val = (high - low) * ( eval( f, low )
+                                   + eval( f, high ) ) / 2.0;
+            return  val;
+        end
+        v_l = ( f.root - low ) * eval( f, low ) / 2.0;
+        v_r = ( high - f.root ) * eval( f, high ) / 2.0;
+        return  v_l + v_r;
+    end
+    return  integral( f, high ) - integral( f, low );
+    #ymin::Float64 = integral( f, 0.0 );
+        
+end
+
 
 function  SweepDist_segs_p( p_a::Point{D,T},
                       p_b::Point{D,T},
@@ -93,12 +159,27 @@ function  SweepDist_segs_p( p_a::Point{D,T},
         return  0.0;
     end
 
+    println( "len: ", len_edge_p );
     @assert( len_edge_p > 0.0 );
-    v_start::Point{D,T} = q_a - p_a;
-    v_end = q_a - p_a;
+
+    println( "q_a: ", q_a );
+    println( "q_b: ", q_b );
+    println( "p_a: ", p_a );
+    println( "p_b: ", p_b );
+    v_start = q_a - p_a ;
+    v_end = q_b - p_b;
+
+    if  Dist( v_start, v_end ) < 0.0000001 * cg.norm( v_start )
+        return  len_edge_p * cg.norm( v_start );
+    end
+
+    println( "v_start: ", v_start );
+    println( "v_end: ", v_end );
     diff::Point{D,T} =  v_end - v_start;
 
-    p_diff::Point{D,T} = diff / len_edge_p;
+    println( "Diff: ", diff );
+    p_diff::Point{D,T} = (1.0 / len_edge_p) * diff;
+    println( "p_diff: ", p_diff );
     # Location of the point at time t along the edge p.
     # p(t) := (t / len_edge_p) * diff + v_start;
     # p(t) := t  * p_diff + v_start;
@@ -109,9 +190,24 @@ function  SweepDist_segs_p( p_a::Point{D,T},
     b = 2.0 * cg.dot( p_diff, v_start );
     c = cg.dot( v_start, v_start );
 
-    f = DistFunction( a, b, c );
+    println( "a: ",  a, " b: ", b, " c: ", c );
+    f = dist_func( a, b, c );
 
-    return  integral( f, len_edge_p ) -  integral( f, 0.0 )
+    vl = integral_interval( f, 0.0, len_edge_p );
+
+    #ymax::Float64 = integral( f, len_edge_p );
+    #ymin::Float64 = integral( f, 0.0 );
+    #vl::Float64 = ymax - ymin;
+    #println( "ymin: ", ymin );
+    #println( "ymax: ", ymax );
+
+    if  ( isnan( vl ) )
+        @assert( ! isnan( vl ) );
+        println( "VL: ", vl );
+    end
+    println( "VL: ", vl );
+
+    return  vl;
 end
 
 function  SweepDist_segs( p_a::Point{D,T},
