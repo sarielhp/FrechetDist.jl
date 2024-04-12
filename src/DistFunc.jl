@@ -51,7 +51,11 @@ end
 
 
 function  eval( f::DistFunction{T}, x::T ) where {T}
-    return  sqrt( f.a*x*x + f.b*x + f.c );
+    v = f.a*x*x + f.b*x + f.c;
+    if  ( abs( v ) < 1e-16 )
+        return  0;
+    end
+    return  sqrt( v );
 end
 
 function  integral( f::DistFunction{T}, x::T ) where {T}

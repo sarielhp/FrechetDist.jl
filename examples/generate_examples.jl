@@ -1507,7 +1507,7 @@ function  create_demo( title::String,
         f_debug && println( "A7..." );
         m_SweepDist_r_m = SweepDist_compute_refine_mono( poly_a, poly_b );
         f_debug && println( "A8..." );
-        SweepDist_compute_split( poly_a, poly_b, m_SweepDist_vec, 7 );
+        SweepDist_compute_split( poly_a, poly_b, m_SweepDist_vec, 7, 2000 );
 
         for  i in eachindex( m_SweepDist_vec )
             mr = m_SweepDist_vec[ i ];
