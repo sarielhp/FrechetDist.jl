@@ -62,6 +62,7 @@ function  integral( f::DistFunction{T}, x::T ) where {T}
     f_debug::Bool = false;
     v = eval( f, x );
 
+    
     f_debug && println( "FFF f_a: ", f.a );
     f_debug && println( "FFF f_b: ", f.b );
     f_debug && println( "FFF f_c: ", f.c );
@@ -72,15 +73,18 @@ function  integral( f::DistFunction{T}, x::T ) where {T}
     f_debug  &&  println( "tmp_a: ", tmp_a );
     f_debug  &&  println( "tmp_b: ", tmp_b );
     f_debug  &&  println( "__VVVVVVV: ", val );
-    if  ( abs( val ) < 1e-14 )
+    if  ( abs( val ) < 1e-10 )
         val = 0.0;
     end
 
     f_debug  &&  println( "VVVVVVV: ", val );
-    t = (2.0*f.a*x + f.b ) / sqrt( val );
-
-    as = asinh( t );
-
+    local as;
+    if  ( val == 0.0 )
+        as = 64;
+    else
+        t = (2.0*f.a*x + f.b ) / sqrt( val );
+        as = asinh( t );
+    end
     A = f.c * as / ( 2.0*sqrt( f.a ) );
     B = - (  f.b^2 / ( 8.0*f.a^(3/2) )  ) * as;
     C = (x/2.0) * v;
