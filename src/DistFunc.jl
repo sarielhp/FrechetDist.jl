@@ -62,7 +62,6 @@ function  integral( f::DistFunction{T}, x::T ) where {T}
     f_debug::Bool = false;
     v = eval( f, x );
 
-    
     f_debug && println( "FFF f_a: ", f.a );
     f_debug && println( "FFF f_b: ", f.b );
     f_debug && println( "FFF f_c: ", f.c );
