@@ -602,6 +602,26 @@ function  Polygon_translate!( P::Polygon{D,T}, v::Point{D,T} ) where {D,T}
 end
 
 
+function  Polygon_split_single_edge( P::Polygon{D,T}, i::Int64 ) where {D, T}
+    if  i == cardin( P )
+        i = i - 1;
+    end
+    if  i == 0
+        i = i + 1;
+    end
+#    println( "iiii: ", i );
+    Q = Polygon{D,T}();
+    for t in 1:i
+        Polygon_push_smart( Q, P[ t ] );
+    end
+    Polygon_push_smart( Q, (P[ i ] + P[ i+1 ] ) / 2.0 );
+    for t in i+1:cardin(P)
+        Polygon_push_smart( Q, P[ t ] );
+    end
+    return  Q;
+end
+
+
 function  Polygon_convex_comb( P::Polygon{D,T},
                                Q::Polygon{D,T},
                                t::Float64 ) where {D,T}
@@ -876,6 +896,15 @@ function  Polygon_prefix_lengths( poly::Polygon{D,T} ) where {D,T}
     end
     return v;
 end
+
+
+function  Polygon_edge_length( P::Polygon{D,T}, i::Int64 )  where {D,T}
+    if  i < 0  ||  ( i >= cardin( P ) )
+        return  0.0;
+    end
+    return  Dist( P[ i ], P[ i + 1 ] );
+end
+
 
 # poly: Poylgon
 # prefix_len: Prefix lengths of the edges,
@@ -1158,6 +1187,8 @@ export  Polygon_write_to_file
 export  Polygon_random
 export  Polygon_convex_comb
 export  Polygon_split_edges
+export  Polygon_split_single_edge
+export  Polygon_edge_length
 
 export  VecPnts_as_matrix
 

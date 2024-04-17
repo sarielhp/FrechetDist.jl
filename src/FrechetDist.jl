@@ -41,6 +41,8 @@ export  Morphing_extract_vertex_radii, Morphing_extract_offsets
 export  Morphing_SweepDist_price
 export  Morphing_SweepDist_approx_price
 
+export  Morphing_get_max_edges_err;
+
 #####################################################################
 export  frechet_d_compute
 export  frechet_d_r_compute

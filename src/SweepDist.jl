@@ -199,6 +199,10 @@ function   SweepDist_compute_refine_mono( poly_a::Polygon{N,T},
 
     P = poly_a;
     Q = poly_b;
+
+    println( "*** P :", cardin( P ) );
+    println( "*** Q :", cardin( Q ) );
+    
     local  m_new;
     while  true
         m = SweepDist_compute( P, Q );

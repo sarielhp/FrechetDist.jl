@@ -1507,6 +1507,7 @@ function  create_demo( title::String,
         f_debug && println( "A7..." );
         m_SweepDist_r_m = SweepDist_compute_refine_mono( poly_a, poly_b );
         f_debug && println( "A8..." );
+
         SweepDist_compute_split( poly_a, poly_b, m_SweepDist_vec, 7, 2000 );
 
         for  i in eachindex( m_SweepDist_vec )
@@ -1515,6 +1516,9 @@ function  create_demo( title::String,
             push!( SweepDist_lb_vec, mlb.sol_value );
 #           exit( -1 );
         end
+        Pa, Qa = Morphing_as_polygons( m_SweepDist_r_m );
+        m_SweepDist_r_m_2 = SweepDist_compute( Pa, Qa );
+
         f_debug && println( "A9..." );
     end
 
@@ -1816,6 +1820,7 @@ function  create_demo( title::String,
         html_write_video_file( fl_SweepDist, "SweepDist_r_m.mp4",
             "SweepDist monotonize via refinement" );
 
+
         for  i in eachindex( m_SweepDist_vec )
             str_num = @sprintf( "%06d", i )
             mvname = @sprintf( "%06d.mp4", i )
@@ -1826,13 +1831,15 @@ function  create_demo( title::String,
         end
 
         println( fl_SweepDist, "<hr>\n" );
-        A = fill("", length( m_SweepDist_vec ), 4)
+        A = fill("", 3+length( m_SweepDist_vec ), 6)
         for  i in eachindex( m_SweepDist_vec )
             m = m_SweepDist_vec[ i ];
             A[i,1] = string( i )
             A[i,2] = string( SweepDist_lb_vec[ i] );
             A[i,3] = string( Morphing_SweepDist_approx_price( m ) );
             A[i,4] = string( Morphing_SweepDist_price( m ) );
+            A[i,5] = string( cardin( m.P ) );
+            A[i,6] = string( cardin( m.Q ) );
             #=println( fl_SweepDist, i );
             println( fl_SweepDist, ": ", SweepDist_lb_vec[ i], "...",
                 Morphing_SweepDist_approx_price( m ), " Exact: ",
@@ -1841,9 +1848,29 @@ function  create_demo( title::String,
             =#
             #            writeln( fl,SweepDist, "\n );
         end
+        ind = length( m_SweepDist_vec ) + 1;
+        A[ ind, 1 ] = "Sweep dist (orig): ";
+        A[ ind, 4 ] =  string( Morphing_SweepDist_price( m_SweepDist ) );
+        A[ ind, 5 ] = string( cardin( m_SweepDist.P ) );
+        A[ ind, 6 ] = string( cardin( m_SweepDist.Q ) );
+
+        A[ ind + 1, 1 ] = "Sweep dist r_mono: ";
+        A[ ind + 1, 4 ] = string( Morphing_SweepDist_price( m_SweepDist_r_m ) );
+        A[ ind + 1, 5 ] = string( cardin( m_SweepDist_r_m.P ) );
+        A[ ind + 1, 6 ] = string( cardin( m_SweepDist_r_m.Q ) );
+
+        A[ ind + 2, 1 ] = "Sweep dist r_mono_2: ";
+        A[ ind + 2, 4 ] = string(
+                 Morphing_SweepDist_price( m_SweepDist_r_m_2 ) );
+        A[ ind + 2, 5 ] = string( cardin( m_SweepDist_r_m_2.P ) );
+        A[ ind + 2, 6 ] = string( cardin( m_SweepDist_r_m_2.Q ) );
+
+        println( fl_SweepDist, "<h2>Original SweepDist" );
+
+
 
         pretty_table(fl_SweepDist, A; header = (["Iteration", "Lower
-                 bound", "Upper bound", "Better UB"]),
+                 bound", "Upper bound", "Better UB", "#P", "#Q" ]),
                  allow_html_in_cells = true, backend = Val(:html) );
 
         println( fl_SweepDist, "\n\n<hr>\n" );
@@ -2130,12 +2157,49 @@ function  generate_examples()
     end
 end
 
+function  reportIt( m )
+    mlb = SweepDist_lb_compute( m.P, m.Q );
+    println( mlb.sol_value, "...", Morphing_SweepDist_price( m ) );
+end
+
+function  SW_test()
+    P, Q = example_3();
+
+    for i in 1:80
+        m = SweepDist_compute_refine_mono( P, Q );
+        reportIt( m );
+
+        i,j, mx = Morphing_get_max_edges_err( m );
+        println( "Max edge fidelity: ", mx, " (", i, ", ", j, ")" );
+#        PA = Polygon_split_single_edge( m.P, i+1 );
+#        QA = Polygon_split_single_edge( m.Q, j+1 );
+        
+        l_p = Polygon_edge_length( m.P, i );
+        l_q = Polygon_edge_length( m.Q, j );
+
+        if  l_p > l_q 
+            P = Polygon_split_single_edge( m.P, i );
+            Q = m.Q;
+        else
+            P = m.P;
+            Q = Polygon_split_single_edge( m.Q, j );
+        end
+    end
+end
+
+
+####################################################################
 
 if  ! isdir( "output" );
     mkdir( "output" );
 end
 
 num_args = length( ARGS );
+
+if   num_args == 1  &&  (ARGS[1]=="SD" )
+    SW_test();
+end
+
 if   num_args == 0
 #    gen_example_6();
 

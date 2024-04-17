@@ -72,6 +72,43 @@ function   Morphing_init( P::Polygon{N,T}, Q::Polygon{N,T},
 end
 
 
+function  Morphing_get_max_edges_err( m::Morphing{D,T} ) where {D,T}
+    mx::Float64 = 0.0;
+
+    io = jo = -1;
+
+    P = m.P;
+    Q = m.Q;
+
+    l_p = cardin( P );
+    l_q = cardin( Q );
+
+    len = length( m.pes );
+    for  ind in  1:len
+        i = m.pes[ ind ].i;
+        j = m.qes[ ind ].i;
+
+        if  ( i== l_p )  ||  ( j == l_q )
+            continue;
+        end
+
+        d = max( Dist( P[ i ], Q[ j ] ),
+                 Dist( P[ i ], Q[ j + 1 ] ),
+                 Dist( P[ i + 1 ], Q[ j ] ),
+                 Dist( P[ i + 1 ], Q[ j + 1 ] ) );
+        ld = iseg_iseg_dist( P[ i ], P[ i + 1 ], Q[ j ], Q[ j + 1 ] );
+        delta = d - ld;
+        #println( "delta : ", delta, " (", i, ", ", j, ")" );
+        if  ( delta > mx )
+            mx = delta;
+            io, jo = i, j;
+        end
+    end
+
+    return   io, jo, mx;
+end
+
+
 ####################################################
 # Compute for every vertex the maximum leash length used with this
 # vertex.
