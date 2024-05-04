@@ -58,6 +58,26 @@ function  eval( f::DistFunction{T}, x::T ) where {T}
     return  sqrt( v );
 end
 
+function  integral_alpha( f::DistFunction{T}, x::T ) where {T}
+    f_debug::Bool = false;
+    f_x = eval( f, x );
+    sqrt_f_x = sqrt( f_x );
+    sqrt_a = sqrt( f.a );
+    
+    bax = f.b + 2.0 * f.a * x;
+    b_sq = f.b*f.b;
+
+    un = b_sq - 4.0 * f.a * f.c;
+
+    A = ( bax * sqrt_f_x ) / ( 4.0 * f.a );
+
+    ll = un * log( bax + 2.0 * sqrt_a * sqrt_f_x  )
+
+    B = - ll / ( 8.0 * sqrt_a * f.a );
+
+    return A + B;
+end
+
 function  integral( f::DistFunction{T}, x::T ) where {T}
     f_debug::Bool = false;
     v = eval( f, x );
@@ -100,13 +120,13 @@ end
 ###################################################################3
 
 function  DistFunc_verify_integral( a, b, c, x )
-    f = DistFunction( a, b, c );
+    f = DFunction( a, b, c );
 
     delta = x/2.0;
     local v, diff;
     for i in 1:14
         l = x - delta;
-        hf = x + delta;
+        h = x + delta;
         diff = ( integral( f, h ) - integral( f, l )  ) / (2.0*delta);
         v = eval( f, x )
         delta = delta / 2.0;

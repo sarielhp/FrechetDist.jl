@@ -418,3 +418,25 @@ function  example_17_dtw()
 
     return  polya, polyb;
 end
+
+### Two segments crossing each other
+function  example_18()
+    polya = Polygon2F(  );
+    polyb = Polygon2F(  );
+
+    xs = 4;
+
+    push!( polya,
+        point( 0.0, 0.4999 * xs  ),
+        point( 0.0, 0.499999 * xs  ),
+        point( xs*1.0, xs * 0.5 ),
+        point( xs*1.0, xs * 0.501 )
+    );
+    push!( polyb,
+           point( xs * 0.4999, 0 ),
+           point( xs * 0.49999, 0 )           ,
+           point( xs * 0.600001, xs*1.0 ),
+           point( xs * 0.6, xs*1.0 )
+           );
+    return  polya, polyb;
+end

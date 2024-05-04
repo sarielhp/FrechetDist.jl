@@ -348,18 +348,10 @@ function   SweepDist_lb_compute( P::Polygon{D,T}, Q::Polygon{D,T}
         i::Int64, j::Int64 = ele[ 1 ];
         value = ele[ 2 ];
 
-        #println( pq );
-        #println( "LOC: (", i, ": ", n_p, ", ",j ,":", n_q, " ): ",
-        #    value );
-        #println( "  VALUE   : ", value );
-        #println( "  dp[", i, ", ", j, "] : ", dp[ i, j ] );
-        #println( pq );
-
         dequeue!( pq );
         if  handled[ i, j ]
             continue;
         end
-
 
         handled[ i, j ] = true;
         if  ( ( i == n_p )  &&  ( j == n_q ) )

@@ -2050,6 +2050,15 @@ function  gen_example_17()
                  );
 end
 
+function  gen_example_18()
+    poly_a,poly_b = example_18();
+    create_demo( "Example 18", "output/18/", poly_a, poly_b,
+                 true, true,
+        "Example where the minimum of the functions are linear",
+                 true
+                 );
+end
+
 function  gen_example_1()
     poly_a,poly_b = example_1();
     create_demo( "Example 1", "output/01/",
@@ -2154,6 +2163,9 @@ function  generate_examples()
     end
     if  is_rebuild( "output/17" )
         gen_example_17()
+    end
+    if  is_rebuild( "output/18" )
+        gen_example_18()
     end
 end
 
