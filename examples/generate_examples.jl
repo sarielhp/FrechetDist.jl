@@ -1431,12 +1431,13 @@ function  create_demo( title::String,
                        f_draw_ve::Bool = true,
                        note::String = "",
                        f_refinements::Bool = false )
-    f_debug::Bool = false;
+    f_debug::Bool = true;
 
     if  ! isdir( prefix )
         mkdir( prefix );
     end
     cardi = cardin( poly_a ) + cardin( poly_b );
+    f_debug  &&  println( "Cardinality of both polygons: ", cardi );
     total_frames = min( 50 * (cardin( poly_a ) + cardin( poly_b )), 800 );
 
     filename_curves = prefix*"curves.pdf";
@@ -1964,6 +1965,8 @@ function  create_demo_files( title::String,
                              )
     poly_a = Polygon_read_plt_file( f_a );
     poly_b = Polygon_read_plt_file( f_b );
+    println( "#poly_a: ", cardin( poly_a ) );
+    println( "#poly_b: ", cardin( poly_b ) );
     create_demo( title, prefix, poly_a, poly_b, f_draw_c, f_draw_ve, note );
 
 end
@@ -2167,6 +2170,17 @@ function  generate_examples()
     if  is_rebuild( "output/18" )
         gen_example_18()
     end
+
+    if   is_rebuild( "output/19" )
+        if  ( isfile( "data/birds/1791.plt" ) )
+            create_demo_files( "Example of birds migration (GPS tracks)",
+                               "output/19/",
+                               "data/birds/1791.plt",
+                               "data/birds/2322.plt",
+                               true, false );
+        end
+    end
+
 end
 
 function  reportIt( m )
@@ -2185,11 +2199,11 @@ function  SW_test()
         println( "Max edge fidelity: ", mx, " (", i, ", ", j, ")" );
 #        PA = Polygon_split_single_edge( m.P, i+1 );
 #        QA = Polygon_split_single_edge( m.Q, j+1 );
-        
+
         l_p = Polygon_edge_length( m.P, i );
         l_q = Polygon_edge_length( m.Q, j );
 
-        if  l_p > l_q 
+        if  l_p > l_q
             P = Polygon_split_single_edge( m.P, i );
             Q = m.Q;
         else

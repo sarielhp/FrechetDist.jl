@@ -645,10 +645,15 @@ function  Polygon_as_matrix( P::Polygon{D,T} ) where {D,T}
     return  m;
 end
 
+"""
+    Polygon_write_to_file
+
+    Writes a plt file of the polygon.
+"""
 function  Polygon_write_to_file( P::Polygon{D,T}, filename ) where {D,T}
     m = Polygon_as_matrix( P );
     open( filename, "w") do io
-        writedlm( io, m )
+        writedlm( io, m', ',' )
     end
 end
 
@@ -1115,6 +1120,12 @@ function  Polygon_read_plt_file( filename )
     P::Polygon2F = Polygon2F();
 
     a = readdlm( filename );
+    d_a::Int64 = size(a,1)
+    println( typeof( a ) );
+    println( size( a ) )
+    println( size(a,1) );
+    println( size(a,2) );
+
     for  r  in 7:size(a,1)
         line = a[r,1]
         parts::Vector{SubString{String}} = split.( line, "," );
