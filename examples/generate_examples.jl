@@ -2172,11 +2172,11 @@ function  generate_examples()
     end
 
     if   is_rebuild( "output/19" )
-        if  ( isfile( "data/birds/1791.plt" ) )
+        if  ( isfile( "data/birds/1787_1.plt" ) )
             create_demo_files( "Example of birds migration (GPS tracks)",
                                "output/19/",
-                               "data/birds/1791.plt",
-                               "data/birds/2322.plt",
+                               "data/birds/1787_1.plt",
+                               "data/birds/1787_2.plt",
                                true, false );
         end
     end
