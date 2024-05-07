@@ -2184,16 +2184,27 @@ function  generate_examples()
                                true, true );
         end
     end
-
+    
     if   is_rebuild( "output/20" )
         if  ( isfile( "data/birds/1787_1.plt" ) )
             create_demo_files( "Example II of birds migration (GPS tracks)",
-                               "output/20/",
-                               "data/birds/2499_2.plt",
-                               "data/birds/2301_4.plt",
-                               true, true );
+                "output/20/",
+                "data/birds/2499_2.plt",
+                "data/birds/2301_4.plt",
+                true, true );
         end
     end
+
+    if   is_rebuild( "output/21" )
+        if  ( isfile( "data/birds/2322_2.plt" ) )
+            create_demo_files( "Example III of birds migration (GPS tracks)",
+                               "output/21/",
+                               "data/birds/2322_2.plt",
+                               "data/birds/1793_4.plt",
+                               true, true );
+        end
+    end    
+
 
 end
 

@@ -1074,7 +1074,7 @@ function  frechet_c_compute( poly_a::Polygon{N,T},
         println( "LOWER BOUND: ", lower_bound );
         println( "upper BOUND: ", m.leash );
     end
-    factor::Float64 = 4.0
+    factor::Float64 = 8.0
     while  true
         f_debug  &&  println( "-------------------------------------------" );
         f_debug  &&  println( "factor: ", factor, "                      " );
@@ -1105,16 +1105,18 @@ function  frechet_c_compute( poly_a::Polygon{N,T},
             println( "Computing radii simplified Frechet distance..." );
         end
         #    m_mid = frechet_ve_r_mono_compute( PS, QS  );
-        f_debug && println( "Approx refinement : ", aprx_refinement );
+        f_debug && println( "\nApprox refinement : ", aprx_refinement );
         m_mid, f_exact, PSR, QSR = frechet_mono_via_refinement( PS, QS,
                                                               aprx_refinement );
 
         f_debug  &&  println( "frechet mono via refinment computed" );
         f_debug  &&  println( "PSR.len: ", cardin( PSR ) );
-        f_debug  &&  println( "QSR.len: ", cardin( QSR ) );
+        f_debug  &&  println("QSR.len: ", cardin( QSR ) );
 
+        f_debug  &&  println( "ve_r_mono( poly_a -> PSR)" );
         m_a = frechet_ve_r_mono_compute( poly_a, PSR );
         mmu = Morphing_combine( m_a, m_mid );
+        f_debug  &&  println( "ve_r_mono( WSR -> poly_b )" );
         m_b = frechet_ve_r_mono_compute( QSR, poly_b );
         mw = Morphing_combine( mmu, m_b );
 
@@ -1135,6 +1137,7 @@ function  frechet_c_compute( poly_a::Polygon{N,T},
         QSR_offs = Morphing_extract_offsets( m_b )[1]
 
 
+        f_debug  &&  println( "ve_r_mono( PSR -> QSR)" );
         m_final = frechet_ve_r_compute_ext( PSR, QSR, PSR_offs, QSR_offs,
                                             true );
         if  ( floating_equal( m_final.leash,  mw.leash ) )
