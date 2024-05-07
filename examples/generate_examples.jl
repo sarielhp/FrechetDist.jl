@@ -1696,13 +1696,15 @@ function  create_demo( title::String,
     write( fl, "\n<hr>\n" )
 
     if  f_draw_ve
-        B=fill("", (2,2) )
+        B=fill("", (2,3) )
         B[1,1] = "Fréchet";
         B[1,2] = string( m_c.leash );
+        B[1,3] = string( m_c.iters );
         B[2,1] = "VE Fréchet";
         B[2,2] = string( m_ve_r.leash ) ;
+        B[2,3] = string( m_ve_r.iters );
         pretty_table(fl, B;
-                     header = (["Distance",  "Value"]),
+                     header = (["Distance",  "Value", "Iters"]),
                      allow_html_in_cells = true,
                      table_style = style_tbl,
                      backend = Val(:html) )

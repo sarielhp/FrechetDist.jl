@@ -1121,10 +1121,10 @@ function  Polygon_read_plt_file( filename )
 
     a = readdlm( filename );
     d_a::Int64 = size(a,1)
-    println( typeof( a ) );
-    println( size( a ) )
-    println( size(a,1) );
-    println( size(a,2) );
+    #println( typeof( a ) );
+    #println( size( a ) )
+    # println( size(a,1) );
+    # println( size(a,2) );
 
     for  r  in 7:size(a,1)
         line = a[r,1]
