@@ -1476,9 +1476,11 @@ function  create_demo( title::String,
     f_debug && println( "A0: frechet_c_compute done..." );
     if  f_draw_ve
         f_debug && println( "A0: frechet_ve_r_compute about to be called..." );
-        m_ve_r = frechet_ve_r_compute( poly_a, poly_b );
+        println( "Before m_ve_r..." );
+        @time m_ve_r = frechet_ve_r_compute( poly_a, poly_b );
+        println( "Iterations: ", m_ve_r.iters );
     end
-
+    
     f_debug && println( "A1..." );
 
     f_SweepDist::Bool = false;

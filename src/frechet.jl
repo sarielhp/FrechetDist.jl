@@ -316,7 +316,7 @@ function   frechet_ve_r_compute_ext( P::Polygon{N,T},
         c.handled[ ev.id ] = true;
         iters = iters + 1;
 
-        if  f_debug  &&  ( (iters % 1000000) == 0 )
+        if  f_debug  &&  ( (iters % 10000) == 0 )
             print( "Iters :" );
             print_int_w_commas( iters );
             print( "  ", length( heap ) );

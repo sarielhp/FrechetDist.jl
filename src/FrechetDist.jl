@@ -20,6 +20,7 @@ include( "morphing.jl" );
 include( "frechet_discrete.jl" );
 include( "frechet.jl" );
 include( "SweepDist.jl" );
+include( "utils.jl" );
 
 ##########################################################################
 
