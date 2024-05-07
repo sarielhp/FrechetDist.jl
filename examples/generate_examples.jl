@@ -2177,7 +2177,7 @@ function  generate_examples()
                                "output/19/",
                                "data/birds/1787_1.plt",
                                "data/birds/1787_2.plt",
-                               true, false );
+                               true, true );
         end
     end
 
@@ -2187,7 +2187,7 @@ function  generate_examples()
                                "output/20/",
                                "data/birds/2499_2.plt",
                                "data/birds/2301_4.plt",
-                               true, false );
+                               true, true );
         end
     end
 
