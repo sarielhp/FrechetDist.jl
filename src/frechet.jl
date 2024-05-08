@@ -56,20 +56,18 @@ end
 @with_kw mutable struct  TreeVertex
     id::Int64
     val::Float64 = 0.0
-#    r::Float64 = 0.0
+    r::Float64 = 0.0
 
     id_prev::Int64
 end
 
 #DictVERType = Dict{Int64, TreeVertex};
-
 DictVERType = Dict{Int64, Int64};
 DictHandledType = Dict{Int64, Bool};
-#HeapVERType = BinaryMinHeap{TreeVertex};
-FRPriorityQueueType = PriorityQueue{Int64,Float64};
+HeapVERType = BinaryMinHeap{TreeVertex};
 
 function  TreeVertex( _id::Int64 )
-    return TreeVertex( _id, 0.0, EID( 0, false, 0, false ) );
+    return TreeVertex( _id, 0.0, 0.0, EID( 0, false, 0, false ) );
 end
 
 function Base.isless( v::TreeVertex, u::TreeVertex )
@@ -84,29 +82,24 @@ function Base.hash(v::TreeVertex, h::UInt)
 end
 
 
-
 @with_kw mutable struct FRContext{N,T}
     P::Polygon{N,T};
     Q::Polygon{N,T};
     p_offs::Vector{Float64};
     q_offs::Vector{Float64};
     handled::DictHandledType;
-    dict_prev::DictVERType;
-    #heap::BinaryMinHeap{TreeVertex};
-    pq::FRPriorityQueueType;
+    dict::DictVERType;
+    heap::BinaryMinHeap{TreeVertex};
     f_offsets::Bool = false;
     n_p::Int64 = 0
     n_q::Int64 = 0
 end
 
 function  FRContext(P::Polygon{N,T}, Q::Polygon{N,T}) where {N,T}
-    return FRContext( P, Q,
-                      Vector{Float64}(),
-                      Vector{Float64}(),
+    return FRContext( P, Q, Vector{Float64}(),  Vector{Float64}(),
                       Dict{Int64, Int64}(),
                       Dict{Int64, Float64}(),
-#                      BinaryMinHeap{TreeVertex}(),
-                      FRPriorityQueueType(),
+                      BinaryMinHeap{TreeVertex}(),
                       false, cardin( P ), cardin( Q ) );
 end
 
@@ -153,16 +146,24 @@ function  ve_event_value( c::FRContext{N,T}, id::Int64 ) where {N,T}
         end
     end
 
-    println( "(", i, j, ") i_is_vert: ", EID_i_is_vert( id ),
-             "  j_is_vert: ", EID_j_is_vert( id ) );
     println( "Error: This kind of event is not handled yet..." );
-    @assert( false );
-
+    exit( -1 )
     return  ev
 end
 
 
+function  f_r_new_event( _id::Int64, c::FRContext{N,T} ) where {N,T}
+    ev = TreeVertex( _id );
+    ev.r = ev.val = ve_event_value( c, ev.id );
+    return  ev;
+end
 
+function   is_start_event( id::Int64 )
+    return ( ( EID_i( id ) == 1 )
+             && ( EID_j( id ) == 1 )
+             && EID_i_is_vert( id )
+             &&  EID_j_is_vert( id ) )
+end
 
 function  is_final_cell( id::Int64, n_p::Int64, n_q::Int64 )
     return   ( ( EID_i( id ) == ( n_p - 1 ) )
@@ -201,8 +202,8 @@ function f_r_create_event( R::Polygon{N,T}, i::Int64,
 end
 
 
-function  is_schedule_event( dict_prev, id::Int64, n_p, n_q )::Bool
-    if  haskey( dict_prev, id )
+function  is_schedule_event( dict, id::Int64, n_p, n_q )::Bool
+    if  haskey( dict, id )
         return  false
     end
     if  ( EID_i( id )  > n_p )  ||  ( EID_j( id ) > n_q )
@@ -219,28 +220,22 @@ end
 
 function  f_r_schedule_event( id::Int64, prev_id::Int64,
                               c::FRContext{N,T} ) where  {N,T}
-    if  ! is_schedule_event( c.dict_prev, id, c.n_p, c.n_q )
+    if  ! is_schedule_event( c.dict, id, c.n_p, c.n_q )
         return
     end
+    ev = f_r_new_event( id, c);
 
-    value = ve_event_value( c, id );
-    c.dict_prev[ id ] = prev_id;
-
-    if  haskey( c.pq, id )
-        if  ( c.pq[ id ] < value )
-            return;
-        end
-        delete!( c.pq, id );
-    end
-
-    enqueue!( c.pq, id, value );
+    ev.id_prev = prev_id;
+    c.dict[ id ] = prev_id;
+    push!( c.heap, ev );
+    return  ev
 end
 
 
 
 
 function  f_r_extract_solution( P::Polygon{N,T}, Q,
-                                end_event_id::Int64, dict_prev
+                                end_event_id::Int64, dict
                                 ) where {N,T}
     #############################################################3
     # Extracting the solution
@@ -262,12 +257,9 @@ function  f_r_extract_solution( P::Polygon{N,T}, Q,
     push!( qes, qex );
 
     curr = end_event_id;
-
-    start_id = EID( 1, true, 1, true );
-
-    while  ( curr != start_id );
+    while  ! is_start_event( curr )
         prev = curr;
-        curr = dict_prev[ prev ];
+        curr = dict[ prev ];
 
 #        id = curr.id;
         id_i = EID_i( curr );
@@ -310,64 +302,58 @@ function   frechet_ve_r_compute_ext( P::Polygon{N,T},
 
     start_id = EID( 1, true, 1, true );
 
-    end_id::Int64 = EID( c.n_p, true, c.n_q, true );
-    f_r_schedule_event( start_id, start_id, c );
+    end_id = EID( c.n_p, true, c.n_q, true );
+    start_event = f_r_schedule_event( start_id, start_id, c );
 
+    end_event::TreeVertex = start_event;
     iters = 0;
-    pq = c.pq;
-    while  ! isempty( pq )
-        tp = peek( pq );
-        id = tp[1];
-        value = tp[ 2 ];
-        dequeue!( pq );
-
-        #println( "pq.size : ", length( pq ) );
-        #println( id );
-        if  ( haskey( c.handled,  id ) )
+    heap = c.heap;
+    while  ! isempty( heap )
+        ev::TreeVertex = pop!( heap );
+        if  ( haskey( c.handled,  ev.id ) )
             continue;
         end
-        c.handled[ id ] = true;
+        c.handled[ ev.id ] = true;
         iters = iters + 1;
 
-        if  f_debug  &&  ( (iters % 1000000) == 0 )
+        if  f_debug  &&  ( (iters % 10000) == 0 )
             print( "Iters :" );
             print_int_w_commas( iters );
-            print( "  ", length( pq ) );
+            print( "  ", length( heap ) );
             print( "  " );
             print_int_w_commas( c.n_p * c.n_q * 2 );
             print( "   dict size: " );
-            print_int_w_commas( length( c.dict_prev ) );
+            print_int_w_commas( length( c.dict ) );
             println( "  " );
         end
 
-        i = EID_i( id );
-        j = EID_j( id );
-        #println( "P:(", i, ", ", j, ")" );
-        if  id == start_id
-            #println( "Start_event!" );
-            #println( "EE" );
-            f_r_schedule_event( EID( 1, false, 1, true ), id, c );
-            f_r_schedule_event( EID( 1, true, 1, false ), id, c );
+        value = ev.val;
+
+        i = EID_i( ev.id );
+        j = EID_j( ev.id );
+
+        if  is_start_event( ev.id )
+            f_r_schedule_event( EID( 1, false, 1, true ), ev.id, c );
+            f_r_schedule_event( EID( 1, true, 1, false ), ev.id, c );
             continue;
         end
 
         # Is it the *final* event?
         if  ( i == c.n_p )  &&  ( j == c.n_q )
-            end_id = id;
+            end_event = ev;
             break;
         end
 
         # Is it on the boundary of the final cell?
-        if  is_final_cell( id, c.n_p, c.n_q )
-            #println( "BB" );
-            f_r_schedule_event( end_id, id, c );
+        if  is_final_cell( ev.id, c.n_p, c.n_q )
+            f_r_schedule_event( end_id, ev.id, c );
             continue;
         end
-        f_r_schedule_event( EID( i+1, true, j, false ), id, c );
-        f_r_schedule_event( EID( i, false, j+1, true ), id, c );
+        f_r_schedule_event( EID( i+1, true, j, false ), ev.id, c );
+        f_r_schedule_event( EID( i, false, j+1, true ), ev.id, c );
     end
 
-    pes, qes = f_r_extract_solution( P, Q, end_id, c.dict_prev );
+    pes, qes = f_r_extract_solution( P, Q, end_event.id, c.dict );
 
     morph::Morphing{N,T} = Morphing_init( P, Q, pes, qes );
     morph.iters = iters;
