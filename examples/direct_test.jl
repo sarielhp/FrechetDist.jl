@@ -40,6 +40,9 @@ function test_files( df::DataFrame, fl_a, fl_b, desc = "" )
     println( "#P: ", cardin( poly_a ) );
     println( "#Q: ", cardin( poly_b ) );
 
+    ub_iters = cardin( poly_a ) * cardin( poly_b ) * 2;
+    
+    
     println( "Forcing compilation..." );
     m_exact_tmp = frechet_c_compute( poly_a, poly_b );
     #println( "\n\n\n\n\n\n\n\n\n\n\n\n\n\n" );
@@ -85,11 +88,14 @@ function test_files( df::DataFrame, fl_a, fl_b, desc = "" )
     end
 
     println( "ve_r..." );
-    @timeit tmo CL_VE_RETRACT begin
-        m_ve_r = frechet_ve_r_compute( poly_a, poly_b );
+    f_do_ve_r::Bool = ( ub_iters < 1000000000 );
+    if  ( f_do_ve_r )
+        @timeit tmo CL_VE_RETRACT begin
+            m_ve_r = frechet_ve_r_compute( poly_a, poly_b );
+        end
     end
 
-    show(tmo)
+    #show(tmo)
 
 
     #println( "\n" );
@@ -110,7 +116,11 @@ function test_files( df::DataFrame, fl_a, fl_b, desc = "" )
     df[ r, CL_APRX_2     ] = snano( CL_APRX_2 );
     df[ r, CL_APRX_4     ] = snano( CL_APRX_4 );
     df[ r, CL_EXACT      ] = snano( CL_EXACT );
-    df[ r, CL_VE_RETRACT ] = snano( CL_VE_RETRACT );
+    if  ( f_do_ve_r )
+        df[ r, CL_VE_RETRACT ] = snano( CL_VE_RETRACT );
+    else
+        df[ r, CL_VE_RETRACT ] = "TOO LARGE";
+    end
     #=
 CL_APRX_1_1 = "Aprx 1.1";
 CL_APRX_2 = "Aprx 2";
