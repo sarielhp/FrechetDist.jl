@@ -1,15 +1,13 @@
+#! /usr/bin/julia
+
 push!(LOAD_PATH, pwd()*"/src/")
 
-#using BenchmarkTools
-#using Parameters
-#using StaticArrays
-#using Distributions;
-#using LinearAlgebra
 using TimerOutputs
-
+using Printf
+using CSV, DataFrames
 using FrechetDist
 using FrechetDist.cg
-using CSV, DataFrames
+using PrettyTables
 #using cg
 
 CSV_FILENAME = "output/results.csv";
@@ -29,7 +27,9 @@ CL_VE_RETRACT = "VE Retractable";
 function test_files( df::DataFrame, fl_a, fl_b, desc = "" )
     local  tmo;
     function  snano( str )::String
-        return  string( TimerOutputs.time(tmo[ str ] ) / 1.0e9 );
+        seconds::Float64 = TimerOutputs.time(tmo[ str ] ) / 1.0e9;
+        s = @sprintf( "%.4f", seconds );
+        return  s; #string(  );
     end
 
     tmo = TimerOutput()
@@ -128,7 +128,16 @@ CL_APRX_4 = "Aprx 4";
 CL_EXACT = "Exact";
  = "VE Retractable";
 =#
-    print( df );
+    println( df );
+
+    ha = LatexHighlighter((d,i,j)->i % 2 != 0,
+        ["cellcolor{lightgray}","textbf"])
+    
+    iox = open("output/results.tex", "w");
+    pretty_table( iox,df, header = names( df ), backend = Val(:latex), highlighters = (ha));
+    
+    #show( iox, "text/latex", df );
+    close( iox );
 end
 
 
@@ -158,6 +167,7 @@ end
 df = get_data_frame( CSV_FILENAME )
 
 println( df );
+println( "\n" );
 
 num_args = length( ARGS );
 if   num_args == 2

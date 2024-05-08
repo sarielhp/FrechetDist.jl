@@ -1,3 +1,5 @@
+#! /usr/bin/julia
+
 # Originally contributed by S. Har-Peled
 # under MIT License
 
@@ -105,6 +107,13 @@ function find_closest_in_directory( path::String, threshold,
                 loc_i = i;
                 loc_j = j;
                 min_dist = dist;
+                println( "= Close pair ============================" );
+                println( dist );
+                println( "#: ", cardin( polygons[ i ] )
+                    + cardin( polygons[ j ] ) );
+                println( files[ i ] );
+                println( files[ j ] );
+                println( "=========================================" );
             end
 #            println( "Curr   ", loc_i, ", ", loc_j, "  d: ",  min_dist );
         end
