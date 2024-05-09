@@ -15,11 +15,11 @@ CSV_FILENAME = "output/results.csv";
 CL_INPUT_P = "P #";
 CL_INPUT_Q = "Q #";
 CL_DESC = "Description";
-CL_APRX_1_001 = "≈ 1.001";
-CL_APRX_1_01 = "≈ 1.01";
-CL_APRX_1_1 = "≈ 1.1";
-CL_APRX_2 = "≈ 2";
-CL_APRX_4 = "≈ 4";
+CL_APRX_1_001 = "≈1.001";
+CL_APRX_1_01 = "≈1.01";
+CL_APRX_1_1 = "≈1.1";
+CL_APRX_2 = "≈2";
+CL_APRX_4 = "≈4";
 CL_EXACT = "Exact";
 CL_VE_RETRACT = "VER";
 
@@ -46,18 +46,18 @@ function test_files( df::DataFrame, fl_a, fl_b, desc = "" )
     poly_b = Polygon_read_plt_file( fl_b );
 
     println( "#P: ", str_int_w_commas( cardin( poly_a ) ) );
-    println( "#Q: ", str_int_w_commas(  cardin( poly_b ) ) );
+    println( "#Q: ", str_int_w_commas( cardin( poly_b ) ) );
 
     ub_iters = cardin( poly_a ) * cardin( poly_b ) * 2;
-    
-    
+
+
     println( "Forcing compilation..." );
     m_exact_tmp = frechet_c_compute( poly_a, poly_b );
     #println( "\n\n\n\n\n\n\n\n\n\n\n\n\n\n" );
 
     local m_aprx_4;
 
-    
+
     println( "Approx 4..." );
     @timeit tmo CL_APRX_4 begin
         m_aprx_4 = frechet_c_approx( poly_a, poly_b, 10.0 );
@@ -115,8 +115,8 @@ function test_files( df::DataFrame, fl_a, fl_b, desc = "" )
     push!( df, fill( "", ncol( df ) ) );
     r = nrow( df );
 
-    df[ r, CL_INPUT_P    ] = string( cardin( poly_a ) );
-    df[ r, CL_INPUT_Q    ] = string( cardin( poly_b ) );
+    df[ r, CL_INPUT_P    ] = str_int_w_commas( cardin( poly_a ) );
+    df[ r, CL_INPUT_Q    ] = str_int_w_commas( cardin( poly_b ) );
     df[ r, CL_DESC       ] = desc;
     df[ r, CL_APRX_1_001 ] = snano( CL_APRX_1_001 );
 #    df[ r, CL_APRX_1_01  ] = snano( CL_APRX_1_01 );
@@ -142,11 +142,11 @@ CL_EXACT = "Exact";
                           ["cellcolor{lightgray}","texttt"])
     hb = LatexHighlighter((d,i,j)->i % 2 == 0,
                           ["texttt"])
-    
+
     iox = open("output/results.tex", "w");
     pretty_table( iox,df, header = names( df ), backend = Val(:latex),
                   highlighters = (ha, hb));
-    
+
     #show( iox, "text/latex", df );
     close( iox );
 end
@@ -167,7 +167,7 @@ function  get_data_frame( filename::String )
     end
 
     df = DataFrame();
-    
+
     add_col( df, CL_INPUT_P, CL_INPUT_Q,  CL_APRX_1_001,
              #CL_APRX_1_01,
              CL_APRX_1_1,
