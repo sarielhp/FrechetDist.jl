@@ -139,10 +139,13 @@ CL_EXACT = "Exact";
     println( df );
 
     ha = LatexHighlighter((d,i,j)->i % 2 != 0,
-        ["cellcolor{lightgray}","textbf"])
+                          ["cellcolor{lightgray}","texttt"])
+    hb = LatexHighlighter((d,i,j)->i % 2 == 0,
+                          ["texttt"])
     
     iox = open("output/results.tex", "w");
-    pretty_table( iox,df, header = names( df ), backend = Val(:latex), highlighters = (ha));
+    pretty_table( iox,df, header = names( df ), backend = Val(:latex),
+                  highlighters = (ha, hb));
     
     #show( iox, "text/latex", df );
     close( iox );
