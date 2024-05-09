@@ -15,20 +15,28 @@ CSV_FILENAME = "output/results.csv";
 CL_INPUT_P = "P #";
 CL_INPUT_Q = "Q #";
 CL_DESC = "Description";
-CL_APRX_1_001 = "Aprx 1.001";
-CL_APRX_1_01 = "Aprx 1.01";
-CL_APRX_1_1 = "Aprx 1.1";
-CL_APRX_2 = "Aprx 2";
-CL_APRX_4 = "Aprx 4";
+CL_APRX_1_001 = "≈ 1.001";
+CL_APRX_1_01 = "≈ 1.01";
+CL_APRX_1_1 = "≈ 1.1";
+CL_APRX_2 = "≈ 2";
+CL_APRX_4 = "≈ 4";
 CL_EXACT = "Exact";
-CL_VE_RETRACT = "VE Retractable";
+CL_VE_RETRACT = "VER";
+
+function  str_int_w_commas( n::Int64 )
+    if  ( abs( n ) < 1000 )
+        return  string( n )
+    end
+    s = str_int_w_commas( floor( Int64, n/1000 ) );
+    return s * @sprintf( ",%03d",  n % 1000 )
+end
 
 
 function test_files( df::DataFrame, fl_a, fl_b, desc = "" )
     local  tmo;
     function  snano( str )::String
         seconds::Float64 = TimerOutputs.time(tmo[ str ] ) / 1.0e9;
-        s = @sprintf( "%.4f", seconds );
+        s = @sprintf( "%.3f", seconds );
         return  s; #string(  );
     end
 
@@ -37,8 +45,8 @@ function test_files( df::DataFrame, fl_a, fl_b, desc = "" )
     poly_a = Polygon_read_plt_file( fl_a );
     poly_b = Polygon_read_plt_file( fl_b );
 
-    println( "#P: ", cardin( poly_a ) );
-    println( "#Q: ", cardin( poly_b ) );
+    println( "#P: ", str_int_w_commas( cardin( poly_a ) ) );
+    println( "#Q: ", str_int_w_commas(  cardin( poly_b ) ) );
 
     ub_iters = cardin( poly_a ) * cardin( poly_b ) * 2;
     
@@ -56,10 +64,10 @@ function test_files( df::DataFrame, fl_a, fl_b, desc = "" )
     end
     #println( "Ratio: ", m_aprx_4.ratio );
 
-    println( "Approx 2.0..." );
-    @timeit tmo CL_APRX_2 begin
-        m_aprx_2 = frechet_c_approx( poly_a, poly_b, 2.0 );
-    end
+#    println( "Approx 2.0..." );
+#    @timeit tmo CL_APRX_2 begin
+#        m_aprx_2 = frechet_c_approx( poly_a, poly_b, 2.0 );
+#    end
     #println( "2.0: ", m_aprx_2.ratio );
 
     println( "Approx 1.1..." );
@@ -75,11 +83,11 @@ function test_files( df::DataFrame, fl_a, fl_b, desc = "" )
     end
     println( "1.001: ", m_aprx_1_001.ratio );
 
-    println( "\nApprox 1.01..." );
-    @timeit tmo CL_APRX_1_01 begin
-        m_aprx_1_01 = frechet_c_approx( poly_a, poly_b, 1.01 );
-    end
-    println( "1.01: ", m_aprx_1_01.ratio );
+#    println( "\nApprox 1.01..." );
+#    @timeit tmo CL_APRX_1_01 begin
+#        m_aprx_1_01 = frechet_c_approx( poly_a, poly_b, 1.01 );
+#    end
+#    println( "1.01: ", m_aprx_1_01.ratio );
 
 
     println( "Exact..." );
@@ -111,9 +119,9 @@ function test_files( df::DataFrame, fl_a, fl_b, desc = "" )
     df[ r, CL_INPUT_Q    ] = string( cardin( poly_b ) );
     df[ r, CL_DESC       ] = desc;
     df[ r, CL_APRX_1_001 ] = snano( CL_APRX_1_001 );
-    df[ r, CL_APRX_1_01  ] = snano( CL_APRX_1_01 );
+#    df[ r, CL_APRX_1_01  ] = snano( CL_APRX_1_01 );
     df[ r, CL_APRX_1_1   ] = snano( CL_APRX_1_1 );
-    df[ r, CL_APRX_2     ] = snano( CL_APRX_2 );
+#    df[ r, CL_APRX_2     ] = snano( CL_APRX_2 );
     df[ r, CL_APRX_4     ] = snano( CL_APRX_4 );
     df[ r, CL_EXACT      ] = snano( CL_EXACT );
     if  ( f_do_ve_r )
@@ -122,9 +130,9 @@ function test_files( df::DataFrame, fl_a, fl_b, desc = "" )
         df[ r, CL_VE_RETRACT ] = "TOO LARGE";
     end
     #=
-CL_APRX_1_1 = "Aprx 1.1";
-CL_APRX_2 = "Aprx 2";
-CL_APRX_4 = "Aprx 4";
+CL_APRX_1_1 = "≈ 1.1";
+CL_APRX_2 = "≈ 2";
+CL_APRX_4 = "≈ 4";
 CL_EXACT = "Exact";
  = "VE Retractable";
 =#
@@ -158,7 +166,10 @@ function  get_data_frame( filename::String )
     df = DataFrame();
     
     add_col( df, CL_INPUT_P, CL_INPUT_Q,  CL_APRX_1_001,
-        CL_APRX_1_01, CL_APRX_1_1, CL_APRX_2, CL_APRX_4, CL_EXACT,
+             #CL_APRX_1_01,
+             CL_APRX_1_1,
+             #CL_APRX_2,
+             CL_APRX_4, CL_EXACT,
         CL_VE_RETRACT, CL_DESC );
 
     return  df;
