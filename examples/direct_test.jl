@@ -127,7 +127,7 @@ function test_files( df::DataFrame, fl_a, fl_b, desc = "" )
     if  ( f_do_ve_r )
         df[ r, CL_VE_RETRACT ] = snano( CL_VE_RETRACT );
     else
-        df[ r, CL_VE_RETRACT ] = "TOO LARGE";
+        df[ r, CL_VE_RETRACT ] = "---";
     end
     #=
 CL_APRX_1_1 = "≈ 1.1";
