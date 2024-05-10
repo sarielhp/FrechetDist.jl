@@ -12,6 +12,7 @@ using PrettyTables
 
 CSV_FILENAME = "output/results.csv";
 
+CL_INDEX   = "Input";
 CL_INPUT_P = "P #";
 CL_INPUT_Q = "Q #";
 CL_DESC = "Description";
@@ -115,6 +116,7 @@ function test_files( df::DataFrame, fl_a, fl_b, desc = "" )
     push!( df, fill( "", ncol( df ) ) );
     r = nrow( df );
 
+    df[ r, CL_INDEX      ] = string( r );
     df[ r, CL_INPUT_P    ] = str_int_w_commas( cardin( poly_a ) );
     df[ r, CL_INPUT_Q    ] = str_int_w_commas( cardin( poly_b ) );
     df[ r, CL_DESC       ] = desc;
@@ -143,8 +145,23 @@ CL_EXACT = "Exact";
     hb = LatexHighlighter((d,i,j)->i % 2 == 0,
                           ["texttt"])
 
+    dfn = deepcopy( df );
+    select!(dfn, Not( CL_DESC ) )
+    
     iox = open("output/results.tex", "w");
-    pretty_table( iox,df, header = names( df ), backend = Val(:latex),
+    pretty_table( iox,dfn, header = names( dfn ), backend = Val(:latex),
+                  highlighters = (ha, hb));
+
+    #show( iox, "text/latex", df );
+    close( iox );
+
+    #################################################33
+    
+    dfn = deepcopy( df );
+    iox = open("output/results_2.tex", "w");
+    select!(dfn, Cols( CL_INDEX, CL_DESC ) )
+
+    pretty_table( iox,dfn, header = names( dfn ), backend = Val(:latex),
                   highlighters = (ha, hb));
 
     #show( iox, "text/latex", df );
@@ -168,7 +185,7 @@ function  get_data_frame( filename::String )
 
     df = DataFrame();
 
-    add_col( df, CL_INPUT_P, CL_INPUT_Q,  CL_APRX_1_001,
+    add_col( df, CL_INDEX, CL_INPUT_P, CL_INPUT_Q,  CL_APRX_1_001,
              #CL_APRX_1_01,
              CL_APRX_1_1,
              #CL_APRX_2,
