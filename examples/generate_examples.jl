@@ -1480,7 +1480,7 @@ function  create_demo( title::String,
         @time m_ve_r = frechet_ve_r_compute( poly_a, poly_b );
         println( "Iterations: ", m_ve_r.iters );
     end
-    
+
     f_debug && println( "A1..." );
 
     f_SweepDist::Bool = false;
@@ -1967,6 +1967,13 @@ function  create_demo_files( title::String,
                              f_draw_ve::Bool = true,
                              note::String = ""
                              )
+    if ( ! isfile( f_a ) )
+        return;
+    end
+    if ( ! isfile( f_b ) )
+        return;
+    end
+
     poly_a = Polygon_read_plt_file( f_a );
     poly_b = Polygon_read_plt_file( f_b );
     println( "#poly_a: ", cardin( poly_a ) );
@@ -2139,13 +2146,11 @@ function  generate_examples()
     end
 
     if   is_rebuild( "output/11" )
-        if  ( isfile( "data/010/trajectory/20080928160000.plt" ) )
-            create_demo_files( "Example of big curves (GPS tracks)",
-                               "output/11/",
-                               "data/010/trajectory/20080928160000.plt",
-                               "data/010/trajectory/20081219114010.plt",
-                               true, false );
-        end
+        create_demo_files( "Example of big curves (GPS tracks)",
+                           "output/11/",
+                           "data/010/trajectory/20070910074631.plt",
+                           "data/010/trajectory/20070919122147.plt",
+                           true, false );
     end
 
     if  is_rebuild( "output/12" )
@@ -2184,7 +2189,7 @@ function  generate_examples()
                                true, true );
         end
     end
-    
+
     if   is_rebuild( "output/20" )
         if  ( isfile( "data/birds/1787_1.plt" ) )
             create_demo_files( "Example II of birds migration (GPS tracks)",
@@ -2203,8 +2208,70 @@ function  generate_examples()
                                "data/birds/1793_4.plt",
                                true, true );
         end
-    end    
+    end
 
+
+    if   is_rebuild( "output/22" )
+        create_demo_files( "Paper example 1 (birds: 1787_1 vs 1797_1",
+                           "output/22/",
+                           "data/birds/1787_1.plt",
+                           "data/birds/1797_1.plt",
+                           true, false );
+    end
+    if   is_rebuild( "output/23" )
+        create_demo_files( "Paper example 2 (birds: 2307_3 vs 2859_3",
+                           "output/23/",
+                           "data/birds/2307_3.plt",
+                           "data/birds/2859_3.plt",
+                           true, false );
+    end
+    if   is_rebuild( "output/24" )
+        create_demo_files( "Paper example 3 (birds: 2322_2 vs 1793_4",
+                           "output/24/",
+                           "data/birds/2322_2.plt",
+                           "data/birds/1793_4.plt",
+                           true, false );
+    end
+    if   is_rebuild( "output/25" )
+        create_demo_files(
+            "Paper example 4: GeoLife 20080928160000 / 20081219114010",
+            "output/25/",
+            "data/010/trajectory/20080928160000.plt",
+            "data/010/trajectory/20081219114010.plt",
+            true, false );
+    end
+    if   is_rebuild( "output/26" )
+        create_demo_files(
+            "Paper example 5: GeoLife 20090708221430 / 20090712044248",
+            "output/26/",
+            "data/041/trajectory/20090708221430.plt",
+            "data/041/trajectory/20090712044248.plt",
+            true, false );
+    end
+    if   is_rebuild( "output/27" )
+        create_demo_files(
+            "Paper example 6: Pigeons RH887_1 / RH887_11",
+            "output/27/",
+            "data/pigeons/RH887_1.plt",
+            "data/pigeons/RH887_11.plt",
+            true, true );
+    end
+    if   is_rebuild( "output/28" )
+        create_demo_files(
+            "Paper example 7: Pigeons C369_5 / C873_6",
+            "output/28/",
+            "data/pigeons/C369_5.plt",
+            "data/pigeons/C873_6.plt",
+            true, false );
+    end
+    if   is_rebuild( "output/29" )
+        create_demo_files(
+            "Paper example 8: Pigeons C360_10 / C480_9",
+            "output/29/",
+            "data/pigeons/C360_10.plt",
+            "data/pigeons/C480_9.plt",
+            true, true );
+    end
 
 end
 
