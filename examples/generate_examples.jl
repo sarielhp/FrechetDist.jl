@@ -218,7 +218,10 @@ function  output_polygons_to_file(  list::VecPolygon2F, filename,
                                     )
     c,cr,bb = cairo_setup( filename, list, f_pdf );
 
-    u_width::Float64 = 1024.0 * (BBox_width( bb) / 800.0);
+    println( BBox_width( bb) );
+    u_width::Float64 = 3.0; #1024.0 * (BBox_width( bb) / 200.0);
+#    u_width = 3;
+#    exit( -1 );
 
     #BBox_print( bb );
     set_source_rgb(cr,0.9,0.9,0.9);    # light gray

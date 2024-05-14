@@ -169,33 +169,9 @@ CL_EXACT = "Exact";
 end
 
 
-function  add_col( df::DataFrame, strs... )
-    for  x in strs
-        df[ :, x ] = String[];
-    end
-end
 
 
-
-function  get_data_frame( filename::String )
-    local df;
-    if  ( isfile( filename ) )
-        return   CSV.read( filename, DataFrame, types=String );
-    end
-
-    df = DataFrame();
-
-    add_col( df, CL_INDEX, CL_INPUT_P, CL_INPUT_Q,  CL_APRX_1_001,
-             #CL_APRX_1_01,
-             CL_APRX_1_1,
-             #CL_APRX_2,
-             CL_APRX_4, CL_EXACT,
-        CL_VE_RETRACT, CL_DESC );
-
-    return  df;
-end
-
-df = get_data_frame( CSV_FILENAME )
+df = get_output_table( CSV_FILENAME )
 
 println( df );
 println( "\n" );
