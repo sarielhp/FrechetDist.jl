@@ -18,7 +18,7 @@ CL_INPUT_P    = "P #";
 CL_INPUT_Q    = "Q #";
 CL_DESC       = "Description";
 CL_APRX_1_001 = "≈1.001";
-#CL_APRX_1_01  = "≈1.01";
+CL_APRX_1_01  = "≈1.01";
 CL_APRX_1_1   = "≈1.1";
 CL_APRX_2     = "≈2";
 CL_APRX_4     = "≈4";
@@ -42,12 +42,14 @@ function  get_output_table( filename::String )
 
     df = DataFrame();
 
-    add_col( df, CL_INDEX, CL_INPUT_P, CL_INPUT_Q,  CL_APRX_1_001,
-             #CL_APRX_1_01,
+    #CL_APRX_2,
+    add_col( df, CL_INDEX, CL_INPUT_P, CL_INPUT_Q,
+             CL_APRX_4,
              CL_APRX_1_1,
-             #CL_APRX_2,
-        CL_APRX_4, CL_EXACT,
-        CL_VE_RETRACT, CL_DESC );
+             CL_APRX_1_01,
+             CL_APRX_1_001,
+             CL_EXACT,
+             CL_VE_RETRACT, CL_DESC );
 
     return  df;
 end

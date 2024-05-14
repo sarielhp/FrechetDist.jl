@@ -10,6 +10,8 @@ using FrechetDist.cg
 using PrettyTables
 #using cg
 
+include( "table_latex.jl" );
+
 CSV_FILENAME = "output/results.csv";
 
 CL_INDEX      = "Input";
@@ -17,7 +19,7 @@ CL_INPUT_P    = "P #";
 CL_INPUT_Q    = "Q #";
 CL_DESC       = "Description";
 CL_APRX_1_001 = "≈1.001";
-#CL_APRX_1_01  = "≈1.01";
+CL_APRX_1_01  = "≈1.01";
 CL_APRX_1_1   = "≈1.1";
 CL_APRX_2     = "≈2";
 CL_APRX_4     = "≈4";
@@ -84,11 +86,12 @@ function test_files( df::DataFrame, fl_a, fl_b, desc = "" )
     end
     println( "1.001: ", m_aprx_1_001.ratio );
 
-#    println( "\nApprox 1.01..." );
-#    @timeit tmo CL_APRX_1_01 begin
-#        m_aprx_1_01 = frechet_c_approx( poly_a, poly_b, 1.01 );
-#    end
-#    println( "1.01: ", m_aprx_1_01.ratio );
+    
+    println( "\nApprox 1.01..." );
+    @timeit tmo CL_APRX_1_01 begin
+        m_aprx_1_01 = frechet_c_approx( poly_a, poly_b, 1.01 );
+    end
+    println( "1.01: ", m_aprx_1_01.ratio );
 
 
     println( "Exact..." );
@@ -121,7 +124,7 @@ function test_files( df::DataFrame, fl_a, fl_b, desc = "" )
     df[ r, CL_INPUT_Q    ] = str_int_w_commas( cardin( poly_b ) );
     df[ r, CL_DESC       ] = desc;
     df[ r, CL_APRX_1_001 ] = snano( CL_APRX_1_001 );
-#    df[ r, CL_APRX_1_01  ] = snano( CL_APRX_1_01 );
+    df[ r, CL_APRX_1_01  ] = snano( CL_APRX_1_01 );
     df[ r, CL_APRX_1_1   ] = snano( CL_APRX_1_1 );
 #    df[ r, CL_APRX_2     ] = snano( CL_APRX_2 );
     df[ r, CL_APRX_4     ] = snano( CL_APRX_4 );
