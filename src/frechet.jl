@@ -981,6 +981,28 @@ mutable struct FrechetCExtraInfo
     f_init::Bool
 end;
 
+function  propogate_negs( qz )
+    for  i  in  length( qz )
+        if  ( i == 1 )  ||  ( i == length( qz ) )
+            continue;
+        end
+
+        if  ( qz[ i ] > qz[ i - 1 ] )  &&  ( qz[ i ] > qz[ i + 1 ] )
+            qz[ i ] = min( qz[ i - 1 ], qz[ i + 1 ] );
+        end
+        #=
+        if  ( i > 1 )  &&  ( qz[ i ] > 0.0 )  &&  ( qz[ i - 1 ] < 0.0 )
+            qz[ i ] = qz[ i - 1 ];
+        end
+        if  ( ( i < length( qz ) )  &&  ( qz[ i ] > 0.0 )
+              &&  ( qz[ i + 1 ] < 0.0 ) )
+            qz[ i ] = qz[ i + 1 ];
+        end
+        =#
+    end
+end
+
+
 ###########################################################################
 """
     frechet_c_compute
@@ -1083,6 +1105,8 @@ function  frechet_c_compute( poly_a::Polygon{N,T},
         pz = ( ( lower_bound * ones( length( pl ) ) ) - pl ) / factor
         qz = ( ( lower_bound * ones( length( ql ) ) ) - ql ) / factor
 
+        propogate_negs( pz );
+        propogate_negs( qz );
 #        f_deprintln( pz );
 
         p_count = count_below_zero( pz );
@@ -1130,10 +1154,12 @@ function  frechet_c_compute( poly_a::Polygon{N,T},
                 println( "Diff         : ", m_mid.leash - mw.leash );
             end
             factor = factor * 2.0;
-            aprx_refinement = 1.0 + (aprx_refinement - 1.0) / 4.0;
+            aprx_refinement = 1.0 + (aprx_refinement - 1.0) / 10.0;
             continue;
         end
 
+        f_debug  &&  println( "Extracting offsets..." );
+        
         # Now we compute the distance, with offsets...
         PSR_offs = Morphing_extract_offsets( m_a )[2]
         QSR_offs = Morphing_extract_offsets( m_b )[1]
@@ -1142,13 +1168,18 @@ function  frechet_c_compute( poly_a::Polygon{N,T},
         f_debug  &&  println( "ve_r_mono( PSR -> QSR)" );
         m_final = frechet_ve_r_compute_ext( PSR, QSR, PSR_offs, QSR_offs,
                                             true );
+        f_debug && println( "*** m_final.leash: ", m_final.leash );
+        f_debug && println( "*** mw     .leash: ", mw.leash );
+        f_debug && println( "*** lower_bound  : ", lower_bound );
+        
         if  ( floating_equal( m_final.leash,  mw.leash ) )
             f_debug && println( "Return from frechet_c_compute" );
             return  mw
         end
 
         factor = factor * 2.0;
-        aprx_refinement = (1.0 + aprx_refinement) / 2.0;
+        aprx_refinement = 1.0 + ( (aprx_refinement - 1.0) / 20.0 );
+        #lower_bound = lower_bound * 0.5; #max( lower_bound,  m_final.leash ); #lower_bound * 0.99;
         if f_debug
             println( "m_a.leash      : ", m_a.leash );
             println( "m_b.leash      : ", m_b.leash );
