@@ -1002,6 +1002,12 @@ function  propogate_negs( qz )
     end
 end
 
+function  eq( a::Float64, b::Float64, tolerance::Float64 )::Bool
+    if   a == b
+        return  true;
+    end
+    return  abs( a - b ) <= (tolerance* (abs( a)  + abs(b) ))
+end
 
 ###########################################################################
 """
@@ -1041,13 +1047,26 @@ function  frechet_c_compute( poly_a::Polygon{N,T},
                              f_accept_approx::Bool = true
                              )  where {N,T}
     f_debug::Bool = false;
-    aprx_refinement::Float64 = 1.01;
+
+    # The parameters that can be finetunes
+    # 2.0, 8.0, 4.0, 10.0 =>  8.74 seconds
+    aprx_refinement::Float64 = 2.0;
+    factor::Float64          = 8.0
+    factor_scale::Float64    = 4.0;
+    approx_scale::Float64    = 10.0;
+
+    ##################################################################
+    # Tolerance: If |a-b| <= tolerance*( |a| + |b| ) then we consider
+    # numbers to be equal. In a perfect world tolerance would be zero.
+    # But floating point issues require us to pick some value.
+    ##################################################################
+    tolerance::Float64 = 0.00001;
 
     f_debug  &&  println( "\n\n\n\n\n\n" );
     f_debug  &&  println( "#", cardin( poly_a ) )
     f_debug  &&  println( "#", cardin( poly_b ) )
 
-    mf = frechet_c_approx( poly_a, poly_b, 1.20 );
+    mf = frechet_c_approx( poly_a, poly_b, aprx_refinement );
     ratio_2 = mf.ratio;
 
     len_a = Polygon_length( poly_a );
@@ -1098,7 +1117,7 @@ function  frechet_c_compute( poly_a::Polygon{N,T},
         println( "upper BOUND: ", m.leash );
     end
     f_debug  &&  println( "\n\n\n\n\n\n" );
-    factor::Float64 = 8.0
+
     while  true
         f_debug  &&  println( "-------------------------------------------" );
         f_debug  &&  println( "factor: ", factor, "                      " );
@@ -1147,19 +1166,22 @@ function  frechet_c_compute( poly_a::Polygon{N,T},
         mw = Morphing_combine( mmu, m_b );
 
         # is there is hope we got the optimal solution?
-        if  ( ! floating_equal( m_mid.leash, mw.leash ) )
+        if  ( ! eq( m_mid.leash, mw.leash, tolerance ) )
             if  f_debug
-                println( "m_mid.leash  : ", m_mid.leash );
-                println( "mw.leash     : ", mw.leash );
-                println( "Diff         : ", m_mid.leash - mw.leash );
+                println( "!!! Ratio        : ",
+                    floating_ratio( m_mid.leash, mw.leash ) );
+                println( "!!! m_mid.leash  : ", m_mid.leash );
+                println( "!!! mw.leash     : ", mw.leash );
+                println( "!!! Diff         : ", m_mid.leash - mw.leash );
+                println( "!!! lower_bound  : ", lower_bound );
             end
-            factor = factor * 2.0;
-            aprx_refinement = 1.0 + (aprx_refinement - 1.0) / 10.0;
+            factor = factor * factor_scale;
+            aprx_refinement = 1.0 + (aprx_refinement - 1.0) / approx_scale;
             continue;
         end
 
         f_debug  &&  println( "Extracting offsets..." );
-        
+
         # Now we compute the distance, with offsets...
         PSR_offs = Morphing_extract_offsets( m_a )[2]
         QSR_offs = Morphing_extract_offsets( m_b )[1]
@@ -1171,15 +1193,16 @@ function  frechet_c_compute( poly_a::Polygon{N,T},
         f_debug && println( "*** m_final.leash: ", m_final.leash );
         f_debug && println( "*** mw     .leash: ", mw.leash );
         f_debug && println( "*** lower_bound  : ", lower_bound );
-        
-        if  ( floating_equal( m_final.leash,  mw.leash ) )
+
+        if  ( eq( m_final.leash,  mw.leash, tolerance ) )
             f_debug && println( "Return from frechet_c_compute" );
             return  mw
         end
 
-        factor = factor * 2.0;
-        aprx_refinement = 1.0 + ( (aprx_refinement - 1.0) / 20.0 );
-        #lower_bound = lower_bound * 0.5; #max( lower_bound,  m_final.leash ); #lower_bound * 0.99;
+        factor = factor * factor_scale;
+        aprx_refinement = 1.0 + ( (aprx_refinement - 1.0) /  approx_scale );
+        #lower_bound = lower_bound * 0.5; #max( lower_bound,
+        #m_final.leash ); #lower_bound * 0.99;
         if f_debug
             println( "m_a.leash      : ", m_a.leash );
             println( "m_b.leash      : ", m_b.leash );

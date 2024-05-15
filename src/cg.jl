@@ -1112,11 +1112,11 @@ end
 
 
 """
-    Polygon_read_plt_file
+    Polygon_read_plt_orig_file
 
     Reads a .plt file into a polygon (2d floating point).
 """
-function  Polygon_read_plt_file( filename )
+function  Polygon_read_plt_orig_file( filename, dchar = "," )
     P::Polygon2F = Polygon2F();
 
     a = readdlm( filename );
@@ -1128,11 +1128,57 @@ function  Polygon_read_plt_file( filename )
 
     for  r  in 7:size(a,1)
         line = a[r,1]
-        parts::Vector{SubString{String}} = split.( line, "," );
+        #println( "line: [", line, "]" );
+        
+        parts::Vector{SubString{String}} = split.( line, dchar );
         x = parse( Float64, parts[ 1 ] );
         y = parse( Float64, parts[ 2 ] );
         Polygon_push_smart( P, point( x, y ) );
     end
+
+    return  P
+end
+
+function get_numbers_in_line( s, ch )
+    pieces = split(s, ch, keepempty=false)
+    map(pieces) do piece
+        #println( "Piece: [", piece, "]  ch[", ch, "]" );
+        parse(Float64, piece)
+    end
+end
+
+
+function  Polygon_read_file( filename, dchar = "," )
+    P::Polygon2F = Polygon2F();
+
+    lines = readlines( filename )
+    for  i  in 1:length( lines )
+        line = lines[ i ];
+        local pieces;
+        if  occursin( " ", line )
+            pieces = get_numbers_in_line( line, ' ' );
+        else
+            pieces = get_numbers_in_line( line, ',' );
+        end
+        @assert( length( pieces ) == 2 );
+        Polygon_push_smart( P, point( pieces[ 1 ], pieces[ 2 ] ) );
+    end
+
+    return  P
+end
+
+
+function  Polygon_read_txt_file( filename, dchar = "," )
+    P::Polygon2F = Polygon2F();
+
+    println( "here!" );
+    a = readdlm( filename );
+    d_a::Int64 = size(a,1)
+    println( typeof( a ) );
+    println( size( a ) )
+     println( size(a,1) );
+     println( size(a,2) );
+    exit(-1);
 
     return  P
 end
@@ -1185,7 +1231,10 @@ export  Segment_get_bisection_point
 export  Polygon_length, Polygon_move_to_origin
 export  Polygon_sample_uniformly, Polygon_push_smart, Polygon_spine
 
-export  Polygon_read_plt_file
+export  Polygon_read_file
+export  Polygon_read_plt_orig_file
+
+export  Polygon_read_txt_file
 
 
 export  Polygon_simplify, Polygon_push, DistInfty

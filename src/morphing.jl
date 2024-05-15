@@ -463,6 +463,14 @@ function  check_monotone_top( out::Polygon2F )
     end
 end
 
+
+function  floating_ratio( a::Float64, b::Float64 )::Float64
+    if   a == b
+        return  1.0;
+    end
+    return  abs( a - b ) / (abs( a)  + abs(b) );
+end
+
 function  floating_equal( a::Float64, b::Float64 )::Bool
     if   a == b
         return  true;

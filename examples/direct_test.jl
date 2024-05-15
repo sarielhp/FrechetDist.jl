@@ -115,6 +115,8 @@ function test_files( df::DataFrame, fl_a, fl_b, desc = "" )
     #println( TimerOutputs.time(tmo[ "Exact" ] ) );
     #println( TimerOutputs.time(tmo[ CL_APRX_4 ] ) );
 
+    println( "Leash : ", m_exact.leash );
+
     # Add the data to the data frame...
     push!( df, fill( "", ncol( df ) ) );
     r = nrow( df );
