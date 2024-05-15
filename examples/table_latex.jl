@@ -53,3 +53,17 @@ function  get_output_table( filename::String )
 
     return  df;
 end
+
+
+function  write_latex_table( out_name, df::DataFrame ) 
+    ha = LatexHighlighter((d,i,j)->i % 2 != 0,
+                          ["cellcolor{lightgray}","texttt"])
+    hb = LatexHighlighter((d,i,j)->i % 2 == 0,
+                          ["texttt"])
+
+    iox = open( out_name, "w" );
+    pretty_table( iox, df, header = names( df ), backend = Val(:latex),
+                  highlighters = (ha, hb));
+
+    close( iox );
+end
