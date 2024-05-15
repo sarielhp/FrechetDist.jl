@@ -1019,10 +1019,11 @@ function  frechet_c_compute( poly_a::Polygon{N,T},
                              f_accept_approx::Bool = true
                              )  where {N,T}
     f_debug::Bool = false;
-    aprx_refinement::Float64 = 1.001;
+    aprx_refinement::Float64 = 1.1;
 
-    f_debug && println( "#", cardin( poly_a ) )
-    f_debug && println( "#", cardin( poly_b ) )
+    f_debug  &&  println( "\n\n\n\n\n\n" );
+    f_debug  &&  println( "#", cardin( poly_a ) )
+    f_debug  &&  println( "#", cardin( poly_b ) )
 
     mf = frechet_c_approx( poly_a, poly_b, 2.0 );
     ratio_2 = mf.ratio;
@@ -1074,7 +1075,8 @@ function  frechet_c_compute( poly_a::Polygon{N,T},
         println( "LOWER BOUND: ", lower_bound );
         println( "upper BOUND: ", m.leash );
     end
-    factor::Float64 = 8.0
+    f_debug  &&  println( "\n\n\n\n\n\n" );
+    factor::Float64 = 64.0
     while  true
         f_debug  &&  println( "-------------------------------------------" );
         f_debug  &&  println( "factor: ", factor, "                      " );
