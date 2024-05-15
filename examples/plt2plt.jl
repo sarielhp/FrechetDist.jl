@@ -26,6 +26,12 @@ function  plt_convert( filename )
     Polygon_write_to_file( p, filename );
 end
 
+function  plt_convert_in_file( filename )
+    lines = readlines( filename );
+    for i in 1:length( lines )
+        plt_convert( lines[ i ] );
+    end
+end
 
 
 num_args = length( ARGS );
@@ -36,5 +42,5 @@ if   num_args == 0
 end
 
 for  i in 1:num_args
-    plt_convert( ARGS[ i ] );
+    plt_convert_in_file( ARGS[ i ] );
 end
