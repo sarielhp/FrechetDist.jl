@@ -12,7 +12,7 @@ using PrettyTables
 
 include( "table_latex.jl" );
 
-CSV_FILENAME = "output/results.csv";
+CSV_FILENAME = "output/julia_results.csv";
 
 CL_INDEX      = "Input";
 CL_INPUT_P    = "P #";
@@ -151,7 +151,7 @@ CL_EXACT = "Exact";
     dfn = deepcopy( df );
     select!(dfn, Not( CL_DESC ) )
     
-    iox = open("output/results.tex", "w");
+    iox = open("output/julia_results.tex", "w");
     pretty_table( iox,dfn, header = names( dfn ), backend = Val(:latex),
                   highlighters = (ha, hb));
 
@@ -161,7 +161,7 @@ CL_EXACT = "Exact";
     #################################################33
     
     dfn = deepcopy( df );
-    iox = open("output/results_2.tex", "w");
+    iox = open("output/julia_results_2.tex", "w");
     select!(dfn, Cols( CL_INDEX, CL_DESC ) )
 
     pretty_table( iox,dfn, header = names( dfn ), backend = Val(:latex),
