@@ -467,7 +467,7 @@ function  floating_equal( a::Float64, b::Float64 )::Bool
     if   a == b
         return  true;
     end
-    return  abs( a - b ) <= (0.0000001* (abs( a)  + abs(b) ))
+    return  abs( a - b ) <= (0.000001* (abs( a)  + abs(b) ))
 end
 
 
