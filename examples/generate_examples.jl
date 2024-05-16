@@ -1036,9 +1036,9 @@ end
 
 function  run_on_curves_files( filename_a, filename_b )
     println( "Reading curve: ", filename_a );
-    poly_a = Polygon_read_plt_file( filename_a );
+    poly_a = Polygon_read_file( filename_a );
     println( "Reading curve: ", filename_b );
-    poly_b = Polygon_read_plt_file( filename_b );
+    poly_b = Polygon_read_file( filename_b );
 
     return  run_on_curves( poly_a, poly_b );
 end
@@ -1977,8 +1977,8 @@ function  create_demo_files( title::String,
         return;
     end
 
-    poly_a = Polygon_read_plt_file( f_a );
-    poly_b = Polygon_read_plt_file( f_b );
+    poly_a = Polygon_read_file( f_a );
+    poly_b = Polygon_read_file( f_b );
     println( "#poly_a: ", cardin( poly_a ) );
     println( "#poly_b: ", cardin( poly_b ) );
     create_demo( title, prefix, poly_a, poly_b, f_draw_c, f_draw_ve, note );

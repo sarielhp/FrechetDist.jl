@@ -38,7 +38,7 @@ function find_closest_in_directory( path::String, threshold,
     for  x in files
         filename = path * x;
         print( "Reading: ", filename );
-        poly_a =  Polygon_read_plt_file( filename );
+        poly_a =  Polygon_read_file( filename );
         push!( polygons,  poly_a );
         println( " #: ", cardin( poly_a ) );
     end

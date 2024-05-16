@@ -85,8 +85,12 @@ function  test_files( base_dir, queries_file )
 
     println( "Figuring out distances..." );
     for  i in  1:length( PA )
+        println( base_dir * df[i,1], " vs ", base_dir * df[i,2] );
+        flush( stdout );
         sgn = frechet_decider( PA[ i ], QA[ i ], rads[ i ] );
     end
+
+    println( "Text completed on : ", queries_file );
 
     #print( df );
 end
@@ -95,15 +99,11 @@ end
 
 num_args = length( ARGS );
 
-#p = Polygon_read_plt_file( "data/birds/1787_1.plt" );
-#Polygon_write_to_file( p, "xx" );
-#q = Polygon_read_plt_file(  "xx" );
-#Polygon_write_to_file( q, "uu" );
 
 #exit( -1 );
 
 function  test_files_from_file( filename, base_dir )
-    #println( "filename::: ", filename );
+    println( "filename::: ", filename );
     lines = readlines( filename );
     nr = length( lines );
     #nr = min( 10, nr );
@@ -111,6 +111,8 @@ function  test_files_from_file( filename, base_dir )
         r = lines[ i ]
         test_files( base_dir, r );
     end
+
+    println( "TEST COMPLETED SUCCESSFULLY!" );
 end
 
 

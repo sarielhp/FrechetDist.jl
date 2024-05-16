@@ -194,7 +194,7 @@ function  plt_show( ARGS )
 
     list = VecPolygon2F();
     for  i in 1:num_args
-        poly_a = Polygon_read_plt_file( ARGS[ i ] );
+        poly_a = Polygon_read_file( ARGS[ i ] );
         push!( list, poly_a );
     end
     output_polygons_to_file( list, "curves.pdf", true );
@@ -211,7 +211,7 @@ num_args = length( ARGS );
 
 
 if   num_args == 0
-    println( "plt_show [plt_file] ... [plt_file]" );
+    println( "show_polygon [txt/plt file] ... [txt/plt file]" );
     exit( -1 );
 end
 

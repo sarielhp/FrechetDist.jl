@@ -1042,8 +1042,8 @@ To really ensure converges, the monotone distance computed between the
 simplification is computed using refinement, so tha the ve_r distance
 
 """
-function  frechet_c_compute( poly_a::Polygon{N,T},
-                             poly_b::Polygon{N,T},
+function  frechet_c_compute( P::Polygon{N,T},
+                             Q::Polygon{N,T},
                              f_accept_approx::Bool = true
                              )  where {N,T}
     f_debug::Bool = false;
@@ -1063,14 +1063,14 @@ function  frechet_c_compute( poly_a::Polygon{N,T},
     tolerance::Float64 = 0.00001;
 
     f_debug  &&  println( "\n\n\n\n\n\n" );
-    f_debug  &&  println( "#", cardin( poly_a ) )
-    f_debug  &&  println( "#", cardin( poly_b ) )
+    f_debug  &&  println( "#", cardin( P ) )
+    f_debug  &&  println( "#", cardin( Q ) )
 
-    mf = frechet_c_approx( poly_a, poly_b, aprx_refinement );
+    mf = frechet_c_approx( P, Q, aprx_refinement );
     ratio_2 = mf.ratio;
 
-    len_a = Polygon_length( poly_a );
-    len_b = Polygon_length( poly_b );
+    len_a = Polygon_length( P );
+    len_b = Polygon_length( Q );
     if  ( mf.leash == 0 )
         return  mf
     end
@@ -1096,11 +1096,11 @@ function  frechet_c_compute( poly_a::Polygon{N,T},
         ratio = ratio_2;
     else
         f_debug  &&  println( "freceht_c_approx( ", approx, ") " );
-        m = frechet_c_approx( poly_a, poly_b, approx );
+        m = frechet_c_approx( P, Q, approx );
         ratio = m.ratio
         f_debug  &&  println( "freceht_c_approx( ", approx, ")...done" );
     end
-        #        frechet_ve_r_mono_approx( poly_a, poly_b, eps );
+        #        frechet_ve_r_mono_approx( P, Q, eps );
 
     if  ( f_debug )
         println( "Approximation computed..." );
@@ -1124,8 +1124,8 @@ function  frechet_c_compute( poly_a::Polygon{N,T},
         pz = ( ( lower_bound * ones( length( pl ) ) ) - pl ) / factor
         qz = ( ( lower_bound * ones( length( ql ) ) ) - ql ) / factor
 
-        propogate_negs( pz );
-        propogate_negs( qz );
+        #propogate_negs( pz );
+        #propogate_negs( qz );
 #        f_deprintln( pz );
 
         p_count = count_below_zero( pz );
@@ -1135,8 +1135,8 @@ function  frechet_c_compute( poly_a::Polygon{N,T},
         f_PS_exact::Bool = false;
         f_QS_exact::Bool = false;
 
-        PS, p_indices, f_PS_exact = Polygon_simplify_radii_ext( poly_a, pz );
-        QS, q_indices, f_QS_exact = Polygon_simplify_radii_ext( poly_b, qz );
+        PS, p_indices, f_PS_exact = Polygon_simplify_radii_ext( P, pz );
+        QS, q_indices, f_QS_exact = Polygon_simplify_radii_ext( Q, qz );
 
         if  f_debug
             println( "PS.len    : ", cardin( PS ); );
@@ -1144,25 +1144,36 @@ function  frechet_c_compute( poly_a::Polygon{N,T},
             println( "p_count <0: ", p_count, " / ", length( pz ) );
             println( "q_count <0: ", q_count, " / ", length( qz ) );
             println( "|PS| = ", cardin( PS ) );
-            println( "|P| = ", cardin( poly_a ) );
+            println( "|P| = ", cardin( P ) );
             println( "|QS| = ", cardin( QS ) );
-            println( "|Q| = ", cardin( poly_b ) );
+            println( "|Q| = ", cardin( Q ) );
             println( "Computing radii simplified Frechet distance..." );
         end
+
+        # If the PS and QS are really large, this is a waste of
+        # time. Just compute the Frechet distance using
+        # monotonization.
+        if  ( ( 2 * cardin( PS ) > cardin( P ) )
+            &&  ( 2 * cardin( QS ) > cardin( Q ) ) )
+            f_debug  &&  println( "Simpl. not profitable, doing mono" );
+            return   frechet_mono_via_refinement( P, Q )[ 1 ];
+        end
+
         #    m_mid = frechet_ve_r_mono_compute( PS, QS  );
         f_debug && println( "\nApprox refinement : ", aprx_refinement );
         m_mid, f_exact, PSR, QSR = frechet_mono_via_refinement( PS, QS,
-                                                              aprx_refinement );
+                                                          aprx_refinement );
+
 
         f_debug  &&  println( "frechet mono via refinment computed" );
         f_debug  &&  println( "PSR.len: ", cardin( PSR ) );
         f_debug  &&  println("QSR.len: ", cardin( QSR ) );
 
-        f_debug  &&  println( "ve_r_mono( poly_a -> PSR)" );
-        m_a = frechet_ve_r_mono_compute( poly_a, PSR );
+        f_debug  &&  println( "ve_r_mono( P -> PSR)" );
+        m_a = frechet_ve_r_mono_compute( P, PSR );
         mmu = Morphing_combine( m_a, m_mid );
-        f_debug  &&  println( "ve_r_mono( WSR -> poly_b )" );
-        m_b = frechet_ve_r_mono_compute( QSR, poly_b );
+        f_debug  &&  println( "ve_r_mono( WSR -> Q )" );
+        m_b = frechet_ve_r_mono_compute( QSR, Q );
         mw = Morphing_combine( mmu, m_b );
 
         # is there is hope we got the optimal solution?
@@ -1177,6 +1188,9 @@ function  frechet_c_compute( poly_a::Polygon{N,T},
             end
             factor = factor * factor_scale;
             aprx_refinement = 1.0 + (aprx_refinement - 1.0) / approx_scale;
+            f_debug  &&  println( "1 aprx_refinement: ", aprx_refinement,
+                 "  scale :", approx_scale );
+
             continue;
         end
 
@@ -1201,6 +1215,8 @@ function  frechet_c_compute( poly_a::Polygon{N,T},
 
         factor = factor * factor_scale;
         aprx_refinement = 1.0 + ( (aprx_refinement - 1.0) /  approx_scale );
+        f_debug  &&  println( "aprx_refinement: ", aprx_refinement,
+             "  scale :", approx_scale );
         #lower_bound = lower_bound * 0.5; #max( lower_bound,
         #m_final.leash ); #lower_bound * 0.99;
         if f_debug
