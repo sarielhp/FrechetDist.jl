@@ -859,6 +859,8 @@ function  frechet_c_approx( poly_a::Polygon{N,T},
     f_do_one_round::Bool = true;
     d = frechet_dist_upper_bound( poly_a, poly_b )
 
+    f_debug  &&  println( "DIST :", d );
+
     # r: Radius of simplification allowed
     r::Float64 = d/( approx + 4.0 ); #max( d/4, d * min( approx, 1.0 ) );
 
@@ -878,10 +880,15 @@ function  frechet_c_approx( poly_a::Polygon{N,T},
 
             @assert( ( cardin( P ) > 1 )  &&  ( cardin( Q ) > 1 ) )
 
-            f_debug &&  println( "before" );
+            f_debug &&  println( "cardins: ", cardin( P ), " , ",
+                                 cardin( Q )  );
             m = frechet_mono_via_refinement( P, Q,
                                              3.0/4.0 + approx / 4.0 )[1];
             d = m.leash;  #        frechet_ve_r_compute_dist( P, Q )
+            if  ( floating_equal( d,.0 ) )
+                break;
+            end;
+            println( "ddd = ", d );
             f_debug && println( "after" );
 
             # d - 2r: Lower bound on the real Frechet distance.
@@ -897,7 +904,7 @@ function  frechet_c_approx( poly_a::Polygon{N,T},
 #        println( "mono a" );
         #m_p = frechet_ve_r_mono_compute( poly_a, P )
         #m_p = frechet_ve_r_mono_compute( poly_a, P )
-        f_debug  &&  println( "f_c_dist( poly_a, P )" );
+        f_debug  &&  println( "=== f_c_dist( poly_a, P )" );
         m_p = frechet_c_mono_approx_subcurve( poly_a, P, p_indices );
 #        println( "mono b" );
 

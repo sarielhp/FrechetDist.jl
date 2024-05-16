@@ -13,13 +13,14 @@ function frechet_comp( P::Polygon{D,T}, Q::Polygon{D,T}
     ratio::Float64 = 5.0;
 
     for  i in 1:10
+#        println( "approx( #", cardin(P ), ", ", cardin(Q), ") " );
         m = frechet_c_approx( P, Q, ratio );
         lb = m.leash / m.ratio;
 
-        println( "m.leash: ", m.leash );
+#        println( "m.leash: ", m.leash );
         ratio = (ratio - 1.0) / 2.0 + 1.0; # min( m.ratio, 1.01 );
         ratio = min( ratio, 1.1 );
-        println( "ratio: ", ratio );
+#        println( "ratio: ", ratio );
         if  ( ratio <= 1.001 )
             m = frechet_c_compute( P, Q );
             return  0;
@@ -35,9 +36,11 @@ end
 
 
 function  test_files( fl_a, fl_b )
+    println( "Reading files..." );
     P = Polygon_read_file( fl_a );
     Q = Polygon_read_file( fl_b );
-
+    println( "Files read!..." );
+    
     sgn = frechet_comp( P, Q,  );
 end
 
