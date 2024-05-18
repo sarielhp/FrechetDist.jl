@@ -25,7 +25,7 @@ function frechet_decider( P::Polygon{D,T}, Q::Polygon{D,T},
     ratio::Float64 = 5.0;
 
     for  i in 1:10
-        f_debug &&  println( "ratio: ", ratio );
+        f_debug &&  ( i > 5 )  &&   println( "ratio: ", ratio );
         m = frechet_c_approx( P, Q, ratio );
         if  m.leash < r
             return  -1;
