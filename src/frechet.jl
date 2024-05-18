@@ -852,8 +852,9 @@ rough approximation.
 function  frechet_c_approx( poly_a::Polygon{N,T},
     poly_b::Polygon{N,T}, approx::Float64 ) where {N,T}
 
-    @assert( ( cardin( poly_a ) > 1 )  &&  ( cardin( poly_b ) > 1 ) )
     f_debug::Bool = false;
+
+    @assert( ( cardin( poly_a ) > 1 )  &&  ( cardin( poly_b ) > 1 ) )
     @assert( approx > 1.0 )
 
     f_do_one_round::Bool = true;
@@ -878,6 +879,13 @@ function  frechet_c_approx( poly_a::Polygon{N,T},
             P, p_indices = Polygon_simplify_ext( poly_a, r )
             Q, q_indices = Polygon_simplify_ext( poly_b, r )
 
+            if  ( (2 * cardin( P ) > cardin( poly_a ) )
+                  &&  (2 * cardin( Q ) > cardin( poly_b ) ) )
+                m = frechet_mono_via_refinement( poly_a, poly_b )[ 1 ];
+                m.ratio = 1.0;
+                return  m;
+            end
+
             @assert( ( cardin( P ) > 1 )  &&  ( cardin( Q ) > 1 ) )
 
             f_debug &&  println( "cardins: ", cardin( P ), " , ",
@@ -885,11 +893,12 @@ function  frechet_c_approx( poly_a::Polygon{N,T},
             m = frechet_mono_via_refinement( P, Q,
                                              3.0/4.0 + approx / 4.0 )[1];
             d = m.leash;  #        frechet_ve_r_compute_dist( P, Q )
-            if  ( floating_equal( d,.0 ) )
+            f_debug  &&  println( "d : ", d );
+            if  ( floating_equal( d,0 ) )
                 break;
             end;
-            println( "ddd = ", d );
-            f_debug && println( "after" );
+            f_debug  &&  println( "ddd = ", d );
+            f_debug  &&  println( "after" );
 
             # d - 2r: Lower bound on the real Frechet distance.
             if  f_debug
@@ -928,7 +937,12 @@ function  frechet_c_approx( poly_a::Polygon{N,T},
         Morphing_verify_valid( m_q );
         Morphing_verify_valid( mmu );
 
-        ratio = mm_out.leash/(d - 2.0*err);
+        lbx = d - 2.0*err
+        if  ( d == 0.0 )
+            ratio = 1.0;
+        else
+            ratio = mm_out.leash/ lbx;
+        end
         f_debug &&  println( "Ratio :", ratio );
         if  ratio <=  approx
             if f_debug

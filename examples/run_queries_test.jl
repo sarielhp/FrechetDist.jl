@@ -14,6 +14,8 @@ using PrettyTables
 
 function frechet_decider( P::Polygon{D,T}, Q::Polygon{D,T},
                           r )::Int64  where {D,T}
+    f_debug::Bool = true;
+
     if  Dist( first( P ), first( Q ) ) > r
         return  1;
     end
@@ -23,6 +25,7 @@ function frechet_decider( P::Polygon{D,T}, Q::Polygon{D,T},
     ratio::Float64 = 5.0;
 
     for  i in 1:10
+        f_debug &&  println( "ratio: ", ratio );
         m = frechet_c_approx( P, Q, ratio );
         if  m.leash < r
             return  -1;
@@ -58,6 +61,8 @@ end
 function  test_files( base_dir, queries_file )
     println( "QF: ", queries_file );
     df = CSV.read( queries_file, DataFrame, types=String, header=false );
+
+    #    println( df );
 
     println( "Reading..." );
     PA = Vector{Polygon2F}();
