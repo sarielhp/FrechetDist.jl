@@ -58,8 +58,8 @@ function frechet_decider( P::Polygon{D,T}, Q::Polygon{D,T},
 end
 
 
-function  test_files( base_dir, queries_file )
-    println( "QF: ", queries_file );
+function  test_files( base_dir, queries_file, prefix )
+    println( "QF: ", queries_file, prefix );
     df = CSV.read( queries_file, DataFrame, types=String, header=false );
 
     #    println( df );
@@ -90,7 +90,7 @@ function  test_files( base_dir, queries_file )
 
     println( "Figuring out distances..." );
     for  i in  1:length( PA )
-        println( i, "/", length( PA ), " ",
+        println(, prefix, i, "/", length( PA ), " ",
                  base_dir * df[i,1], "   ", base_dir * df[i,2] );
         flush( stdout );
         sgn = frechet_decider( PA[ i ], QA[ i ], rads[ i ] );
@@ -115,7 +115,8 @@ function  test_files_from_file( filename, base_dir )
     #nr = min( 10, nr );
     for  i in 1:nr
         r = lines[ i ]
-        test_files( base_dir, r );
+        prefix = @sprintf( "[%d/%d] ", i, nr );
+        test_files( base_dir, r, prefix );
     end
 
     println( "TEST COMPLETED SUCCESSFULLY!" );
