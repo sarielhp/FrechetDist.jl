@@ -984,6 +984,9 @@ function  Polygon_simplify_radii_ext( P::Polygon{N,T}, r::Vector{T}
                                       ) where {N,T}
     f_exact::Bool = false;
 
+    println( "#P :", cardin( P ) );
+    println( "#r :", length( r ) );
+    
     PS, p_indices = Polygon_simplify_radii( P, r );
     if   ( cardin( PS ) <= ( cardin( P ) / 2 ) )
         return  PS, p_indices, false
@@ -1094,6 +1097,7 @@ function  frechet_c_compute( P::Polygon{N,T},
 
     len_a = Polygon_length( P );
     len_b = Polygon_length( Q );
+    f_debug  &&  println( "#", cardin( P ) )
     if  ( mf.leash == 0 )
         return  mf
     end
@@ -1143,6 +1147,8 @@ function  frechet_c_compute( P::Polygon{N,T},
 
     while  true
         f_debug  &&  println( "-------------------------------------------" );
+        f_debug  &&  println( "A#", cardin( P ) )
+        f_debug  &&  println( "B#", cardin( pl ) )
         f_debug  &&  println( "factor: ", factor, "                      " );
         pz = ( ( lower_bound * ones( length( pl ) ) ) - pl ) / factor
         qz = ( ( lower_bound * ones( length( ql ) ) ) - ql ) / factor
@@ -1201,7 +1207,9 @@ function  frechet_c_compute( P::Polygon{N,T},
         m_b = frechet_ve_r_mono_compute( QSR, Q );
         mw = Morphing_combine( mmu, m_b );
 
-
+        println( "CARDIN(P): ", cardin( mw.P ) );
+        println( "CARDIN(Q): ", cardin( mw.Q ) );
+        
         # is there is hope we got the optimal solution?
         if  ( ! eq( m_mid.leash, mw.leash, tolerance ) )
             if  f_debug
