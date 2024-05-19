@@ -1069,7 +1069,7 @@ function  frechet_c_compute( P::Polygon{N,T},
                              Q::Polygon{N,T},
                              f_accept_approx::Bool = true
                              )  where {N,T}
-    f_debug::Bool = false;
+    f_debug::Bool = true;
 
     # The parameters that can be finetunes
     # 2.0, 8.0, 4.0, 10.0 =>  8.74 seconds
@@ -1154,6 +1154,8 @@ function  frechet_c_compute( P::Polygon{N,T},
         p_count = count_below_zero( pz );
         q_count = count_below_zero( qz );
 
+        f_debug  &&  println( "pz count <0: ", p_count, " / ", length( pz ) );
+        f_debug  &&  println( "qz count <0: ", q_count, " / ", length( qz ) );
 
         f_PS_exact::Bool = false;
         f_QS_exact::Bool = false;

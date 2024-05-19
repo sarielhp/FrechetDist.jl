@@ -28,7 +28,7 @@ function frechet_comp( P::Polygon{D,T}, Q::Polygon{D,T}
         ratio = (ratio - 1.0) / 6.0 + 1.0; # min( m.ratio, 1.01 );
         ratio = min( ratio, 1.1 );
 #        println( "ratio: ", ratio );
-        if  ( ratio <= 1.001 )
+        if  ( ratio <= 11.0 )
             println( "Calling frechet_c_compute" );
             m = frechet_c_compute( P, Q );
             return  0;
