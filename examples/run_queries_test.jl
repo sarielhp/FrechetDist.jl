@@ -38,7 +38,7 @@ function frechet_decider( P::Polygon{D,T}, Q::Polygon{D,T},
         #    ratio = (r / lb min( m.ratio, 1.01 );
         ratio = ((r / lb) - 1.0) / 2.0 + 1.0; # min( m.ratio, 1.01 );
         ratio = min( ratio, 1.1 );
-        if  ( ratio <= 1.001 )
+        if  ( ratio <= 1.01 )
             m = frechet_c_compute( P, Q );
             if  m.leash > r
                 return  1;

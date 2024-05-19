@@ -31,6 +31,7 @@ function frechet_comp( P::Polygon{D,T}, Q::Polygon{D,T}
         if  ( ratio <= 11.0 )
             println( "Calling frechet_c_compute" );
             m = frechet_c_compute( P, Q );
+            println( "... done" );
             return  0;
         end
 #        if  i > 2
