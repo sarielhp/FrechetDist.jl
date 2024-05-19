@@ -753,6 +753,14 @@ function  frechet_mono_via_refinement_ext( Pa::Polygon{N,T}, Qa::Polygon{N,T},
         Q = poly_b_2;
     end
 
+    # We potentially need to flatten the morphing back to the original
+    # curves...
+    if   ( ( cardin( mm.P ) != cardin( Pa ) )
+           ||  ( cardin( mm.Q ) != cardin( Qa ) ) )
+        prm = Morphing_extract_prm( mm );
+        mm = Morphing_from_prm( prm, Pa, Qa );
+    end
+
     #println( "RETURNING!" );
     return  mm, f_exact, P, Q
 end
@@ -983,10 +991,9 @@ end
 function  Polygon_simplify_radii_ext( P::Polygon{N,T}, r::Vector{T}
                                       ) where {N,T}
     f_exact::Bool = false;
+    #f_debug  &&  println( "#P :", cardin( P ) );
+    #f_debug  &&  println( "#r :", length( r ) );
 
-    println( "#P :", cardin( P ) );
-    println( "#r :", length( r ) );
-    
     PS, p_indices = Polygon_simplify_radii( P, r );
     if   ( cardin( PS ) <= ( cardin( P ) / 2 ) )
         return  PS, p_indices, false
@@ -1072,7 +1079,7 @@ function  frechet_c_compute( P::Polygon{N,T},
                              Q::Polygon{N,T},
                              f_accept_approx::Bool = true
                              )  where {N,T}
-    f_debug::Bool = true;
+    f_debug::Bool = false;
 
     # The parameters that can be finetunes
     # 2.0, 8.0, 4.0, 10.0 =>  8.74 seconds
@@ -1089,10 +1096,12 @@ function  frechet_c_compute( P::Polygon{N,T},
     tolerance::Float64 = 0.00001;
 
     f_debug  &&  println( "\n\n\n\n\n\n" );
-    f_debug  &&  println( "#", cardin( P ) )
-    f_debug  &&  println( "#", cardin( Q ) )
+    f_debug  &&  println( "P#", cardin( P ) )
+    f_debug  &&  println( "Q#", cardin( Q ) )
 
     mf = frechet_c_approx( P, Q, aprx_refinement );
+    #println( "=#= P :", cardin( mf.P ) );
+    #println( "=#= Q :", cardin( mf.Q ) );
     ratio_2 = mf.ratio;
 
     len_a = Polygon_length( P );
@@ -1120,10 +1129,12 @@ function  frechet_c_compute( P::Polygon{N,T},
 
     if  ratio_2 <= approx
         m = mf;
+        #println( "___ #P: ", cardin( m.P ) );
         ratio = ratio_2;
     else
         f_debug  &&  println( "freceht_c_approx( ", approx, ") " );
         m = frechet_c_approx( P, Q, approx );
+        #println( "_=_ #P: ", cardin( m.P ) );
         ratio = m.ratio
         f_debug  &&  println( "freceht_c_approx( ", approx, ")...done" );
     end
@@ -1136,6 +1147,9 @@ function  frechet_c_compute( P::Polygon{N,T},
     end
 
     pl, ql = Morphing_extract_vertex_radii( m );
+    f_debug  &&  println( "### m.P:", cardin( m.P ) );
+    f_debug  &&  println( "### pl :", length( pl ) );
+    f_debug  &&  println( "### P :", cardin( P ) )
 
     lower_bound = m.leash / ratio;
     if  f_debug
@@ -1148,7 +1162,7 @@ function  frechet_c_compute( P::Polygon{N,T},
     while  true
         f_debug  &&  println( "-------------------------------------------" );
         f_debug  &&  println( "A#", cardin( P ) )
-        f_debug  &&  println( "B#", cardin( pl ) )
+        f_debug  &&  println( "B#", length( pl ) )
         f_debug  &&  println( "factor: ", factor, "                      " );
         pz = ( ( lower_bound * ones( length( pl ) ) ) - pl ) / factor
         qz = ( ( lower_bound * ones( length( ql ) ) ) - ql ) / factor
@@ -1207,9 +1221,9 @@ function  frechet_c_compute( P::Polygon{N,T},
         m_b = frechet_ve_r_mono_compute( QSR, Q );
         mw = Morphing_combine( mmu, m_b );
 
-        println( "CARDIN(P): ", cardin( mw.P ) );
-        println( "CARDIN(Q): ", cardin( mw.Q ) );
-        
+        f_debug  &&  println( "CARDIN(P): ", cardin( mw.P ) );
+        f_debug  &&  println( "CARDIN(Q): ", cardin( mw.Q ) );
+
         # is there is hope we got the optimal solution?
         if  ( ! eq( m_mid.leash, mw.leash, tolerance ) )
             if  f_debug

@@ -274,12 +274,11 @@ function  Morphing_recompute_leash( m::Morphing{N,T} ) where  {N,T}
         end
     end
     if  ( m.leash != r )   &&   ( m.leash != 0 )
-        println( "old leash:" , m.leash );
-        println( "new leash:" , r );
+        println( "ERROR old leash:" , m.leash );
+        println( "ERROR new leash:" , r );
         exit( -1 );
     end
     m.leash = r;
-#    println(  " m.leash: ", m.leash );
 end
 
 """
@@ -398,8 +397,8 @@ end
     Morphing_extract_prm
 
     A parameterization is a polygonal curve that starts at (0,0) and
-    end at (m,n).  The polygonal curve ither have positive slope edge,
-    or vertical or horizontla edges. It can be thought of as a
+    end at (m,n).  The polygonal curve either have positive slope edge,
+    or vertical or horizontal edges. It can be thought of as a
     piecewise linear function from [0,m] to [0,n]. Here m and n are the
     lengths of the two given polygons of P and Q, respectively.
 
