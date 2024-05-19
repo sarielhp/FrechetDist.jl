@@ -9,6 +9,7 @@ using FrechetDist
 using FrechetDist.cg
 using PrettyTables
 
+AtomicInt = Threads.Atomic{Int}
 
 ######################################################################
 
@@ -58,7 +59,10 @@ function frechet_decider( P::Polygon{D,T}, Q::Polygon{D,T},
 end
 
 
-function  test_files( base_dir, queries_file, prefix )
+function  test_files( base_dir, queries_file, prefix,
+                      count::AtomicInt,
+                      i_second::Int64 = 1
+                      )
     println( "QF: ", queries_file, prefix );
     df = CSV.read( queries_file, DataFrame, types=String, header=false );
 
@@ -90,10 +94,15 @@ function  test_files( base_dir, queries_file, prefix )
 
     println( "Figuring out distances..." );
     for  i in  1:length( PA )
-        println( prefix, i, "/", length( PA ), " ",
+        if  ( i < i_second )
+            continue;
+        end
+        println( count[], " : ", prefix, i, "/", length( PA ), " ",
                  base_dir * df[i,1], "   ", base_dir * df[i,2] );
         flush( stdout );
         sgn = frechet_decider( PA[ i ], QA[ i ], rads[ i ] );
+        
+        Threads.atomic_add!( count, 1 )
     end
 
     println( "Text completed on : ", queries_file );
@@ -108,17 +117,58 @@ num_args = length( ARGS );
 
 #exit( -1 );
 
-function  test_files_from_file( filename, base_dir )
-    println( "filename::: ", filename );
-    lines = readlines( filename );
-    nr = length( lines );
+function  do_chunk( lines, base_dir, nr,
+                    count::AtomicInt,
+                    i_second::Int64 = 1 )
+#        test_files( base_dir, r, prefix, i_second );
+
     #nr = min( 10, nr );
-    for  i in 1:nr
+    #parentindices( chunk )
+    for  i in eachindex( lines )
+        i_orig = lines.offset1 + lines.stride1*i
         r = lines[ i ]
-        prefix = @sprintf( "[%d/%d] ", i, nr );
-        test_files( base_dir, r, prefix );
+        prefix = @sprintf( "[%d/%d] ", i_orig, nr );
+        test_files( base_dir, r, prefix, count, i_second );
+    end
+end 
+
+    
+function  test_files_from_file( filename, base_dir,
+                                i_main::Int64 = 1,
+                                i_second::Int64 = 1 )
+    rlines = readlines( filename );
+
+    println( "filename::: ", filename );
+    lines = rlines[i_main:length( rlines )];
+    nr = length( lines );
+    count = AtomicInt( 0 );
+
+    if   ( i_second > 1 )
+        prefix = @sprintf( "[%d/%d] ", i_main, nr );
+        test_files( base_dir, lines[ i_main ], prefix, count, i_second );
+        return;
     end
 
+
+    
+    chunks = Iterators.partition(lines, length(lines) ÷ Threads.nthreads())
+    tasks = map(chunks) do chunk
+        #println( parentindices( chunk ) );
+        Threads.@spawn do_chunk(chunk, base_dir, nr, count, i_second );
+    end;
+    fetch.(tasks);
+
+    #nr = min( 10, nr );
+        #=
+    for  i in 1:nr
+        if  ( i > i_main )
+            i_second = 1;
+        end
+        r = lines[ i ]
+        prefix = @sprintf( "[%d/%d] ", i, nr );
+        test_files( base_dir, r, prefix, i_second );
+    end
+        =#
     println( "TEST COMPLETED SUCCESSFULLY!" );
 end
 
@@ -131,5 +181,12 @@ end
 if   num_args == 3  &&  ( ARGS[ 1 ] == "file" )
     println( "ARGS[3]: ", ARGS[3 ] );
     test_files_from_file( ARGS[3], ARGS[2] );
+    exit( -1 );
+end
+
+if   num_args == 5  &&  ( ARGS[ 1 ] == "file" )
+    println( "ARGS[3]: ", ARGS[3 ] );
+    test_files_from_file( ARGS[3], ARGS[2], parse( Int64, ARGS[4] ),
+                          parse( Int64, ARGS[ 5 ] ) );
     exit( -1 );
 end
