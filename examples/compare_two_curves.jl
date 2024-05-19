@@ -12,16 +12,24 @@ function frechet_comp( P::Polygon{D,T}, Q::Polygon{D,T}
      )::Int64  where {D,T}
     ratio::Float64 = 5.0;
 
+    println( "|P| :", cardin( P ) );
+    println( "|Q| :", cardin( Q ) );
+
     for  i in 1:10
-#        println( "approx( #", cardin(P ), ", ", cardin(Q), ") " );
+        println( "approx( #", cardin(P ), ", ", cardin(Q), ")   approx: ",
+                 ratio );
         m = frechet_c_approx( P, Q, ratio );
+        if  ( m.ratio == 1.0 )
+            return  0;
+        end
         lb = m.leash / m.ratio;
 
-#        println( "m.leash: ", m.leash );
-        ratio = (ratio - 1.0) / 2.0 + 1.0; # min( m.ratio, 1.01 );
+        println( "m.leash: ", m.leash );
+        ratio = (ratio - 1.0) / 6.0 + 1.0; # min( m.ratio, 1.01 );
         ratio = min( ratio, 1.1 );
 #        println( "ratio: ", ratio );
         if  ( ratio <= 1.001 )
+            println( "Calling frechet_c_compute" );
             m = frechet_c_compute( P, Q );
             return  0;
         end
@@ -40,7 +48,7 @@ function  test_files( fl_a, fl_b )
     P = Polygon_read_file( fl_a );
     Q = Polygon_read_file( fl_b );
     println( "Files read!..." );
-    
+
     sgn = frechet_comp( P, Q,  );
 end
 
@@ -55,4 +63,3 @@ if   num_args == 2
 end
 
 println( "compare_two_curves.jl [file1] [file2]" );
-

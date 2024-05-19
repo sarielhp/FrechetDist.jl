@@ -881,8 +881,10 @@ function  frechet_c_approx( poly_a::Polygon{N,T},
 
             if  ( (2 * cardin( P ) > cardin( poly_a ) )
                   &&  (2 * cardin( Q ) > cardin( poly_b ) ) )
+                #println( "DDDD" );
                 m = frechet_mono_via_refinement( poly_a, poly_b )[ 1 ];
                 m.ratio = 1.0;
+#                exit( -1 ); # DDDD
                 return  m;
             end
 
@@ -1197,6 +1199,7 @@ function  frechet_c_compute( P::Polygon{N,T},
         m_b = frechet_ve_r_mono_compute( QSR, Q );
         mw = Morphing_combine( mmu, m_b );
 
+
         # is there is hope we got the optimal solution?
         if  ( ! eq( m_mid.leash, mw.leash, tolerance ) )
             if  f_debug
@@ -1212,6 +1215,7 @@ function  frechet_c_compute( P::Polygon{N,T},
             f_debug  &&  println( "1 aprx_refinement: ", aprx_refinement,
                  "  scale :", approx_scale );
 
+            pl, ql = Morphing_extract_vertex_radii( mw );
             continue;
         end
 

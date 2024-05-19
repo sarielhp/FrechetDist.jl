@@ -124,9 +124,12 @@ function   extract_vertex_leash( P::Polygon{N,T},
     for  i in  1:len
         ev = pes[ i ];
         evx = qes[ i ];
-        if  ( ev.type == PT_VERTEX )
-            vl[ ev.i ] = max( vl[ ev.i ], Dist( ev.p, evx.p ) );
-        end
+        # BUG: If should not have been there... We are being very
+        # conservative about vertices that should not be simplified.
+
+        # if ( ev.type == PT_VERTEX )
+        vl[ ev.i ] = max( vl[ ev.i ], Dist( ev.p, evx.p ) );
+        #end
     end
 
     return  vl;
