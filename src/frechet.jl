@@ -1085,7 +1085,7 @@ function  frechet_c_compute( P::Polygon{N,T},
     # 2.0, 8.0, 4.0, 10.0 =>  8.74 seconds
     aprx_refinement::Float64 = 2.0;
     factor::Float64          = 8.0
-    factor_scale::Float64    = 4.0;
+    factor_scale::Float64    = 1.5;
     approx_scale::Float64    = 10.0;
 
     ##################################################################
