@@ -371,10 +371,6 @@ end
 
 
 
-
-
-
-
 #####################################################################
 # 2-approximation to the Frechet distance between
 #   P[first(rng)]-P[last(rng)] and he polygon
@@ -493,7 +489,7 @@ end
 
 Approximates the Frechet distance between a curve (P) and subcurbe (Q). Here,
 Q vertices are the vertices of P specifieid by p_indices. That is
-Q[ i ] =P[ p_indices[ i ].
+Q[ i ] =P[ p_indices[ i ]].
 
 """
 function    frechet_c_mono_approx_subcurve(
@@ -1006,13 +1002,6 @@ function  Polygon_simplify_radii_ext( P::Polygon{N,T}, r::Vector{T}
     end
 end
 
-mutable struct FrechetCExtraInfo
-    PSR::Polygon2F;
-    QSR::Polygon2F;
-    PSR_offs::Vector{Float64};
-    QSR_offs::Vector{Float64};
-    f_init::Bool
-end;
 
 function  propogate_negs( qz )
     for  i  in  length( qz )
@@ -1206,19 +1195,25 @@ function  frechet_c_compute( P::Polygon{N,T},
 
         #    m_mid = frechet_ve_r_mono_compute( PS, QS  );
         f_debug && println( "\nApprox refinement : ", aprx_refinement );
-        m_mid, f_exact, PSR, QSR = frechet_mono_via_refinement( PS, QS,
-                                                          aprx_refinement );
+        m_mid = frechet_mono_via_refinement( PS, QS, aprx_refinement )[ 1 ];
 
 
         f_debug  &&  println( "frechet mono via refinment computed" );
-        f_debug  &&  println( "PSR.len: ", cardin( PSR ) );
-        f_debug  &&  println("QSR.len: ", cardin( QSR ) );
+        f_debug  &&  println( "|PS|: ", cardin( PS ) );
+        f_debug  &&  println( "|QS|: ", cardin( QS ) );
 
-        f_debug  &&  println( "ve_r_mono( P -> PSR)" );
-        m_a = frechet_ve_r_mono_compute( P, PSR );
+        # XXX        
+        f_debug  &&  println( "ve_r_mono( P -> PS)" );
+
+        m_a = frechet_c_mono_approx_subcurve( P, PS, p_indices );
+#        m_a = frechet_ve_r_mono_compute( P, PS );
         mmu = Morphing_combine( m_a, m_mid );
-        f_debug  &&  println( "ve_r_mono( WSR -> Q )" );
-        m_b = frechet_ve_r_mono_compute( QSR, Q );
+        f_debug  &&  println( "ve_r_mono( QS -> Q )" );
+
+        m_b = frechet_c_mono_approx_subcurve( Q, QS, q_indices );
+        Morphing_swap_sides!( m_b );
+        #XXX
+        #m_b = frechet_ve_r_mono_compute( QS, Q );
         mw = Morphing_combine( mmu, m_b );
 
         f_debug  &&  println( "CARDIN(P): ", cardin( mw.P ) );
@@ -1246,12 +1241,12 @@ function  frechet_c_compute( P::Polygon{N,T},
         f_debug  &&  println( "Extracting offsets..." );
 
         # Now we compute the distance, with offsets...
-        PSR_offs = Morphing_extract_offsets( m_a )[2]
-        QSR_offs = Morphing_extract_offsets( m_b )[1]
+        PS_offs = Morphing_extract_offsets( m_a )[2]
+        QS_offs = Morphing_extract_offsets( m_b )[1]
 
 
-        f_debug  &&  println( "ve_r_mono( PSR -> QSR)" );
-        m_final = frechet_ve_r_compute_ext( PSR, QSR, PSR_offs, QSR_offs,
+        f_debug  &&  println( "ve_r_mono( PS -> QS)" );
+        m_final = frechet_ve_r_compute_ext( PS, QS, PS_offs, QS_offs,
                                             true );
         f_debug && println( "*** m_final.leash: ", m_final.leash );
         f_debug && println( "*** mw     .leash: ", mw.leash );
