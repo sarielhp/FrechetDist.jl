@@ -90,7 +90,7 @@ function  test_files( base_dir, queries_file )
 
     println( "Figuring out distances..." );
     for  i in  1:length( PA )
-        println( base_dir * df[i,1], " vs ", base_dir * df[i,2] );
+        println( i, ": ",  base_dir * df[i,1], " vs ", base_dir * df[i,2] );
         flush( stdout );
         sgn = frechet_decider( PA[ i ], QA[ i ], rads[ i ] );
     end
