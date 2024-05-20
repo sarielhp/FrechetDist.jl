@@ -497,6 +497,7 @@ function    frechet_c_mono_approx_subcurve(
     Q::Polygon{N,T},
     p_indices::Vector{Int64} ) where {N,T}
 
+    offsets = zeros( T, length( p_indices ) );
     #println( "#P: ", cardin( P ), "#Q: ", cardin( Q ), "  #qind: ",
     #         length( p_indices ) );
 
@@ -511,6 +512,7 @@ function    frechet_c_mono_approx_subcurve(
         push!( pes, EventPoint( P[ pind ], pind, PT_VERTEX, 0.0 ) );
         push!( qes, EventPoint( Q[ i ], i, PT_VERTEX, 0.0 ) );
 
+        max_d::Float64 = 0;
         max_t::Float64 = 0;
         seg = Segment( Q[ i ], Q[ i + 1 ] );
         for  j in (pind + 1):(pind_next - 1)
@@ -522,15 +524,18 @@ function    frechet_c_mono_approx_subcurve(
             else # new_t < max_t
                 q = Segment_get_on( seg, max_t )
             end
+            max_d = max( max_d, Dist( P[ j ], q ) );
             push!( pes, EventPoint( P[ j ], j, PT_VERTEX, 0.0 ) );
             push!( qes, EventPoint( q, i, PT_ON_EDGE, max_t ) );
         end
+        offsets[ i ] = max( offsets[ i ], max_d );
+        offsets[ i + 1 ] = max( offsets[ i + 1 ], max_d );
     end
 
     push!( pes, EventPoint( last( P ), cardin( P ), PT_VERTEX, 0.0 ) );
     push!( qes, EventPoint( last( Q ), cardin(Q), PT_VERTEX, 0.0 ) );
 
-    return  Morphing_init( P, Q, pes, qes );
+    return  Morphing_init( P, Q, pes, qes ), offsets;
 end
 
 
@@ -924,12 +929,12 @@ function  frechet_c_approx( poly_a::Polygon{N,T},
         #m_p = frechet_ve_r_mono_compute( poly_a, P )
         #m_p = frechet_ve_r_mono_compute( poly_a, P )
         f_debug  &&  println( "=== f_c_dist( poly_a, P )" );
-        m_p = frechet_c_mono_approx_subcurve( poly_a, P, p_indices );
+        m_p = frechet_c_mono_approx_subcurve( poly_a, P, p_indices )[ 1 ];
 #        println( "mono b" );
 
         #m_q = frechet_ve_r_mono_compute( Q, poly_b )
         f_debug  &&  println( "f_c_dist( poly_b, Q )" );
-        m_q = frechet_c_mono_approx_subcurve( poly_b, Q, q_indices );
+        m_q = frechet_c_mono_approx_subcurve( poly_b, Q, q_indices )[ 1 ];
         Morphing_swap_sides!( m_q );
 
         err = max( m_p.leash, m_q.leash );
@@ -1038,6 +1043,37 @@ function  eq( a::Float64, b::Float64, tolerance::Float64 )::Bool
     end
     return  abs( a - b ) <= (tolerance* (abs( a)  + abs(b) ))
 end
+
+
+function  get_refinement_map( PSR::Polygon{N,T}, PS::Polygon{N,T} ) where {N,T}
+    @assert( cardin( PSR ) >= cardin( PS ) );
+
+    len = cardin( PSR );
+    lenPS = cardin( PS );
+    mp = zeros(Int64, len );
+
+    curr = 1
+    i = 1
+    while  ( curr <= len )
+        if  ( i < lenPS )  &&  ( PSR[ curr ] == PS[ i + 1 ]  )
+            i = i + 1;
+        end
+        mp[ curr ] = i;
+        curr = curr + 1 ;
+    end
+
+    return  mp;
+end
+
+
+function    offsets_copy_map( map_PS, offsets )
+    offs = zeros( Float64, length( map_PS ) );
+    for  i in eachindex( map_PS )
+        offs[ i ] = offsets[ map_PS[ i ] ];
+    end
+    return  offs;
+end
+
 
 ###########################################################################
 """
@@ -1158,9 +1194,10 @@ function  frechet_c_compute( P::Polygon{N,T},
 
     while  true
         f_debug  &&  println( "-------------------------------------------" );
-        f_debug  &&  println( "A#", cardin( P ) )
-        f_debug  &&  println( "B#", length( pl ) )
-        f_debug  &&  println( "A factor: ", factor, "                      " );
+        #f_debug  &&  println( "A#", cardin( P ) )
+        #f_debug  &&  println( "B#", length( pl ) )
+        f_debug  &&  println( "Factor: ", factor,
+                              "  Approx : ", aprx_refinement );
         pz = ( ( lower_bound * ones( length( pl ) ) ) - pl ) / factor
         qz = ( ( lower_bound * ones( length( ql ) ) ) - ql ) / factor
 
@@ -1186,14 +1223,10 @@ function  frechet_c_compute( P::Polygon{N,T},
         #          length( p_indices ) );
 
         if  f_debug
-            println( "PS.len    : ", cardin( PS ); );
-            println( "QS.len    : ", cardin( QS ); );
             println( "p_count <0: ", p_count, " / ", length( pz ) );
             println( "q_count <0: ", q_count, " / ", length( qz ) );
-            println( "|PS| = ", cardin( PS ) );
-            println( "|P| = ", cardin( P ) );
-            println( "|QS| = ", cardin( QS ) );
-            println( "|Q| = ", cardin( Q ) );
+            println( "|PS| = ", cardin( PS ), "  |P| = ", cardin( P ) );
+            println( "|QS| = ", cardin( QS ), "  |Q| = ", cardin( Q ) );
             println( "Computing radii simplified Frechet distance..." );
         end
 
@@ -1207,39 +1240,36 @@ function  frechet_c_compute( P::Polygon{N,T},
         end
 
         #    m_mid = frechet_ve_r_mono_compute( PS, QS  );
-        f_debug && println( "\nApprox refinement : ", aprx_refinement );
-        m_mid = frechet_mono_via_refinement( PS, QS, aprx_refinement )[ 1 ];
+        m_mid, _f_exact, PSR, QSR = frechet_mono_via_refinement( PS, QS,
+                                                                 aprx_refinement );
 
-
-        f_debug  &&  println( "frechet mono via refinment computed" );
-        f_debug  &&  println( "|PS|: ", cardin( PS ) );
-        f_debug  &&  println( "|QS|: ", cardin( QS ) );
-
-        # XXX
-        f_debug  &&  println( "ve_r_mono( P -> PS)" );
+        f_debug  &&  println( "frechet mono via refinement computed" );
+        #f_debug  &&  println( "ve_r_mono( P -> PS)" );
 
         # BUG FIX: Used the mono computation instead of the subcurve code,
         # which is much faster...
         #println( "_#PS: ", cardin( PS ) );
-        m_a = frechet_c_mono_approx_subcurve( P, PS, p_indices );
+        m_a, offsets_a = frechet_c_mono_approx_subcurve( P, PS, p_indices );
 
         # OLD CODE
         #   m_a = frechet_ve_r_mono_compute( P, PS );
         mmu = Morphing_combine( m_a, m_mid );
-        f_debug  &&  println( "ve_r_mono( QS -> Q )" );
+        #f_debug  &&  println( "ve_r_mono( QS -> Q )" );
 
         # BUG FIX: Used the mono computation instead of the subcurve code,
         # which is much faster...
         #println( "_#QS: ", cardin( QS ) );
-        m_b = frechet_c_mono_approx_subcurve( Q, QS, q_indices );
+        m_b, offsets_b = frechet_c_mono_approx_subcurve( Q, QS, q_indices );
         Morphing_swap_sides!( m_b );
 
         # OLD CODE
         #  m_b = frechet_ve_r_mono_compute( QS, Q );
         mw = Morphing_combine( mmu, m_b );
 
-        f_debug  &&  println( "CARDIN(P): ", cardin( mw.P ) );
-        f_debug  &&  println( "CARDIN(Q): ", cardin( mw.Q ) );
+        #f_debug  &&  println( "CARDIN(P): ", cardin( mw.P ) );
+        #f_debug  &&  println( "CARDIN(Q): ", cardin( mw.Q ) );
+
+        f_debug  &&  println( "eq?  ", m_mid.leash, " = ", mw.leash );
 
         # is there is hope we got the optimal solution?
         if  ( ! eq( m_mid.leash, mw.leash, tolerance ) )
@@ -1263,16 +1293,27 @@ function  frechet_c_compute( P::Polygon{N,T},
         f_debug  &&  println( "Extracting offsets..." );
 
         # Now we compute the distance, with offsets...
-        PS_offs = Morphing_extract_offsets( m_a )[2]
-        QS_offs = Morphing_extract_offsets( m_b )[1]
+        PS_offs = offsets_a;#Morphing_extract_offsets( m_a )[2]
+        QS_offs = offsets_b;#Morphing_extract_offsets( m_b )[1]
 
+        f_debug  &&  println( "offsets_a max : ", maximum( PS_offs ) );
+        f_debug  &&  println( "offsets_a max : ", maximum( QS_offs ) );
 
         f_debug  &&  println( "ve_r_mono( PS -> QS)" );
-        m_final = frechet_ve_r_compute_ext( PS, QS, PS_offs, QS_offs,
+
+        map_PS = get_refinement_map( PSR, PS );
+        map_QS = get_refinement_map( QSR, QS );
+        PS_offs = offsets_copy_map( map_PS, offsets_a );
+        QS_offs = offsets_copy_map( map_QS, offsets_b );
+        @assert( length( PS_offs ) == cardin( PSR ) );
+        @assert( length( QS_offs ) == cardin( QSR ) );
+        
+        # very important! We have to use the refined to monotonicity copies...
+        m_final = frechet_ve_r_compute_ext( PSR, QSR, PS_offs, QS_offs,
                                             true );
-        f_debug && println( "*** m_final.leash: ", m_final.leash );
-        f_debug && println( "*** mw     .leash: ", mw.leash );
-        f_debug && println( "*** lower_bound  : ", lower_bound );
+        f_debug && println( "*** lower_bound.leash  : ", m_final.leash );
+        f_debug && println( "*** mw     .leash      : ", mw.leash );
+        #f_debug && println( "*** lower_bound       : ", lower_bound );
 
         if  ( eq( m_final.leash,  mw.leash, tolerance ) )
             f_debug && println( "Return from frechet_c_compute" );
