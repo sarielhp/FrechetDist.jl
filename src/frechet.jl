@@ -859,7 +859,7 @@ rough approximation.
 function  frechet_c_approx( poly_a::Polygon{N,T},
     poly_b::Polygon{N,T}, approx::Float64 ) where {N,T}
 
-    f_debug::Bool = true;
+    f_debug::Bool = false;
 
     @assert( ( cardin( poly_a ) > 1 )  &&  ( cardin( poly_b ) > 1 ) )
     @assert( approx > 1.0 )
@@ -1076,7 +1076,7 @@ function  frechet_c_compute( P::Polygon{N,T},
                              Q::Polygon{N,T},
                              f_accept_approx::Bool = true
                              )  where {N,T}
-    f_debug::Bool = true;
+    f_debug::Bool = false;
 
     # The parameters that can be finetunes
     # 2.0, 8.0, 4.0, 10.0 =>  8.74 seconds
