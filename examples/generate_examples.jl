@@ -1434,8 +1434,11 @@ function  create_demo( title::String,
                        f_draw_ve::Bool = true,
                        note::String = "",
                        f_refinements::Bool = false )
-    f_debug::Bool = true;
+    f_debug::Bool = false;
 
+    println( "Creating: ", title );
+
+             
     if  ! isdir( prefix )
         mkdir( prefix );
     end

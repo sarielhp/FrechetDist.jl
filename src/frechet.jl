@@ -497,6 +497,9 @@ function    frechet_c_mono_approx_subcurve(
     Q::Polygon{N,T},
     p_indices::Vector{Int64} ) where {N,T}
 
+    #println( "#P: ", cardin( P ), "#Q: ", cardin( Q ), "  #qind: ",
+    #         length( p_indices ) );
+
     @assert( cardin(Q) == length( p_indices ) );
 
     pes = Vector{EventPoint{N,T}}();
@@ -856,7 +859,7 @@ rough approximation.
 function  frechet_c_approx( poly_a::Polygon{N,T},
     poly_b::Polygon{N,T}, approx::Float64 ) where {N,T}
 
-    f_debug::Bool = false;
+    f_debug::Bool = true;
 
     @assert( ( cardin( poly_a ) > 1 )  &&  ( cardin( poly_b ) > 1 ) )
     @assert( approx > 1.0 )
@@ -886,6 +889,7 @@ function  frechet_c_approx( poly_a::Polygon{N,T},
             if  ( (2 * cardin( P ) > cardin( poly_a ) )
                   &&  (2 * cardin( Q ) > cardin( poly_b ) ) )
                 #println( "DDDD" );
+                f_debug  &&  println( "VVV Calling frechet_mono_via_refinement" );
                 m = frechet_mono_via_refinement( poly_a, poly_b )[ 1 ];
                 m.ratio = 1.0;
 #                exit( -1 ); # DDDD
@@ -991,15 +995,19 @@ function  Polygon_simplify_radii_ext( P::Polygon{N,T}, r::Vector{T}
     #f_debug  &&  println( "#r :", length( r ) );
 
     PS, p_indices = Polygon_simplify_radii( P, r );
+    @assert( length( p_indices ) == cardin( PS ) );
     if   ( cardin( PS ) <= ( cardin( P ) / 2 ) )
+        @assert( cardin( PS ) == length( p_indices ) );
         return  PS, p_indices, false
     end
 
-    pindices = Vector{Int64}();
-    for  i in cardin( P )
-        push!( pindices, i )
-        return  P, p_indices, true
+    p_indices = Vector{Int64}();
+    for  i in 1:cardin( P )
+        push!( p_indices, i )
     end
+    #println( "______________________________" );
+    @assert( cardin( P ) == length( p_indices ) );
+    return  P, p_indices, true
 end
 
 
@@ -1068,13 +1076,13 @@ function  frechet_c_compute( P::Polygon{N,T},
                              Q::Polygon{N,T},
                              f_accept_approx::Bool = true
                              )  where {N,T}
-    f_debug::Bool = false;
+    f_debug::Bool = true;
 
     # The parameters that can be finetunes
     # 2.0, 8.0, 4.0, 10.0 =>  8.74 seconds
     aprx_refinement::Float64 = 2.0;
     factor::Float64          = 8.0
-    factor_scale::Float64    = 1.5;
+    factor_scale::Float64    = 1.2;
     approx_scale::Float64    = 10.0;
 
     ##################################################################
@@ -1152,7 +1160,7 @@ function  frechet_c_compute( P::Polygon{N,T},
         f_debug  &&  println( "-------------------------------------------" );
         f_debug  &&  println( "A#", cardin( P ) )
         f_debug  &&  println( "B#", length( pl ) )
-        f_debug  &&  println( "factor: ", factor, "                      " );
+        f_debug  &&  println( "A factor: ", factor, "                      " );
         pz = ( ( lower_bound * ones( length( pl ) ) ) - pl ) / factor
         qz = ( ( lower_bound * ones( length( ql ) ) ) - ql ) / factor
 
@@ -1171,6 +1179,11 @@ function  frechet_c_compute( P::Polygon{N,T},
 
         PS, p_indices, f_PS_exact = Polygon_simplify_radii_ext( P, pz );
         QS, q_indices, f_QS_exact = Polygon_simplify_radii_ext( Q, qz );
+
+        #println( "### #QS : ", cardin( QS ), "   q_ind: ",
+        #         length( q_indices ) );
+        #println( "### #PS : ", cardin( PS ), "   p_ind: ",
+        #          length( p_indices ) );
 
         if  f_debug
             println( "PS.len    : ", cardin( PS ); );
@@ -1202,18 +1215,27 @@ function  frechet_c_compute( P::Polygon{N,T},
         f_debug  &&  println( "|PS|: ", cardin( PS ) );
         f_debug  &&  println( "|QS|: ", cardin( QS ) );
 
-        # XXX        
+        # XXX
         f_debug  &&  println( "ve_r_mono( P -> PS)" );
 
+        # BUG FIX: Used the mono computation instead of the subcurve code,
+        # which is much faster...
+        #println( "_#PS: ", cardin( PS ) );
         m_a = frechet_c_mono_approx_subcurve( P, PS, p_indices );
-#        m_a = frechet_ve_r_mono_compute( P, PS );
+
+        # OLD CODE
+        #   m_a = frechet_ve_r_mono_compute( P, PS );
         mmu = Morphing_combine( m_a, m_mid );
         f_debug  &&  println( "ve_r_mono( QS -> Q )" );
 
+        # BUG FIX: Used the mono computation instead of the subcurve code,
+        # which is much faster...
+        #println( "_#QS: ", cardin( QS ) );
         m_b = frechet_c_mono_approx_subcurve( Q, QS, q_indices );
         Morphing_swap_sides!( m_b );
-        #XXX
-        #m_b = frechet_ve_r_mono_compute( QS, Q );
+
+        # OLD CODE
+        #  m_b = frechet_ve_r_mono_compute( QS, Q );
         mw = Morphing_combine( mmu, m_b );
 
         f_debug  &&  println( "CARDIN(P): ", cardin( mw.P ) );
