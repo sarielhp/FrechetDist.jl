@@ -5,17 +5,38 @@ push!(LOAD_PATH, pwd()*"/src/")
 using Cairo
 using FrechetDist
 using FrechetDist.cg
+using Parameters
 
 VecFloat = Vector{Float64};
 VecVecFloat = Vector{VecFloat};
 
 
-function  draw_polygon( cr, P )
+mutable struct  Affine2d
+    x::Float64;
+    y::Float64;
+    scale::Float64;
+
+    function  Affine2d()
+        return  new( 0.0, 0.0, 1.0 );
+    end
+    function  Affine2d( _x, _y, _scale)
+        return  new( _x, _y, _scale );
+    end
+end;
+
+function  Base.:*(t::Affine2d, p::Point{D,T}) where  {D,T}
+    return  point( ( p[ 1 ] + t.x)*t.scale,
+        ( p[ 2 ] + t.y)*t.scale );
+end
+
+
+function  draw_polygon( cr, P, T::Affine2d )
     nv::Int64 = cardin( P );
     for  i in 2:nv
-        po = P.pnts[ i - 1 ];
+        #println( T * P[ i ] );
+        po = T * P.pnts[ i - 1 ];
         p = po.x;
-        qo = P.pnts[ i ];
+        qo = T * P.pnts[ i ];
         q = qo.x;
         move_to( cr,  p[1], p[2] )
         line_to( cr, q[1], q[2] );
@@ -70,6 +91,12 @@ function  compute_bounding_boxes( list::VecPolygon2F )
     bbo::BBox2F = deepcopy( bb );
     BBox_expand( bbo, 1.05 );
 
+    println( "--------------------" );
+    BBox_print( bbo );
+    println( "--------------------" );
+    BBox_print( bb );
+    println( "--------------------" );
+
     return  bb, bbo
 end
 
@@ -90,16 +117,26 @@ function  get_image_dims( bbo )
     iheight::Int64 = convert( Int64, 16 * ceil( theight / 16 ) )
     iwidth::Int64 = convert( Int64, 16 * ceil( width / 16 ) )
 
+    println( "Image dimensions: (", iwidth, ", ", iheight, ")" );
     return  iheight,iwidth;
 end
+
+
+
 
 function  set_transform( cr, iwidth::Int64, iheight::Int64,
                          bbo::BBox2F )
     xcal = convert( Float64, iwidth) / BBox_width( bbo, 1 );
 
-    Cairo.scale( cr, xcal, xcal );
+    println( "Scaling: ", xcal );
+    #Cairo.scale( cr, xcal, xcal );
     bl = BBox_bottom_left( bbo );
-    Cairo.translate( cr, -bl[ 1 ], -bl[ 2 ]);
+    println( "bl :", bl );
+    #Cairo.translate( cr, -bl[ 1 ], -bl[ 2 ]);
+
+    println( "IWIDTH: ", iwidth );
+    println( "TRANSLATION: ", bl[1], " , ", bl[2 ] );
+    return  Affine2d( -bl[ 1 ], -bl[ 2 ], xcal );
 end
 
 function  cairo_setup( filename::String, list::VecPolygon2F,
@@ -117,14 +154,14 @@ function  cairo_setup( filename::String, list::VecPolygon2F,
     end
     cr = CairoContext(c);
 
-    set_transform( cr, iwidth, iheight, bbo );
-
+    T = set_transform( cr, iwidth, iheight, bbo );
+    
     if  ( ! f_pdf )
         set_source_rgb(cr, 1, 1, 1);
         paint(cr);
     end
 
-    return  c,cr,bb;
+    return  c,cr,bb, T;
 end
 
 
@@ -133,7 +170,7 @@ function  output_polygons_to_file(  list::VecPolygon2F, filename,
                                     f_draw_vertices::Bool = false,
                                     f_matching::Bool = false
                                     )
-    c,cr,bb = cairo_setup( filename, list, f_pdf );
+    c,cr,bb, T = cairo_setup( filename, list, f_pdf );
 
     u_width::Float64 = 1024.0 * (BBox_width( bb) / 100.0);
 
@@ -147,14 +184,14 @@ function  output_polygons_to_file(  list::VecPolygon2F, filename,
     for  poly in  list
         count = count + 1;
         #println( count, " ", len );
-        set_line_width(cr, u_width );
+        set_line_width(cr, 3.0 );
         if  len == 2  &&  count == 2
             set_source_rgb(cr, 0.0, 0.0, 1.0 );
         else
             set_source_rgb( cr, 0.0, 1.0, 0.0 );
         end
 
-        draw_polygon( cr, poly );
+        draw_polygon( cr, poly, T );
     end
 
     if  ( f_matching )  &&  ( cardin( list[ 1 ] ) ==  cardin( list[ 2 ] ) )
@@ -173,7 +210,7 @@ function  output_polygons_to_file(  list::VecPolygon2F, filename,
     end
 
     if  ( f_draw_vertices )
-        set_line_width(cr, 2.0*u_width);
+        set_line_width(cr, 2.0);
         set_source_rgb( cr, 1.0, 0.0, 0.0 );
         for  poly in  list
             draw_polygon_vertices( cr, poly, BBox_width( bb) / 200  );
@@ -193,10 +230,21 @@ function  plt_show( ARGS )
     num_args = length( ARGS );
 
     list = VecPolygon2F();
+    bb = BBox2F();
     for  i in 1:num_args
         poly_a = Polygon_read_file( ARGS[ i ] );
         push!( list, poly_a );
+        BBox_bound( bb, poly_a );
     end
+    p = BBox_bottom_left( bb );
+    for  poly  in list
+        Polygon_translate!( poly, p );
+    end
+
+    #for  poly  in list
+    #    println( poly );
+    #end
+
     output_polygons_to_file( list, "curves.pdf", true );
     println( "Generated curves.pdf" );
 end

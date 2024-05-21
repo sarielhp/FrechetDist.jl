@@ -1165,7 +1165,7 @@ function  Polygon_read_file( filename, dchar = "," )
         else
             pieces = get_numbers_in_line( line, ',' );
         end
-        @assert( length( pieces ) == 2 );
+        @assert( length( pieces ) >= 2 );
         Polygon_push_smart( P, point( pieces[ 1 ], pieces[ 2 ] ) );
     end
 

@@ -28,9 +28,9 @@ function frechet_comp( P::Polygon{D,T}, Q::Polygon{D,T}
         ratio = min( ratio, 1.1 );
 #        println( "ratio: ", ratio );
         if  ( ratio <= 11.0 )
-            println( "Calling frechet_c_compute" );
+            println( "frechet_c_compute..." );
             m = frechet_c_compute( P, Q );
-            println( "... done" );
+#            println( "... done" );
             return  0;
         end
 #        if  i > 2
@@ -51,8 +51,9 @@ function  test_files( fl_a, fl_b )
     P = Polygon_read_file( fl_a );
     Q = Polygon_read_file( fl_b );
 
-    sgn = frechet_comp( P, Q,  );
-    println( "Sign: ", sgn, "\n\n\n\n\n\n" );
+    frechet_comp( P, Q );
+    println( "Done..." );
+    #println( "Sign: ", sgn, "\n\n\n\n\n\n" );
 end
 
 
