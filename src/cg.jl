@@ -862,7 +862,12 @@ function  Polygon_simplify_radii( P::Polygon{D,T}, r::Vector{T} ) where {D,T}
     if  Polygon_push_smart( pout, P[ len ] )
         push!( pindices, len );
     end
-
+    #println( "STRLEN: ", length( pindices ) )
+    if  ( length( pindices ) <= 1 )
+        Polygon_push( pout, P[ len ] )
+        push!( pindices, len );
+    end
+    
     return  pout, pindices;
 end
 
