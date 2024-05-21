@@ -735,8 +735,10 @@ function  frechet_mono_via_refinement_ext( Pa::Polygon{N,T}, Qa::Polygon{N,T},
         fr_r_mono = mm.leash;
 
         if ( f_debug )
-            f_debug && println( "fr_retract : ", m.leash );
-            f_debug && println( "fr_mono    : ", fr_r_mono );
+            f_debug && println( "fr_retract     : ", fr_retract );
+            f_debug && println( "fr_mono        : ", fr_r_mono );
+            f_debug && println( "mono / retract : ", fr_r_mono / fr_retract );
+            f_debug && println( "Approx         : ", approx );
         end
 
         if  ( fr_r_mono == fr_retract )
@@ -747,7 +749,6 @@ function  frechet_mono_via_refinement_ext( Pa::Polygon{N,T}, Qa::Polygon{N,T},
             f_exact = false;
             break;
         end
-
         f_refinement = true;
 
         poly_a_2 = extract_refined_polygon( P, m.pes, 1 );
@@ -1016,24 +1017,20 @@ function  Polygon_simplify_radii_ext( P::Polygon{N,T}, r::Vector{T}
 end
 
 
-function  propogate_negs( qz )
-    for  i  in  length( qz )
-        if  ( i == 1 )  ||  ( i == length( qz ) )
-            continue;
+function  propogate_mins( qz, rounds::Int64 = 1 )
+    a = deepcopy( qz );
+    for  r  in 1:rounds
+        for  i  in  length( a )
+            if  ( i == 1 )  ||  ( i == length( qz ) )
+                continue;
+            end
+
+            a[ i ] = min( qz[ i - 1 ], qz[ i ], qz[ i + 1 ] );
         end
 
-        if  ( qz[ i ] > qz[ i - 1 ] )  &&  ( qz[ i ] > qz[ i + 1 ] )
-            qz[ i ] = min( qz[ i - 1 ], qz[ i + 1 ] );
+        for  i  in  length( a )
+            qz[ i ] = a[ i ];
         end
-        #=
-        if  ( i > 1 )  &&  ( qz[ i ] > 0.0 )  &&  ( qz[ i - 1 ] < 0.0 )
-            qz[ i ] = qz[ i - 1 ];
-        end
-        if  ( ( i < length( qz ) )  &&  ( qz[ i ] > 0.0 )
-              &&  ( qz[ i + 1 ] < 0.0 ) )
-            qz[ i ] = qz[ i + 1 ];
-        end
-        =#
     end
 end
 
@@ -1117,8 +1114,8 @@ function  frechet_c_compute( P::Polygon{N,T},
     # The parameters that can be finetunes
     # 2.0, 8.0, 4.0, 10.0 =>  8.74 seconds
     aprx_refinement::Float64 = 2.0;
-    factor::Float64          = 8.0
-    factor_scale::Float64    = 1.2;
+    factor::Float64          = 4.0
+    factor_scale::Float64    = 1.3;
     approx_scale::Float64    = 10.0;
 
     ##################################################################
@@ -1126,8 +1123,9 @@ function  frechet_c_compute( P::Polygon{N,T},
     # numbers to be equal. In a perfect world tolerance would be zero.
     # But floating point issues require us to pick some value.
     ##################################################################
-    tolerance::Float64 = 0.00001;
-
+    tolerance::Float64  = 0.00001;
+    min_approx::Float64 = 1.00000000001;
+    
     f_debug  &&  println( "\n\n\n\n\n\n" );
     f_debug  &&  println( "P#", cardin( P ) )
     f_debug  &&  println( "Q#", cardin( Q ) )
@@ -1192,7 +1190,11 @@ function  frechet_c_compute( P::Polygon{N,T},
     end
     f_debug  &&  println( "\n\n\n\n\n\n" );
 
+    round::Int64 = 0;
     while  true
+        round = round + 1;
+        aprx_refinement = max( aprx_refinement, min_approx );
+        
         f_debug  &&  println( "-------------------------------------------" );
         #f_debug  &&  println( "A#", cardin( P ) )
         #f_debug  &&  println( "B#", length( pl ) )
@@ -1200,6 +1202,9 @@ function  frechet_c_compute( P::Polygon{N,T},
                               "  Approx : ", aprx_refinement );
         pz = ( ( lower_bound * ones( length( pl ) ) ) - pl ) / factor
         qz = ( ( lower_bound * ones( length( ql ) ) ) - ql ) / factor
+
+        propogate_mins( pz, 4 * round * round )
+        propogate_mins( qz, 4 * round * round )
 
         #propogate_negs( pz );
         #propogate_negs( qz );
@@ -1240,11 +1245,11 @@ function  frechet_c_compute( P::Polygon{N,T},
         end
 
         #    m_mid = frechet_ve_r_mono_compute( PS, QS  );
+        f_debug  &&  println(  "frechet_mono_via_refinement( PS, QS )" );
         m_mid, _f_exact, PSR, QSR = frechet_mono_via_refinement( PS, QS,
-                                                                 aprx_refinement );
+            max( tolerance + 1.0, aprx_refinement ) );
 
         f_debug  &&  println( "frechet mono via refinement computed" );
-        #f_debug  &&  println( "ve_r_mono( P -> PS)" );
 
         # BUG FIX: Used the mono computation instead of the subcurve code,
         # which is much faster...
@@ -1271,8 +1276,10 @@ function  frechet_c_compute( P::Polygon{N,T},
 
         f_debug  &&  println( "eq?  ", m_mid.leash, " = ", mw.leash );
 
-        # is there is hope we got the optimal solution?
+        # is there is NO hope we got the optimal solution?
         if  ( ! eq( m_mid.leash, mw.leash, tolerance ) )
+            lb = mw.leash - 2.0*m_a.leash - 2.0*m_b.leash;
+            lower_bound = max( lower_bound, lb );
             if  f_debug
                 println( "!!! Ratio        : ",
                     floating_ratio( m_mid.leash, mw.leash ) );
@@ -1280,6 +1287,7 @@ function  frechet_c_compute( P::Polygon{N,T},
                 println( "!!! mw.leash     : ", mw.leash );
                 println( "!!! Diff         : ", m_mid.leash - mw.leash );
                 println( "!!! lower_bound  : ", lower_bound );
+                println( "!!! LB           : ", lb );
             end
             factor = factor * factor_scale;
             aprx_refinement = 1.0 + (aprx_refinement - 1.0) / approx_scale;
@@ -1293,21 +1301,22 @@ function  frechet_c_compute( P::Polygon{N,T},
         f_debug  &&  println( "Extracting offsets..." );
 
         # Now we compute the distance, with offsets...
-        PS_offs = offsets_a;#Morphing_extract_offsets( m_a )[2]
-        QS_offs = offsets_b;#Morphing_extract_offsets( m_b )[1]
+        #PS_offs = offsets_a;#Morphing_extract_offsets( m_a )[2]
+        #QS_offs = offsets_b;#Morphing_extract_offsets( m_b )[1]
 
-        f_debug  &&  println( "offsets_a max : ", maximum( PS_offs ) );
-        f_debug  &&  println( "offsets_a max : ", maximum( QS_offs ) );
+        f_debug  &&  println( "offsets_a max : ", maximum( offsets_a ) );
+        f_debug  &&  println( "offsets_a max : ", maximum( offsets_b ) );
 
         f_debug  &&  println( "ve_r_mono( PS -> QS)" );
 
         map_PS = get_refinement_map( PSR, PS );
         map_QS = get_refinement_map( QSR, QS );
+
         PS_offs = offsets_copy_map( map_PS, offsets_a );
         QS_offs = offsets_copy_map( map_QS, offsets_b );
         @assert( length( PS_offs ) == cardin( PSR ) );
         @assert( length( QS_offs ) == cardin( QSR ) );
-        
+
         # very important! We have to use the refined to monotonicity copies...
         m_final = frechet_ve_r_compute_ext( PSR, QSR, PS_offs, QS_offs,
                                             true );

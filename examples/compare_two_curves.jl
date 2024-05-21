@@ -45,12 +45,15 @@ end
 
 
 function  test_files( fl_a, fl_b )
-    println( "Reading files..." );
+    println( "---------------------------------------------" );
+    println( fl_a );
+    println( fl_b );
+    println( "---------------------------------------------" );
     P = Polygon_read_file( fl_a );
     Q = Polygon_read_file( fl_b );
-    println( "Files read!..." );
 
     sgn = frechet_comp( P, Q,  );
+    println( "Sign: ", sgn, "\n\n\n\n\n\n" );
 end
 
 
