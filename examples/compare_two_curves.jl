@@ -12,8 +12,7 @@ function frechet_comp( P::Polygon{D,T}, Q::Polygon{D,T}
      )::Int64  where {D,T}
     ratio::Float64 = 5.0;
 
-    println( "|P| :", cardin( P ) );
-    println( "|Q| :", cardin( Q ) );
+    println( "|P|:", cardin( P ), "  |Q| :", cardin( Q ) );
 
     for  i in 1:10
         println( "approx( #", cardin(P ), ", ", cardin(Q), ")   approx: ",

@@ -131,6 +131,8 @@ function  do_chunk( lines, base_dir, nr,
         prefix = @sprintf( "[%d/%d] ", i_orig, nr );
         test_files( base_dir, r, prefix, count, i_second );
     end
+
+    return  0;
 end 
 
     
