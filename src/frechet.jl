@@ -735,16 +735,9 @@ function  frechet_mono_via_refinement_ext( Pa::Polygon{N,T}, Qa::Polygon{N,T},
         fr_r_mono = mm.leash;
 
         if ( f_debug )
-<<<<<<< HEAD
-            f_debug && println( "fr_retract     : ", fr_retract );
-            f_debug && println( "fr_mono        : ", fr_r_mono );
-            f_debug && println( "mono / retract : ", fr_r_mono / fr_retract );
-            f_debug && println( "Approx         : ", approx );
-=======
             println( "ve_r            : ", m.leash );
             println( "ve_r.mono       : ", fr_r_mono );
             println( "ve_r*approx     : ", approx * fr_retract );
->>>>>>> 9112f0e ()
         end
 
         if  ( fr_r_mono == fr_retract )
