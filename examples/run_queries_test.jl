@@ -15,7 +15,9 @@ AtomicInt = Threads.Atomic{Int}
 
 function frechet_decider( P::Polygon{D,T}, Q::Polygon{D,T},
                           r )::Int64  where {D,T}
-    f_debug::Bool = true;
+    f_debug::Bool = false;
+
+    f_debug  &&  println( "|P|: ", cardin( P ), " |Q|: ", cardin( Q ) );
 
     if  Dist( first( P ), first( Q ) ) > r
         return  1;
@@ -53,8 +55,9 @@ function frechet_decider( P::Polygon{D,T}, Q::Polygon{D,T},
 #            println( "RATIO  ", i, " : ", ratio );
 #        end
     end
-    println( "UNDECIDED" );
-
+    f_debug  &&  println( "UNDECIDED" );
+    @assert( false );
+    
     return  0;
 end
 
@@ -102,7 +105,7 @@ function  test_files( base_dir, queries_file, prefix,
                  base_dir * df[i,1], "   ", base_dir * df[i,2] );
         flush( stdout );
         sgn = frechet_decider( PA[ i ], QA[ i ], rads[ i ] );
-        
+
         Threads.atomic_add!( count, 1 )
     end
 
@@ -133,9 +136,9 @@ function  do_chunk( lines, base_dir, nr,
     end
 
     return  0;
-end 
+end
 
-    
+
 function  test_files_from_file( filename, base_dir,
                                 i_main::Int64 = 1,
                                 i_second::Int64 = 1 )
@@ -153,7 +156,7 @@ function  test_files_from_file( filename, base_dir,
     end
 
 
-    
+
     chunks = Iterators.partition(lines, length(lines) ÷ Threads.nthreads())
     tasks = map(chunks) do chunk
         #println( parentindices( chunk ) );
