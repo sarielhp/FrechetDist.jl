@@ -1222,8 +1222,8 @@ function  frechet_c_compute( P::Polygon{N,T},
         PS, p_indices, f_PS_exact = Polygon_simplify_radii_ext( P, pz );
         QS, q_indices, f_QS_exact = Polygon_simplify_radii_ext( Q, qz );
 
-        println( "### #QS : ", cardin( QS ), "   q_ind: ",
-                 length( q_indices ) );
+        #println( "### #QS : ", cardin( QS ), "   q_ind: ",
+        #         length( q_indices ) );
         #println( "### #PS : ", cardin( PS ), "   p_ind: ",
         #          length( p_indices ) );
 
