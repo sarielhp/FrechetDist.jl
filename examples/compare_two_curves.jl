@@ -31,6 +31,8 @@ function frechet_comp( P::Polygon{D,T}, Q::Polygon{D,T}
             println( "frechet_c_compute..." );
             m = frechet_c_compute( P, Q );
 #            println( "... done" );
+            println( "----------------------------------------------" );
+            println( "DISTANCE: ", m.leash );
             return  0;
         end
 #        if  i > 2
