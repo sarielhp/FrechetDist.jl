@@ -1,7 +1,7 @@
 name = "FrechetDist"
 uuid = "04d82aa0-596e-49d4-9e15-129fccfbf66a"
 authors = ["Sariel Har-Peled <sariel@gmail.com> and contributors"]
-version = "1.0.0"
+version = "2.0.0"
 
 [deps]
 DataStructures = "864edb3b-99cc-5e75-8d2d-829cb0a9cfe8"
