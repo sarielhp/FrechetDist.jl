@@ -28,7 +28,6 @@ using DelimitedFiles
 """
 mutable struct Point{D,T}
     x::MVector{D,T}
-
 end
 
 function Point{D,T}() where  {D,T}
@@ -197,7 +196,8 @@ end
     point( args... )
 
 A flexible constructor for a point specified by the arguments. Thus
-point( 2.0, 3.0, 4.0 ) defined the 3d point (2.0, 3.0, 4.0).
+point( 2.0, 3.0, 4.0 ) defined the 3d point (2.0, 3.0, 4.0). Or
+similarly, point( 2.0, 1.0 ) would create a 2d point.
 
 """
 function point( args...)
@@ -1159,6 +1159,12 @@ function  Polygon_read_file( filename, dchar = "," )
     lines = readlines( filename )
     for  i  in 1:length( lines )
         line = lines[ i ];
+
+        # the sigspatial file have a header line... Just ignore it.
+        if  ( line == "x y k tid" )
+            #println( "CONTINUE!" );
+            continue;
+        end
         local pieces;
         if  occursin( " ", line )
             pieces = get_numbers_in_line( line, ' ' );
