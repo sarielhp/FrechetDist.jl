@@ -1,7 +1,11 @@
 push!(LOAD_PATH,"../src/")
 push!(LOAD_PATH,"src/")
+import Pkg;
+Pkg.add("StaticArrays")
+
 using FrechetDist
 using Documenter
+
 
 makedocs(
          sitename = "FrechetDist.jl",

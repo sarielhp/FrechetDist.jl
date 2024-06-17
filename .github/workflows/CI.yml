@@ -68,7 +68,7 @@ jobs:
   docs:
     name: Documentation
     runs-on: ubuntu-latest
-    needs: docs_setup
+#    needs: docs_setup
     steps:
       - uses: actions/checkout@v4
       - uses: julia-actions/setup-julia@v2
