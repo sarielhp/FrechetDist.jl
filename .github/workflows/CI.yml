@@ -84,3 +84,10 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           DOCUMENTER_KEY: ${{ secrets.DOCUMENTER_KEY }}
       - uses: actions/upload-artifact@v4
+        with:
+          path: |
+            cg/
+            frechet_discrete/
+            low_level/
+            morphing/
+            assets/
