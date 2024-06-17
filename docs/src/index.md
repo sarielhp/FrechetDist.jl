@@ -11,4 +11,5 @@
 frechet_c_compute
 frechet_c_approx
 frechet_dist_upper_bound
+FrechetDist.frechet_width_approx
 ```

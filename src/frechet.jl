@@ -370,13 +370,19 @@ end
 
 
 
+"""
+    frechet_width_approx
 
-#####################################################################
-# 2-approximation to the Frechet distance between
-#   P[first(rng)]-P[last(rng)] and he polygon
-#   P[rng]
-# Here, rng is a range i:j
-#####################################################################
+ 2-approximation to the Frechet distance between
+   seg = P[first(rng)]-P[last(rng)] and he polygon
+   P[rng]
+ Here, rng is a range i:j
+
+This function implements a greedy matching alnog the segment - you
+move to the cloest point on seg to the current point, making sure
+never moving back.
+
+"""
 function  frechet_width_approx( P::Polygon{N,T},
                                 rng::UnitRange{Int64} = 0:0
                                 ) where {N,T}
@@ -413,13 +419,17 @@ end
 eachindexButLast(x) =  firstindex(x):lastindex(x)-1
 
 #####################################################################
-# frechet_offests
+"""
+    frechet_offests
 
-#    Given P, and subset of indices of P defining a subpolygon,
-# computes a 2-approximation to the Frechet distance between every
-# edge of the subpolygon they define, and corresponding portion of P.
-#
-#####################################################################
+Given P, and subset of indices of P defining a subpolygon, computes a
+-approximation to the Frechet distance between every edge of the
+subpolygon they define, and corresponding portion of P.  A fast, and
+probably decent approximation to the optimal morhping. Finally, set
+for every vertex of the subcurve, the frechet distance of this
+subcurve. Thus, providing a fast estimates of the offsets.
+
+"""
 function    frechet_offsets( P::Polygon{N,T}, p_indices::Vector{Int64}
                              ) where {N,T}
     offs = Vector{Float64}();
@@ -857,12 +867,18 @@ curves. Returns a monotone morphing realizing it.
 
 - `approx` : The output morhing has Frechet distance <= approx*optimal.
 
-Importantly, approx can be larger than 2, if you want a really
-rough approximation.
+Importantly, approx can be larger than 2, if you want a rough
+approximation.
+
+The quality of approximation is available at ret.ratio. Thus,
+ret.leash/ret.ratio is a lower bound on the Frechet distance, while
+ret.leash is an upper bound.
+
+
 
 """
 function  frechet_c_approx( poly_a::Polygon{N,T},
-    poly_b::Polygon{N,T}, approx::Float64 ) where {N,T}
+    poly_b::Polygon{N,T}, approx::Float64 )::Morphing{N,T} where {N,T}
 
     f_debug::Bool = false;
 

@@ -26,4 +26,6 @@
 frechet_d_compute
 frechet_d_r_compute
 frechet_d_r_compute_sample
+FrechetDist.DTW_d_compute
+FrechetDist.d_frechet_extract_solution
 ```

@@ -16,4 +16,11 @@ FrechetDist.frechet_ve_r_mono_compute
 FrechetDist.Morphing_from_prm
 FrechetDist.add_points_along_seg
 FrechetDist.EID
+FrechetDist.integral
+FrechetDist.SweepDist_segs
+FrechetDist.DistFunc_verify_integral
+FrechetDist.frechet_offsets
+FrechetDist.SweepDist_segs_p
+FrechetDist.integral_interval
+FrechetDist.SweepDist_lb_compute
 ```

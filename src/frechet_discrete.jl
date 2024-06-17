@@ -8,7 +8,13 @@
 # which uses hashing to avoid this).
 #---------------------------------------------------------------
 
+"""
+    d_frechet_extract_solution
 
+Extracting the morphing computd realizing the discrete Frechet
+distnace.
+
+"""
 function   d_frechet_extract_solution( P::Polygon{D,T}, Q,
     dp_dec_i, n_p, n_q )::Morphing{D,T} where {D,T}
     i = n_p;
@@ -145,6 +151,11 @@ Compute discrete frechet distance that is locally optimal
 Frechet. Essentially discrete frechet + Prim/Dijkstra algorithm For
 the discrete case, that is modified to be retractable -- that is
 minimize the maximum bottleneck edge being computed.
+
+Note, the function still allocates quadratic space for the lookup
+tables. Doesn't seem to matter, but this might be worth fixing in
+future versions.
+
 """
 function   frechet_d_r_compute( P::Polygon{D,T}, Q::Polygon{D,T}
                                             ) where {D,T}
@@ -234,7 +245,14 @@ function   frechet_d_r_compute( P::Polygon{D,T}, Q::Polygon{D,T}
     return  m;
 end
 
+"""
+    DTW_d_compute
 
+    Compute the Dynamic Time Wrapping distance between two
+    polygons. Here the price is the of lengths of leashes throughtout
+    the discrete morphing.
+
+"""
 function   DTW_d_compute( P::Polygon{D,T}, Q::Polygon{D,T}
                           ) where {D,T}
 

@@ -58,6 +58,14 @@ function  eval( f::DistFunction{T}, x::T ) where {T}
     return  sqrt( v );
 end
 
+"""
+    intgral_alpha
+
+returns the integral of the function f, for the value x. This integral
+was computed by woflram alpha. It seems to be wrong(?).
+
+"""
+
 function  integral_alpha( f::DistFunction{T}, x::T ) where {T}
     f_debug::Bool = false;
     f_x = eval( f, x );
@@ -78,6 +86,13 @@ function  integral_alpha( f::DistFunction{T}, x::T ) where {T}
     return A + B;
 end
 
+"""
+    intgral
+
+returns the integral of the function f, for the value x. This integral
+was computed by sage math.
+
+"""
 function  integral( f::DistFunction{T}, x::T ) where {T}
     f_debug::Bool = false;
     v = eval( f, x );
@@ -113,14 +128,16 @@ function  integral( f::DistFunction{T}, x::T ) where {T}
 end
 
 
-###################################################################3
-# Since I got the integral of the function f from software (i.e.,
-# sagemath), and I was too lazy to verify it by hand, I did a
-# numerical verification.
-###################################################################3
+"""
+    DistFunc_verify_integral
 
-function  DistFunc_verify_integral( a, b, c, x )
-    f = DFunction( a, b, c );
+Verifies the intergral function presented above.  Since we got the
+integral of the function f from software (i.e., sagemath), and I was
+too lazy to verify it by hand, I did a numerical verification.
+
+"""
+ function DistFunc_verify_integral( a, b, c, x ) f = DFunction( a, b,
+ c );
 
     delta = x/2.0;
     local v, diff;
@@ -154,6 +171,11 @@ function  DistFunc_verify_integral_ext()
     DistFunc_verify_integral_2( 1.0, 2.0, 100.0 );
 end
 
+"""
+    inegral_interval
+
+    Return the integral of f over an interval.
+"""
 function  integral_interval( f::DistFunction{T}, low, high ) where {T}
     @assert( low <= high );
 
@@ -176,6 +198,14 @@ function  integral_interval( f::DistFunction{T}, low, high ) where {T}
 end
 
 
+"""
+    SweepDist_segs_p
+
+Return the oriented Sweep distance (i.e., continuous dynamic time wrapping)
+distance between two oriented segments. To this end, we compute the
+distance function, and then compute its integrval.
+
+"""
 function  SweepDist_segs_p( p_a::Point{D,T},
                       p_b::Point{D,T},
                       q_a::Point{D,T},
@@ -239,6 +269,15 @@ function  SweepDist_segs_p( p_a::Point{D,T},
     return  vl;
 end
 
+
+"""
+    SweepDist_segs
+
+Finally, compute the CDTW between two (oriented) segmets ``p_a p_b``
+and ``q_a q_b``. Its simply the sum of teh two oriented integrals of
+the distance.
+
+"""
 function  SweepDist_segs( p_a::Point{D,T},
                       p_b::Point{D,T},
                       q_a::Point{D,T},
