@@ -3,7 +3,7 @@
 *.jl.mem
 /Manifest.toml
 distributions
-scripts
+scripts/
 .ignore/
 data/
 data

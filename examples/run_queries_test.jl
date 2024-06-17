@@ -78,7 +78,7 @@ function   read_polygons_in_dir( base_dir )
             ( file == "dataset.txt" )  &&  continue;
             ( file == "mixoutALL_shifted.mat" )  && continue;
             ( file == "trajectories.names" )  && continue;
-            
+
             println( "Reading: ", base_dir * file, "      \r" );
             poly = Polygon_read_file( base_dir * file );
             push!( P.polys, poly );
@@ -124,7 +124,7 @@ function  test_files( PID, base_dir, queries_file, prefix,
         poly_a = PID[ s_a ];
         poly_b = PID[ s_b ];
         #println( "after?" );
-        
+
         push!( PA, poly_a );
         push!( QA, poly_b );
         push!( rads, rad );
@@ -135,7 +135,7 @@ function  test_files( PID, base_dir, queries_file, prefix,
         if  ( i < i_second )
             continue;
         end
-        if  ( ( count[]  & 0xfff ) == 0xfff )
+        if  ( ( count[]  & 0xff ) == 0xff )
             println( count[], " T",
                 Threads.threadid(),"D : ", prefix, i, "/", length( PA ), " ",
                 base_dir * df[i,1], "   ", base_dir * df[i,2] );
@@ -156,7 +156,16 @@ end
 num_args = length( ARGS );
 
 
-#exit( -1 );
+
+function  do_array( PID, lines, base_dir, nr,
+                    count::AtomicInt,
+                    i_second::Int64 = 1 )
+    for  i in eachindex( lines )
+        r = lines[ i ]
+        prefix = @sprintf( "[%d/%d] ", i, length( lines ) );
+        test_files( PID, base_dir, r, prefix, count, i_second );
+    end
+end
 
 function  do_chunk( PID, lines, base_dir, nr,
                     count::AtomicInt,
@@ -180,8 +189,10 @@ end
 
 
 function  test_files_from_file( filename, base_dir,
-                                i_main::Int64 = 1,
-                                i_second::Int64 = 1 )
+    i_main::Int64 = 1,
+    i_second::Int64 = 1,
+    f_serial::Bool = false
+)
     rlines = readlines( filename );
 
     println( "filename::: ", filename );
@@ -200,27 +211,20 @@ function  test_files_from_file( filename, base_dir,
     end
 
 
-    nt = Threads.nthreads();
-    #nt = 1;
-    chunks = Iterators.partition(lines, length(lines) ÷ nt )
-    tasks = map(chunks) do chunk
-        #println( parentindices( chunk ) );
-        Threads.@spawn do_chunk( PID, chunk, base_dir, nr, count, i_second );
-    end;
-    fetch.(tasks);
-
-    #nr = min( 10, nr );
-        #=
-    for  i in 1:nr
-        if  ( i > i_main )
-            i_second = 1;
-        end
-        r = lines[ i ]
-        prefix = @sprintf( "[%d/%d] ", i, nr );
-        test_files( base_dir, r, prefix, i_second );
+    if  ( f_serial )
+        do_array( PID, lines, base_dir, nr, count, i_second )
+    else
+        nt = Threads.nthreads();
+        chunks = Iterators.partition(lines, length(lines) ÷ nt )
+        tasks = map(chunks) do chunk
+            #println( parentindices( chunk ) );
+            Threads.@spawn do_chunk( PID, chunk, base_dir, nr, count, i_second );
+        end;
+        fetch.(tasks);
     end
-        =#
+    
     println( "TEST COMPLETED SUCCESSFULLY!" );
+    println( "# of pairs compared : ", count[] );
     flush( stdout );
 end
 
@@ -233,7 +237,13 @@ end
 if   num_args == 3  &&  ( ARGS[ 1 ] == "file" )
     println( "ARGS[3]: ", ARGS[3 ] );
     test_files_from_file( ARGS[3], ARGS[2] );
-    exit( -1 );
+    exit( 0 );
+end
+
+if   num_args == 3  &&  ( ARGS[ 1 ] == "sfile" )
+    println( "ARGS[3]: ", ARGS[3 ] );
+    test_files_from_file( ARGS[3], ARGS[2], 1, 1, true );
+    exit( 0 );
 end
 
 if   num_args == 5  &&  ( ARGS[ 1 ] == "file" )

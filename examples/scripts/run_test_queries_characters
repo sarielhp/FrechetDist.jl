@@ -1,0 +1,24 @@
+#! /bin/bash
+
+export JULIA_NUM_THREADS=auto
+
+rm *.txt >& /dev/null
+
+find data/queries/characters -type f > characters.txt
+
+
+start=`date +%s`
+examples/run_queries_test.jl sfile \
+                             data/characters/ \
+                             characters.txt
+end=`date +%s`
+
+runtime=$((end-start))
+echo  "Running time: " $runtime
+exit  -1;
+
+rm *.txt >& /dev/null
+# examples/run_queries_test.jl data/characters/
+# data/tests/characters/characters_query_decider_10_0_plus.txt | gi
+# undeci
+
