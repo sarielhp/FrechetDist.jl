@@ -1,3 +1,2 @@
 [deps]
 Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
-FrechetDist = "04d82aa0-596e-49d4-9e15-129fccfbf66a"
