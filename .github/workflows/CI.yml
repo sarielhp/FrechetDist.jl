@@ -63,7 +63,7 @@ jobs:
         with:
           version: '1'
       - uses: julia-actions/cache@v1
-      - julia-actions/julia-buildpkg@latest
+      - uses: julia-actions/julia-buildpkg@latest
 #      - name: Install dependencies
 #        run: julia --color=yes --project=docs/ docs/instantiate.jl
       - name: Build the manual
