@@ -8,7 +8,7 @@ find data/queries/geolife -type f > geolife.txt
 
 
 start=`date +%s`
-examples/run_queries_test.jl sfile \
+julia examples/run_queries_test.jl sfile \
                              data/geolife/ \
                              geolife.txt
 end=`date +%s`

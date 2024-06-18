@@ -21,8 +21,23 @@ using FrechetDist.cg
 
 include( "fr_examples.jl" )
 
-
 FrechetStr::String = "Fréchet";
+
+
+function  test_command( cmds... )
+    for  cmd  in cmds
+#        println( "cmd: ", cmd );
+        if  ( Sys.which( cmd ) == nothing )
+            println( "Error:\n\t"*
+                "Required system commad [", cmd,"] not found.\n\n"*
+                 "Please install, and try again!\n\n"*
+                "If you are missing \"convert\", this is provided "*
+                    "by ImageMagic.\n\n" );
+            exit( -1 );
+        end
+    end
+end
+
 
 
 function  is_mkdir( dir )
@@ -1965,6 +1980,15 @@ function  create_demo( title::String,
 end
 
 
+function  test_file( f_a )
+    if  isfile( f_a )
+        return
+    end
+    println( "\n\nERROR: Unable to open file!\n\n\t", f_a, "\n\n" );
+    exit( -1 );
+end
+
+
 function  create_demo_files( title::String,
                              prefix::String,
                              f_a::String,
@@ -1973,6 +1997,8 @@ function  create_demo_files( title::String,
                              f_draw_ve::Bool = true,
                              note::String = ""
                              )
+    test_file( f_a );
+    test_file( f_b );
     if ( ! isfile( f_a ) )
         return;
     end
@@ -2154,7 +2180,7 @@ function  generate_examples()
     if   is_rebuild( "output/11" )
         create_demo_files( "Example of big curves (GPS tracks)",
                            "output/11/",
-                           "data/010/trajectory/20070910074631.plt",
+                           "data/geolife/1307.txt",
                            "data/010/trajectory/20070919122147.plt",
                            true, false );
     end
@@ -2313,6 +2339,8 @@ end
 
 
 ####################################################################
+
+test_command( "HandBrakeCLI", "ffmpeg", "pdf2svg", "convert" );
 
 if  ! isdir( "output" );
     mkdir( "output" );
