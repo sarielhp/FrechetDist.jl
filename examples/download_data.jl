@@ -87,6 +87,7 @@ println( fd_dir );
 dir_download = dir_raw * "frechet/test_data/benchmark/";
 
 fetch_script = "fetch_and_convert_data.sh";
+convert_script = "geolife_converter.py";
 
 
 #cd( dir_download, cmd )
@@ -99,6 +100,8 @@ dir_chars_trg  = "data/characters/";
 if  !isdir( dir_download * dir_geolife )
     cmd = dir_download  * fetch_script;
     cp( "examples/replacement/"*fetch_script, dir_download * fetch_script,
+        force=true );
+    cp( "examples/replacement/"*convert_script, dir_download * convert_script,
         force=true );
 #    println( "!!!" );
     run(Cmd( `./$cmd` ) );
