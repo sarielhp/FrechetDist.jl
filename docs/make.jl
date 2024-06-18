@@ -22,5 +22,5 @@ makedocs(
 
 deploydocs(;
     repo="github.com/sarielhp/FrechetDist.jl",
-               )
- 
+    push_preview=true,
+           )
