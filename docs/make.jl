@@ -21,6 +21,7 @@ makedocs(
 )
 
 deploydocs(;
-    repo="github.com/sarielhp/FrechetDist.jl.git",
-    push_preview=true,
+           repo="github.com/sarielhp/FrechetDist.jl.git",
+           devbranch="main",
+           push_preview=true,
            )
