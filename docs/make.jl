@@ -4,6 +4,8 @@ import Pkg;
 Pkg.add("StaticArrays")
 Pkg.add("DataStructures")
 
+Pkg.status( "Documenter" )
+
 using FrechetDist
 using Documenter
 
