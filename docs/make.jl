@@ -23,5 +23,7 @@ makedocs(
 deploydocs(;
            repo="github.com/sarielhp/FrechetDist.jl.git",
            devbranch="main",
+           forcepush=true,
+           versions="v#",
            push_preview=true,
            )
