@@ -17,7 +17,8 @@ makedocs(
              "Home" => "index.md",
              "cg.md",
              "frechet_discrete.md",
-             "morphing.md"
+             "morphing.md",
+             "examples.md"
          ],
     warnonly=true
 )
