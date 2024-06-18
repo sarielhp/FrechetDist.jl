@@ -1,7 +1,8 @@
 # Examples
-    Here we describe how to download test date, and run some of the
-    examples. Here, I assume you are installing the package directly
-    from github, and not from Julia package manager.
+
+Here we describe how to download test date, and run some of the
+examples. Here, I assume you are installing the package directly from
+github, and not from Julia package manager.
 
 ## Getting started
 
@@ -37,10 +38,10 @@ Since it is (3.6GB), and contains all the downloaded data before conversion.
 ## Testing the data
 
 We use test data available from earlier
-[project](https://gitlab.mpi-klsb.mpg.de/anusser/frechet_distance)Adapating
-, which in turn was inspired (or is from) sigspatial competition. In
-any case, you have three scripts to run the tests, the larger one
-takes several hours:
+[project](https://gitlab.mpi-klsb.mpg.de/anusser/frechet_distance),
+which in turn was inspired (or is from) sigspatial competition. In any
+case, you have three scripts to run the tests, the larger one takes
+several hours:
 ```
 examples/scripts/run_test_queries_characters
 examples/scripts/run_test_queries_geolife
@@ -63,4 +64,3 @@ julia examples/generate_examples.jl
 ## For a minimal example...
 
 See the `test/` subdirectory.
-
