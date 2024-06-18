@@ -3,6 +3,7 @@
 
 V2.0.0 Release Notes
 ====================
+(June 18, 2024)
 * Added sweep-distance (continuous/discrete)
 * Major performance improvements/bug fixes due to massive testing.
 * Added `examples/prereq.jl` to install needed packages.
