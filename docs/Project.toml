@@ -3,3 +3,7 @@ Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
 FrechetDist = "04d82aa0-596e-49d4-9e15-129fccfbf66a"
 Parameters = "d96e819e-fc66-5662-9728-84c9c7592b0a"
 StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
+
+
+[compat]
+Documenter = "1.4"
