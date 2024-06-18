@@ -87,6 +87,7 @@ jobs:
         with:
           name: docs_subdirs
           path: |
+            dev/
             cg/
             frechet_discrete/
             low_level/
