@@ -2022,11 +2022,11 @@ gurl::String = gurl_base * gurl_suffix;
 gemb::String = "<a href=\"" * gurl * "\">GeoLife GPS Trajectories</a>";
 
 function  gen_example_12()
-    if  ( isfile( "data/041/trajectory/20090429225015.plt" ) )
+    if  ( isfile( "data/geolife/5314.txt" ) )
         create_demo_files( "Example of close curves (GPS tracks)",
             "output/12/",
-            "data/041/trajectory/20090429225015.plt",
-            "data/041/trajectory/20090531225725.plt",
+            "data/geolife/5314.txt",
+            "data/geolife/5428.txt",
             true, false,
             "An example of two GPS tracks from " *
                 gemb * " that are close together. \n" *
@@ -2178,10 +2178,12 @@ function  generate_examples()
     end
 
     if   is_rebuild( "output/11" )
+        # data/010/trajectory/20070910074631
+        # data/010/trajectory/20070919122147
         create_demo_files( "Example of big curves (GPS tracks)",
                            "output/11/",
-                           "data/geolife/1307.txt",
-                           "data/010/trajectory/20070919122147.plt",
+                           "data/geolife/1326.txt",
+                           "data/geolife/1328.txt",
                            true, false );
     end
 
@@ -2265,19 +2267,23 @@ function  generate_examples()
                            true, false );
     end
     if   is_rebuild( "output/25" )
+        # data/010/trajectory/20080928160000.plt
+        # data/010/trajectory/20081219114010.plt
         create_demo_files(
             "Paper example 4: GeoLife 20080928160000 / 20081219114010",
             "output/25/",
-            "data/010/trajectory/20080928160000.plt",
-            "data/010/trajectory/20081219114010.plt",
+            "data/geolife/1367_109.txt",
+            "data/geolife/1403.txt",
             true, false );
     end
     if   is_rebuild( "output/26" )
+        # data/041/trajectory/20090708221430.plt
+        # data/041/trajectory/20090712044248.plt
         create_demo_files(
             "Paper example 5: GeoLife 20090708221430 / 20090712044248",
             "output/26/",
-            "data/041/trajectory/20090708221430.plt",
-            "data/041/trajectory/20090712044248.plt",
+            "data/geolife/5578.txt",
+            "data/geolife/5585.txt",
             true, false );
     end
     if   is_rebuild( "output/27" )
