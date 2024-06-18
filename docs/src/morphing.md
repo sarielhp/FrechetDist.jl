@@ -1,7 +1,8 @@
 # Morphing
-    A *morphing* is an encoding of a "matching" between two curves. It
-    is the output of the various Frechet distance computation functions.
-    The package provides some basic geometric types in the cg submodule.
+
+A *morphing* is an encoding of a "matching" between two curves. It is
+the output of the various Frechet distance computation functions.  The
+package provides some basic geometric types in the cg submodule.
 
 ## Types
 ```@docs
