@@ -18,7 +18,8 @@ makedocs(
              "cg.md",
              "frechet_discrete.md",
              "morphing.md",
-             "examples.md"
+             "examples.md",
+             "change_log.md"
          ],
     warnonly=true
 )
