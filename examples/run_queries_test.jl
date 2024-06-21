@@ -13,21 +13,218 @@ AtomicInt = Threads.Atomic{Int}
 
 ######################################################################
 
-function frechet_decider( P::Polygon{D,T}, Q::Polygon{D,T},
-                          r )::Int64  where {D,T}
+
+mutable struct  PolygonHierarchy
+    len::Float64;
+    P::Polygon2F;
+    polys::Vector{Polygon2F};
+    widths::Vector{Float64};
+end
+
+function  ph_push_target( ph::PolygonHierarchy, w::Float64 )
+    P = ph.P;
+    
+    if  ( cardin( P ) <= 10 )
+        return  true;
+    end
+
+    R, R_indices = frechet_simplify_to_width( P, w );
+
+    # No point continuing...
+    if  ( ( 1.1 * cardin( R ) ) > cardin( P ) )
+        return  true;
+    end
+    mr = frechet_c_mono_approx_subcurve( P, R, R_indices )[ 1 ];
+    #println( "## :", cardin( P ), "  # :", cardin( R ), "    R_w: ", mr.leash );
+
+    push!( ph.polys, R );
+    push!( ph.widths, mr.leash );
+
+    return  false;
+end
+
+function  compute_simp_hierarchy( P::Polygon2F )
+    ph = PolygonHierarchy( 0.0, P, Vector{Polygon2F}(), Vector{Float64}() );
+    ph.len = Polygon_length( P );
+    #card = cardin( P );
+
+    w = frechet_width_approx( P );
+    push!( ph.polys, Polygon_spine( P ) );
+    push!( ph.widths, w );
+
+    ratio::Float64 = 4.0
+    for  i in 1:12
+        #println( "i ", i );
+        w = last( ph.widths ) / ratio;
+        ph_push_target( ph,      w )  &&  return  ph;
+    end
+
+
+    return  ph;
+end
+
+
+struct  PolygonsInDir
+    PHA::Vector{PolygonHierarchy};
+    polys::Vector{Polygon2F};
+    widths::Vector{Float64};
+    d::Dict{String, Integer};
+end;
+
+
+function  GetIndex( P::PolygonsInDir, s::String)
+    return   P.d[ s ];
+end
+
+
+function  Base.getindex( P::PolygonsInDir, s::String)
+    return   P.polys[ P.d[ s ] ];
+end
+
+function   read_polygons_in_dir( base_dir )
+    limit::Int64 = 200000;
+
+    count::Int64 = 0;
+    P = PolygonsInDir( Vector{PolygonHierarchy}(),
+                       Vector{Polygon2F}(), Vector{Float64}(),
+                       Dict( "empty" => -1 ) );
+    for (root, dirs, files) in walkdir( base_dir )
+        if  ( count > limit )
+            break;
+        end
+        for file in files
+            ( file == "dataset.txt" )  &&  continue;
+            ( file == "mixoutALL_shifted.mat" )  && continue;
+            ( file == "trajectories.names" )  && continue;
+
+            count = count + 1;
+            if  ( count > limit  )
+                break;
+            end
+            println( "Reading: ", base_dir * file, "      \r" );
+            poly = Polygon_read_file( base_dir * file );
+            width = frechet_width_approx( poly );
+
+            push!( P.polys, poly );
+            push!( P.widths, width );
+            P.d[ file ] = length( P.polys );
+        end
+    end
+    
+    phx = compute_simp_hierarchy( P.polys[1] )
+    for  i  in 1:length(P.polys)
+        push!( P.PHA, phx );
+    end
+    
+    println( "Computing simplificiation hierarchies..." );
+    cnt_ph = AtomicInt( 0 );
+
+    Threads.@threads for  i  in 1:length(P.polys)
+        #println( i );
+        poly = P.polys[ i ];
+        ph = compute_simp_hierarchy( poly )
+        P.PHA[ i ] = ph;
+        Threads.atomic_add!( cnt_ph, 1 )
+        if  ( cnt_ph[] & 0xff) == 0
+            print( cnt_ph[], "        \r" );
+        end
+    end
+
+    return P;
+end
+
+
+
+
+##########################################################################33
+
+
+function frechet_decider_PID( PID, i, j, r )::Int64
     f_debug::Bool = false;
 
+    P = PID.polys[ i ];
+    Q = PID.polys[ j ];
+
+    f_debug && println( "\n\n@@@@@@@@a@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@" );
     f_debug  &&  println( "|P|: ", cardin( P ), " |Q|: ", cardin( Q ) );
 
-    if  Dist( first( P ), first( Q ) ) > r
+    l_a =  Dist( first( P ), first( Q ) );
+    if  l_a > r
         return  1;
     end
-    if  Dist( last( P ), last( Q ) ) > r
+    l_b = Dist( last( P ), last( Q ) );
+    if  l_b > r
         return  1;
     end
+    P_ph = PID.PHA[ i ];
+    Q_ph = PID.PHA[ j ];
+
+    w_P = P_ph.widths[ 1 ];
+    w_Q = Q_ph.widths[ 1 ];
+
+    f_debug && print( "w_P  : ", w_P );
+    f_debug && print( "    w_Q  : ", w_Q );
+
+    ub = max( l_a, l_b ) + w_P + w_Q;
+    if  ub < r
+        return  -1;
+    end
+    lb = max( l_a, l_b ) - w_P - w_Q;
+    if  lb > r
+        return  +1;
+    end
+
     ratio::Float64 = 5.0;
+    delta = min( abs( r - lb ), abs( r - ub ) );
+    mi = min( length( P_ph.polys ), length( Q_ph.polys ) );
+    for  i in 2:mi
+        w_P = P_ph.widths[ i ];
+        w_Q = Q_ph.widths[ i ];
+
+        if  ( ( w_P + w_Q ) > delta )
+            continue;
+        end
+        P_a = P_ph.polys[ i ];
+        Q_a = Q_ph.polys[ i ];
+
+        m = frechet_ve_r_compute( P_a, Q_a );
+        lb = m.leash - w_P - w_Q
+
+
+        if  f_debug
+            println( "---------------------------------------------------" );
+            println( "|P_a|: ", cardin( P_a ) );
+            println( "|Q_a|: ", cardin( Q_a ) );
+            println( "r    : ", r );
+            println( "ve_l : ", m.leash );
+            println( "w_P  : ", w_P );
+            println( "w_Q  : ", w_Q );
+            println( "lb A : ", lb );
+        end
+        if  ( lb > r )
+            return  +1;
+        end
+        #mm = Morphing_monotonize( m );
+        mm_leash =  Morphing_monotone_leash( m );
+
+        lb = mm_leash - w_P - w_Q
+        f_debug  &&  println( "lb B : ", lb );
+        if  ( lb > r )
+            return  +1;
+        end
+
+        ub = mm_leash + w_P + w_Q
+        f_debug  &&  println( "ub B : ", ub );
+        if  ( ub < r )
+            return  -1;
+        end
+        delta = abs( mm_leash - r );
+    end
+
+#    println( "SHOGI!" );
 
     for  i in 1:10
+#        println( "Iter: ", i );
         f_debug &&  ( i > 5 )  &&   println( "ratio: ", ratio );
         m = frechet_c_approx( P, Q, ratio );
         if  m.leash < r
@@ -62,32 +259,75 @@ function frechet_decider( P::Polygon{D,T}, Q::Polygon{D,T},
 end
 
 
-struct  PolygonsInDir
-    polys::Vector{Polygon2F};
-    d::Dict{String, Integer};
-end;
+function frechet_decider( P::Polygon{D,T}, Q::Polygon{D,T},
+    r, w_P::Float64 = -1.0, w_Q::Float64 = -1.0,
+    f_use_widths::Bool = false;
+)::Int64  where {D,T}
+    f_debug::Bool = false;
 
-function  Base.getindex( P::PolygonsInDir, s::String)
-    return   P.polys[ P.d[ s ] ];
-end
+    f_debug  &&  println( "|P|: ", cardin( P ), " |Q|: ", cardin( Q ) );
 
-function   read_polygons_in_dir( base_dir )
-    P = PolygonsInDir( Vector{Polygon2F}(), Dict( "empty" => -1 ) );
-    for (root, dirs, files) in walkdir( base_dir )
-        for file in files
-            ( file == "dataset.txt" )  &&  continue;
-            ( file == "mixoutALL_shifted.mat" )  && continue;
-            ( file == "trajectories.names" )  && continue;
-
-            println( "Reading: ", base_dir * file, "      \r" );
-            poly = Polygon_read_file( base_dir * file );
-            push!( P.polys, poly );
-            P.d[ file ] = length( P.polys );
+    l_a =  Dist( first( P ), first( Q ) );
+    if  l_a > r
+        return  1;
+    end
+    l_b = Dist( last( P ), last( Q ) );
+    if  l_b > r
+        return  1;
+    end
+    if  f_use_widths
+        ub = max( l_a, l_b ) + w_P + w_Q;
+        if  ub < r
+            return  -1;
+        end
+        lb = max( l_a, l_b ) - w_P - w_Q;
+        if  lb > r
+            return  +1;
         end
     end
-    return P;
+
+    ratio::Float64 = 5.0;
+
+    for  i in 1:10
+        println( "Iter: ", i );
+        f_debug &&  ( i > 5 )  &&   println( "ratio: ", ratio );
+        m = frechet_c_approx( P, Q, ratio );
+        if  m.leash < r
+            return  -1;
+        end
+        lb = m.leash / m.ratio;
+        if  lb > r
+            return  1;
+        end
+
+        #    ratio = (r / lb min( m.ratio, 1.01 );
+        ratio = ((r / lb) - 1.0) / 2.0 + 1.0; # min( m.ratio, 1.01 );
+        ratio = min( ratio, 1.1 );
+        if  ( ratio <= 1.01 )
+            m = frechet_c_compute( P, Q );
+            if  m.leash > r
+                return  1;
+            end
+            if  m.leash < r
+                return  -1;
+            end
+            return  0;
+        end
+#        if  i > 2
+#            println( "RATIO  ", i, " : ", ratio );
+#        end
+    end
+    f_debug  &&  println( "UNDECIDED" );
+    @assert( false );
+
+    return  0;
 end
 
+struct  test_info_t
+    i_P::Int64
+    i_Q::Int64
+    rad::Float64;
+end
 
 function  test_files( PID, base_dir, queries_file, prefix,
                       count::AtomicInt,
@@ -96,12 +336,7 @@ function  test_files( PID, base_dir, queries_file, prefix,
     println( "test_file: ", queries_file, prefix );
     df = CSV.read( queries_file, DataFrame, types=String, header=false );
 
-    #println( df );
-
-    #println( "Reading..." );
-    PA = Vector{Polygon2F}();
-    QA = Vector{Polygon2F}();
-    rads = Vector{Float64}();
+    tests = Vector{test_info_t}();
 
     nr = nrow(df);
 
@@ -115,35 +350,36 @@ function  test_files( PID, base_dir, queries_file, prefix,
         fl_b = base_dir * df[i,2];
         #println( "=======================================" );
         rad = parse( Float64, df[i,3] );
-        #println( fl_a, " ", fl_b, " ", rad );
+        if  ! haskey( PID.d, s_a )
+            continue;
+        end
+        if  ! haskey( PID.d, s_b )
+            continue;
+        end
+        ind_a = GetIndex( PID, s_a );
+        ind_b = GetIndex( PID, s_b );
 
-        #poly_a = Polygon_read_file( fl_a );
-        #poly_b = Polygon_read_file( fl_b );
-        #println( "s_a : ", s_a );
-        #println( "s_b : ", s_b );
-        poly_a = PID[ s_a ];
-        poly_b = PID[ s_b ];
-        #println( "after?" );
-
-        push!( PA, poly_a );
-        push!( QA, poly_b );
-        push!( rads, rad );
+        t = test_info_t( ind_a, ind_b, rad );
+        push!( tests, t );
     end
 
-    #println( "Figuring out distances..." );
-    for  i in  1:length( PA )
+    for  i in  1:length( tests )
         if  ( i < i_second )
             continue;
         end
         if  ( ( count[]  & 0xff ) == 0xff )
             println( count[], " T",
-                Threads.threadid(),"D : ", prefix, i, "/", length( PA ), " ",
+                Threads.threadid(),"D : ", prefix, i, "/", length( tests ), " ",
                 base_dir * df[i,1], "   ", base_dir * df[i,2] );
             flush( stdout );
         end
-        sgn = frechet_decider( PA[ i ], QA[ i ], rads[ i ] );
+        t = tests[ i ];
+        sgn = frechet_decider_PID( PID, t.i_P, t.i_Q, t.rad );
 
         Threads.atomic_add!( count, 1 )
+        #if ( count[] > 1000 )
+        #    return;
+        #end;
     end
 
     println( "Text completed on : ", queries_file );
@@ -164,6 +400,9 @@ function  do_array( PID, lines, base_dir, nr,
         r = lines[ i ]
         prefix = @sprintf( "[%d/%d] ", i, length( lines ) );
         test_files( PID, base_dir, r, prefix, count, i_second );
+        #if ( count[] > 1000 )
+        #    return;
+        #end;
     end
 end
 
@@ -212,7 +451,7 @@ function  test_files_from_file( filename, base_dir,
 
 
     if  ( f_serial )
-        do_array( PID, lines, base_dir, nr, count, i_second )
+        @time do_array( PID, lines, base_dir, nr, count, i_second )
     else
         nt = Threads.nthreads();
         chunks = Iterators.partition(lines, length(lines) ÷ nt )
@@ -222,7 +461,7 @@ function  test_files_from_file( filename, base_dir,
         end;
         fetch.(tasks);
     end
-    
+
     println( "TEST COMPLETED SUCCESSFULLY!" );
     println( "# of pairs compared : ", count[] );
     flush( stdout );

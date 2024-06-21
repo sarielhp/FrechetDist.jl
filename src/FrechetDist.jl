@@ -38,6 +38,8 @@ export  Morphing_monotonize, Morphing_empty, Morphing_verify_valid
 export  Morphing_combine, Morphing_extract_prm
 export  Morphing_as_polygons
 export  Morphing_extract_vertex_radii, Morphing_extract_offsets
+export  Morphing_monotone_leash
+
 
 export  Morphing_SweepDist_price
 export  Morphing_SweepDist_approx_price
@@ -58,7 +60,12 @@ export  frechet_mono_via_refinement, frechet_mono_via_refinement_ext
 
 export  frechet_ve_r_compute_ext
 
+export  frechet_c_mono_approx_subcurve;
+
 export  frechet_dist_upper_bound
+
+export  frechet_simplify_to_width
+export  frechet_simplify_to_cardin
 
 export  frechet_c_approx
 export  frechet_c_compute

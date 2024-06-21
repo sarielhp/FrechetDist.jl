@@ -354,7 +354,7 @@ function   frechet_ve_r_compute_ext( P::Polygon{N,T},
     end
 
     pes, qes = f_r_extract_solution( P, Q, end_event.id, c.dict );
-
+    
     morph::Morphing{N,T} = Morphing_init( P, Q, pes, qes );
     morph.iters = iters;
 
@@ -385,7 +385,7 @@ never moving back.
 """
 function  frechet_width_approx( P::Polygon{N,T},
                                 rng::UnitRange{Int64} = 0:0
-                                ) where {N,T}
+                                )::T where {N,T}
     card = cardin( P );
     if  ( card <= 2 )
         return  0;
@@ -736,7 +736,7 @@ function  frechet_mono_via_refinement_ext( Pa::Polygon{N,T}, Qa::Polygon{N,T},
         m = frechet_ve_r_compute( P, Q )
 #        f_debug  && println( "After... m.leash : ", m.leash );
         mm = Morphing_monotonize( m );
- 
+
         if  ( f_snapshots )
             push!( out, deepcopy( m ) );
         end
@@ -1141,7 +1141,7 @@ function  frechet_c_compute( P::Polygon{N,T},
     ##################################################################
     tolerance::Float64  = 0.00001;
     min_approx::Float64 = 1.00000000001;
-    
+
     f_debug  &&  println( "\n\n\n\n\n\n" );
     f_debug  &&  println( "P#", cardin( P ) )
     f_debug  &&  println( "Q#", cardin( Q ) )
@@ -1210,7 +1210,7 @@ function  frechet_c_compute( P::Polygon{N,T},
     while  true
         round = round + 1;
         aprx_refinement = max( aprx_refinement, min_approx );
-        
+
         f_debug  &&  println( "-------------------------------------------" );
         #f_debug  &&  println( "A#", cardin( P ) )
         #f_debug  &&  println( "B#", length( pl ) )
@@ -1367,6 +1367,99 @@ function  frechet_c_compute( P::Polygon{N,T},
     end  # While loop end
 end
 
+###########################################################################
+
+function  find_frechet_prefix_inner( P, ind_start::Int64, i, j, w )
+#    println( i, " : ", j );
+    if i >= j
+        return  j;
+    end
+    if  (ind_start + 1) == j
+        return  j; # the width is zero, nothing to do.
+    end
+    r = frechet_width_approx( P, ind_start:j )
+    if  ( r <= w )
+        return  j;
+    end
+    if (i+1) == j
+        return  i;
+    end
+    j = j - 1;
+    mid = ( i + j ) >> 1;
+    r_m = frechet_width_approx( P, ind_start:mid )
+    if  ( r_m > w )
+        return   find_frechet_prefix_inner( P, ind_start, i, mid - 1, w );
+    end
+    return  find_frechet_prefix_inner( P, ind_start, mid, j, w );
+end
+
+function  find_frechet_prefix( P, i, j, w )
+    r = frechet_width_approx( P, i:j )
+    if  ( r <= w )
+        return  j;
+    end
+    return  find_frechet_prefix_inner( P, i, i, j, w );
+end
+
+function  frechet_simplify_to_width( P::Polygon{D,T}, w ) where {D,T}
+    pout = Polygon{D,T}();
+    pindices = Vector{Int64}();
+
+    len = cardin( P );
+    if  ( len == 0 )
+        return pout;
+    end
+    if  ( Polygon_push_smart( pout, P[1] ) )
+        push!( pindices, 1 );
+    end
+
+    curr_ind = 1;
+    next_ind::Int64 = 1;
+    card = cardin( P );
+    while  true
+        next_ind = find_frechet_prefix( P, curr_ind, card, w )
+        #println( "next_ind: ", next_ind );
+        @assert( next_ind > curr_ind );
+        push!( pindices, next_ind );
+        push!( pout,  P[ next_ind ] );
+        if  next_ind == card
+            return  pout, pindices;
+        end
+        curr_ind = next_ind;
+    end
+end
+
+
+function  frechet_simplify_to_cardin( P::Polygon{D,T}, sz::Int64 ) where {D,T}
+    pout = Polygon{D,T}();
+    pindices = Vector{Int64}();
+
+    @assert( cardin( P ) >= 2 );
+    if  sz <= 2
+        push!( pindices, 1, cardin( P ) );
+        return  Polygon_spine( P ), pindices;
+    end
+    w = frechet_width_approx( P );
+    ratio = 0.8;
+
+    count::Int64 = 1;
+    while  true
+        count = count + 1;
+        w = w * ratio;
+        if  count > 5
+            w = w / count;
+        end
+        Q, q_indices = Polygon_simplify_ext( P, w )
+        m = frechet_c_mono_approx_subcurve( P, Q, q_indices )[ 1 ];
+        R, R_indices = frechet_simplify_to_width( P, m.leash );
+        if  ( ( cardin( R ) >= sz + 2 )  ||  ( 2*cardin( R ) >= cardin( P ) ) )
+            println( " RRR :", cardin(R), " / ", sz );
+            return  R, R_indices;
+        end
+        m = frechet_c_mono_approx_subcurve( P, R, R_indices )[ 1 ];
+        w = m.leash;
+    end
+end
 
 #
 # End of file

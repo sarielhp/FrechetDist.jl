@@ -57,6 +57,9 @@ Encoding of a moprhing (i.e., matching) between two polygonal cuves.
     ratio::Float64
     monotone_err::Float64
     sol_value::Float64
+
+    f_is_monotone_init::Bool
+    f_is_monotone::Bool
 end
 
 function   Morphing_init( P::Polygon{N,T}, Q::Polygon{N,T},
@@ -65,7 +68,7 @@ function   Morphing_init( P::Polygon{N,T}, Q::Polygon{N,T},
 
     @assert( length( pes ) == length( qes ) );
     m = Morphing( P, Q, pes, qes,
-                  0.0, 0, 0.0, 0.0, 0.0 );
+                  0.0, 0, 0.0, 0.0, 0.0, false, false );
     Morphing_recompute_leash( m );
 
     return  m;
@@ -167,7 +170,7 @@ function   Morphing_empty( P::Polygon{N,T}, Q::Polygon{N,T} )  where {N,T}
     pes = Vector{EventPoint{N,T}}();
     qes = Vector{EventPoint{N,T}}()
     r::Float64 = -1;
-    return  Morphing( P, Q, pes, qes, r, 0, 0.0, 0.0, 0.0 );
+    return  Morphing( P, Q, pes, qes, r, 0, 0.0, 0.0, 0.0, false, false );
 end
 
 
@@ -264,6 +267,55 @@ function  events_seq_make_monotone( P::Polygon{N,T},
     return  ns, delta;
 end
 
+
+##############################################################################
+# Make the matching (which might be potentially not monotone) into a monotone
+# one.
+##############################################################################
+function  events_seq_get_monotone_leash( P::Polygon{N,T},
+    s::Vector{EventPoint{N,T}},
+    s_alt::Vector{EventPoint{N,T}},
+    leash::T ) where {N,T}
+
+    len = length( s );
+    i::Int64 = 1;
+    while  ( i <= len )
+        ep = s[ i ];
+        if  ep.type == PT_VERTEX
+            i = i + 1;
+            continue;
+        end
+
+        j = i
+        loc = s[ i ].i;
+        t = s[ i ].t
+        while  ( ( j < len )
+                 &&  ( s[ j + 1 ].type == PT_ON_EDGE )
+                 &&  ( s[ j + 1 ].i == loc ) )
+            nep = s[ j ];
+            t = max( t, nep.t );
+            if  ( t > nep.t )
+                ell = Dist( P[ nep.i ], P[ nep.i + 1 ] );
+                new_p = convex_comb( P[ nep.i ], P[ nep.i + 1 ],
+                                     t  );
+                leash = max( leash, Dist( new_p, s_alt[ j ].p ) );
+            end
+            j = j + 1
+        end
+
+        nep = s[ j ];
+        if  ( t > nep.t )
+            ell = Dist( P[ nep.i ], P[ nep.i + 1 ] );
+            new_p = convex_comb( P[ nep.i ], P[ nep.i + 1 ], t );
+            leash = max( leash, Dist( new_p, s_alt[ j ].p ) );
+        end
+        i = j + 1;
+    end
+
+    return  leash;
+end
+
+
 function  Morphing_recompute_leash( m::Morphing{N,T} ) where  {N,T}
     @assert( length( m.pes ) == length( m.qes ) );
     r = 0;
@@ -303,8 +355,14 @@ end
 
 
 function   Morphing_is_monotone( m::Morphing{N,T} ) where {N,T}
-    return ( events_seq_is_monotone( m.pes )
-             && events_seq_is_monotone( m.qes ) )
+    if  m.f_is_monotone_init
+        return  m.f_is_monotone
+    end
+    m.f_is_monotone = ( events_seq_is_monotone( m.pes )
+                      && events_seq_is_monotone( m.qes ) )
+    m.f_is_monotone_init = true;
+
+    return  m.f_is_monotone
 end
 
 ##########################################################3
@@ -318,7 +376,7 @@ staying in place if necessary.
 """
 function  Morphing_monotonize( m::Morphing{N,T} ) where {N,T}
     if  Morphing_is_monotone( m )
-        return  deepcopy( m );
+        return  m; # deepcopy( m );
     end
     P = m.P;
     Q = m.Q;
@@ -332,6 +390,19 @@ function  Morphing_monotonize( m::Morphing{N,T} ) where {N,T}
     m_out.monotone_err = max( da, db );
 
     return  m_out;
+end
+
+
+function  Morphing_monotone_leash( m::Morphing{N,T} ) where {N,T}
+    if  Morphing_is_monotone( m )
+        return  m.leash; # deepcopy( m );
+    end
+
+    leash = m.leash;
+    leash = events_seq_get_monotone_leash( m.P, m.pes, m.qes, leash );
+    leash = events_seq_get_monotone_leash( m.Q, m.qes, m.pes, leash );
+
+    return  leash;
 end
 
 
