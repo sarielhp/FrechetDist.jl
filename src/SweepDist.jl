@@ -10,6 +10,40 @@
 # convergences.
 ###########################################################################
 
+############################################################
+# TreeVertex:
+#    Encoding for a vertex in the VE Diagram how the search
+#    procedure arrived ot it. I.e., encoding the reverse tree
+#    that the algorithm computes.
+#
+# id: Vertex of the diagram
+# val: The value associated with this vertex.
+# id_prev: The vertex we arrvied from.
+############################################################
+@with_kw mutable struct  TreeVertex
+    id::Int64
+    val::Float64 = 0.0
+#    r::Float64 = 0.0
+    id_prev::Int64
+end
+
+function  TreeVertex( _id::Int64 )
+    return TreeVertex( _id, 0.0, -1 );
+end
+
+function Base.isless( v::TreeVertex, u::TreeVertex )
+    return  v.val < u.val;
+end
+
+###########################################################
+# TODO: Seems unnecessary?
+###########################################################
+function Base.hash(v::TreeVertex, h::UInt)
+    return  hash( v.id, hash( :TreeVertex, h) );
+end
+
+
+
 DictVerticesType = Dict{Int64, TreeVertex};
 
 @with_kw mutable struct SDContext{N,T}
@@ -36,7 +70,7 @@ end
 function  SW_new_event_v( _id::Int64, c::SDContext{N,T},
                             val::Float64 ) where {N,T}
     ev = TreeVertex( _id );
-    ev.r = ev.val = 0.0;
+    ev.val = 0.0;
     return  ev;
 end
 
@@ -81,7 +115,7 @@ function  SW_new_event( id::Int64, id_prev::Int64, value::Float64,
                           c::SDContext{N,T} ) where {N,T}
     ev = TreeVertex( id );
     ev.id_prev = id_prev;
-    ev.r = ev.val = value;
+    ev.val = value;
 
     c.vertices[ id ] = ev;
 

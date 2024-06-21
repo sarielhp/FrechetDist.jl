@@ -47,43 +47,12 @@ function  EID_j_is_vert( id::Int64 )::Bool
     return  ( (id & 0x1) != 0 );
 end
 
-############################################################
-# TreeVertex:
-#    Encoding for a vertex in the VE Diagram how the search
-#    procedure arrived ot it. I.e., encoding the reverse tree
-#    that the algorithm computes.
-#
-# id: Vertex of the diagram
-# val: The value associated with this vertex.
-# id_prev: The vertex we arrvied from.
-############################################################
-@with_kw mutable struct  TreeVertex
-    id::Int64
-    val::Float64 = 0.0
-    r::Float64 = 0.0
-
-    id_prev::Int64
-end
-
 #DictVERType = Dict{Int64, TreeVertex};
 DictVERType = Dict{Int64, Int64};
 DictHandledType = Dict{Int64, Bool};
-HeapVERType = BinaryMinHeap{TreeVertex};
+#HeapVERType = BinaryMinHeap{TreeVertex};
 
-function  TreeVertex( _id::Int64 )
-    return TreeVertex( _id, 0.0, 0.0, EID( 0, false, 0, false ) );
-end
-
-function Base.isless( v::TreeVertex, u::TreeVertex )
-    return  v.val < u.val;
-end
-
-###########################################################
-# TODO: Seems unnecessary?
-###########################################################
-function Base.hash(v::TreeVertex, h::UInt)
-    return  hash( v.id, hash( :TreeVertex, h) );
-end
+HeapVerticesType = BinaryMinHeap{Tuple{Float64,Int64},};
 
 
 @with_kw mutable struct FRContext{N,T}
@@ -93,7 +62,7 @@ end
     q_offs::Vector{Float64};
     handled::DictHandledType;
     dict::DictVERType;
-    heap::BinaryMinHeap{TreeVertex};
+    heapAlt::HeapVerticesType;
     f_offsets::Bool = false;
     n_p::Int64 = 0
     n_q::Int64 = 0
@@ -103,7 +72,7 @@ function  FRContext(P::Polygon{N,T}, Q::Polygon{N,T}) where {N,T}
     return FRContext( P, Q, Vector{Float64}(),  Vector{Float64}(),
                       Dict{Int64, Int64}(),
                       Dict{Int64, Float64}(),
-                      BinaryMinHeap{TreeVertex}(),
+                      HeapVerticesType(),
                       false, cardin( P ), cardin( Q ) );
 end
 
@@ -155,12 +124,13 @@ function  ve_event_value( c::FRContext{N,T}, id::Int64 ) where {N,T}
     return  ev
 end
 
-
+#=
 function  f_r_new_event( _id::Int64, c::FRContext{N,T} ) where {N,T}
     ev = TreeVertex( _id );
-    ev.r = ev.val = ve_event_value( c, ev.id );
+    ev.val = ve_event_value( c, ev.id );
     return  ev;
 end
+=#
 
 function   is_start_event( id::Int64 )
     return ( ( EID_i( id ) == 1 )
@@ -227,13 +197,15 @@ function  f_r_schedule_event( id::Int64, prev_id::Int64,
     if  ! is_schedule_event( c.dict, id, c.n_p, c.n_q )
         return
     end
-    ev = f_r_new_event( id, c);
+    new_val = ve_event_value( c,id )
+    #ev = f_r_new_event( id, c);
 
-    ev.id_prev = prev_id;
+    #ev.id_prev = prev_id;
     c.dict[ id ] = prev_id;
-    push!( c.heap, ev );
-    return  ev
+    push!( c.heapAlt, (new_val, id ) );
 end
+
+
 
 
 
@@ -426,23 +398,25 @@ function   frechet_ve_r_compute_mono_dist( P::Polygon{N,T},
     start_id = EID( 1, true, 1, true );
 
     end_id = EID( c.n_p, true, c.n_q, true );
-    start_event = f_r_schedule_event( start_id, start_id, c );
+    f_r_schedule_event( start_id, start_id, c );
 
-    end_event::TreeVertex = start_event;
+    end_event_id::Int64 = start_id;
     iters = 0;
-    heap = c.heap;
-    while  ! isempty( heap )
-        ev::TreeVertex = pop!( heap );
-        if  ( haskey( c.handled,  ev.id ) )
+    heapAlt = c.heapAlt;
+    while  ! isempty( heapAlt )
+        tp = pop!( heapAlt );
+        id = last( tp );
+        value = first( tp );
+        if  ( haskey( c.handled,  id ) )
             continue;
         end
-        c.handled[ ev.id ] = true;
+        c.handled[ id ] = true;
         iters = iters + 1;
 
         if  f_debug  &&  ( (iters % 10000) == 0 )
             print( "Iters :" );
             print_int_w_commas( iters );
-            print( "  ", length( heap ) );
+            print( "  ", length( heapAlt ) );
             print( "  " );
             print_int_w_commas( c.n_p * c.n_q * 2 );
             print( "   dict size: " );
@@ -450,33 +424,31 @@ function   frechet_ve_r_compute_mono_dist( P::Polygon{N,T},
             println( "  " );
         end
 
-        value = ev.val;
+        i = EID_i( id );
+        j = EID_j( id );
 
-        i = EID_i( ev.id );
-        j = EID_j( ev.id );
-
-        if  is_start_event( ev.id )
-            f_r_schedule_event( EID( 1, false, 1, true ), ev.id, c );
-            f_r_schedule_event( EID( 1, true, 1, false ), ev.id, c );
+        if  is_start_event( id )
+            f_r_schedule_event( EID( 1, false, 1, true ), id, c );
+            f_r_schedule_event( EID( 1, true, 1, false ), id, c );
             continue;
         end
 
         # Is it the *final* event?
         if  ( i == c.n_p )  &&  ( j == c.n_q )
-            end_event = ev;
+            end_event_id = id;
             break;
         end
 
         # Is it on the boundary of the final cell?
-        if  is_final_cell( ev.id, c.n_p, c.n_q )
-            f_r_schedule_event( end_id, ev.id, c );
+        if  is_final_cell( id, c.n_p, c.n_q )
+            f_r_schedule_event( end_id, id, c );
             continue;
         end
-        f_r_schedule_event( EID( i+1, true, j, false ), ev.id, c );
-        f_r_schedule_event( EID( i, false, j+1, true ), ev.id, c );
+        f_r_schedule_event( EID( i+1, true, j, false ), id, c );
+        f_r_schedule_event( EID( i, false, j+1, true ), id, c );
     end
 
-    out_arr = f_r_extract_solution_ids( P, Q, end_event.id, c.dict );
+    out_arr = f_r_extract_solution_ids( P, Q, end_event_id, c.dict );
 
     leash = compute_leash_from_arr( P, Q, out_arr )
 
@@ -509,17 +481,19 @@ function   frechet_ve_r_compute_ext( P::Polygon{N,T},
     start_id = EID( 1, true, 1, true );
 
     end_id = EID( c.n_p, true, c.n_q, true );
-    start_event = f_r_schedule_event( start_id, start_id, c );
+    f_r_schedule_event( start_id, start_id, c );
 
-    end_event::TreeVertex = start_event;
+    #end_event_i::TreeVertex = start_event;
     iters = 0;
-    heap = c.heap;
-    while  ! isempty( heap )
-        ev::TreeVertex = pop!( heap );
-        if  ( haskey( c.handled,  ev.id ) )
+    heapAlt = c.heapAlt;
+    while  ! isempty( heapAlt )
+        tp = pop!( heapAlt );
+        id = last( tp );
+        value = first( tp );
+        if  ( haskey( c.handled, id ) )
             continue;
         end
-        c.handled[ ev.id ] = true;
+        c.handled[ id ] = true;
         iters = iters + 1;
 
         if  f_debug  &&  ( (iters % 10000) == 0 )
@@ -533,34 +507,31 @@ function   frechet_ve_r_compute_ext( P::Polygon{N,T},
             println( "  " );
         end
 
-        value = ev.val;
+        i = EID_i( id );
+        j = EID_j( id );
 
-        i = EID_i( ev.id );
-        j = EID_j( ev.id );
-
-        if  is_start_event( ev.id )
-            f_r_schedule_event( EID( 1, false, 1, true ), ev.id, c );
-            f_r_schedule_event( EID( 1, true, 1, false ), ev.id, c );
+        if  is_start_event( id )
+            f_r_schedule_event( EID( 1, false, 1, true ), id, c );
+            f_r_schedule_event( EID( 1, true, 1, false ), id, c );
             continue;
         end
 
         # Is it the *final* event?
         if  ( i == c.n_p )  &&  ( j == c.n_q )
-            end_event = ev;
             break;
         end
 
         # Is it on the boundary of the final cell?
-        if  is_final_cell( ev.id, c.n_p, c.n_q )
-            f_r_schedule_event( end_id, ev.id, c );
+        if  is_final_cell( id, c.n_p, c.n_q )
+            f_r_schedule_event( end_id, id, c );
             continue;
         end
-        f_r_schedule_event( EID( i+1, true, j, false ), ev.id, c );
-        f_r_schedule_event( EID( i, false, j+1, true ), ev.id, c );
+        f_r_schedule_event( EID( i+1, true, j, false ), id, c );
+        f_r_schedule_event( EID( i, false, j+1, true ), id, c );
     end
 
     #@time
-    pes, qes = f_r_extract_solution( P, Q, end_event.id, c.dict );
+    pes, qes = f_r_extract_solution( P, Q, end_id, c.dict );
 
     morph::Morphing{N,T} = Morphing_init( P, Q, pes, qes );
     morph.iters = iters;
