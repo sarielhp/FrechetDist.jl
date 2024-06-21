@@ -82,7 +82,7 @@ function  Base.getindex( P::PolygonsInDir, s::String)
 end
 
 function   read_polygons_in_dir( base_dir )
-    limit::Int64 = 200000;
+    limit::Int64 = 500000;
 
     count::Int64 = 0;
     P = PolygonsInDir( Vector{PolygonHierarchy}(),
@@ -134,6 +134,12 @@ function   read_polygons_in_dir( base_dir )
 end
 
 
+function  eq( a::Float64, b::Float64, tolerance::Float64 )::Bool
+    if   a == b
+        return  true;
+    end
+    return  abs( a - b ) <= (tolerance* (abs( a)  + abs(b) ))
+end
 
 
 ##########################################################################33
@@ -187,8 +193,19 @@ function frechet_decider_PID( PID, i, j, r )::Int64
         P_a = P_ph.polys[ i ];
         Q_a = Q_ph.polys[ i ];
 
+        m_leash = frechet_ve_r_compute_mono_dist( P_a, Q_a );
+
+        #=
         m = frechet_ve_r_compute( P_a, Q_a );
-        lb = m.leash - w_P - w_Q
+        mm_leash =  Morphing_monotone_leash( m );
+
+        if  ( ! eq( m_leash, mm_leash, 0.000001 ) )
+            println( "XXX :", m_leash, "   ", mm_leash );
+            exit( -1 );
+        end
+        =#
+        ## m_leash = frechet_ve_r_compute( P_a, Q_a );
+        lb = m_leash - w_P - w_Q
 
 
         if  f_debug
@@ -196,7 +213,7 @@ function frechet_decider_PID( PID, i, j, r )::Int64
             println( "|P_a|: ", cardin( P_a ) );
             println( "|Q_a|: ", cardin( Q_a ) );
             println( "r    : ", r );
-            println( "ve_l : ", m.leash );
+            println( "ve_l : ", m_leash );
             println( "w_P  : ", w_P );
             println( "w_Q  : ", w_Q );
             println( "lb A : ", lb );
@@ -204,21 +221,18 @@ function frechet_decider_PID( PID, i, j, r )::Int64
         if  ( lb > r )
             return  +1;
         end
-        #mm = Morphing_monotonize( m );
-        mm_leash =  Morphing_monotone_leash( m );
-
-        lb = mm_leash - w_P - w_Q
+        lb = m_leash - w_P - w_Q
         f_debug  &&  println( "lb B : ", lb );
         if  ( lb > r )
             return  +1;
         end
 
-        ub = mm_leash + w_P + w_Q
+        ub = m_leash + w_P + w_Q
         f_debug  &&  println( "ub B : ", ub );
         if  ( ub < r )
             return  -1;
         end
-        delta = abs( mm_leash - r );
+        delta = abs( m_leash - r );
     end
 
 #    println( "SHOGI!" );

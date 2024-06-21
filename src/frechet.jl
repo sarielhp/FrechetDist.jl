@@ -35,6 +35,10 @@ function  EID_j( id::Int64 )::Int64
     return   ( id & 0xfffffffc ) >> 2;
 end
 
+function   EID_ij_status( id::Int64 )::Int64
+    return   id & 0x3;
+end
+
 function   EID_i_is_vert( id::Int64 )::Bool
     return   ( (id & 0x2) != 0 );
 end
@@ -278,6 +282,208 @@ function  f_r_extract_solution( P::Polygon{N,T}, Q,
     return  pes, qes;
 end
 
+function   eid_same_status( arr::Vector{Int64}, curr::Int64, len::Int64 )
+    eid = arr[ curr ];
+    status = EID_ij_status( arr[ curr ] );
+    t = curr + 1;
+    while  ( t <= len )
+        if EID_ij_status( arr[ t ] ) != status
+            break;
+        end
+        t = t + 1;
+    end
+    return  t - 1;
+end
+
+
+function  f_r_extract_solution_ids( P::Polygon{N,T}, Q,
+                                    end_event_id::Int64, dict
+                                    ) where {N,T}
+    out_arr = Vector{Int64}();
+
+    push!( out_arr, end_event_id );
+
+    curr = end_event_id;
+    while  ! is_start_event( curr )
+        push!( out_arr, curr );
+        prev = curr;
+        curr = dict[ prev ];
+    end
+    push!( out_arr, curr );
+
+    reverse!( out_arr );
+
+    return  out_arr;
+end
+
+
+function    max_leash( leash::T, p_a::Point{N,T}, p_b::Point{N,T},
+                       P::Polygon{N,T}, low, hi ) where {N,T}
+    seg = Segment( p_a, p_b );
+    max_t = 0.0;
+    for  j in low:hi
+        p = P[ j ];
+        q = Segment_nn_point( seg, p );
+        new_t = Segment_get_convex_coef( seg, q );
+        if  ( new_t >= max_t )
+            max_t = new_t;
+        else # new_t < max_t
+            q = Segment_get_on( seg, max_t )
+        end
+        leash = max( leash, Dist( p, q ) );
+    end
+
+    return  leash;
+end
+
+function   compute_leash_from_arr( P::Polygon{N,T},
+                                   Q::Polygon{N,T},
+                                   arr::Vector{Int64}
+                                   ) where {N,T}
+    curr::Int64 = 1;
+    len::Int64 = length( arr );
+    leash::T = 0.0;
+
+    while  curr <= len
+        eid = arr[ curr ];
+
+        i = EID_i( eid );
+        j = EID_j( eid );
+
+        if  EID_i_is_vert( eid )  &&  EID_j_is_vert( eid )
+            leash = max( leash, Dist( P[ i ], Q[ j ] ) );
+            curr = curr + 1;
+            continue;
+        end
+
+        if  ( EID_i_is_vert( eid )  &&  ( ! EID_j_is_vert( eid ) ) )
+            low = curr;
+            hi = eid_same_status( arr, curr, len )
+
+            if  low > hi
+                curr = curr + 1;
+                continue;
+            end
+            eid_start = arr[ low ];
+            eid_end = arr[ hi ];
+            q_a = Q[ EID_j( eid_start ) ];
+            q_b = Q[ EID_j( eid_start ) + 1 ];
+
+            if ( low == hi )
+                curr = curr + 1;
+                leash = max( leash,
+                             dist_seg_nn_point( q_a, q_b,
+                                                P[ EID_i( eid_start ) ] ) );
+                continue;
+            end
+
+            leash = max_leash( leash, q_a, q_b, P, EID_i( eid_start ),
+                               EID_i( eid_end ) );
+            curr = hi + 1;
+            continue;
+        end
+
+        if  ( ( ! EID_i_is_vert( eid ) )  &&  (  EID_j_is_vert( eid ) ) )
+            low = curr;
+            hi = eid_same_status( arr, curr, len )
+
+            if  low > hi
+                curr = curr + 1;
+                continue;
+            end
+            eid_start = arr[ low ];
+            eid_end = arr[ hi ];
+            p_a = P[ EID_i( eid_start ) ];
+            p_b = P[ EID_i( eid_start ) + 1 ];
+
+            if ( low == hi )
+                curr = curr + 1;
+                leash = max( leash,
+                             dist_seg_nn_point( p_a, p_b,
+                                                Q[ EID_j( eid_start ) ] ) );
+                continue;
+            end
+
+            leash = max_leash( leash, p_a, p_b, Q, EID_j( eid_start ),
+                               EID_j( eid_end ) );
+            curr = hi + 1;
+            continue;
+        end
+
+        @assert( false );
+    end
+
+    return  leash;
+end
+
+
+function   frechet_ve_r_compute_mono_dist( P::Polygon{N,T},
+                                           Q::Polygon{N,T}
+                                           ) where {N,T}
+    f_debug::Bool = false;
+    c::FRContext{N,T} = FRContext( P, Q )
+
+    start_id = EID( 1, true, 1, true );
+
+    end_id = EID( c.n_p, true, c.n_q, true );
+    start_event = f_r_schedule_event( start_id, start_id, c );
+
+    end_event::TreeVertex = start_event;
+    iters = 0;
+    heap = c.heap;
+    while  ! isempty( heap )
+        ev::TreeVertex = pop!( heap );
+        if  ( haskey( c.handled,  ev.id ) )
+            continue;
+        end
+        c.handled[ ev.id ] = true;
+        iters = iters + 1;
+
+        if  f_debug  &&  ( (iters % 10000) == 0 )
+            print( "Iters :" );
+            print_int_w_commas( iters );
+            print( "  ", length( heap ) );
+            print( "  " );
+            print_int_w_commas( c.n_p * c.n_q * 2 );
+            print( "   dict size: " );
+            print_int_w_commas( length( c.dict ) );
+            println( "  " );
+        end
+
+        value = ev.val;
+
+        i = EID_i( ev.id );
+        j = EID_j( ev.id );
+
+        if  is_start_event( ev.id )
+            f_r_schedule_event( EID( 1, false, 1, true ), ev.id, c );
+            f_r_schedule_event( EID( 1, true, 1, false ), ev.id, c );
+            continue;
+        end
+
+        # Is it the *final* event?
+        if  ( i == c.n_p )  &&  ( j == c.n_q )
+            end_event = ev;
+            break;
+        end
+
+        # Is it on the boundary of the final cell?
+        if  is_final_cell( ev.id, c.n_p, c.n_q )
+            f_r_schedule_event( end_id, ev.id, c );
+            continue;
+        end
+        f_r_schedule_event( EID( i+1, true, j, false ), ev.id, c );
+        f_r_schedule_event( EID( i, false, j+1, true ), ev.id, c );
+    end
+
+    out_arr = f_r_extract_solution_ids( P, Q, end_event.id, c.dict );
+
+    leash = compute_leash_from_arr( P, Q, out_arr )
+
+    return  leash
+end
+
+
 
 ##########################################################################
 ##########################################################################
@@ -353,8 +559,9 @@ function   frechet_ve_r_compute_ext( P::Polygon{N,T},
         f_r_schedule_event( EID( i, false, j+1, true ), ev.id, c );
     end
 
+    #@time
     pes, qes = f_r_extract_solution( P, Q, end_event.id, c.dict );
-    
+
     morph::Morphing{N,T} = Morphing_init( P, Q, pes, qes );
     morph.iters = iters;
 

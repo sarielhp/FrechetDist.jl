@@ -55,7 +55,9 @@ export  frechet_d_r_compute_sample
 export  frechet_ve_r_compute
 export  frechet_width_approx
 export  frechet_offsets
+export  frechet_ve_r_compute_mono_dist
 
+    
 export  frechet_mono_via_refinement, frechet_mono_via_refinement_ext
 
 export  frechet_ve_r_compute_ext
