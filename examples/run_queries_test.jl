@@ -381,7 +381,7 @@ function  test_files( PID, base_dir, queries_file, prefix,
         if  ( i < i_second )
             continue;
         end
-        if  ( ( count[]  & 0x3ff ) == 0x3ff )
+        if  ( ( count[]  & 0x1fff ) == 0x1fff )
             println( count[], " T",
                 Threads.threadid(),"D : ", prefix, i, "/", length( tests ), " ",
                 base_dir * df[i,1], "   ", base_dir * df[i,2] );
