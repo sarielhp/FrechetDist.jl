@@ -55,12 +55,13 @@ function  compute_simp_hierarchy( P::Polygon2F )
 
     # Best so far: 1.5 28
     #
-    # 1.3 40:  38 seconds
-    # 1.4 40:  39
     # 1.1 40:  38.7
     # 1.1 60:  60 seconds ???
-    
-    ratio::Float64 = 2.0
+    # 1.3 40:  38 seconds
+    # 1.4 40:  39
+    # 2.0 20: 120 seconds?
+    # 
+    ratio::Float64 = 1.4
     for  i in 1:20
         #println( "i ", i );
         w = last( ph.widths ) / ratio;
