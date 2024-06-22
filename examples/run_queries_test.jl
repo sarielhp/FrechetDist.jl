@@ -54,7 +54,7 @@ function  compute_simp_hierarchy( P::Polygon2F )
     push!( ph.widths, w );
 
     ratio::Float64 = 4.0
-    for  i in 1:0
+    for  i in 1:12
         #println( "i ", i );
         w = last( ph.widths ) / ratio;
         ph_push_target( ph,      w )  &&  return  ph;
@@ -83,7 +83,7 @@ function  Base.getindex( P::PolygonsInDir, s::String)
 end
 
 function   read_polygons_in_dir( base_dir )
-    limit::Int64 = 500000 ;
+    limit::Int64 = 50000 ;
 
     count::Int64 = 0;
     P = PolygonsInDir( Vector{PolygonHierarchy}(),
@@ -477,8 +477,8 @@ function  test_files_from_file( filename, base_dir,
         fetch.(tasks);
     end
 
-    println( "TEST COMPLETED SUCCESSFULLY!" );
-    println( "# of pairs compared : ", count[] );
+    #println( "TEST COMPLETED SUCCESSFULLY!" );
+    #println( "# of pairs compared : ", count[] );
     flush( stdout );
 end
 
