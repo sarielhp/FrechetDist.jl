@@ -83,7 +83,7 @@ function  Base.getindex( P::PolygonsInDir, s::String)
 end
 
 function   read_polygons_in_dir( base_dir )
-    limit::Int64 = 50000 ;
+    limit::Int64 = 10000;
 
     count::Int64 = 0;
     P = PolygonsInDir( Vector{PolygonHierarchy}(),
@@ -397,7 +397,7 @@ function  test_files( PID, base_dir, queries_file, prefix,
         #end;
     end
 
-    
+
     #println( "Text completed on : ", queries_file );
 
     #print( df );
