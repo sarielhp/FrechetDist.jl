@@ -57,9 +57,9 @@ function  compute_simp_hierarchy( P::Polygon2F )
     #
     # 1.3 40:  38 seconds
     # 1.4 40:  39
-    # 1.1 40: 
+    # 1.1 40:  38.7
     ratio::Float64 = 1.1
-    for  i in 1:40
+    for  i in 1:60
         #println( "i ", i );
         w = last( ph.widths ) / ratio;
         ph_push_target( ph,      w )  &&  return  ph;
@@ -98,6 +98,7 @@ function   read_polygons_in_dir( base_dir )
         if  ( count > limit )
             break;
         end
+        
         for file in files
             ( file == "dataset.txt" )  &&  continue;
             ( file == "mixoutALL_shifted.mat" )  && continue;
@@ -107,7 +108,9 @@ function   read_polygons_in_dir( base_dir )
             if  ( count > limit  )
                 break;
             end
-            println( "Reading: ", base_dir * file, "      \r" );
+            if  ( count & 0x3ff == 0x3ff )
+                println( "Reading: ", base_dir * file, "      \r" );
+            end
             poly = Polygon_read_file( base_dir * file );
             width = frechet_width_approx( poly );
 
