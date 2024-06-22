@@ -73,7 +73,7 @@ end
 function  FR_Context(P::Polygon{N,T}, Q::Polygon{N,T}) where {N,T}
     d_h = DictHandledType();
     d_ver = DictVERType();
-    h + HeapVerticesType();
+    h = HeapVerticesType();
     return FRContext( P, Q, Vector{Float64}(),  Vector{Float64}(),
         d_h,
         d_ver,
