@@ -203,7 +203,7 @@ function  f_r_schedule_event( id::Int64, prev_id::Int64,
     if  ! is_schedule_event( c.dict, id, c.n_p, c.n_q )
         return
     end
-    new_val = ve_event_value( c,id )
+    new_val = ve_event_value( c, id )
     if  ( c.f_upper_bound  &&  ( c.upper_bound < new_val ) )
         return;
     end
