@@ -80,7 +80,7 @@ function  FR_Context(P::Polygon{N,T}, Q::Polygon{N,T}) where {N,T}
                       d_ver,
                       h,
                       false, Int64(cardin( P) ), Int64(cardin( Q )),
-                      false, zero(T)  # Upper bound 
+                      false, zero(T)  # Upper bound
                       );
 end
 
@@ -408,39 +408,19 @@ function   frechet_ve_r_compute_mono_dist( P::Polygon{N,T},
 
     n_pm::Int64 = c.n_p - 1;
     n_qm::Int64 = c.n_q - 1;
-    
+
     start_id = EID( 1, true, 1, true );
 
     end_id = EID( c.n_p, true, c.n_q, true );
     f_r_schedule_event( start_id, start_id, c );
 
-    end_event_id::Int64 = start_id;
-    iters = 0;
+    end_event_id::Int64 = 0;
     heapAlt = c.heapAlt;
     while  ! isempty( heapAlt )
         tp = pop!( heapAlt );
         id = last( tp );
         value = first( tp );
-        #if  ( haskey( c.handled,  id ) )
-        #    r_c = r_c + 1;
-        #    continue;
-        #end
-        #c.handled[ id ] = true;
-        iters = iters + 1;
 
-        #=
-        if  f_debug  &&  ( (iters % 10000) == 0 )
-            print( "Iters :" );
-            print_int_w_commas( iters );
-            print( "  ", length( heapAlt ) );
-            print( "  " );
-            print_int_w_commas( c.n_p * c.n_q * 2 );
-            print( "   dict size: " );
-            print_int_w_commas( length( c.dict ) );
-            println( "  " );
-        end
-        =#
-        
         i = EID_i( id );
         j = EID_j( id );
 
@@ -452,7 +432,7 @@ function   frechet_ve_r_compute_mono_dist( P::Polygon{N,T},
 
         if  ( i >= n_pm )  &&  ( j >= n_qm )
             # Is it the *final* event?
-            if  ( i == n_p )  &&  ( j == n_q )
+            if  ( i == c.n_p )  &&  ( j == c.n_q )
                 end_event_id = id;
                 break;
             end
@@ -466,7 +446,6 @@ function   frechet_ve_r_compute_mono_dist( P::Polygon{N,T},
         f_r_schedule_event( EID( i, false, j+1, true ), id, c );
     end
 
-    f_debug && println( "itere ", iters );
     out_arr = f_r_extract_solution_ids( P, Q, end_event_id, c.dict );
 
     leash = compute_leash_from_arr( P, Q, out_arr )
@@ -1424,7 +1403,7 @@ function  frechet_c_compute( P::Polygon{N,T},
         #propogate_negs( qz );
 #        f_deprintln( pz );
 
-        if  f_debug 
+        if  f_debug
             p_count = count_below_zero( pz );
             q_count = count_below_zero( qz );
 
