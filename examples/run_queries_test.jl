@@ -53,8 +53,8 @@ function  compute_simp_hierarchy( P::Polygon2F )
     push!( ph.polys, Polygon_spine( P ) );
     push!( ph.widths, w );
 
-    ratio::Float64 = 2.0
-    for  i in 1:24
+    ratio::Float64 = 1.5
+    for  i in 1:28
         #println( "i ", i );
         w = last( ph.widths ) / ratio;
         ph_push_target( ph,      w )  &&  return  ph;
