@@ -406,6 +406,9 @@ function   frechet_ve_r_compute_mono_dist( P::Polygon{N,T},
     c.f_upper_bound = true;
     c.upper_bound = upper_bound;
 
+    n_pm::Int64 = c.n_p - 1;
+    n_qm::Int64 = c.n_q - 1;
+    
     start_id = EID( 1, true, 1, true );
 
     end_id = EID( c.n_p, true, c.n_q, true );
@@ -425,6 +428,7 @@ function   frechet_ve_r_compute_mono_dist( P::Polygon{N,T},
         #c.handled[ id ] = true;
         iters = iters + 1;
 
+        #=
         if  f_debug  &&  ( (iters % 10000) == 0 )
             print( "Iters :" );
             print_int_w_commas( iters );
@@ -435,7 +439,8 @@ function   frechet_ve_r_compute_mono_dist( P::Polygon{N,T},
             print_int_w_commas( length( c.dict ) );
             println( "  " );
         end
-
+        =#
+        
         i = EID_i( id );
         j = EID_j( id );
 
@@ -445,16 +450,17 @@ function   frechet_ve_r_compute_mono_dist( P::Polygon{N,T},
             continue;
         end
 
-        # Is it the *final* event?
-        if  ( i == c.n_p )  &&  ( j == c.n_q )
-            end_event_id = id;
-            break;
-        end
-
-        # Is it on the boundary of the final cell?
-        if  is_final_cell( id, c.n_p, c.n_q )
-            f_r_schedule_event( end_id, id, c );
-            continue;
+        if  ( i >= n_pm )  &&  ( j >= n_qm )
+            # Is it the *final* event?
+            if  ( i == n_p )  &&  ( j == n_q )
+                end_event_id = id;
+                break;
+            end
+            # Is it on the boundary of the final cell?
+            if  is_final_cell( id, c.n_p, c.n_q )
+                f_r_schedule_event( end_id, id, c );
+                continue;
+            end
         end
         f_r_schedule_event( EID( i+1, true, j, false ), id, c );
         f_r_schedule_event( EID( i, false, j+1, true ), id, c );
