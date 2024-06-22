@@ -8,7 +8,6 @@
 #-------------------------------------------------------------
 
 DictVERType = Dict{Int64, Int64};
-DictHandledType = Dict{Int64, Bool};
 
 
 """
@@ -62,7 +61,7 @@ mutable struct FRContext{N,T}
     Q::Polygon{N,T};
     p_offs::Vector{Float64};
     q_offs::Vector{Float64};
-    handled::DictHandledType;
+#    handled::DictHandledType;
     dict::DictVERType;
     heapAlt::HeapVerticesType;
     f_offsets::Bool ;
@@ -71,11 +70,11 @@ mutable struct FRContext{N,T}
 end
 
 function  FR_Context(P::Polygon{N,T}, Q::Polygon{N,T}) where {N,T}
-    d_h = DictHandledType();
+#    d_h = DictHandledType();
     d_ver = DictVERType();
     h = HeapVerticesType();
     return FRContext( P, Q, Vector{Float64}(),  Vector{Float64}(),
-        d_h,
+ #       d_h,
         d_ver,
         #        Dict{Int64, Int64}(),
         #                      Dict{Int64, Float64}(),
@@ -413,10 +412,11 @@ function   frechet_ve_r_compute_mono_dist( P::Polygon{N,T},
         tp = pop!( heapAlt );
         id = last( tp );
         value = first( tp );
-        if  ( haskey( c.handled,  id ) )
-            continue;
-        end
-        c.handled[ id ] = true;
+        #if  ( haskey( c.handled,  id ) )
+        #    r_c = r_c + 1;
+        #    continue;
+        #end
+        #c.handled[ id ] = true;
         iters = iters + 1;
 
         if  f_debug  &&  ( (iters % 10000) == 0 )
@@ -454,6 +454,7 @@ function   frechet_ve_r_compute_mono_dist( P::Polygon{N,T},
         f_r_schedule_event( EID( i, false, j+1, true ), id, c );
     end
 
+    f_debug && println( "itere ", iters );
     out_arr = f_r_extract_solution_ids( P, Q, end_event_id, c.dict );
 
     leash = compute_leash_from_arr( P, Q, out_arr )
@@ -496,10 +497,10 @@ function   frechet_ve_r_compute_ext( P::Polygon{N,T},
         tp = pop!( heapAlt );
         id = last( tp );
         value = first( tp );
-        if  ( haskey( c.handled, id ) )
-            continue;
-        end
-        c.handled[ id ] = true;
+        #if  ( haskey( c.handled, id ) )
+        #  continue;
+        #end
+        #c.handled[ id ] = true;
         iters = iters + 1;
 
         if  f_debug  &&  ( (iters % 10000) == 0 )

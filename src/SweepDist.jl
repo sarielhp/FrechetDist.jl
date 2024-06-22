@@ -45,6 +45,7 @@ end
 
 
 DictVerticesType = Dict{Int64, TreeVertex};
+DictHandledType = Dict{Int64, Bool};
 
 @with_kw mutable struct SDContext{N,T}
     P::Polygon{N,T};

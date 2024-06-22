@@ -6,7 +6,6 @@ using FrechetDist
 using FrechetDist.cg
 using Profile
 using InteractiveUtils
-using JET
 
 ######################################################################
 
@@ -57,7 +56,10 @@ function  test_files( fl_a, fl_b )
 
     #@profile
     #@code_warntype
-    print( @report_opt frechet_comp( P, Q ) );
+    #print( @report_opt frechet_comp( P, Q ) );
+    frechet_ve_r_compute_mono_dist( P, Q );
+
+    frechet_comp( P, Q );
     #Profile.print();
     
     println( "Done..." );
