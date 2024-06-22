@@ -786,12 +786,13 @@ function Polygon_move_to_origin( P::Polygon{D,T} ) where {D,T}
     return  pout;
 end
 
-function  cardin( p::Polygon{D,T}  ) where {D,T}
+function  cardin( p::Polygon{D,T} )::Int64 where {D,T}
     return  length( p.pnts );
 end
 
 
-function  Polygon_simplify_ext( P::Polygon{D,T}, r ) where {D,T}
+function  Polygon_simplify_ext( P::Polygon{D,T}, r::T ) where {D,T}
+#::Tuple{Polygon{D,T},Vector{Int64}}
     pout = Polygon{D,T}();
     pindices = Vector{Int64}();
 
@@ -894,15 +895,16 @@ function  Polygon_length( poly::Polygon{D,T} ) where {D,T}
 end
 
 
-function  Polygon_prefix_lengths( poly::Polygon{D,T} ) where {D,T}
-    v::Vector{Float64} = [];
-    push!( v, 0 );
-    len = 0;
+function  Polygon_prefix_lengths( poly::Polygon{D,T}
+)::Vector{Float64} where {D,T}
+    v = Vector{Float64}();
+    push!( v,  zero(Float64) );
+    len::Float64 = 0.0;
     for i in firstindex(poly.pnts) : lastindex(poly.pnts)-1
         p = poly.pnts[ i ];
         q = poly.pnts[ i + 1 ];
         len += Dist( p, q );
-        push!( v, len );
+        push!( v, Float64( len ) );
     end
     return v;
 end
@@ -1000,7 +1002,7 @@ function  Polygon_sample_uniformly( P::Polygon{D,T}, n::Int64 ) where {D,T}
 
     delta = len / (n-1);
 
-    new_P::Polygon{D,T} = Polygon{D,T}( Point{D,T}[] );
+    new_P::Polygon{D,T} = Polygon{D,T}( Point{D,T}() );
     Polygon_push_smart( new_P, first( P.pnts ) );
 
     sz = cardin( P );

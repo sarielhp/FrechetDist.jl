@@ -7,6 +7,9 @@
 # A library to compute various versions of the Frechet distance.
 #-------------------------------------------------------------
 
+DictVERType = Dict{Int64, Int64};
+DictHandledType = Dict{Int64, Bool};
+
 
 """
     EID
@@ -48,14 +51,13 @@ function  EID_j_is_vert( id::Int64 )::Bool
 end
 
 #DictVERType = Dict{Int64, TreeVertex};
-DictVERType = Dict{Int64, Int64};
-DictHandledType = Dict{Int64, Bool};
 #HeapVERType = BinaryMinHeap{TreeVertex};
 
 HeapVerticesType = BinaryMinHeap{Tuple{Float64,Int64},};
 
 
-@with_kw mutable struct FRContext{N,T}
+#@with_kw
+mutable struct FRContext{N,T}
     P::Polygon{N,T};
     Q::Polygon{N,T};
     p_offs::Vector{Float64};
@@ -63,23 +65,25 @@ HeapVerticesType = BinaryMinHeap{Tuple{Float64,Int64},};
     handled::DictHandledType;
     dict::DictVERType;
     heapAlt::HeapVerticesType;
-    f_offsets::Bool = false;
-    n_p::Int64 = 0
-    n_q::Int64 = 0
+    f_offsets::Bool ;
+    n_p::Int64 #0
+    n_q::Int64 #0
 end
 
-function  FRContext(P::Polygon{N,T}, Q::Polygon{N,T}) where {N,T}
+function  FR_Context(P::Polygon{N,T}, Q::Polygon{N,T}) where {N,T}
+    d_h = DictHandledType();
+    d_ver = DictVERType();
+    h + HeapVerticesType();
     return FRContext( P, Q, Vector{Float64}(),  Vector{Float64}(),
-                      Dict{Int64, Int64}(),
-                      Dict{Int64, Float64}(),
-                      HeapVerticesType(),
-                      false, cardin( P ), cardin( Q ) );
+        d_h,
+        d_ver,
+        #        Dict{Int64, Int64}(),
+        #                      Dict{Int64, Float64}(),
+        h,
+        false, Int64(cardin( P) ), Int64(cardin( Q )) );
 end
 
 function  ve_event_value( c::FRContext{N,T}, id::Int64 ) where {N,T}
-
-#    i::Int64, i_is_vert::Bool,
-#                          j::Int64, j_is_vert::Bool ) where {N,T}
     P = c.P
     Q = c.Q
     i = EID_i( id );
@@ -121,7 +125,7 @@ function  ve_event_value( c::FRContext{N,T}, id::Int64 ) where {N,T}
 
     println( "Error: This kind of event is not handled yet..." );
     exit( -1 )
-    return  ev
+    return  0.0;
 end
 
 #=
@@ -176,7 +180,8 @@ function f_r_create_event( R::Polygon{N,T}, i::Int64,
 end
 
 
-function  is_schedule_event( dict, id::Int64, n_p, n_q )::Bool
+function  is_schedule_event( dict::DictVERType, id::Int64, n_p::Int64,
+                             n_q::Int64 )::Bool
     if  haskey( dict, id )
         return  false
     end
@@ -211,7 +216,8 @@ end
 
 
 function  f_r_extract_solution( P::Polygon{N,T}, Q,
-                                end_event_id::Int64, dict
+                                end_event_id::Int64,
+                                dict::DictVERType
                                 ) where {N,T}
     #############################################################3
     # Extracting the solution
@@ -290,7 +296,7 @@ end
 
 
 function    max_leash( leash::T, p_a::Point{N,T}, p_b::Point{N,T},
-                       P::Polygon{N,T}, low, hi ) where {N,T}
+                       P::Polygon{N,T}, low::Int64, hi::Int64 ) where {N,T}
     seg = Segment( p_a, p_b );
     max_t = 0.0;
     for  j in low:hi
@@ -393,7 +399,7 @@ function   frechet_ve_r_compute_mono_dist( P::Polygon{N,T},
                                            Q::Polygon{N,T}
                                            ) where {N,T}
     f_debug::Bool = false;
-    c::FRContext{N,T} = FRContext( P, Q )
+    c::FRContext{N,T} = FR_Context( P, Q )
 
     start_id = EID( 1, true, 1, true );
 
@@ -470,7 +476,7 @@ function   frechet_ve_r_compute_ext( P::Polygon{N,T},
                                      f_use_offsets::Bool = false,
                                      ) where {N,T}
     f_debug::Bool = false;
-    c::FRContext{N,T} = FRContext( P, Q )
+    c = FR_Context( P, Q )
 
     if  f_use_offsets
         c.p_offs = p_offs;
@@ -754,7 +760,7 @@ function   add_points_along_seg( pout::Polygon{N,T},
                                  n_mid_points::Int64 = 1 ) where {N,T}
     out_times = Vector{Float64}();
 
-    function  push_time( tm )
+    function  push_time( tm::Float64 )
         if  ( tm == 0 )  ||  ( tm == 1 )
             return
         end
@@ -1027,7 +1033,8 @@ Computing the ver frechet distance, and then monotonize it. No
 guarentee as far as the quality of the distance this realizes...
 
 """
-function  frechet_ve_r_mono_compute( poly_a, poly_b )
+function  frechet_ve_r_mono_compute( poly_a::Polygon{D,T},
+                                     poly_b::Polygon{D,T} ) where {D,T}
     m = frechet_ve_r_compute( poly_a, poly_b );
     mm = Morphing_monotonize( m )
 
@@ -1141,10 +1148,10 @@ function  frechet_c_approx( poly_a::Polygon{N,T},
         mm_out = Morphing_combine( mmu, m_q );
 
         f_debug && println( "Verification..." );
-        Morphing_verify_valid( m_p );
-        Morphing_verify_valid( m );
-        Morphing_verify_valid( m_q );
-        Morphing_verify_valid( mmu );
+        f_debug && Morphing_verify_valid( m_p );
+        f_debug && Morphing_verify_valid( m );
+        f_debug && Morphing_verify_valid( m_q );
+        f_debug && Morphing_verify_valid( mmu );
 
         lbx = d - 2.0*err
         if  ( d == 0.0 )
@@ -1404,12 +1411,13 @@ function  frechet_c_compute( P::Polygon{N,T},
         #propogate_negs( qz );
 #        f_deprintln( pz );
 
-        p_count = count_below_zero( pz );
-        q_count = count_below_zero( qz );
+        if  f_debug 
+            p_count = count_below_zero( pz );
+            q_count = count_below_zero( qz );
 
-        f_debug  &&  println( "pz count <0: ", p_count, " / ", length( pz ) );
-        f_debug  &&  println( "qz count <0: ", q_count, " / ", length( qz ) );
-
+            println( "pz count <0: ", p_count, " / ", length( pz ) );
+            println( "qz count <0: ", q_count, " / ", length( qz ) );
+        end
         f_PS_exact::Bool = false;
         f_QS_exact::Bool = false;
 
@@ -1547,7 +1555,8 @@ end
 
 ###########################################################################
 
-function  find_frechet_prefix_inner( P, ind_start::Int64, i, j, w )
+function  find_frechet_prefix_inner( P::Polygon{D,T},
+    ind_start::Int64, i::Int64, j::Int64, w::T ) where {D,T}
 #    println( i, " : ", j );
     if i >= j
         return  j;
@@ -1571,7 +1580,8 @@ function  find_frechet_prefix_inner( P, ind_start::Int64, i, j, w )
     return  find_frechet_prefix_inner( P, ind_start, mid, j, w );
 end
 
-function  find_frechet_prefix( P, i, j, w )
+function  find_frechet_prefix( P::Polygon{D,T}, i::Int64,
+    j::Int64, w::T )  where {D,T}
     r = frechet_width_approx( P, i:j )
     if  ( r <= w )
         return  j;
@@ -1579,7 +1589,7 @@ function  find_frechet_prefix( P, i, j, w )
     return  find_frechet_prefix_inner( P, i, i, j, w );
 end
 
-function  frechet_simplify_to_width( P::Polygon{D,T}, w ) where {D,T}
+function  frechet_simplify_to_width( P::Polygon{D,T}, w::T ) where {D,T}
     pout = Polygon{D,T}();
     pindices = Vector{Int64}();
 

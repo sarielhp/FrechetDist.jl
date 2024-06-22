@@ -4,7 +4,9 @@ push!(LOAD_PATH, pwd()*"/src/")
 
 using FrechetDist
 using FrechetDist.cg
-
+using Profile
+using InteractiveUtils
+using JET
 
 ######################################################################
 
@@ -53,7 +55,11 @@ function  test_files( fl_a, fl_b )
     P = Polygon_read_file( fl_a );
     Q = Polygon_read_file( fl_b );
 
-    frechet_comp( P, Q );
+    #@profile
+    #@code_warntype
+    print( @report_opt frechet_comp( P, Q ) );
+    #Profile.print();
+    
     println( "Done..." );
     #println( "Sign: ", sgn, "\n\n\n\n\n\n" );
 end

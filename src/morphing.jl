@@ -226,7 +226,8 @@ function  events_seq_make_monotone( P::Polygon{N,T},
     while  ( i <= len )
         ep = s[ i ];
         if  ep.type == PT_VERTEX
-            push!( ns, deepcopy( ep ) )
+            up = deepcopy( ep );
+            push!( ns, up )
             i = i + 1;
             continue;
         end
@@ -474,7 +475,7 @@ end
     lengths of the two given polygons of P and Q, respectively.
 
 """
-function  Morphing_extract_prm( m::Morphing{N,T} )::Polygon2F where {N,T}
+function  Morphing_extract_prm( m::Morphing{N,T} )::cg.Polygon2F where {N,T}
     P::Polygon{N,T} = m.P;
     Q::Polygon{N,T} = m.Q;
     peout::Vector{EventPoint{N,T}} = m.pes;
@@ -490,7 +491,7 @@ function  Morphing_extract_prm( m::Morphing{N,T} )::Polygon2F where {N,T}
 
     @assert( length( pps ) == length( qps ) )
 
-    out = Polygon{2,Float64}();
+    out = cg.Polygon2F();
     for  i in eachindex(pps)
         push!( out, point( pps[ i ], qps[ i ] ) )
     end
@@ -556,11 +557,13 @@ function  floating_equal( a, b )::Bool
     return  a == b;
 end
 
+
 ##############################################################3
 # parameterization_combine
 # Given two parameterization f, g, compute f(g( . ))
 ###############################################################
-function   parameterization_combine( f::Polygon2F, g::Polygon2F )
+function   parameterization_combine( f::Polygon2F,
+                                     g::Polygon2F )::Polygon2F
     if  ( ! floating_equal( last( g )[2], last( f )[ 1 ] ) )
         println( last( g )[2], " != ",  last( f )[ 1 ] );
         @assert( floating_equal( last( g )[2], last( f )[ 1 ] ) )
@@ -713,7 +716,7 @@ function  event_sequences_extract( prm::Polygon2F, P::Polygon{N,T},
 
     for  i in 1:( cardin( prm ) - 1 )
 #        println( "before?? A" );
-        curr::Point2F = prm[ i ];
+        curr = prm[ i ];
         p_loc = curr[ 1 ];
 
         while  ( i_p < length( lp ) )  &&  ( p_loc >= lp[ i_p + 1 ] )
@@ -740,6 +743,7 @@ function  event_sequences_extract( prm::Polygon2F, P::Polygon{N,T},
         end
 
         #        println( "get_point P..." );
+        #t_p::Float64;
         pcurr,t_p = get_point( P, lp, i_p, p_loc );
         @assert( 0 <= t_p  &&  t_p <= 1.0 )
         #        println( "get_point Q ..." );
@@ -756,13 +760,13 @@ function  event_sequences_extract( prm::Polygon2F, P::Polygon{N,T},
         if  ( t_p == 0.0 ) ||  ( ( t_p == 1.0 )  &&  ( i_p == len_p ) )
             push!( pes, EventPoint( pcurr, i_p, PT_VERTEX, 0.0 ) );
         else
-            push!( pes, EventPoint( pcurr, i_p, PT_ON_EDGE, t_p ) );
+            push!( pes, EventPoint( pcurr, i_p, PT_ON_EDGE, T(t_p) ) );
         end
 
         if  ( t_q == 0.0 ) ||  ( ( t_q == 1 )  &&  ( i_q == len_q ) )
             push!( qes, EventPoint( qcurr, i_q, PT_VERTEX, 0.0 ) );
         else
-            push!( qes, EventPoint( qcurr, i_q, PT_ON_EDGE, t_q ) );
+            push!( qes, EventPoint( qcurr, i_q, PT_ON_EDGE, T(t_q) ) );
         end
         #       println( "here? B" );
     end
