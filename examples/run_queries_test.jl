@@ -8,7 +8,7 @@ using CSV, DataFrames
 using FrechetDist
 using FrechetDist.cg
 using PrettyTables
-using Profile
+#using Profile
 
 AtomicInt = Threads.Atomic{Int}
 
@@ -466,7 +466,7 @@ function  test_files_from_file( filename, base_dir,
 
 
     if  ( f_serial )
-        @profile do_array( PID, lines, base_dir, nr, count, i_second )
+        @time do_array( PID, lines, base_dir, nr, count, i_second )
     else
         nt = Threads.nthreads();
         chunks = Iterators.partition(lines, length(lines) ÷ nt )
