@@ -24,7 +24,7 @@ end
 
 function  ph_push_target( ph::PolygonHierarchy, w::Float64 )
     P = ph.P;
-    
+
     if  ( cardin( P ) <= 10 )
         return  true;
     end
@@ -83,7 +83,7 @@ function  Base.getindex( P::PolygonsInDir, s::String)
 end
 
 function   read_polygons_in_dir( base_dir )
-    limit::Int64 = 500000;
+    limit::Int64 = 500 ;
 
     count::Int64 = 0;
     P = PolygonsInDir( Vector{PolygonHierarchy}(),
@@ -111,12 +111,12 @@ function   read_polygons_in_dir( base_dir )
             P.d[ file ] = length( P.polys );
         end
     end
-    
+
     phx = compute_simp_hierarchy( P.polys[1] )
     for  i  in 1:length(P.polys)
         push!( P.PHA, phx );
     end
-    
+
     println( "Computing simplificiation hierarchies..." );
     cnt_ph = AtomicInt( 0 );
 
@@ -194,7 +194,7 @@ function frechet_decider_PID( PID, i, j, r )::Int64
         P_a = P_ph.polys[ i ];
         Q_a = Q_ph.polys[ i ];
 
-        m_leash = frechet_ve_r_compute_mono_dist( P_a, Q_a );
+        m_leash = frechet_ve_r_compute_mono_dist( P_a, Q_a, ub );
 
         #=
         m = frechet_ve_r_compute( P_a, Q_a );

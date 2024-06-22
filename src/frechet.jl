@@ -8,6 +8,7 @@
 #-------------------------------------------------------------
 
 DictVERType = Dict{Int64, Int64};
+#DictHandledType = Dict{Int64, Bool};
 
 
 """
@@ -67,6 +68,8 @@ mutable struct FRContext{N,T}
     f_offsets::Bool ;
     n_p::Int64 #0
     n_q::Int64 #0
+    f_upper_bound::Bool
+    upper_bound::T
 end
 
 function  FR_Context(P::Polygon{N,T}, Q::Polygon{N,T}) where {N,T}
@@ -74,12 +77,11 @@ function  FR_Context(P::Polygon{N,T}, Q::Polygon{N,T}) where {N,T}
     d_ver = DictVERType();
     h = HeapVerticesType();
     return FRContext( P, Q, Vector{Float64}(),  Vector{Float64}(),
- #       d_h,
-        d_ver,
-        #        Dict{Int64, Int64}(),
-        #                      Dict{Int64, Float64}(),
-        h,
-        false, Int64(cardin( P) ), Int64(cardin( Q )) );
+                      d_ver,
+                      h,
+                      false, Int64(cardin( P) ), Int64(cardin( Q )),
+                      false, zero(T)  # Upper bound 
+                      );
 end
 
 function  ve_event_value( c::FRContext{N,T}, id::Int64 ) where {N,T}
@@ -202,9 +204,10 @@ function  f_r_schedule_event( id::Int64, prev_id::Int64,
         return
     end
     new_val = ve_event_value( c,id )
-    #ev = f_r_new_event( id, c);
-
-    #ev.id_prev = prev_id;
+    if  ( c.f_upper_bound  &&  ( c.upper_bound < new_val ) )
+        return;
+    end
+    ### Also... Blocks the event from being considered again...
     c.dict[ id ] = prev_id;
     push!( c.heapAlt, (new_val, id ) );
 end
@@ -395,10 +398,13 @@ end
 
 
 function   frechet_ve_r_compute_mono_dist( P::Polygon{N,T},
-                                           Q::Polygon{N,T}
+                                           Q::Polygon{N,T},
+                                           upper_bound::T
                                            ) where {N,T}
     f_debug::Bool = false;
     c::FRContext{N,T} = FR_Context( P, Q )
+    c.f_upper_bound = true;
+    c.upper_bound = upper_bound;
 
     start_id = EID( 1, true, 1, true );
 
