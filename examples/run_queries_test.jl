@@ -22,7 +22,8 @@ mutable struct  PolygonHierarchy
     widths::Vector{Float64};
 end
 
-function  ph_push_target( ph::PolygonHierarchy, w::Float64 )
+function  ph_push_target( ph::PolygonHierarchy, w::Float64,
+                          last_cardin::Int64 )
     P = ph.P;
 
     if  ( cardin( P ) <= 10 )
@@ -38,6 +39,9 @@ function  ph_push_target( ph::PolygonHierarchy, w::Float64 )
     mr = frechet_c_mono_approx_subcurve( P, R, R_indices )[ 1 ];
     #println( "## :", cardin( P ), "  # :", cardin( R ), "    R_w: ", mr.leash );
 
+    if cardin( R ) < ( last_cardin * 1.1 + 4 )
+        return  false;
+    end
     push!( ph.polys, R );
     push!( ph.widths, mr.leash );
 
@@ -62,11 +66,15 @@ function  compute_simp_hierarchy( P::Polygon2F )
     # 1.4 40:  39
     # 2.0 20: 120 seconds?
 
-    ratio::Float64 = 1.3
-    for  i in 1:10
+    ratio::Float64 = 1.1
+    last_cardin::Int64 = 4;
+    last_width = last( ph.widths );
+    for  i in 1:40
         #println( "i ", i );
-        w = last( ph.widths ) / ratio;
-        ph_push_target( ph,      w )  &&  return  ph;
+        w = min( last_width, last( ph.widths ) ) / ratio;
+        last_cardin = cardin( last(ph.polys ) )
+        ph_push_target( ph,      w, last_cardin )  &&  return  ph;
+        last_width = w;
     end
 
 
@@ -196,6 +204,7 @@ function frechet_decider_PID( PID, i, j, r )::Int64
     ratio::Float64 = 5.0;
     delta = min( abs( r - lb ), abs( r - ub ) );
     mi = min( length( P_ph.polys ), length( Q_ph.polys ) );
+    #println( "mi: ", mi );
     for  i in 2:mi
         w_P = P_ph.widths[ i ];
         w_Q = Q_ph.widths[ i ];
@@ -205,6 +214,9 @@ function frechet_decider_PID( PID, i, j, r )::Int64
         end
         P_a = P_ph.polys[ i ];
         Q_a = Q_ph.polys[ i ];
+
+        # println( "i: ", i, "   |P_a|: ", cardin( P_a ),
+        #          "   |Q_a|: ", cardin( Q_a ) );
 
         m_leash = frechet_ve_r_compute_mono_dist( P_a, Q_a, ub );
         lb = m_leash - w_P - w_Q
