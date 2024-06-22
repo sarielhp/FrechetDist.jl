@@ -1617,7 +1617,7 @@ function  frechet_simplify_to_width( P::Polygon{D,T}, w::T ) where {D,T}
     next_ind::Int64 = 1;
     card = cardin( P );
     while  true
-        hi = exp_search_width_prefix( P, curr_ind, w );
+        hi = len #exp_search_width_prefix( P, curr_ind, w );
         next_ind = find_frechet_prefix( P, curr_ind, hi, w )
         #println( "next_ind: ", next_ind );
         @assert( next_ind > curr_ind );
