@@ -188,7 +188,7 @@ function frechet_decider_PID( PID, i, j, r )::Int64
     if  ub < r
         return  -1;
     end
-    lb = max( l_a, l_b ) - w_P - w_Q;
+    lb = max( max( l_a, l_b ), l_b ) - w_P - w_Q;
     if  lb > r
         return  +1;
     end
@@ -207,19 +207,7 @@ function frechet_decider_PID( PID, i, j, r )::Int64
         Q_a = Q_ph.polys[ i ];
 
         m_leash = frechet_ve_r_compute_mono_dist( P_a, Q_a, ub );
-
-        #=
-        m = frechet_ve_r_compute( P_a, Q_a );
-        mm_leash =  Morphing_monotone_leash( m );
-
-        if  ( ! eq( m_leash, mm_leash, 0.000001 ) )
-            println( "XXX :", m_leash, "   ", mm_leash );
-            exit( -1 );
-        end
-        =#
-        ## m_leash = frechet_ve_r_compute( P_a, Q_a );
         lb = m_leash - w_P - w_Q
-
 
         if  f_debug
             println( "---------------------------------------------------" );
@@ -230,12 +218,8 @@ function frechet_decider_PID( PID, i, j, r )::Int64
             println( "w_P  : ", w_P );
             println( "w_Q  : ", w_Q );
             println( "lb A : ", lb );
+            f_debug  &&  println( "lb B : ", lb );
         end
-        if  ( lb > r )
-            return  +1;
-        end
-        lb = m_leash - w_P - w_Q
-        f_debug  &&  println( "lb B : ", lb );
         if  ( lb > r )
             return  +1;
         end
@@ -275,9 +259,6 @@ function frechet_decider_PID( PID, i, j, r )::Int64
             end
             return  0;
         end
-#        if  i > 2
-#            println( "RATIO  ", i, " : ", ratio );
-#        end
     end
     f_debug  &&  println( "UNDECIDED" );
     @assert( false );
