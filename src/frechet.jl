@@ -439,7 +439,7 @@ function   frechet_ve_r_compute_mono_dist( P::Polygon{N,T},
         i = EID_i( id );
         j = EID_j( id );
 
-        if  is_start_event( id )
+        if  id == start_id
             f_r_schedule_event( EID( 1, false, 1, true ), id, c );
             f_r_schedule_event( EID( 1, true, 1, false ), id, c );
             continue;
