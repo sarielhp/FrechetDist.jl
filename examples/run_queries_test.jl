@@ -26,20 +26,20 @@ function  ph_push_target( ph::PolygonHierarchy, w::Float64,
                           last_cardin::Int64 )
     P = ph.P;
 
-    if  ( cardin( P ) <= 10 )
+    if  ( cardin( P ) <= 15 )
         return  true;
     end
 
     R, R_indices = frechet_simplify_to_width( P, w );
 
     # No point continuing...
-    if  ( ( 1.1 * cardin( R ) ) > cardin( P ) )
+    if  ( ( 4 * cardin( R ) ) > cardin( P ) )
         return  true;
     end
     mr = frechet_c_mono_approx_subcurve( P, R, R_indices )[ 1 ];
     #println( "## :", cardin( P ), "  # :", cardin( R ), "    R_w: ", mr.leash );
 
-    if cardin( R ) < ( last_cardin * 1.1 + 4 )
+    if cardin( R ) < ( last_cardin + 4 )
         return  false;
     end
     push!( ph.polys, R );
@@ -69,15 +69,21 @@ function  compute_simp_hierarchy( P::Polygon2F )
     ratio::Float64 = 1.1
     last_cardin::Int64 = 4;
     last_width = last( ph.widths );
-    for  i in 1:40
+    for  i in 1:100
         #println( "i ", i );
         w = min( last_width, last( ph.widths ) ) / ratio;
         last_cardin = cardin( last(ph.polys ) )
-        ph_push_target( ph,      w, last_cardin )  &&  return  ph;
+        ph_push_target( ph,      w, last_cardin )  && break;
         last_width = w;
     end
-
-
+    #=
+    println( "\n", "Size: ", cardin( P ) );
+    for i in 1:length(ph.widths)
+        println( " w[", i, "]: ", ph.widths[ i ], "  # :",
+                 cardin( ph.polys[ i ] ) );
+    end
+    println( "---\n" );
+    =#
     return  ph;
 end
 
@@ -100,7 +106,7 @@ function  Base.getindex( P::PolygonsInDir, s::String)
 end
 
 function   read_polygons_in_dir( base_dir )
-    limit::Int64 = 10000;
+    limit::Int64 = 500;
 
     count::Int64 = 0;
     P = PolygonsInDir( Vector{PolygonHierarchy}(),
@@ -214,6 +220,9 @@ function frechet_decider_PID( PID, i, j, r )::Int64
         end
         P_a = P_ph.polys[ i ];
         Q_a = Q_ph.polys[ i ];
+        println( "|P|: ", cardin( P_a ), " wp : ", w_P, " |Q|: ",
+                 cardin(Q_a), " wQ : ", w_Q,
+                 "   delta: ", delta );
 
         # println( "i: ", i, "   |P_a|: ", cardin( P_a ),
         #          "   |Q_a|: ", cardin( Q_a ) );
