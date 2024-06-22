@@ -397,7 +397,7 @@ function  test_files( PID, base_dir, queries_file, prefix,
         #end;
     end
 
-    println( "Text completed on : ", queries_file );
+    #println( "Text completed on : ", queries_file );
 
     #print( df );
 end
@@ -477,8 +477,8 @@ function  test_files_from_file( filename, base_dir,
         fetch.(tasks);
     end
 
-    #println( "TEST COMPLETED SUCCESSFULLY!" );
-    #println( "# of pairs compared : ", count[] );
+    println( "TEST COMPLETED SUCCESSFULLY!" );
+    println( "# of pairs compared : ", count[] );
     flush( stdout );
 end
 

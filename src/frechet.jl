@@ -1583,7 +1583,7 @@ function  exp_search_width_prefix( P::Polygon{N,T},
 
     while  hi < len
         r = frechet_width_approx( P, start:hi )
-        ( r > w )  &&  return  hi;
+        ( r > w )  &&  return  min( hi + 10, len );
         hi = start + 2 * ( hi - start )
     end
 
