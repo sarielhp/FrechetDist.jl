@@ -54,8 +54,9 @@ function  compute_simp_hierarchy( P::Polygon2F )
     push!( ph.widths, w );
 
     # Best so far: 1.5 28
+    # 1.3 40:  38 seconds
     ratio::Float64 = 1.4
-    for  i in 1:30
+    for  i in 1:40
         #println( "i ", i );
         w = last( ph.widths ) / ratio;
         ph_push_target( ph,      w )  &&  return  ph;
