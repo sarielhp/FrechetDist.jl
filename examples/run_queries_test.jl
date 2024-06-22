@@ -83,7 +83,7 @@ function  Base.getindex( P::PolygonsInDir, s::String)
 end
 
 function   read_polygons_in_dir( base_dir )
-    limit::Int64 = 500 ;
+    limit::Int64 = 500000 ;
 
     count::Int64 = 0;
     P = PolygonsInDir( Vector{PolygonHierarchy}(),
