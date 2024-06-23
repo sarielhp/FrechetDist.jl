@@ -8,7 +8,14 @@ find data/queries/characters -type f > characters.txt
 
 
 start=`date +%s`
-julia -O3 --min-optlevel=3 examples/run_queries_test.jl sfile \
+
+# file: Run the test using multi-threading
+# sfile: Run the test using a single thread...
+
+
+#julia -O3 --min-optlevel=3  \
+julia \
+             examples/run_queries_test.jl file \
                              data/characters/ \
                              characters.txt
 end=`date +%s`
