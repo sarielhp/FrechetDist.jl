@@ -1204,6 +1204,9 @@ function  Polygon_read_file( filename, dchar = "," )
         Polygon_push_smart( P, point( pieces[ 1 ], pieces[ 2 ] ) );
     end
 
+    if  ( cardin( P ) <= 1 )
+        Polygon_push( P, deepcopy( first( P ) ) );
+    end
     return  P
 end
 
