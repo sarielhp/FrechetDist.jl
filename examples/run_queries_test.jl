@@ -22,26 +22,22 @@ mutable struct  PolygonHierarchy
     widths::Vector{Float64};
 end
 
-function  ph_push_target( ph::PolygonHierarchy, w::Float64,
-                          last_cardin::Int64 )
+function  ph_push_target( ph::PolygonHierarchy, w::Float64 )
     P = ph.P;
 
-    if  ( cardin( P ) <= 15 )
+    if  ( cardin( P ) <= 10 )
         return  true;
     end
 
     R, R_indices = frechet_simplify_to_width( P, w );
 
     # No point continuing...
-    if  ( ( 4 * cardin( R ) ) > cardin( P ) )
+    if  ( ( 1.1 * cardin( R ) ) > cardin( P ) )
         return  true;
     end
     mr = frechet_c_mono_approx_subcurve( P, R, R_indices )[ 1 ];
     #println( "## :", cardin( P ), "  # :", cardin( R ), "    R_w: ", mr.leash );
 
-    if cardin( R ) < ( last_cardin + 4 )
-        return  false;
-    end
     push!( ph.polys, R );
     push!( ph.widths, mr.leash );
 
@@ -57,33 +53,14 @@ function  compute_simp_hierarchy( P::Polygon2F )
     push!( ph.polys, Polygon_spine( P ) );
     push!( ph.widths, w );
 
-    # Best so far: 1.5 28
-    #
-    # 1.1 40:  38.7
-    # 1.1 60:  60 seconds ???
-    # 1.3 40:  38 seconds
-    # 1.4 20: 119 seconds
-    # 1.4 40:  39
-    # 2.0 20: 120 seconds?
-
-    ratio::Float64 = 1.1
-    last_cardin::Int64 = 4;
-    last_width = last( ph.widths );
-    for  i in 1:100
+    ratio::Float64 = 4.0
+    for  i in 1:20
         #println( "i ", i );
-        w = min( last_width, last( ph.widths ) ) / ratio;
-        last_cardin = cardin( last(ph.polys ) )
-        ph_push_target( ph,      w, last_cardin )  && break;
-        last_width = w;
+        w = last( ph.widths ) / ratio;
+        ph_push_target( ph,      w )  &&  return  ph;
     end
-    #=
-    println( "\n", "Size: ", cardin( P ) );
-    for i in 1:length(ph.widths)
-        println( " w[", i, "]: ", ph.widths[ i ], "  # :",
-                 cardin( ph.polys[ i ] ) );
-    end
-    println( "---\n" );
-    =#
+
+
     return  ph;
 end
 
@@ -106,7 +83,7 @@ function  Base.getindex( P::PolygonsInDir, s::String)
 end
 
 function   read_polygons_in_dir( base_dir )
-    limit::Int64 = 500;
+    limit::Int64 = 500000 ;
 
     count::Int64 = 0;
     P = PolygonsInDir( Vector{PolygonHierarchy}(),
@@ -116,7 +93,6 @@ function   read_polygons_in_dir( base_dir )
         if  ( count > limit )
             break;
         end
-        
         for file in files
             ( file == "dataset.txt" )  &&  continue;
             ( file == "mixoutALL_shifted.mat" )  && continue;
@@ -126,9 +102,7 @@ function   read_polygons_in_dir( base_dir )
             if  ( count > limit  )
                 break;
             end
-            if  ( count & 0x3ff == 0x3ff )
-                println( "Reading: ", base_dir * file, "      \r" );
-            end
+            println( "Reading: ", base_dir * file, "      \r" );
             poly = Polygon_read_file( base_dir * file );
             width = frechet_width_approx( poly );
 
@@ -202,7 +176,7 @@ function frechet_decider_PID( PID, i, j, r )::Int64
     if  ub < r
         return  -1;
     end
-    lb = max( max( l_a, l_b ), l_b ) - w_P - w_Q;
+    lb = max( l_a, l_b ) - w_P - w_Q;
     if  lb > r
         return  +1;
     end
@@ -210,7 +184,6 @@ function frechet_decider_PID( PID, i, j, r )::Int64
     ratio::Float64 = 5.0;
     delta = min( abs( r - lb ), abs( r - ub ) );
     mi = min( length( P_ph.polys ), length( Q_ph.polys ) );
-    #println( "mi: ", mi );
     for  i in 2:mi
         w_P = P_ph.widths[ i ];
         w_Q = Q_ph.widths[ i ];
@@ -220,15 +193,21 @@ function frechet_decider_PID( PID, i, j, r )::Int64
         end
         P_a = P_ph.polys[ i ];
         Q_a = Q_ph.polys[ i ];
-        println( "|P|: ", cardin( P_a ), " wp : ", w_P, " |Q|: ",
-                 cardin(Q_a), " wQ : ", w_Q,
-                 "   delta: ", delta );
-
-        # println( "i: ", i, "   |P_a|: ", cardin( P_a ),
-        #          "   |Q_a|: ", cardin( Q_a ) );
 
         m_leash = frechet_ve_r_compute_mono_dist( P_a, Q_a, ub );
+
+        #=
+        m = frechet_ve_r_compute( P_a, Q_a );
+        mm_leash =  Morphing_monotone_leash( m );
+
+        if  ( ! eq( m_leash, mm_leash, 0.000001 ) )
+            println( "XXX :", m_leash, "   ", mm_leash );
+            exit( -1 );
+        end
+        =#
+        ## m_leash = frechet_ve_r_compute( P_a, Q_a );
         lb = m_leash - w_P - w_Q
+
 
         if  f_debug
             println( "---------------------------------------------------" );
@@ -239,8 +218,12 @@ function frechet_decider_PID( PID, i, j, r )::Int64
             println( "w_P  : ", w_P );
             println( "w_Q  : ", w_Q );
             println( "lb A : ", lb );
-            f_debug  &&  println( "lb B : ", lb );
         end
+        if  ( lb > r )
+            return  +1;
+        end
+        lb = m_leash - w_P - w_Q
+        f_debug  &&  println( "lb B : ", lb );
         if  ( lb > r )
             return  +1;
         end
@@ -280,6 +263,9 @@ function frechet_decider_PID( PID, i, j, r )::Int64
             end
             return  0;
         end
+#        if  i > 2
+#            println( "RATIO  ", i, " : ", ratio );
+#        end
     end
     f_debug  &&  println( "UNDECIDED" );
     @assert( false );
@@ -411,8 +397,7 @@ function  test_files( PID, base_dir, queries_file, prefix,
         #end;
     end
 
-
-    #println( "Text completed on : ", queries_file );
+    println( "Text completed on : ", queries_file );
 
     #print( df );
 end
