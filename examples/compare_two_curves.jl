@@ -13,12 +13,15 @@ function frechet_comp( P::Polygon{D,T}, Q::Polygon{D,T}
      )::Int64  where {D,T}
     ratio::Float64 = 5.0;
 
+    println( P );
+    println( Q );
     println( "|P|:", cardin( P ), "  |Q| :", cardin( Q ) );
 
     for  i in 1:10
         println( "approx( #", cardin(P ), ", ", cardin(Q), ")   approx: ",
                  ratio );
         m = frechet_c_approx( P, Q, ratio );
+        exit( -1 );
         if  ( m.ratio == 1.0 )
             return  0;
         end

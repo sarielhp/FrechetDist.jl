@@ -8,7 +8,8 @@ find data/queries/sigspatial -type f > sigspatial.txt
 
 
 start=`date +%s`
-julia examples/run_queries_test.jl sfile \
+#e --track-allocation=user
+julia    examples/run_queries_test.jl sfile \
                              data/sigspatial/ \
                              sigspatial.txt
 end=`date +%s`

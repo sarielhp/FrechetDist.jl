@@ -1002,7 +1002,7 @@ function  Polygon_sample_uniformly( P::Polygon{D,T}, n::Int64 ) where {D,T}
 
     delta = len / (n-1);
 
-    new_P::Polygon{D,T} = Polygon{D,T}( Point{D,T}() );
+    new_P::Polygon{D,T} = Polygon{D,T}( );
     Polygon_push_smart( new_P, first( P.pnts ) );
 
     sz = cardin( P );

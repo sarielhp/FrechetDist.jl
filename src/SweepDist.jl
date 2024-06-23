@@ -123,9 +123,27 @@ function  SW_new_event( id::Int64, id_prev::Int64, value::Float64,
     return  ev;
 end
 
+function  is_sw_schedule_event( dict::DictHandledType, id::Int64, n_p::Int64,
+                             n_q::Int64 )::Bool
+    if  haskey( dict, id )
+        return  false
+    end
+    if  ( EID_i( id )  > n_p )  ||  ( EID_j( id ) > n_q )
+        return  false;
+    end
+    if  ( EID_i(id) >= n_p )  &&  ( ! EID_i_is_vert( id ) )
+        return  false
+    end
+    if  ( EID_j( id ) >= n_q )  &&  ( ! EID_j_is_vert( id ) )
+        return  false
+    end
+    return  true
+end
+
+
 function  SW_schedule_event( id::Int64, id_prev::Int64,
                                c::SDContext{N,T} ) where  {N,T}
-    if  ! is_schedule_event( c.handled, id, c.n_p, c.n_q )
+    if  ! is_sw_schedule_event( c.handled, id, c.n_p, c.n_q )
         return
     end
     ev_prev::TreeVertex = c.vertices[ id_prev ];
