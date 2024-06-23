@@ -249,8 +249,7 @@ function frechet_decider_PID( PID, i, j, r )::Int64
         P_a = P_ph.polys[ i ];
         Q_a = Q_ph.polys[ i ];
 
-        #@time
-        m_leash = frechet_ve_r_compute_mono_dist( P_a, Q_a, ub );
+        @time m_leash = frechet_ve_r_compute_mono_dist( P_a, Q_a, ub );
 
         #=
         m = frechet_ve_r_compute( P_a, Q_a );
