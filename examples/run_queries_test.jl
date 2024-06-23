@@ -29,7 +29,7 @@ end
 
 
 function  ph_push_target_exp( ph::PolygonHierarchy, w::Float64,
-                              P::Polygon2F )
+                              P::Polygon2F, lmt::Int64 )
     #P = ph.P;
 
     if  ( cardin( P ) <= 10 )
@@ -39,7 +39,7 @@ function  ph_push_target_exp( ph::PolygonHierarchy, w::Float64,
     T, T_indices = frechet_simplify_w_exp( P, w );
 
     # No point continuing...
-    if  ( ( 1.1 * cardin( T ) ) > cardin( P ) )
+    if  ( cardin( T ) > lmt )
         return  true;
     end
     mr = frechet_c_mono_approx_subcurve( P, T, T_indices )[ 1 ];
@@ -103,25 +103,35 @@ function  compute_simp_hierarchy( P::Polygon2F )
     #ph = ph_init( P );
     phA = ph_init( P );
 
-    w_init = w = phA.widths[ 1 ];
+    w = phA.widths[ 1 ];
     #println( "Before simplify..." );
-    PA, PA_indices = frechet_simplify_to_width( P, w * 1e-6 );
+    w_L = w / 20.0;
+    PL, PL_indices = frechet_simplify_to_width( P, w_L );
+#    w_S = w / 500.0;
+#    PS, PS_indices = frechet_simplify_to_width( P, w_S );
     #println( "After simplify..." );
-    println( cardin( P ), " => ", cardin( PA ) );
+    #println( cardin( P ), " => ", cardin( PA ) );
     #card = cardin( P );
 
     ratio::Float64 = 4.0
+    lmt::Int64 = min( round( Int64, cardin( P )/ 3), 100 );
     for  i in 1:20
         #println( "i ", i );
         #w = last( ph.widths ) / ratio;
         #ph_push_target( ph,      w )  &&  break;
 
         wA = last( phA.widths ) / ratio;
-        ph_push_target_exp( phA,     wA, P )  &&  break;
+        if  ( wA > 4.0*w_L )
+            ph_push_target_exp( phA,     wA, PL, lmt )  &&  break;
+        else
+            ph_push_target_exp( phA,     wA, P, lmt )  &&  break;
+        end
     end
 
     #ph_print( P, ph );
     #ph_print( P, phA );
+    #println( "w_used: ", w_used );
+    
     #global mx = max( mx, w_init / last( phA.widths ) );
     #println( mx );
     #println( "\n\n\n" );
@@ -147,7 +157,7 @@ function  Base.getindex( P::PolygonsInDir, s::String)
 end
 
 function   read_polygons_in_dir( base_dir, f_parallel::Bool )
-    limit::Int64 = 500;
+    limit::Int64 = 500000;
 
     count::Int64 = 0;
     P = PolygonsInDir( Vector{PolygonHierarchy}(),
