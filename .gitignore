@@ -10,5 +10,8 @@ data
 docs/build/
 output
 various/
-# DEL_THIS_LINE 4842
+<<<<<<< HEAD
 alt_version/
+=======
+>>>>>>> 9bbc4b7 (minor changes)
+# DEL_THIS_LINE 16408
