@@ -11,7 +11,7 @@ start=`date +%s`
 #e --track-allocation=user
 julia \
     -O3 --min-optlevel=3 \
-    examples/run_queries_test.jl sfile \
+    examples/run_queries_test.jl file \
                              data/sigspatial/ \
                              sigspatial.txt
 end=`date +%s`
