@@ -138,7 +138,7 @@ function  Base.getindex( P::PolygonsInDir, s::String)
 end
 
 function   read_polygons_in_dir( base_dir, f_parallel::Bool )
-    limit::Int64 = 50000;
+    limit::Int64 = 1000000;
 
     count::Int64 = 0;
     P = PolygonsInDir( Vector{PolygonHierarchy}(),
@@ -161,8 +161,8 @@ function   read_polygons_in_dir( base_dir, f_parallel::Bool )
             poly = Polygon_read_file( base_dir * file );
             width = frechet_width_approx( poly );
 
-            assert( length( poly ) > 1 );
-            
+            @assert( cardin( poly ) > 1 );
+
             push!( P.polys, poly );
             push!( P.widths, width );
             P.d[ file ] = length( P.polys );
