@@ -28,8 +28,9 @@ function ph_push!( ph::PolygonHierarchy, Q::Polygon2F, w::Float64 )
 end
 
 
-function  ph_push_target_exp( ph::PolygonHierarchy, w::Float64 )
-    P = ph.P;
+function  ph_push_target_exp( ph::PolygonHierarchy, w::Float64,
+                              P::Polygon2F )
+    #P = ph.P;
 
     if  ( cardin( P ) <= 10 )
         return  true;
@@ -96,10 +97,17 @@ function ph_init( P::Polygon2F )
 end
 
 
+#global mx::Float64 = 0.0;
+
 function  compute_simp_hierarchy( P::Polygon2F )
     #ph = ph_init( P );
     phA = ph_init( P );
 
+    w_init = w = phA.widths[ 1 ];
+    #println( "Before simplify..." );
+    PA, PA_indices = frechet_simplify_to_width( P, w * 1e-6 );
+    #println( "After simplify..." );
+    println( cardin( P ), " => ", cardin( PA ) );
     #card = cardin( P );
 
     ratio::Float64 = 4.0
@@ -109,13 +117,14 @@ function  compute_simp_hierarchy( P::Polygon2F )
         #ph_push_target( ph,      w )  &&  break;
 
         wA = last( phA.widths ) / ratio;
-        ph_push_target_exp( phA,     wA )  &&  break;
+        ph_push_target_exp( phA,     wA, P )  &&  break;
     end
 
     #ph_print( P, ph );
     #ph_print( P, phA );
+    #global mx = max( mx, w_init / last( phA.widths ) );
+    #println( mx );
     #println( "\n\n\n" );
-
     return  phA;
 end
 
@@ -138,7 +147,7 @@ function  Base.getindex( P::PolygonsInDir, s::String)
 end
 
 function   read_polygons_in_dir( base_dir, f_parallel::Bool )
-    limit::Int64 = 1000000;
+    limit::Int64 = 500;
 
     count::Int64 = 0;
     P = PolygonsInDir( Vector{PolygonHierarchy}(),
@@ -174,7 +183,7 @@ function   read_polygons_in_dir( base_dir, f_parallel::Bool )
         push!( P.PHA, phx );
     end
 
-    println( "Computing simplificiation hierarchies..." );
+    println( "Computing simplification hierarchies..." );
     cnt_ph = AtomicInt( 0 );
 
     if  f_parallel
