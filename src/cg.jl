@@ -1076,10 +1076,10 @@ function  BBox_bound(  bb::BBox{D,T}, pnt::Point{D,T} )  where  {D,T}
     end
 
     for  i in 1:D
-        if  pnt.x[ i ] < bb.mini[ i ]
+        if  pnt[ i ] < bb.mini[ i ]
             bb.mini[ i ] = pnt[ i ];
         end
-        if  pnt.x[ i ] > bb.maxi[ i ]
+        if  pnt[ i ] > bb.maxi[ i ]
             bb.maxi[ i ] = pnt[ i ];
         end
     end

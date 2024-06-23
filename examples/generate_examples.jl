@@ -106,10 +106,10 @@ end
 function  draw_polygon( cr, P )
     nv::Int64 = cardin( P );
     for  i in 2:nv
-        po = P.pnts[ i - 1 ];
-        p = po.x;
-        qo = P.pnts[ i ];
-        q = qo.x;
+        p = P.pnts[ i - 1 ];
+        #p = po.x;
+        q = P.pnts[ i ];
+        #q = qo.x;
         move_to( cr,  p[1], p[2] )
         line_to( cr, q[1], q[2] );
         #println( q[1], " ", q[2] );
@@ -1453,7 +1453,6 @@ function  create_demo( title::String,
 
     println( "Creating: ", title );
 
-             
     if  ! isdir( prefix )
         mkdir( prefix );
     end
