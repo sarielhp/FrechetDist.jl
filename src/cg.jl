@@ -56,6 +56,18 @@ function  norm(p::Point{D,T} ) where {D,T}
     return  norm( p.x );
 end
 
+function  mult(z::T, p::Point{D,T}) where  {D,T}
+    return  Point( z * p.x );
+end
+function  mult(p::Point{D,T}, z::T) where  {D,T}
+    return  Point( z * p.x );
+end
+
+#function  Base.:/( p::Point{D,T}, z ) where  {D,T}
+function  pnt_div( p::Point{D,T}, z::T ) where  {D,T}
+    return  Point( (one(T) / z) * p.x );
+end
+
 function  normalize(p::Point{D,T} ) where {D,T}
     x = norm( p );
     if  x == 0
@@ -66,31 +78,29 @@ function  normalize(p::Point{D,T} ) where {D,T}
     return  p;
 end
 
-function  Base.:*(z, p::Point{D,T}) where  {D,T}
-    return  Point( z * p.x );
-end
-function  Base.:/( p::Point{D,T}, z ) where  {D,T}
-    return  Point( (1.0/z) * p.x );
-end
 
 
-function  Base.:-(p::Point{D,T}, q::Point{D,T}) where  {D,T}
+#function  Base.:-(p::Point{D,T}, q::Point{D,T}) where  {D,T}
+function  sub(p::Point{D,T}, q::Point{D,T}) where  {D,T}
     u = p.x - q.x;
     return  Point( u );
 end
-function  Base.:+(p::Point{D,T}, q::Point{D,T}) where  {D,T}
+
+
+#function  Base.:+(p::Point{D,T}, q::Point{D,T}) where  {D,T}
+function  add(p::Point{D,T}, q::Point{D,T}) where  {D,T}
     u = p.x + q.x;
     return  Point( u );
 end
 
-function  Base.:*(p::Point{D,T}, c::T) where  {D,T}
-    u = p.x * c;
-    return  Point( u );
-end
-function  Base.:*(p::Point{D,T}, c::S) where  {D,T,S}
-    u = p.x * c;
-    return  Point( u );
-end
+#function  Base.:*(p::Point{D,T}, c::T) where  {D,T}
+#    u = p.x * c;
+#    return  Point( u );
+#end
+#function  Base.:*(p::Point{D,T}, c::S) where  {D,T,S}
+#    u = p.x * c;
+#    return  Point( u );
+#end
 
 function  dot( p::Point{D,T}, q::Point{D,T}) where  {D,T}
     return  LinearAlgebra.dot( p.x, q.x );
@@ -127,6 +137,16 @@ function  Dist(p::Point{D,T}, q::Point{D,T}) where {D,T}
     return  sqrt( sum ) #norm( p1.x - p2.x );
 end
 
+function  convex_comb( p::Point{D,T}, q::Point{D,T}, t::Float64 ) where{D,T}
+    if  ( 0 <= t <= 0.000001 )
+        return  p;
+    end
+    if  ( 0.99999 < t <= 1.0 )
+        return  q;
+    end
+
+    return  add( mult( p, 1.0-t), mult( q, t ) );
+end
 
 
 ######################################################################
@@ -265,19 +285,9 @@ function  Segment{D,T}() where{D,T}
 end
 
 function  Segment_get_on( seg::Segment{D,T}, t::Float64 ) where{D,T}
-    v::Point{D,T} = seg.p * (1.0-t) + seg.q * t;
+    return convex_comb( seg.p, seg.q, t );
 end
 
-function  convex_comb( p::Point{D,T}, q::Point{D,T}, t::Float64 ) where{D,T}
-    if  ( 0 <= t <= 0.000001 )
-        return  p;
-    end
-    if  ( 0.99999 < t <= 1.0 )
-        return  q;
-    end
-
-    return  p * (1.0-t) + q * t;
-end
 
 
 function Base.show(io::IO, s::Segment{D,T}) where {D,T}
@@ -312,13 +322,13 @@ end
 
 # Get nearest point on segment...
 """
-    induced_seg_nn_point
+    iseg_nn_point
 
 Returns the closest point to the segment induced by the first two
 points, to the query point. By avoiding creating the segment iself, it
 is hopeflly more efficient.
 """
-function  induced_seg_nn_point( s_p::Point{D,T}, s_q::Point{D,T},
+function  iseg_nn_point( s_p::Point{D,T}, s_q::Point{D,T},
                                 qr::Point{D,T} ) where {D,T}
     # v(t) = p*(1-t) + q * t
     #      = p + t*(q-p)
@@ -330,8 +340,8 @@ function  induced_seg_nn_point( s_p::Point{D,T}, s_q::Point{D,T},
     # The minimum distance is achived at
     #    t^* = -b/(2a).
     a = DistSq( s_p, s_q );
-    b = 2.0* dot( s_p-qr, s_q - s_p );
-    t = -b /(2.0 * a);
+    b = 2.0* dot( sub(s_p, qr), sub(s_q, s_p) );
+    t::T = -b /(2.0 * a);
 
     if  ( t < 0 )
         t = 0;
@@ -339,7 +349,7 @@ function  induced_seg_nn_point( s_p::Point{D,T}, s_q::Point{D,T},
     if  ( t > 1 )
         t = 1;
     end
-    pon = s_p*(1-t) + s_q * t;
+    pon = convex_comb( s_p, s_q, t );
 
     lon = DistSq(qr, pon);
     lp = DistSq(qr, s_p);
@@ -361,9 +371,9 @@ function  iseg_iseg_dist( a_p::Point{D,T}, a_q::Point{D,T},
     # v(s,t) = a_p*(1-s) + a_q * s - b_p*(1-t) - b_q * t
     #      = (a_p - b_p)  +  s * (a_q-a_p)  +  t * (b_p-b_q)
     #      = v_1  +  s * v_2  +  t * v_3
-    v_1 = a_p - b_p;
-    v_2 = a_q - a_p;
-    v_3 = b_p - b_q;
+    v_1 = sub(a_p, b_p);
+    v_2 = sub(a_q, a_p);
+    v_3 = sub(b_p,  b_q);
 
     #=
 
@@ -398,10 +408,10 @@ function  iseg_iseg_dist( a_p::Point{D,T}, a_q::Point{D,T},
     if  ( rk == 1 )
         # The minimum distance is realized by one of the endpoints.
         d = min(
-            dist_seg_nn_point( a_p, a_q, b_p ),
-            dist_seg_nn_point( a_p, a_q, b_q ),
-            dist_seg_nn_point( b_p, b_q, a_p ),
-            dist_seg_nn_point( b_p, b_q, a_q ) );
+            dist_iseg_nn_point( a_p, a_q, b_p ),
+            dist_iseg_nn_point( a_p, a_q, b_q ),
+            dist_iseg_nn_point( b_p, b_q, a_p ),
+            dist_iseg_nn_point( b_p, b_q, a_q ) );
         return  d;
     end
     #=
@@ -438,10 +448,10 @@ function  iseg_iseg_dist( a_p::Point{D,T}, a_q::Point{D,T},
     d::Float64 =  Dist( convex_comb( a_p, a_q, s ),
         convex_comb( b_p, b_q, t ) );
 
-    d = min( d, dist_seg_nn_point( a_p, a_q, b_p ),
-                dist_seg_nn_point( a_p, a_q, b_q ),
-                dist_seg_nn_point( b_p, b_q, a_p ),
-                dist_seg_nn_point( b_p, b_q, a_q ) );
+    d = min( d, dist_iseg_nn_point( a_p, a_q, b_p ),
+                dist_iseg_nn_point( a_p, a_q, b_q ),
+                dist_iseg_nn_point( b_p, b_q, a_p ),
+                dist_iseg_nn_point( b_p, b_q, a_q ) );
 
     
     da = Dist( a_p, b_p );
@@ -476,13 +486,13 @@ end
 # qr : the query point.
 #############################################
 """
-    dist_seg_nn_point
+    dist_iseg_nn_point
 
 Returns the *distance* to the closest point lying on the segment induced by
 the first two points, to the query point. By avoiding creating the
 segment iself, it is hopeflly more efficient.
 """
-function dist_seg_nn_point( s_p::Point{D,T}, s_q::Point{D,T}, qr::Point{D,T}
+function dist_iseg_nn_point( s_p::Point{D,T}, s_q::Point{D,T}, qr::Point{D,T}
 )  where {D,T}
     # v(t) = p*(1-t) + q * t
     #      = p + t*(q-p)
@@ -496,10 +506,10 @@ function dist_seg_nn_point( s_p::Point{D,T}, s_q::Point{D,T}, qr::Point{D,T}
     #        So D(t) = a*t^2 + b t + c
     # The minimum distance is achived at
     #    t^* = -b/(2a).
-    dff = s_p - qr;
+    dff = sub( s_p, qr );
 
     a = DistSq( s_p, s_q );
-    b = 2.0* dot( dff, s_q - s_p );
+    b = 2.0* dot( dff, sub( s_q, s_p ) );
 
     c = dot( dff, dff );
 
@@ -526,7 +536,7 @@ Returns the closest point on the segment `s` to the query point `qr`.
 
 """
 function  Segment_nn_point( s::Segment{D,T}, qr::Point{D,T} ) where {D,T}
-    return   induced_seg_nn_point( s.p, s.q, qr );
+    return   iseg_nn_point( s.p, s.q, qr );
 end
 
 
@@ -761,7 +771,7 @@ function  Polygon_split_edges( P::Polygon{D,T} ) where {D,T}
         return  Q;
     end;
     for  i in 1:l-1
-        p::Point{D,T} = ( P[ i ] + P[ i + 1 ] )/2.0;
+        p::Point{D,T} = convex_comb( P[ i ], P[ i + 1 ], 0.5 );
         Polygon_push_smart( Q, P[ i ] );
         Polygon_push_smart( Q, p );
     end
@@ -947,7 +957,7 @@ function  Polygon_get_point_on( poly, prefix_len, t )
     delta = prefix_len[ i ] - prefix_len[ i - 1 ];  # length of segment
     x = (t - prefix_len[ i - 1 ]) / delta;
 
-    return  poly.pnts[ i - 1 ] * ( one(x) - x) +  poly.pnts[ i ] * x;
+    return  convex_comb( poly.pnts[ i - 1 ], poly.pnts[ i ], x );
 end
 
 
@@ -1225,12 +1235,17 @@ export Polygon, Polygon2I, Point, Point2I
 export BBox
 export point
 export BBox2F, Segment2F, Polygon2F, Point2F
-#
+
+# Basic operations on points
+
+export  add, sub, mult, norm
+
+# 
 export  BBox_init, BBox_bound, BBox_expand, BBox_print, BBox_width
 export  cardin, Dist, DistSq, VecPolygon2F
 export  BBox_bottom_left, BBox_top_right
 
-export  induced_seg_nn_point
+export  iseg_nn_point
 
 export  iseg_iseg_dist
 
@@ -1265,7 +1280,7 @@ export  Polygon_edge_length
 
 export  VecPnts_as_matrix
 
-export  dist_seg_nn_point
+export  dist_iseg_nn_point
 
 export  convex_comb
 

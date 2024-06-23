@@ -138,7 +138,7 @@ function  Base.getindex( P::PolygonsInDir, s::String)
 end
 
 function   read_polygons_in_dir( base_dir )
-    limit::Int64 = 500;
+    limit::Int64 = 50000;
  
     count::Int64 = 0;
     P = PolygonsInDir( Vector{PolygonHierarchy}(),
@@ -249,7 +249,8 @@ function frechet_decider_PID( PID, i, j, r )::Int64
         P_a = P_ph.polys[ i ];
         Q_a = Q_ph.polys[ i ];
 
-        @time m_leash = frechet_ve_r_compute_mono_dist( P_a, Q_a, ub );
+        #@time
+        m_leash = frechet_ve_r_compute_mono_dist( P_a, Q_a, ub );
 
         #=
         m = frechet_ve_r_compute( P_a, Q_a );
@@ -452,7 +453,7 @@ function  test_files( PID, base_dir, queries_file, prefix,
         #end;
     end
 
-    println( "Text completed on : ", queries_file );
+    #println( "Text completed on : ", queries_file );
 
     #print( df );
 end

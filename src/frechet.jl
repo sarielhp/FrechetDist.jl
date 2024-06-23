@@ -99,7 +99,7 @@ function  ve_event_value( c::FRContext{N,T}, id::Int64 ) where {N,T}
                 return  Dist( P[ i ], Q[ j ] );
             end
         end
-        d = dist_seg_nn_point( Q[ j ], Q[ j + 1 ], c.P[ i ] );
+        d = dist_iseg_nn_point( Q[ j ], Q[ j + 1 ], c.P[ i ] );
         if  c.f_offsets
 #            if  ( c.q_offs[ j ] > 0 )
 #                println( "Larger than 0!" );
@@ -114,7 +114,7 @@ function  ve_event_value( c::FRContext{N,T}, id::Int64 ) where {N,T}
     end
 
     if  EID_j_is_vert( id )
-        d = dist_seg_nn_point( P[ i ], P[ i + 1 ], Q[ j ] );
+        d = dist_iseg_nn_point( P[ i ], P[ i + 1 ], Q[ j ] );
         if  c.f_offsets
 # Old code: Bug?
 #            return  d - c.p_offs[ i ];
@@ -352,7 +352,7 @@ function   compute_leash_from_arr( P::Polygon{N,T},
             if ( low == hi )
                 curr = curr + 1;
                 leash = max( leash,
-                             dist_seg_nn_point( q_a, q_b,
+                             dist_iseg_nn_point( q_a, q_b,
                                                 P[ EID_i( eid_start ) ] ) );
                 continue;
             end
@@ -379,7 +379,7 @@ function   compute_leash_from_arr( P::Polygon{N,T},
             if ( low == hi )
                 curr = curr + 1;
                 leash = max( leash,
-                             dist_seg_nn_point( p_a, p_b,
+                             dist_iseg_nn_point( p_a, p_b,
                                                 Q[ EID_j( eid_start ) ] ) );
                 continue;
             end

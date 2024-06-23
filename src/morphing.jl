@@ -504,7 +504,7 @@ function  eval_pl_func_on_dim( p::Point{N,T}, q::Point{N,T}, val::Float64,
     @assert( p[ d ] <= q[ d ] );
     t = (val - p[d]) / (q[d] - p[d]);
 
-    return  p * (1.0 - t) + q * t;
+    return  convex_comb( p, q, t );
 end
 
 function  eval_pl_func( p::Point2F, q::Point2F, val::Float64 )
@@ -695,7 +695,7 @@ function  get_point(
     if  ( t == 1 )
         return  P[ i + 1 ], 1.0;
     end
-    p =  P[ i ] * (1.0 - t) + P[i + 1] * t;
+    p = convex_comb( P[ i ], P[i + 1], t );
 #    println( "inside... 4" );
     return p, t;
 end

@@ -86,12 +86,12 @@ function  get_event_points( c::SDContext{N,T}, id::Int64 ) where {N,T}
             return  P[ i ], Q[ j ];
         end
 
-        q = induced_seg_nn_point( Q[ j ], Q[ j + 1 ], P[ i ] );
+        q = iseg_nn_point( Q[ j ], Q[ j + 1 ], P[ i ] );
         return  P[ i ], q;
     end
 
     if  EID_j_is_vert( id )
-        p = induced_seg_nn_point( P[ i ], P[ i + 1 ], Q[ j ] );
+        p = iseg_nn_point( P[ i ], P[ i + 1 ], Q[ j ] );
         return  p, Q[ j ];
     end
 
