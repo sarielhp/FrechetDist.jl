@@ -23,6 +23,7 @@ mutable struct  PolygonHierarchy
 end
 
 function ph_push!( ph::PolygonHierarchy, Q::Polygon2F, w::Float64 )
+    @assert( cardin( Q ) > 1 )
     push!( ph.polys, Q );
     push!( ph.widths, w );
 end

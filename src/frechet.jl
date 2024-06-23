@@ -422,7 +422,6 @@ function   frechet_ve_r_compute_mono_dist( P::Polygon{N,T},
     end_id = EID( c.n_p, true, c.n_q, true );
     f_r_schedule_event( start_id, start_id, c );
 
-    end_event_id::Int64 = 0;
     heapAlt = c.heapAlt;
     while  ! isempty( heapAlt )
         tp = pop!( heapAlt );
@@ -441,10 +440,8 @@ function   frechet_ve_r_compute_mono_dist( P::Polygon{N,T},
         if  ( i >= n_pm )  &&  ( j >= n_qm )
             # Is it the *final* event?
             if  ( i == c.n_p )  &&  ( j == c.n_q )
-                end_event_id = id;
                 break;
             end
-            # Is it on the boundary of the final cell?
             if  is_final_cell( id, c.n_p, c.n_q )
                 f_r_schedule_event( end_id, id, c );
                 continue;
@@ -454,7 +451,7 @@ function   frechet_ve_r_compute_mono_dist( P::Polygon{N,T},
         f_r_schedule_event( EID( i, false, j+1, true ), id, c );
     end
 
-    out_arr = f_r_extract_solution_ids( P, Q, end_event_id, start_id, c.dict );
+    out_arr = f_r_extract_solution_ids( P, Q, end_id, start_id, c.dict );
 
     leash = compute_leash_from_arr( P, Q, out_arr )
 
