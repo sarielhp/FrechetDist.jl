@@ -290,6 +290,11 @@ function  f_r_extract_solution_ids( P::Polygon{N,T}, Q,
     while  ( curr != start_event_id )
         push!( out_arr, curr );
         prev = curr;
+        if  ! haskey( dict, curr )
+            println( "start_event_id: ", start_event_id );
+            println( "end_event_id: ", end_event_id );
+            println( "|P|: ", cardin( P ) );
+        end
         curr = dict[ prev ];
     end
     push!( out_arr, curr );
