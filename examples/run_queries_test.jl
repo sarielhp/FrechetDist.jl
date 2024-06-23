@@ -175,7 +175,8 @@ function   read_polygons_in_dir( base_dir )
     println( "Computing simplificiation hierarchies..." );
     cnt_ph = AtomicInt( 0 );
 
-    Threads.@threads for  i  in 1:length(P.polys)
+    #Threads.@threads
+    for  i  in 1:length(P.polys)
         #println( i );
         poly = P.polys[ i ];
         ph = compute_simp_hierarchy( poly )
