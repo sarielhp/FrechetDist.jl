@@ -1572,25 +1572,6 @@ function  find_frechet_prefix_inner( P::Polygon{D,T},
     return  find_frechet_prefix_inner( P, ind_start, mid, j, w );
 end
 
-
-function  exp_search_width_prefix( P::Polygon{N,T},
-                                   start::Int64,
-                                   w::Float64 ) where {N,T}
-    len = cardin( P );
-    hi::Int64 = min( start + 2, len );
-
-    ( hi >= len )  &&  return  hi;
-
-    while  hi < len
-        r = frechet_width_approx( P, start:hi )
-        ( r > w )  &&  return  min( hi + 10, len );
-        hi = start + 2 * ( hi - start )
-    end
-
-    return  len;
-end
-
-
 function  find_frechet_prefix( P::Polygon{D,T}, i::Int64,
     j::Int64, w::T )  where {D,T}
     r = frechet_width_approx( P, i:j )
@@ -1599,7 +1580,6 @@ function  find_frechet_prefix( P::Polygon{D,T}, i::Int64,
     end
     return  find_frechet_prefix_inner( P, i, i, j, w );
 end
-
 
 function  frechet_simplify_to_width( P::Polygon{D,T}, w::T ) where {D,T}
     pout = Polygon{D,T}();
@@ -1617,8 +1597,7 @@ function  frechet_simplify_to_width( P::Polygon{D,T}, w::T ) where {D,T}
     next_ind::Int64 = 1;
     card = cardin( P );
     while  true
-        hi = len #exp_search_width_prefix( P, curr_ind, w );
-        next_ind = find_frechet_prefix( P, curr_ind, hi, w )
+        next_ind = find_frechet_prefix( P, curr_ind, card, w )
         #println( "next_ind: ", next_ind );
         @assert( next_ind > curr_ind );
         push!( pindices, next_ind );
