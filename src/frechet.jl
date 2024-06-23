@@ -1641,6 +1641,73 @@ function  frechet_simplify_to_cardin( P::Polygon{D,T}, sz::Int64 ) where {D,T}
     end
 end
 
+
+
+
+
+
+
+
+
+
+
+
+
+###########################################################################
+
+
+
+function  exp_search_width_prefix( P::Polygon{N,T},
+                                   start::Int64,
+                                   w::Float64 ) where {N,T}
+    len = cardin( P );
+    hi::Int64 = min( start + 2, len );
+
+    ( hi >= len )  &&  return  hi;
+
+    while  hi < len
+        r = frechet_width_approx( P, start:hi )
+        ( r > w )  &&  return  min( hi + 10, len );
+        hi = start + 2 * ( hi - start )
+    end
+
+    return  len;
+end
+
+
+function  frechet_simplify_w_exp( P::Polygon{D,T}, w::T ) where {D,T}
+    pout = Polygon{D,T}();
+    pindices = Vector{Int64}();
+
+    len = cardin( P );
+    if  ( len == 0 )
+        return pout;
+    end
+    if  ( Polygon_push_smart( pout, P[1] ) )
+        push!( pindices, 1 );
+    end
+
+    curr_ind = 1;
+    next_ind::Int64 = 1;
+    card = cardin( P );
+    while  true
+        hi = exp_search_width_prefix( P, curr_ind, w );
+        next_ind = find_frechet_prefix( P, curr_ind, hi, w )
+        #println( "next_ind: ", next_ind );
+        @assert( next_ind > curr_ind );
+        push!( pindices, next_ind );
+        push!( pout,  P[ next_ind ] );
+        if  next_ind == card
+            return  pout, pindices;
+        end
+        curr_ind = next_ind;
+    end
+end
+
+
+
+
+
 #
 # End of file
 ##########################################################################

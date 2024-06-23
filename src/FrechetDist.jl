@@ -57,7 +57,7 @@ export  frechet_width_approx
 export  frechet_offsets
 export  frechet_ve_r_compute_mono_dist
 
-    
+
 export  frechet_mono_via_refinement, frechet_mono_via_refinement_ext
 
 export  frechet_ve_r_compute_ext
@@ -68,6 +68,7 @@ export  frechet_dist_upper_bound
 
 export  frechet_simplify_to_width
 export  frechet_simplify_to_cardin
+export  frechet_simplify_w_exp
 
 export  frechet_c_approx
 export  frechet_c_compute
