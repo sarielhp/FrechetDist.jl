@@ -237,7 +237,7 @@ function   SweepDist_compute( P::Polygon{N,T}, Q::Polygon{N,T} ) where {N,T}
         SW_schedule_event( EID( i, false, j+1, true ), id, c );
     end
 
-    pes, qes = f_r_extract_solution( P, Q, id_end, c.prev_map );
+    pes, qes = f_r_extract_solution( P, Q, id_end, start_id, c.prev_map );
 
     morph::Morphing{N,T} = Morphing_init( P, Q, pes, qes );
     morph.iters = iters;

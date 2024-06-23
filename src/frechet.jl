@@ -219,6 +219,7 @@ end
 
 function  f_r_extract_solution( P::Polygon{N,T}, Q,
                                 end_event_id::Int64,
+                                start_id::Int64,
                                 dict::DictVERType
                                 ) where {N,T}
     #############################################################3
@@ -277,14 +278,16 @@ end
 
 
 function  f_r_extract_solution_ids( P::Polygon{N,T}, Q,
-                                    end_event_id::Int64, dict
+                                    end_event_id::Int64,
+                                    start_event_id::Int64,
+                                    dict
                                     ) where {N,T}
     out_arr = Vector{Int64}();
 
     push!( out_arr, end_event_id );
 
     curr = end_event_id;
-    while  ! is_start_event( curr )
+    while  ( curr != start_event_id )
         push!( out_arr, curr );
         prev = curr;
         curr = dict[ prev ];
@@ -446,7 +449,7 @@ function   frechet_ve_r_compute_mono_dist( P::Polygon{N,T},
         f_r_schedule_event( EID( i, false, j+1, true ), id, c );
     end
 
-    out_arr = f_r_extract_solution_ids( P, Q, end_event_id, c.dict );
+    out_arr = f_r_extract_solution_ids( P, Q, end_event_id, start_id, c.dict );
 
     leash = compute_leash_from_arr( P, Q, out_arr )
 
@@ -529,7 +532,7 @@ function   frechet_ve_r_compute_ext( P::Polygon{N,T},
     end
 
     #@time
-    pes, qes = f_r_extract_solution( P, Q, end_id, c.dict );
+    pes, qes = f_r_extract_solution( P, Q, end_id, start_id, c.dict );
 
     morph::Morphing{N,T} = Morphing_init( P, Q, pes, qes );
     morph.iters = iters;
