@@ -432,6 +432,7 @@ function  test_files( PID, base_dir, queries_file, prefix,
 
         fl_a = base_dir * df[i,1];
         fl_b = base_dir * df[i,2];
+        println( fl_a, "  ", fl_b );
         #println( "=======================================" );
         rad = parse( Float64, df[i,3] );
         if  ! haskey( PID.d, s_a )
