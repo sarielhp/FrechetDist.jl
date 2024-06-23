@@ -137,9 +137,9 @@ function  Base.getindex( P::PolygonsInDir, s::String)
     return   P.polys[ P.d[ s ] ];
 end
 
-function   read_polygons_in_dir( base_dir )
+function   read_polygons_in_dir( base_dir, f_parallel::Bool )
     limit::Int64 = 50000;
- 
+
     count::Int64 = 0;
     P = PolygonsInDir( Vector{PolygonHierarchy}(),
                        Vector{Polygon2F}(), Vector{Float64}(),
@@ -175,17 +175,29 @@ function   read_polygons_in_dir( base_dir )
     println( "Computing simplificiation hierarchies..." );
     cnt_ph = AtomicInt( 0 );
 
-    Threads.@threads for  i  in 1:length(P.polys)
-        #println( i );
-        poly = P.polys[ i ];
-        ph = compute_simp_hierarchy( poly )
-        P.PHA[ i ] = ph;
-        Threads.atomic_add!( cnt_ph, 1 )
-        if  ( cnt_ph[] & 0xff) == 0
-            print( cnt_ph[], "        \r" );
+    if  f_parallel
+        Threads.@threads for  i  in 1:length(P.polys)
+            #println( i );
+            poly = P.polys[ i ];
+            ph = compute_simp_hierarchy( poly )
+            P.PHA[ i ] = ph;
+            Threads.atomic_add!( cnt_ph, 1 )
+            if  ( cnt_ph[] & 0xff) == 0
+                print( cnt_ph[], "        \r" );
+            end
+        end
+    else
+        for  i  in 1:length(P.polys)
+            #println( i );
+            poly = P.polys[ i ];
+            ph = compute_simp_hierarchy( poly )
+            P.PHA[ i ] = ph;
+            Threads.atomic_add!( cnt_ph, 1 )
+            if  ( cnt_ph[] & 0xff) == 0
+                print( cnt_ph[], "        \r" );
+            end
         end
     end
-
     return P;
 end
 
@@ -507,7 +519,7 @@ function  test_files_from_file( filename, base_dir,
     println( "filename::: ", filename );
     println( "base_dir ", base_dir );
 
-    PID = read_polygons_in_dir( base_dir );
+    PID = read_polygons_in_dir( base_dir, ! f_serial );
 
     lines = rlines[i_main:length( rlines )];
     nr = length( lines );
