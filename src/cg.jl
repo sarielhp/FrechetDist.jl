@@ -26,9 +26,12 @@ using DelimitedFiles
     and `T` for underlying type.
 
 """
-mutable struct Point{D,T}
-    x::MVector{D,T}
-end
+# POINT
+# mutable struct Point{D,T}
+#    x::MVector{D,T}
+# end
+
+Point{D,T} = MVector{D,T};
 
 function Point{D,T}() where  {D,T}
 #    x::MVector{D,T} = zeros( T, D );
@@ -36,13 +39,17 @@ function Point{D,T}() where  {D,T}
     return  Point{D,T}( zeros( T, D ) );
 end
 
+#= POINT 
 function  Base.getindex(p::Point{D,T}, i::Int) where {D,T}
-    return   p.x[ i ];
+   return   p.x[ i ];
 end
+=#
 
+#= POINT
 function  Base.setindex!(p::Point{D,T}, v, i::Int) where {D,T}
     p.x[ i ] = v;
 end
+=#
 
 function  norm(p::MVector{D,T} ) where {D,T}
     sum = 0;
@@ -52,20 +59,25 @@ function  norm(p::MVector{D,T} ) where {D,T}
     return  sqrt( sum );
 end
 
+#=
 function  norm(p::Point{D,T} ) where {D,T}
     return  norm( p.x );
 end
+=#
 
 function  mult(z::T, p::Point{D,T}) where  {D,T}
-    return  Point( z * p.x );
+    return  z * p;
+    ### POINT    return  Point( z * p.x );
 end
 function  mult(p::Point{D,T}, z::T) where  {D,T}
-    return  Point( z * p.x );
+    return  p * z;
+    # POINT    return  Point( z * p.x );
 end
 
 #function  Base.:/( p::Point{D,T}, z ) where  {D,T}
 function  pnt_div( p::Point{D,T}, z::T ) where  {D,T}
-    return  Point( (one(T) / z) * p.x );
+    return  p / z;
+    # POINT    return  Point( (one(T) / z) * p.x );
 end
 
 function  normalize(p::Point{D,T} ) where {D,T}
@@ -82,15 +94,19 @@ end
 
 #function  Base.:-(p::Point{D,T}, q::Point{D,T}) where  {D,T}
 function  sub(p::Point{D,T}, q::Point{D,T}) where  {D,T}
-    u = p.x - q.x;
-    return  Point( u );
+    #= POINT u = p.x - q.x;
+    u = p - q;
+    return  Point( u ); =#
+    return  p - q;
 end
 
 
 #function  Base.:+(p::Point{D,T}, q::Point{D,T}) where  {D,T}
 function  add(p::Point{D,T}, q::Point{D,T}) where  {D,T}
-    u = p.x + q.x;
+    #= POINT u = p.x + q.x;
     return  Point( u );
+    =#
+    return  p + q;
 end
 
 #function  Base.:*(p::Point{D,T}, c::T) where  {D,T}
@@ -103,16 +119,16 @@ end
 #end
 
 function  dot( p::Point{D,T}, q::Point{D,T}) where  {D,T}
-    return  LinearAlgebra.dot( p.x, q.x );
+    return  LinearAlgebra.dot( p, q );
 end
 
 # Define standard lexicographical ordering on points
 function Base.isless( p::Point{D,T}, q::Point{D,T} ) where {D,T}
     for i in 1:D
-        if  p.x[ i ] < q.x[ i ]
+        if  p[ i ] < q[ i ]
             return  true;
         else
-            if  p.x[ i ] > q.x[ i ]
+            if  p[ i ] > q[ i ]
                 return  false;
             end
         end
@@ -123,7 +139,7 @@ end
 function  DistSq(p::Point{D,T}, q::Point{D,T}) where {D,T}
     sum = 0.0;
     for  i in 1:D
-        sum = sum + ( p.x[i] - q.x[i] )^2
+        sum = sum + ( p[i] - q[i] )^2
     end
 
     return  sum  #norm( p1.x - p2.x );
@@ -131,7 +147,7 @@ end
 function  Dist(p::Point{D,T}, q::Point{D,T}) where {D,T}
     sum = 0.0;
     for  i in 1:D
-        sum = sum + ( p.x[i] - q.x[i] )^2
+        sum = sum + ( p[i] - q[i] )^2
     end
 
     return  sqrt( sum ) #norm( p1.x - p2.x );
@@ -189,8 +205,8 @@ end
 function  BBox_init( bb::BBox{D,T}, p, q ) where  {D,T}
     f_init = true;
     for  i in 1:D
-        bb.mini[ i ] = min( p.x[i ], q.x[ i ] );
-        bb.maxi[ i ] = max( p.x[i ], q.x[ i ] );
+        bb.mini[ i ] = min( p[i ], q[ i ] );
+        bb.maxi[ i ] = max( p[i ], q[ i ] );
     end
 end
 
@@ -604,8 +620,9 @@ end
 
 
 function  Polygon_translate!( P::Polygon{D,T}, v::Point{D,T} ) where {D,T}
-    for  p in P.pnts
-        p.x = p.x - v.x;
+    for  i in 1:length(P.pnts)
+        # POINT p.x = p.x - v.x;
+        P.pnts[i] = sub( P.pnts[i], v );
     end
 
     return P;
@@ -650,7 +667,7 @@ end
 function  Polygon_as_matrix( P::Polygon{D,T} ) where {D,T}
     m = zeros( T, D, length( P.pnts ) );
     for  i in 1:length( P.pnts )
-        m[:,i] = P.pnts[ i ].x;
+        m[:,i] = P.pnts[ i ];
     end
     return  m;
 end
@@ -671,7 +688,7 @@ end
 function  VecPnts_as_matrix( v::Vector{Point{D,T}} ) where {D,T}
     m = zeros( T, D, length( v ) );
     for  i in 1:length( v )
-        m[:,i] = v[ i ].x;
+        m[:,i] = v[ i ];
     end
     return  m;
 end
@@ -700,7 +717,7 @@ end
 function Base.show(io::IO, p::Point{D,T}) where {D,T}
     print( io, "(" );
     for i in 1:D
-        print( io, p.x[i] );
+        print( io, p[i] );
         if   i < D
             print( io, ", " );
         end
@@ -1035,12 +1052,12 @@ end
 
 
 
-distance(p1::Point{D,T}, p2::Point{D,T}) where {D,T} = norm(p1.x - p2.x)
+distance(p1::Point{D,T}, p2::Point{D,T}) where {D,T} = norm( sub( p1, p2) )
 
 function distance(y::Point{D,T}, l::Line{D,T}) where {D,T}
     p, u = l.p, l.u
 
-    t = (y.x - p) ⋅ u / (u ⋅ u)
+    t = dot( (y - p), u ) / dot( u, u )
     x = Point(p + t*u)
 
     return Dist(x, y)
@@ -1053,17 +1070,17 @@ function  BBox_bound(  bb::BBox{D,T}, pnt::Point{D,T} )  where  {D,T}
     if  ! bb.f_init
 #        println( "BB INIT!" );
         bb.f_init = true;
-        bb.mini = deepcopy( pnt.x );
-        bb.maxi = deepcopy( pnt.x );
+        bb.mini = deepcopy( pnt );
+        bb.maxi = deepcopy( pnt );
         return
     end
 
     for  i in 1:D
         if  pnt.x[ i ] < bb.mini[ i ]
-            bb.mini[ i ] = deepcopy(pnt.x[ i ]);
+            bb.mini[ i ] = pnt[ i ];
         end
         if  pnt.x[ i ] > bb.maxi[ i ]
-            bb.maxi[ i ] = deepcopy( pnt.x[ i ] );
+            bb.maxi[ i ] = pnt[ i ];
         end
     end
 end
