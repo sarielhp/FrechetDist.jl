@@ -161,6 +161,8 @@ function   read_polygons_in_dir( base_dir, f_parallel::Bool )
             poly = Polygon_read_file( base_dir * file );
             width = frechet_width_approx( poly );
 
+            assert( length( poly ) > 1 );
+            
             push!( P.polys, poly );
             push!( P.widths, width );
             P.d[ file ] = length( P.polys );
