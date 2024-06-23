@@ -9,7 +9,9 @@ find data/queries/sigspatial -type f > sigspatial.txt
 
 start=`date +%s`
 #e --track-allocation=user
-julia    examples/run_queries_test.jl sfile \
+julia \
+    -O3 --min-optlevel=3 \
+    examples/run_queries_test.jl sfile \
                              data/sigspatial/ \
                              sigspatial.txt
 end=`date +%s`
