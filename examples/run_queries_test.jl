@@ -31,23 +31,17 @@ end
 
 function  ph_push_target_exp( ph::PolygonHierarchy, w::Float64,
                               P::Polygon2F, lmt::Int64, w_extra::Float64 )
-    #P = ph.P;
-
-    if  ( cardin( P ) <= 10 )
-        return  true;
-    end
-
     T, T_indices = frechet_simplify_w_exp( P, w );
-
-    # No point continuing...
-    if  ( cardin( T ) > lmt )
-        return  true;
-    end
     mr = frechet_c_mono_approx_subcurve( P, T, T_indices )[ 1 ];
+    new_w = mr.leash + w_extra
 
-    ph_push!( ph, T, mr.leash + w_extra );
+    if  ( ( cardin( last( ph.polys ) ) + 4 ) > cardin( T ) )
+        return  new_w;
+    end
 
-    return  false;
+    ph_push!( ph, T, new_w );
+
+    return  new_w;
 end
 
 
@@ -105,37 +99,27 @@ function  compute_simp_hierarchy( P::Polygon2F )
     phA = ph_init( P );
 
     w = phA.widths[ 1 ];
-    #println( "Before simplify..." );
-    w_L = w / 100.0;
-    PL, PL_indices = frechet_simplify_to_width( P, w_L );
-#    w_S = w / 500.0;
-#    PS, PS_indices = frechet_simplify_to_width( P, w_S );
-    #println( "After simplify..." );
-    #println( cardin( P ), " => ", cardin( PA ) );
-    #card = cardin( P );
 
-    ratio::Float64 = 1.4
-    lmt::Int64 = min( round( Int64, cardin( P )/ 3), 50 );
-    for  i in 1:30
-        #println( "i ", i );
-        #w = last( ph.widths ) / ratio;
-        #ph_push_target( ph,      w )  &&  break;
-
-        wA = last( phA.widths ) / ratio;
-#        if  ( wA > 20.0*w_L )
-#            ph_push_target_exp( phA,     wA, PL, lmt, w_L )  &&  break;
-#        else
-            ph_push_target_exp( phA,     wA, P, lmt, 0.0 )  &&  break;
-#        end
-    end
-
-    #ph_print( P, ph );
-    #ph_print( P, phA );
-    #println( "w_used: ", w_used );
+    wL = w / 500.0;
+    PL, PL_indices = frechet_simplify_to_width( P, wL );
+    mr = frechet_c_mono_approx_subcurve( P, PL, PL_indices )[ 1 ];
+    wL = mr.leash;
     
-    #global mx = max( mx, w_init / last( phA.widths ) );
-    #println( mx );
-    #println( "\n\n\n" );
+    ratio::Float64 = 1.4
+    lmt::Int64 = min( round( Int64, cardin( P ) * 0.95 ), 500 );
+    for  i in 1:200
+        if cardin( last( phA.polys ) ) >= lmt
+            break
+        end
+        wA = w / ratio;
+        if  ( wA > 20.0 * wL )
+            w = ph_push_target_exp( phA,     wA, PL, lmt, wL )
+        else
+            w = ph_push_target_exp( phA,     wA, P, lmt, 0.0 )
+        end
+    end
+    ph_push!( phA, P, 0.0 );
+
     return  phA;
 end
 
@@ -274,16 +258,18 @@ function frechet_decider_PID( PID, i, j, r )::Int64
 
     ratio::Float64 = 5.0;
     delta = min( abs( r - lb ), abs( r - ub ) );
-    mi = min( length( P_ph.polys ), length( Q_ph.polys ) );
-    for  i in 2:mi
-        w_P = P_ph.widths[ i ];
-        w_Q = Q_ph.widths[ i ];
+    mi = max( length( P_ph.polys ), length( Q_ph.polys ) );
+    for  iv in 2:mi
+        iP = min( iv, length( P_ph.widths ) );
+        iQ = min( iv, length( Q_ph.widths ) );
+        w_P = P_ph.widths[ iP ];
+        w_Q = Q_ph.widths[ iQ ];
 
         if  ( ( w_P + w_Q ) > delta )
             continue;
         end
-        P_a = P_ph.polys[ i ];
-        Q_a = Q_ph.polys[ i ];
+        P_a = P_ph.polys[ iP ];
+        Q_a = Q_ph.polys[ iQ ];
 
         m_leash = frechet_ve_r_compute_mono_dist( P_a, Q_a, ub );
 

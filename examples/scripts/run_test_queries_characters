@@ -15,7 +15,7 @@ start=`date +%s`
 
 #julia -O3 --min-optlevel=3  \
 julia \
-             examples/run_queries_test.jl file \
+             examples/run_queries_test.jl sfile \
                              data/characters/ \
                              characters.txt
 end=`date +%s`
