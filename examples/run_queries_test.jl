@@ -132,23 +132,18 @@ function ph_init( P::Polygon2F )
     w = frechet_width_approx( P );
     ph_push!( ph, Polygon_spine( P ), w );
 
-    resolution::Float64 = 1.1;
-    ph_approx( ph, w /    2.0, resolution );
-    ph_approx( ph, w /    3.0, resolution );
-    ph_approx( ph, w /    4.0, resolution );
-    ph_approx( ph, w /    6.0, resolution );
-    ph_approx( ph, w /    8.0, resolution );
-    ph_approx( ph, w /   10.0, resolution );
-    ph_approx( ph, w /   16.0, resolution );
-    ph_approx( ph, w /   32.0, resolution );
-    ph_approx( ph, w /   45.0, resolution );
-    ph_approx( ph, w /   64.0, resolution );
-    ph_approx( ph, w /  128.0, resolution );
-    ph_approx( ph, w /  256.0, resolution );
-    ph_approx( ph, w /  400.0, resolution );
-    ph_approx( ph, w /  800.0, resolution );
-    ph_approx( ph, w / 1200.0, resolution );
+    resolution::Float64 = 1.09;
+    retio::Float64 = 1.1;
+    mult::Float64 = 1.1;
+    for  i  in 1:30
+        ratio = ratio * mult;
+        if  ratio > 1400
+            break;
+        end
 
+        ph_approx( ph, w / ratio, resolution );
+    end
+    
     return  ph;
 end
 
@@ -479,13 +474,13 @@ function frechet_decider_PID( PID, i, j, r )::Int64
         PA, wP = ph_approx( P_ph, w_trg );
         QA, wQ = ph_approx( Q_ph, w_trg );
 
-        
-        
+
+
         if  (     ( cardin( PA ) > round(Int64, cardin( P ) * 0.9 ) )
               ||  ( cardin( QA ) > round(Int64, cardin( Q ) * 0.9 ) ) )
             break;
         end
-            
+
         #print( "delta: ", delta, "  wP: ", wP, "  wQ: ", wQ, "  " );
         #println( cardin( PA ), " / ", cardin( P ),  "   |   ",
         #         cardin( QA ), " / ", cardin( Q ) );
