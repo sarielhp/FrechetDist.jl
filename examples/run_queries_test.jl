@@ -132,6 +132,9 @@ function ph_init( P::Polygon2F )
     w = frechet_width_approx( P );
     ph_push!( ph, Polygon_spine( P ), w );
 
+    ph_approx( ph, w / 4.0 );
+    ph_approx( ph, w / 16.0 );
+
     return  ph;
 end
 
@@ -680,7 +683,7 @@ function  do_array( PID, lines, base_dir, nr,
                     i_second::Int64 = 1 )
     for  i in eachindex( lines )
         r = lines[ i ]
-        prefix = @sprintf( "[%d/%d] ", i, length( lines ) );
+        prefix = @sprintf( "  [%d/%d] ", i, length( lines ) );
         test_files( PID, base_dir, r, prefix, count, i_second );
         #if ( count[] > 1000 )
         #    return;
