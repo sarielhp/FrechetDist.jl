@@ -86,16 +86,22 @@ end
 
 function   ph_approx( ph::PolygonHierarchy, w::Float64 )
 
+    resolution::Float64 = 4.0;
+    simp_threshold::Float64 = 4.0;
+
+    resolution, simp_rsolution = 1.1, 4.0; 
+    
     #println( "---------------------" );
     for  i  in  1:length(ph.widths)
         #println( ph.widths[ i ] );
-        if  ( ph.widths[ i ] < w <= ( 1.1 * ph.widths[ i ] ) )
+        if  ( ph.widths[ i ] < w <= ( resolution * ph.widths[ i ] ) )
             #println( "Bingo!" );
             return  ph.polys[ i ], ph.widths[ i ]
         end
     end
 
-    Z, Z_indices, wZ = frechet_approx_from_pallete( ph.P, ph.plt, w / 4.0 );
+    Z, Z_indices, wZ = frechet_approx_from_pallete( ph.P, ph.plt,
+                                                    w / simp_threshold );
     #w = ph_push_target_exp( phA,   max( wA - wZ, 0.0 ), Z, lmt, wZ )
 
     wtmp = max( w-wZ, 0.0 );
