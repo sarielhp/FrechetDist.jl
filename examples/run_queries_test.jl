@@ -86,7 +86,7 @@ end
 
 function   ph_approx( ph::PolygonHierarchy, w::Float64 )
 
-    resolution::Float64 = 2.0;
+    resolution::Float64 = 1.4;
     simp_threshold::Float64 = 4.0;
 
     #resolution, simp_rsolution = 1.1, 4.0; # 242 seconds
@@ -140,6 +140,8 @@ function ph_init( P::Polygon2F )
     ph_approx( ph, w / 64.0 );
     ph_approx( ph, w / 128.0 );
     ph_approx( ph, w / 256.0 );
+    ph_approx( ph, w / 400.0 );
+    ph_approx( ph, w / 800.0 );
 
     return  ph;
 end
