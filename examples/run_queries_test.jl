@@ -133,7 +133,10 @@ function ph_init( P::Polygon2F )
     ph_push!( ph, Polygon_spine( P ), w );
 
     ph_approx( ph, w / 4.0 );
+    ph_approx( ph, w / 8.0 );
     ph_approx( ph, w / 16.0 );
+    ph_approx( ph, w / 32.0 );
+    ph_approx( ph, w / 64.0 );
 
     return  ph;
 end
