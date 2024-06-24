@@ -19,7 +19,7 @@ mutable struct  PolygonHierarchy
     len::Float64;
     P::Polygon2F;
     plt::Vector{Float64};
-    
+
     polys::Vector{Polygon2F};
     widths::Vector{Float64};
 
@@ -86,6 +86,15 @@ end
 
 function   ph_approx( ph::PolygonHierarchy, w::Float64 )
 
+    #println( "---------------------" );
+    for  i  in  1:length(ph.widths)
+        #println( ph.widths[ i ] );
+        if  ( ph.widths[ i ] < w <= ( 1.4 * ph.widths[ i ] ) )
+            #println( "Bingo!" );
+            return  ph.polys[ i ], ph.widths[ i ]
+        end
+    end
+
     Z, Z_indices, wZ = frechet_approx_from_pallete( ph.P, ph.plt, w / 4.0 );
     #w = ph_push_target_exp( phA,   max( wA - wZ, 0.0 ), Z, lmt, wZ )
 
@@ -93,6 +102,12 @@ function   ph_approx( ph::PolygonHierarchy, w::Float64 )
 
     X, X_indices = frechet_simplify_w_exp( Z, wtmp );
     mX = frechet_c_mono_approx_subcurve( Z, X, X_indices )[ 1 ];
+
+    w_out = mX.leash + wZ;
+
+    push!( ph.polys, X );
+    push!( ph.widths, w_out );
+
     return  X, mX.leash + wZ;
 end
 
@@ -123,7 +138,7 @@ function  compute_simp_hierarchy( P::Polygon2F )
     #=
     ratio::Float64 = 1.4
     lmt::Int64 = min( round( Int64, cardin( P ) * 0.95 ), 500 );
-    #=f_large::Bool = false; 
+    #=f_large::Bool = false;
     if  cardin( P ) > 1000
         #println( "LARGE" );
         ratio = 8.0;
@@ -141,7 +156,7 @@ function  compute_simp_hierarchy( P::Polygon2F )
     elseif  cardin( P ) > 100
         lmt = 50;
     end=#
-    
+
     for  i in 1:200
         if cardin( last( phA.polys ) ) >= lmt
             break
@@ -158,10 +173,10 @@ function  compute_simp_hierarchy( P::Polygon2F )
     end
 #    ph_push!( phA, P, 0.0 );
     #ph_print( phA );
-    
+
     #f_large && ph_print( P, phA );
     =#
-    
+
     return  phA;
 end
 
@@ -203,7 +218,7 @@ function   read_polygons_in_dir( base_dir, f_parallel::Bool )
             if  ( count > limit  )
                 break;
             end
-            if  (count & 0xfff) == 0xfff 
+            if  (count & 0xfff) == 0xfff
                 println( count, "  Reading: ", base_dir * file, "      \r" );
             end
             poly = Polygon_read_file( base_dir * file );
@@ -430,7 +445,7 @@ function frechet_decider_PID( PID, i, j, r )::Int64
     ratio::Float64 = 5.0;
     delta = min( abs( r - lb ), abs( r - ub ) );
     mi = max( length( P_ph.polys ), length( Q_ph.polys ) );
-    for  iv in 2:mi
+    while  true
         w_trg = delta / 2.0
         PA, wP = ph_approx( P_ph, w_trg );
         QA, wQ = ph_approx( Q_ph, w_trg );
