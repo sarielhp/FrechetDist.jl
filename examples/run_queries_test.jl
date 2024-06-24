@@ -135,7 +135,7 @@ function ph_init( P::Polygon2F )
     resolution::Float64 = 1.009;
     ratio::Float64 = 1.0;
     mult::Float64 = 4.0;
-    for  i  in 1:200
+    for  i  in 1:0
         ratio = ratio * mult;
         if  ratio > 1000
             break;
