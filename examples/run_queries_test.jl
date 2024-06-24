@@ -32,6 +32,10 @@ end
 function  ph_push_target_exp( ph::PolygonHierarchy, w::Float64,
                               P::Polygon2F, lmt::Int64, w_extra::Float64 )
     T, T_indices = frechet_simplify_w_exp( P, w );
+    if  ( cardin( T ) > lmt )
+        return  -1.0;
+    end
+
     mr = frechet_c_mono_approx_subcurve( P, T, T_indices )[ 1 ];
     new_w = mr.leash + w_extra
 
@@ -100,25 +104,45 @@ function  compute_simp_hierarchy( P::Polygon2F )
 
     w = phA.widths[ 1 ];
 
-    wL = w / 500.0;
-    PL, PL_indices = frechet_simplify_to_width( P, wL );
-    mr = frechet_c_mono_approx_subcurve( P, PL, PL_indices )[ 1 ];
-    wL = mr.leash;
+    wL = 0.0;
+    PL = P;
     
     ratio::Float64 = 1.4
     lmt::Int64 = min( round( Int64, cardin( P ) * 0.95 ), 500 );
+    f_large::Bool = false; 
+    if  cardin( P ) > 1000
+        #println( "LARGE" );
+        ratio = 8.0;
+        lmt = 500;
+        wL = w / 1000.0;
+        PL, PL_indices = frechet_simplify_to_width( P, wL );
+        mr = frechet_c_mono_approx_subcurve( P, PL, PL_indices )[ 1 ];
+        wL = mr.leash;
+        #println( "|PL| ", cardin( PL ), "  |P|: ", cardin( P ),
+        #         "  wL: ", wL );
+        f_large = true;
+    elseif  cardin( P ) > 500
+        reatio = 2.0;
+        lmt = 250;
+    elseif  cardin( P ) > 100
+        lmt = 50;
+    end
+    
     for  i in 1:200
         if cardin( last( phA.polys ) ) >= lmt
             break
         end
         wA = w / ratio;
-        if  ( wA > 20.0 * wL )
+        if  ( wA > wL )
             w = ph_push_target_exp( phA,     wA, PL, lmt, wL )
         else
             w = ph_push_target_exp( phA,     wA, P, lmt, 0.0 )
         end
+        ( w < -0.5 )  &&  break;
     end
-    ph_push!( phA, P, 0.0 );
+#    ph_push!( phA, P, 0.0 );
+
+    #f_large && ph_print( P, phA );
 
     return  phA;
 end
