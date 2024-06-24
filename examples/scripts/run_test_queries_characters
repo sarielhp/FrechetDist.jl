@@ -13,6 +13,7 @@ start=`date +%s`
 # sfile: Run the test using a single thread...
 
 
+# BINGO
 #julia -O3 --min-optlevel=3  \
 julia \
              examples/run_queries_test.jl sfile \
