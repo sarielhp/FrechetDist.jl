@@ -18,8 +18,11 @@ AtomicInt = Threads.Atomic{Int}
 mutable struct  PolygonHierarchy
     len::Float64;
     P::Polygon2F;
+    plt::Vector{Float64};
+    
     polys::Vector{Polygon2F};
     widths::Vector{Float64};
+
 end
 
 function ph_push!( ph::PolygonHierarchy, Q::Polygon2F, w::Float64 )
@@ -36,9 +39,19 @@ function  ph_push_target_exp( ph::PolygonHierarchy, w::Float64,
         return  -1.0;
     end
 
-    mr = frechet_c_mono_approx_subcurve( P, T, T_indices )[ 1 ];
-    new_w = mr.leash + w_extra
+    mT = frechet_c_mono_approx_subcurve( P, T, T_indices )[ 1 ];
+    new_w = mT.leash + w_extra;
 
+    #mZ = frechet_c_mono_approx_subcurve( P, Z, Z_indices )[ 1 ];
+
+    #=
+    println( "\n-----------------------------" );
+    println( "w  : ", w );
+    println( "wZ : ", wZ );
+    println( "    |T|: ", cardin( T ), " w(T): ", mT.leash );
+    println( "plt |Z|: ", cardin( Z ), " w(Z): ", mZ.leash );
+    =#
+    
     if  ( ( cardin( last( ph.polys ) ) + 4 ) > cardin( T ) )
         return  new_w;
     end
@@ -73,7 +86,8 @@ function  ph_push_target( ph::PolygonHierarchy, w::Float64 )
 end
 
 
-function  ph_print( P::Polygon2F,  ph::PolygonHierarchy )
+function  ph_print( ph::PolygonHierarchy )
+    P = ph.P
     println( "--------------------------------------------" );
     println( "|P|: ", cardin( P ) );
     for  i  in  1:length( ph.widths )
@@ -85,9 +99,10 @@ end
 
 
 function ph_init( P::Polygon2F )
-    ph = PolygonHierarchy( 0.0, P, Vector{Polygon2F}(),
+    ph = PolygonHierarchy( 0.0, P, Vector{Int64}(), Vector{Polygon2F}(),
                            Vector{Float64}() );
     ph.len = Polygon_length( P );
+    ph.plt = frechet_pallete( P );
 
     w = frechet_width_approx( P );
     ph_push!( ph, Polygon_spine( P ), w );
@@ -104,12 +119,12 @@ function  compute_simp_hierarchy( P::Polygon2F )
 
     w = phA.widths[ 1 ];
 
-    wL = 0.0;
-    PL = P;
+    #wL = 0.0;
+#    PL = P;
     
     ratio::Float64 = 1.4
     lmt::Int64 = min( round( Int64, cardin( P ) * 0.95 ), 500 );
-    f_large::Bool = false; 
+    #=f_large::Bool = false; 
     if  cardin( P ) > 1000
         #println( "LARGE" );
         ratio = 8.0;
@@ -126,22 +141,25 @@ function  compute_simp_hierarchy( P::Polygon2F )
         lmt = 250;
     elseif  cardin( P ) > 100
         lmt = 50;
-    end
+    end=#
     
     for  i in 1:200
         if cardin( last( phA.polys ) ) >= lmt
             break
         end
         wA = w / ratio;
-        if  ( wA > wL )
-            w = ph_push_target_exp( phA,     wA, PL, lmt, wL )
-        else
-            w = ph_push_target_exp( phA,     wA, P, lmt, 0.0 )
-        end
+
+        Z, Z_indices, wZ = frechet_approx_from_pallete( P, phA.plt, wA / 10.0 );
+
+        w = ph_push_target_exp( phA,   max( wA - wZ, 0.0 ), Z, lmt, wZ )
+#        else
+#            w = ph_push_target_exp( phA,     wA, P, lmt, 0.0 )
+#        end
         ( w < -0.5 )  &&  break;
     end
 #    ph_push!( phA, P, 0.0 );
-
+    #ph_print( phA );
+    
     #f_large && ph_print( P, phA );
 
     return  phA;
@@ -166,7 +184,7 @@ function  Base.getindex( P::PolygonsInDir, s::String)
 end
 
 function   read_polygons_in_dir( base_dir, f_parallel::Bool )
-    limit::Int64 = 400000;
+    limit::Int64 = 500000;
 
     count::Int64 = 0;
     P = PolygonsInDir( Vector{PolygonHierarchy}(),

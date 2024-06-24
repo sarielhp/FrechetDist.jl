@@ -73,6 +73,9 @@ export  frechet_simplify_w_exp
 export  frechet_c_approx
 export  frechet_c_compute
 
+export  frechet_pallete
+export  frechet_approx_from_pallete
+
 export  DTW_d_compute;
 
 export  SweepDist_compute;
