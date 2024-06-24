@@ -467,9 +467,9 @@ function frechet_decider_PID( PID, i, j, r )::Int64
             break;
         end
             
-        print( "delta: ", delta, "  wP: ", wP, "  wQ: ", wQ, "  " );
-        println( cardin( PA ), " / ", cardin( P ),  "   |   ",
-                 cardin( QA ), " / ", cardin( Q ) );
+        #print( "delta: ", delta, "  wP: ", wP, "  wQ: ", wQ, "  " );
+        #println( cardin( PA ), " / ", cardin( P ),  "   |   ",
+        #         cardin( QA ), " / ", cardin( Q ) );
 
         m_leash = frechet_ve_r_compute_mono_dist( PA, QA, ub );
 
@@ -495,7 +495,7 @@ function frechet_decider_PID( PID, i, j, r )::Int64
         if  ( ub < r )
             return  -1;
         end
-        delta = min( abs( m_leash - r ), delta / 2.0 );
+        delta = min( abs( m_leash - r ), delta / 1.4 );
     end
 
 #    println( "SHOGI!" );
