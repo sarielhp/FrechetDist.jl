@@ -106,7 +106,7 @@ function  compute_simp_hierarchy( P::Polygon2F )
 
     w = phA.widths[ 1 ];
     #println( "Before simplify..." );
-    w_L = w / 40.0;
+    w_L = w / 80.0;
     PL, PL_indices = frechet_simplify_to_width( P, w_L );
 #    w_S = w / 500.0;
 #    PS, PS_indices = frechet_simplify_to_width( P, w_S );
@@ -454,7 +454,7 @@ function  test_files( PID, base_dir, queries_file, prefix,
 
         fl_a = base_dir * df[i,1];
         fl_b = base_dir * df[i,2];
-        println( fl_a, "  ", fl_b );
+        # println( fl_a, "  ", fl_b );
         #println( "=======================================" );
         rad = parse( Float64, df[i,3] );
         if  ! haskey( PID.d, s_a )
