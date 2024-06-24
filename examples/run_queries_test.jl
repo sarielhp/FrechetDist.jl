@@ -144,8 +144,8 @@ function ph_init( P::Polygon2F )
         ph_approx( ph, w / ratio, resolution );
     end
     println( "\n\n" );
-    
-    ph_print( ph );
+
+    #ph_print( ph );
     return  ph;
 end
 
