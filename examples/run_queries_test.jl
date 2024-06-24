@@ -133,11 +133,11 @@ function ph_init( P::Polygon2F )
     ph_push!( ph, Polygon_spine( P ), w );
 
     resolution::Float64 = 1.09;
-    ratio::Float64 = 1.1;
-    mult::Float64 = 1.1;
+    ratio::Float64 = 1.0;
+    mult::Float64 = 1.4;
     for  i  in 1:30
         ratio = ratio * mult;
-        if  ratio > 1400
+        if  ratio > 2000
             break;
         end
 
