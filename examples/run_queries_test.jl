@@ -617,7 +617,7 @@ function  test_files( PID, base_dir, queries_file, prefix,
                       count::AtomicInt,
                       i_second::Int64 = 1
                       )
-    println( "test_file: ", queries_file, prefix );
+    println( prefix, " : ", queries_file );
     df = CSV.read( queries_file, DataFrame, types=String, header=false );
 
     tests = Vector{test_info_t}();
@@ -683,7 +683,7 @@ function  do_array( PID, lines, base_dir, nr,
                     i_second::Int64 = 1 )
     for  i in eachindex( lines )
         r = lines[ i ]
-        prefix = @sprintf( "  [%d/%d] ", i, length( lines ) );
+        prefix = @sprintf( "[%3d/%d]", i, length( lines ) );
         test_files( PID, base_dir, r, prefix, count, i_second );
         #if ( count[] > 1000 )
         #    return;
