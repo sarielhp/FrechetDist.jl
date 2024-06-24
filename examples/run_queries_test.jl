@@ -86,7 +86,7 @@ end
 
 function   ph_approx( ph::PolygonHierarchy, w::Float64 )
 
-    Z, Z_indices, wZ = frechet_approx_from_pallete( ph.P, ph.plt, w / 10.0 );
+    Z, Z_indices, wZ = frechet_approx_from_pallete( ph.P, ph.plt, w / 4.0 );
     #w = ph_push_target_exp( phA,   max( wA - wZ, 0.0 ), Z, lmt, wZ )
 
     wtmp = max( w-wZ, 0.0 );
