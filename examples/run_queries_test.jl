@@ -94,7 +94,7 @@ function   ph_approx( ph::PolygonHierarchy, w::Float64 )
     #resolution, simp_rsolution = 8.0, 4.0; # 213
     #resolution, simp_rsolution = 1.4, 4.0; # 215
     #resolution, simp_rsolution = 1.4, 2.0; # 215
-    resolution, simp_rsolution = 4.0, 2.0; # 214
+    resolution, simp_rsolution = 4.0, 4.0; # 214
 
     #println( "---------------------" );
     for  i  in  1:length(ph.widths)
@@ -462,8 +462,8 @@ function frechet_decider_PID( PID, i, j, r )::Int64
         PA, wP = ph_approx( P_ph, w_trg );
         QA, wQ = ph_approx( Q_ph, w_trg );
 
-        if  ( ( cardin( PA ) > cardin( P ) / 3 )
-              ||  ( cardin( QA ) > cardin( Q ) / 3 ) )
+        if  ( ( cardin( PA ) > cardin( P ) / 2 )
+              ||  ( cardin( QA ) > cardin( Q ) / 2 ) )
             break;
         end
             
