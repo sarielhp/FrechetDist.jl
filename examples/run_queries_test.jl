@@ -85,7 +85,7 @@ end
 
 
 function   ph_approx( ph::PolygonHierarchy, w::Float64,
-                      resolution::Float64 = 2.0 )
+                      resolution::Float64 = 2.1 )
 
     simp_threshold::Float64 = 4.0;
 
