@@ -456,12 +456,13 @@ function frechet_decider_PID( PID, i, j, r )::Int64
     ratio::Float64 = 5.0;
     delta = min( abs( r - lb ), abs( r - ub ) );
     #mi = max( length( P_ph.polys ), length( Q_ph.polys ) );
+    println( "\n" );
     while  true
-        w_trg = delta / 2.0
+        w_trg = delta # / 2.0
         PA, wP = ph_approx( P_ph, w_trg );
         QA, wQ = ph_approx( Q_ph, w_trg );
 
-        println( "delta: ", delta, "  wP: ", wP, "  wQ: ", wQ );
+        println( "\ndelta: ", delta, "  wP: ", wP, "  wQ: ", wQ );
         println( cardin( PA ), " / ", cardin( P ),  "   |   ",
                  cardin( QA ), " / ", cardin( Q ) );
 
