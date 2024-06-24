@@ -490,7 +490,7 @@ function frechet_decider_PID( PID, i, j, r )::Int64
         if  ( ub < r )
             return  -1;
         end
-        delta = abs( m_leash - r );
+        delta = min( abs( m_leash - r ), delta / 2.0 );
     end
 
 #    println( "SHOGI!" );
