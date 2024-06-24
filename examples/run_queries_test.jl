@@ -177,7 +177,7 @@ function   read_polygons_in_dir( base_dir, f_parallel::Bool )
             if  ( count > limit  )
                 break;
             end
-            if  count & 0x3ff == 0x3ff 
+            if  (count & 0x3ff) == 0x3ff 
                 println( "Reading: ", base_dir * file, "      \r" );
             end
             poly = Polygon_read_file( base_dir * file );
