@@ -462,8 +462,8 @@ function frechet_decider_PID( PID, i, j, r )::Int64
         PA, wP = ph_approx( P_ph, w_trg );
         QA, wQ = ph_approx( Q_ph, w_trg );
 
-        if  ( ( cardin( PA ) > cardin( P ) / 6 )
-              ||  ( cardin( QA ) > cardin( Q ) / 6 ) )
+        if  ( ( cardin( PA ) > cardin( P ) / 3 )
+              ||  ( cardin( QA ) > cardin( Q ) / 3 ) )
             break;
         end
             
