@@ -458,7 +458,7 @@ function frechet_decider_PID( PID, i, j, r )::Int64
     #mi = max( length( P_ph.polys ), length( Q_ph.polys ) );
     println( "\n" );
     while  true
-        w_trg = delta # / 2.0
+        w_trg = delta / 1.5 # / 2.0
         PA, wP = ph_approx( P_ph, w_trg );
         QA, wQ = ph_approx( Q_ph, w_trg );
 
