@@ -277,7 +277,7 @@ function   eid_same_status( arr::Vector{Int64}, curr::Int64, len::Int64 )
 end
 
 
-function  f_r_extract_solution_ids( P::Polygon{N,T}, Q,
+function  f_r_extract_solution_ids( P::Polygon{N,T}, Q::Polygon{N,T},
                                     end_event_id::Int64,
                                     start_event_id::Int64,
                                     dict
@@ -294,6 +294,11 @@ function  f_r_extract_solution_ids( P::Polygon{N,T}, Q,
             println( "start_event_id: ", start_event_id );
             println( "end_event_id: ", end_event_id );
             println( "|P|: ", cardin( P ) );
+            println( "|Q|: ", cardin( Q ) );
+            println( P );
+            println( "----------------------------------" );
+            println( Q );
+            println( "----------------------------------" );
         end
         curr = dict[ prev ];
     end
