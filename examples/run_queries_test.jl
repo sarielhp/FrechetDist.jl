@@ -91,7 +91,8 @@ function   ph_approx( ph::PolygonHierarchy, w::Float64 )
 
     #resolution, simp_rsolution = 1.1, 4.0; # 242 seconds
     # resolution, simp_rsolution = 4.0, 4.0; # 205
-    resolution, simp_rsolution = 8.0, 4.0; # 
+    #resolution, simp_rsolution = 8.0, 4.0; # 213
+    resolution, simp_rsolution = 1.4, 4.0; # 213
     
     #println( "---------------------" );
     for  i  in  1:length(ph.widths)
