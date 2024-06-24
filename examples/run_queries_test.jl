@@ -89,7 +89,7 @@ function   ph_approx( ph::PolygonHierarchy, w::Float64 )
     #println( "---------------------" );
     for  i  in  1:length(ph.widths)
         #println( ph.widths[ i ] );
-        if  ( ph.widths[ i ] < w <= ( 1.4 * ph.widths[ i ] ) )
+        if  ( ph.widths[ i ] < w <= ( 2.0 * ph.widths[ i ] ) )
             #println( "Bingo!" );
             return  ph.polys[ i ], ph.widths[ i ]
         end
