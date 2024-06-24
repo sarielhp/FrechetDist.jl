@@ -453,6 +453,8 @@ function frechet_decider_PID( PID, i, j, r )::Int64
         return  +1;
     end
 
+    println( "=================" );
+    
     ratio::Float64 = 5.0;
     delta = min( abs( r - lb ), abs( r - ub ) );
     mi = max( length( P_ph.polys ), length( Q_ph.polys ) );
