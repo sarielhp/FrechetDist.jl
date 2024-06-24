@@ -106,7 +106,7 @@ function  compute_simp_hierarchy( P::Polygon2F )
 
     w = phA.widths[ 1 ];
     #println( "Before simplify..." );
-    w_L = w / 80.0;
+    w_L = w / 160.0;
     PL, PL_indices = frechet_simplify_to_width( P, w_L );
 #    w_S = w / 500.0;
 #    PS, PS_indices = frechet_simplify_to_width( P, w_S );
