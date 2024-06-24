@@ -114,7 +114,7 @@ function  compute_simp_hierarchy( P::Polygon2F )
     #println( cardin( P ), " => ", cardin( PA ) );
     #card = cardin( P );
 
-    ratio::Float64 = 4.0
+    ratio::Float64 = 1.3
     lmt::Int64 = min( round( Int64, cardin( P )/ 3), 100 );
     for  i in 1:20
         #println( "i ", i );
