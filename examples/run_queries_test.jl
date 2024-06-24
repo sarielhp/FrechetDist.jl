@@ -122,7 +122,7 @@ function  compute_simp_hierarchy( P::Polygon2F )
         #ph_push_target( ph,      w )  &&  break;
 
         wA = last( phA.widths ) / ratio;
-        if  ( wA > 8.0*w_L )
+        if  ( wA > 4.0*w_L )
             ph_push_target_exp( phA,     wA, PL, lmt, w_L )  &&  break;
         else
             ph_push_target_exp( phA,     wA, P, lmt, 0.0 )  &&  break;
