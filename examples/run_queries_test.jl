@@ -116,7 +116,7 @@ function  compute_simp_hierarchy( P::Polygon2F )
 
     ratio::Float64 = 1.3
     lmt::Int64 = min( round( Int64, cardin( P )/ 3), 100 );
-    for  i in 1:20
+    for  i in 1:30
         #println( "i ", i );
         #w = last( ph.widths ) / ratio;
         #ph_push_target( ph,      w )  &&  break;
