@@ -100,7 +100,7 @@ function   ph_approx( ph::PolygonHierarchy, w::Float64 )
     for  i  in  1:length(ph.widths)
         #println( ph.widths[ i ] );
         if  ( ph.widths[ i ] < w <= ( resolution * ph.widths[ i ] ) )
-            println( "Bingo!" );
+            #println( "Bingo!" );
             return  ph.polys[ i ], ph.widths[ i ]
         end
     end
