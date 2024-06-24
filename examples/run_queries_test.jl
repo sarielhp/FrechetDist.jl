@@ -456,7 +456,7 @@ function frechet_decider_PID( PID, i, j, r )::Int64
     ratio::Float64 = 5.0;
     delta = min( abs( r - lb ), abs( r - ub ) );
     #mi = max( length( P_ph.polys ), length( Q_ph.polys ) );
-    println( "\n" );
+    #println( "\n" );
     while  true
         w_trg = delta / 2.0 #1.5 # / 2.0
         PA, wP = ph_approx( P_ph, w_trg );
