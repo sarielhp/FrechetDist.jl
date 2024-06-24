@@ -95,7 +95,7 @@ function   ph_approx( ph::PolygonHierarchy, w::Float64 )
     #resolution, simp_rsolution = 1.4, 4.0; # 215
     #resolution, simp_rsolution = 1.4, 2.0; # 215
     resolution, simp_rsolution = 1.4, 10.0; # 214
-     
+
     #println( "---------------------" );
     for  i  in  1:length(ph.widths)
         #println( ph.widths[ i ] );
@@ -455,11 +455,14 @@ function frechet_decider_PID( PID, i, j, r )::Int64
 
     ratio::Float64 = 5.0;
     delta = min( abs( r - lb ), abs( r - ub ) );
-    mi = max( length( P_ph.polys ), length( Q_ph.polys ) );
+    #mi = max( length( P_ph.polys ), length( Q_ph.polys ) );
     while  true
         w_trg = delta / 2.0
         PA, wP = ph_approx( P_ph, w_trg );
         QA, wQ = ph_approx( Q_ph, w_trg );
+
+        println( cardin( PA ), " / ", cardin( P ),  "   |   ",
+                 cardin( QA ), " / ", cardin( Q ) );
 
         m_leash = frechet_ve_r_compute_mono_dist( PA, QA, ub );
 
