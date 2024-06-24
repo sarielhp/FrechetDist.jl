@@ -87,6 +87,10 @@ end
 function   ph_approx( ph::PolygonHierarchy, w::Float64,
                       resolution::Float64 = 1.4 )
 
+    if  ( cardin( ph.P ) <= 10 )
+        return  ph.P, 0.0;
+    end
+
     simp_threshold::Float64 = 4.0;
 
     #resolution, simp_rsolution = 1.1, 4.0; # 242 seconds
