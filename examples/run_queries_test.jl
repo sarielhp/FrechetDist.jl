@@ -96,7 +96,7 @@ function   ph_approx( ph::PolygonHierarchy, w::Float64 )
     #resolution, simp_rsolution = 1.4, 2.0; # 215
     resolution, simp_rsolution = 1.4, 10.0; # 214
      
-    println( "---------------------" );
+    #println( "---------------------" );
     for  i  in  1:length(ph.widths)
         #println( ph.widths[ i ] );
         if  ( ph.widths[ i ] < w <= ( resolution * ph.widths[ i ] ) )
@@ -453,8 +453,6 @@ function frechet_decider_PID( PID, i, j, r )::Int64
         return  +1;
     end
 
-    println( "=================" );
-    
     ratio::Float64 = 5.0;
     delta = min( abs( r - lb ), abs( r - ub ) );
     mi = max( length( P_ph.polys ), length( Q_ph.polys ) );
