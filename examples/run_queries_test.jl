@@ -42,20 +42,6 @@ function  ph_push_target_exp( ph::PolygonHierarchy, w::Float64,
     mT = frechet_c_mono_approx_subcurve( P, T, T_indices )[ 1 ];
     new_w = mT.leash + w_extra;
 
-    #mZ = frechet_c_mono_approx_subcurve( P, Z, Z_indices )[ 1 ];
-
-    #=
-    println( "\n-----------------------------" );
-    println( "w  : ", w );
-    println( "wZ : ", wZ );
-    println( "    |T|: ", cardin( T ), " w(T): ", mT.leash );
-    println( "plt |Z|: ", cardin( Z ), " w(Z): ", mZ.leash );
-    =#
-    
-    if  ( ( cardin( last( ph.polys ) ) + 4 ) > cardin( T ) )
-        return  new_w;
-    end
-
     ph_push!( ph, T, new_w );
 
     return  new_w;
@@ -98,6 +84,19 @@ function  ph_print( ph::PolygonHierarchy )
 end
 
 
+function   ph_approx( ph::PolygonHierarchy, w::Float64 )
+
+    Z, Z_indices, wZ = frechet_approx_from_pallete( ph.P, ph.plt, w / 10.0 );
+    #w = ph_push_target_exp( phA,   max( wA - wZ, 0.0 ), Z, lmt, wZ )
+
+    wtmp = max( w-wZ, 0.0 );
+
+    X, X_indices = frechet_simplify_w_exp( Z, wtmp );
+    mX = frechet_c_mono_approx_subcurve( Z, X, X_indices )[ 1 ];
+    return  X, mX.leash + wZ;
+end
+
+
 function ph_init( P::Polygon2F )
     ph = PolygonHierarchy( 0.0, P, Vector{Int64}(), Vector{Polygon2F}(),
                            Vector{Float64}() );
@@ -121,7 +120,7 @@ function  compute_simp_hierarchy( P::Polygon2F )
 
     #wL = 0.0;
 #    PL = P;
-    
+    #=
     ratio::Float64 = 1.4
     lmt::Int64 = min( round( Int64, cardin( P ) * 0.95 ), 500 );
     #=f_large::Bool = false; 
@@ -161,7 +160,8 @@ function  compute_simp_hierarchy( P::Polygon2F )
     #ph_print( phA );
     
     #f_large && ph_print( P, phA );
-
+    =#
+    
     return  phA;
 end
 
@@ -263,7 +263,7 @@ end
 ##########################################################################33
 
 
-function frechet_decider_PID( PID, i, j, r )::Int64
+function frechet_decider_PID_old( PID, i, j, r )::Int64
     f_debug::Bool = false;
 
     P = PID.polys[ i ];
@@ -391,6 +391,115 @@ function frechet_decider_PID( PID, i, j, r )::Int64
 
     return  0;
 end
+
+function frechet_decider_PID( PID, i, j, r )::Int64
+    f_debug::Bool = false;
+
+    P = PID.polys[ i ];
+    Q = PID.polys[ j ];
+
+    f_debug && println( "\n\n@@@@@@@@a@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@" );
+    f_debug  &&  println( "|P|: ", cardin( P ), " |Q|: ", cardin( Q ) );
+
+    l_a =  Dist( first( P ), first( Q ) );
+    if  l_a > r
+        return  1;
+    end
+    l_b = Dist( last( P ), last( Q ) );
+    if  l_b > r
+        return  1;
+    end
+    P_ph = PID.PHA[ i ];
+    Q_ph = PID.PHA[ j ];
+
+    w_P = P_ph.widths[ 1 ];
+    w_Q = Q_ph.widths[ 1 ];
+
+    f_debug && print( "w_P  : ", w_P );
+    f_debug && print( "    w_Q  : ", w_Q );
+
+    ub = max( l_a, l_b ) + w_P + w_Q;
+    if  ub < r
+        return  -1;
+    end
+    lb = max( l_a, l_b ) - w_P - w_Q;
+    if  lb > r
+        return  +1;
+    end
+
+    ratio::Float64 = 5.0;
+    delta = min( abs( r - lb ), abs( r - ub ) );
+    mi = max( length( P_ph.polys ), length( Q_ph.polys ) );
+    for  iv in 2:mi
+        w_trg = delta / 2.0
+        PA, wP = ph_approx( P_ph, w_trg );
+        QA, wQ = ph_approx( Q_ph, w_trg );
+
+        m_leash = frechet_ve_r_compute_mono_dist( PA, QA, ub );
+
+        lb = m_leash - wP - wQ
+
+
+        if  f_debug
+            println( "---------------------------------------------------" );
+            println( "|P_a|: ", cardin( PA ) );
+            println( "|Q_a|: ", cardin( QA ) );
+            println( "r    : ", r );
+            println( "ve_l : ", m_leash );
+            println( "w_P  : ", wP );
+            println( "w_Q  : ", wQ );
+            println( "lb A : ", lb );
+        end
+        if  ( lb > r )
+            return  +1;
+        end
+
+        ub = m_leash + wP + wQ
+        f_debug  &&  println( "ub B : ", ub );
+        if  ( ub < r )
+            return  -1;
+        end
+        delta = abs( m_leash - r );
+    end
+
+#    println( "SHOGI!" );
+
+    for  i in 1:10
+#        println( "Iter: ", i );
+        f_debug &&  ( i > 5 )  &&   println( "ratio: ", ratio );
+        m = frechet_c_approx( P, Q, ratio );
+        if  m.leash < r
+            return  -1;
+        end
+        lb = m.leash / m.ratio;
+        if  lb > r
+            return  1;
+        end
+
+        #    ratio = (r / lb min( m.ratio, 1.01 );
+        ratio = ((r / lb) - 1.0) / 2.0 + 1.0; # min( m.ratio, 1.01 );
+        ratio = min( ratio, 1.1 );
+        if  ( ratio <= 1.01 )
+            m = frechet_c_compute( P, Q );
+            if  m.leash > r
+                return  1;
+            end
+            if  m.leash < r
+                return  -1;
+            end
+            return  0;
+        end
+#        if  i > 2
+#            println( "RATIO  ", i, " : ", ratio );
+#        end
+    end
+    f_debug  &&  println( "UNDECIDED" );
+    @assert( false );
+
+    return  0;
+end
+
+
 
 
 function frechet_decider( P::Polygon{D,T}, Q::Polygon{D,T},
