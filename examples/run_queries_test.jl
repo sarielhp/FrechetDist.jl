@@ -30,7 +30,7 @@ end
 
 
 function  ph_push_target_exp( ph::PolygonHierarchy, w::Float64,
-                              P::Polygon2F, lmt::Int64 )
+                              P::Polygon2F, lmt::Int64, w_extra::Float64 )
     #P = ph.P;
 
     if  ( cardin( P ) <= 10 )
@@ -45,7 +45,7 @@ function  ph_push_target_exp( ph::PolygonHierarchy, w::Float64,
     end
     mr = frechet_c_mono_approx_subcurve( P, T, T_indices )[ 1 ];
 
-    ph_push!( ph, T, mr.leash );
+    ph_push!( ph, T, mr.leash + w_extra );
 
     return  false;
 end
@@ -106,7 +106,7 @@ function  compute_simp_hierarchy( P::Polygon2F )
 
     w = phA.widths[ 1 ];
     #println( "Before simplify..." );
-    w_L = w / 20.0;
+    w_L = w / 40.0;
     PL, PL_indices = frechet_simplify_to_width( P, w_L );
 #    w_S = w / 500.0;
 #    PS, PS_indices = frechet_simplify_to_width( P, w_S );
@@ -122,10 +122,10 @@ function  compute_simp_hierarchy( P::Polygon2F )
         #ph_push_target( ph,      w )  &&  break;
 
         wA = last( phA.widths ) / ratio;
-        if  ( wA > 4.0*w_L )
-            ph_push_target_exp( phA,     wA, PL, lmt )  &&  break;
+        if  ( wA > 8.0*w_L )
+            ph_push_target_exp( phA,     wA, PL, lmt, w_L )  &&  break;
         else
-            ph_push_target_exp( phA,     wA, P, lmt )  &&  break;
+            ph_push_target_exp( phA,     wA, P, lmt, 0.0 )  &&  break;
         end
     end
 
@@ -177,7 +177,7 @@ function   read_polygons_in_dir( base_dir, f_parallel::Bool )
             if  ( count > limit  )
                 break;
             end
-            if  (count & 0x3ff) == 0x3ff 
+            if  (count & 0xfff) == 0xfff 
                 println( count, "  Reading: ", base_dir * file, "      \r" );
             end
             poly = Polygon_read_file( base_dir * file );
