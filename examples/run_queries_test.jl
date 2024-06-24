@@ -461,6 +461,7 @@ function frechet_decider_PID( PID, i, j, r )::Int64
         PA, wP = ph_approx( P_ph, w_trg );
         QA, wQ = ph_approx( Q_ph, w_trg );
 
+        println( "delta: ", delta, "  wP: ", wP, "  wQ: ", wQ );
         println( cardin( PA ), " / ", cardin( P ),  "   |   ",
                  cardin( QA ), " / ", cardin( Q ) );
 
