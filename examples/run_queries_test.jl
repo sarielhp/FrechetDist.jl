@@ -132,9 +132,9 @@ function ph_init( P::Polygon2F )
     w = frechet_width_approx( P );
     ph_push!( ph, Polygon_spine( P ), w );
 
-    resolution::Float64 = 1.09;
+    resolution::Float64 = 1.009;
     ratio::Float64 = 1.0;
-    mult::Float64 = 1.4;
+    mult::Float64 = 1.1;
     for  i  in 1:200
         ratio = ratio * mult;
         if  ratio > 20000
