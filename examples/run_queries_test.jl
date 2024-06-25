@@ -421,15 +421,24 @@ function frechet_decider_PID( PID, i, j, r )::Int64
         #println( cardin( PA ), " / ", cardin( P ),  "   |   ",
         #         cardin( QA ), " / ", cardin( Q ) );
 
-        l_min, l_max = frechet_ve_r_compute_range( PA, QA, ub );
+        l_min, l_max = frechet_ve_r_compute_range( PA, QA, ub_start );
 
+        m_verify = frechet_ve_r_compute( PA, QA );
+        l_min_2 = m_verify.leash;
+        m_m_verify = Morphing_monotonize( m_verify )
+        l_max_2 = m_m_verify.leash;
+
+        
+        
         # Are we in the not very common situation that monotonicity is
         # the source of our troubles?
         # 
         if  ( l_min < r < l_max )  &&  ( ( w_P + w_Q ) < ( l_max - l_min ) )
             l_min = l_max = frechet_c_compute( PA, QA );
         end
-        print( l_min, "...", l_max );
+        println( "----" );
+        println( l_min, "...", l_max );
+        println( l_min_2, "...", l_max_2 );
         #=
         mz = frechet_ve_r_compute( PA, QA );
         mm = Morphing_monotonize( mz );
