@@ -411,6 +411,10 @@ function frechet_decider_PID( PID, i, j, r )::Int64
         PA, wP = ph_approx( P_ph, w_trg );
         QA, wQ = ph_approx( Q_ph, w_trg );
 
+        if  ( wP > w_trg ) ||   ( wQ > w_trg )
+            println( "wP: ", wP, " > ", w_trg );
+            println( "wQ: ", wQ, " > ", w_trg );
+        end
         @assert( wP <= w_trg );
         @assert( wQ <= w_trg );
                  
