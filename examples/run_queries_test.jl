@@ -329,7 +329,7 @@ function frechet_decider_PID_slow( PID, i, j, r )::Int64
     end
 
     ratio = 4.0;
-    for  i in 1:10
+    for  i in 1:100
         f_debug &&  ( i > 5 )  &&   println( "ratio: ", ratio );
         m = frechet_c_approx( P, Q, ratio );
         if  m.leash < r
@@ -337,6 +337,7 @@ function frechet_decider_PID_slow( PID, i, j, r )::Int64
         end
         lb = m.leash / m.ratio;
         if  lb > r
+            println( "???????????" );
             return  +1;
         end
 
@@ -344,6 +345,7 @@ function frechet_decider_PID_slow( PID, i, j, r )::Int64
         ratio = min( ratio, 1.1 );
         if  ( ratio <= 1.01 )
             m = frechet_c_compute( P, Q );
+            println( "***" );
             if  m.leash > r
                 return  1;
             end
@@ -634,6 +636,7 @@ function  test_files( PID, base_dir, queries_file, prefix,
                 m = frechet_c_compute( P, Q );
                 println( "sgn     : ", sgn );
                 println( "sgn_a   : ", sgn_a );
+                println( "sign    : ", sign( m.leash - r ) );
                 println( "r       : ", t.rad );
                 println( "m.leash : ", m.leash );
             end
