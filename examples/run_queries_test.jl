@@ -112,18 +112,24 @@ function   ph_approx( ph::PolygonHierarchy, w::Float64,
     Z, Z_indices, wZ = frechet_approx_from_pallete( ph.P, ph.plt,
                                                     w / simp_threshold );
     #w = ph_push_target_exp( phA,   max( wA - wZ, 0.0 ), Z, lmt, wZ )
+    mu = frechet_c_mono_approx_subcurve( ph.P, Z, Z_indices )[ 1 ];
+    diff = mu.leash - wZ;
+    if  ( abs(diff) >= 1e-10 )
+        println( "diff: ", mu.leash - wZ, " ",mu.leash, " ", wZ );
 
+        exit(-1 );
+    end
     wtmp = max( w-wZ, 0.0 );
 
     X, X_indices = frechet_simplify_w_exp( Z, wtmp );
     mX = frechet_c_mono_approx_subcurve( Z, X, X_indices )[ 1 ];
 
-    w_out = mX.leash + wZ;
+    w_out = 1.00001 * (mX.leash + wZ);
 
     push!( ph.polys, X );
     push!( ph.widths, w_out );
 
-    return  X, mX.leash + wZ;
+    return  X, w_out;
 end
 
 
@@ -378,7 +384,7 @@ function frechet_decider_PID( PID, i, j, r )::Int64
     f_debug && print( "w_P  : ", w_P );
     f_debug && print( "    w_Q  : ", w_Q );
 
-    ub = max( l_a, l_b ) + w_P + w_Q;
+    ub_start = ub = max( l_a, l_b ) + w_P + w_Q;
     if  ub < r
         return  -1;
     end
@@ -413,18 +419,35 @@ function frechet_decider_PID( PID, i, j, r )::Int64
         println( cardin( PA ), " / ", cardin( P ),  "   |   ",
                  cardin( QA ), " / ", cardin( Q ) );
 
-        m_leash = frechet_ve_r_compute_mono_dist( PA, QA, ub );
+        l_min, l_max = frechet_ve_r_compute_range( PA, QA, ub );
 
-        lb = m_leash - wP - wQ
-        ub = m_leash + wP + wQ
+        # Are we in the not very common situation that monotonicity is
+        # the source of our troubles?
+        # 
+        if  ( l_min < r < l_max )  &&  ( ( w_P + w_Q ) < ( l_max - l_min ) )
+            l_min = l_max = frechet_c_compute( PA, QA );
+        end
+        #=
+        mz = frechet_ve_r_compute( PA, QA );
+        mm = Morphing_monotonize( mz );
 
+        mx = frechet_c_compute( PA, QA );
+        println( "mx.leash : ", mx.leash );
+        println( "mz.leash : ", mz.leash );
+        println( "mm.leash : ", mm.leash );
+        #m_leash = frechet_ve_r_compute_mono_dist( PA, QA, ub );
+        =#
+        lb = l_min - wP - wQ
+        ub = l_max + wP + wQ
+
+        println( "m_leash  : ", l_max );
         println( "lb: ", lb, "  ub: ", ub, "     r :", r );
         if  f_debug
             println( "---------------------------------------------------" );
             println( "|P_a|: ", cardin( PA ) );
             println( "|Q_a|: ", cardin( QA ) );
             println( "r    : ", r );
-            println( "ve_l : ", m_leash );
+            println( "ve_l : ", l_max );
             println( "w_P  : ", wP );
             println( "w_Q  : ", wQ );
             println( "lb A : ", lb );
@@ -437,7 +460,7 @@ function frechet_decider_PID( PID, i, j, r )::Int64
         if  ( ub < r )
             return  -1;
         end
-        delta = min( abs( m_leash - r ), delta / 1.1 );
+        delta = min( abs( l_max - r ), delta / 1.1 );
     end
 
 #    println( "SHOGI!" );
@@ -603,8 +626,13 @@ function  test_files( PID, base_dir, queries_file, prefix,
         if  ( f_verify )
             sgn_a = frechet_decider_PID_slow( PID, t.i_P, t.i_Q, t.rad )
             if  ( sgn != sgn_a )
-                println( "sgn  : ", sgn );
-                println( "sgn_a: ", sgn_a );
+                P = PID.polys[ t.i_P ];
+                Q = PID.polys[ t.i_Q ];
+                m = frechet_c_compute( P, Q );
+                println( "sgn     : ", sgn );
+                println( "sgn_a   : ", sgn_a );
+                println( "r       : ", t.rad );
+                println( "m.leash : ", m.leash );
             end
             @assert( sgn == sgn_a );
         end

@@ -310,23 +310,26 @@ function  f_r_extract_solution_ids( P::Polygon{N,T}, Q::Polygon{N,T},
 end
 
 
-function    max_leash( leash::T, p_a::Point{N,T}, p_b::Point{N,T},
+function    max_leash( l_min::T, l_max::T, p_a::Point{N,T}, p_b::Point{N,T},
                        P::Polygon{N,T}, low::Int64, hi::Int64 ) where {N,T}
     seg = Segment( p_a, p_b );
     max_t = 0.0;
     for  j in low:hi
         p = P[ j ];
         q = Segment_nn_point( seg, p );
+        dst = Dist( p, q );
+        l_min = max( l_min, dst );
         new_t = Segment_get_convex_coef( seg, q );
         if  ( new_t >= max_t )
             max_t = new_t;
         else # new_t < max_t
             q = Segment_get_on( seg, max_t )
+            dst = Dist( p, q );
+            l_max = max( l_max, dst );
         end
-        leash = max( leash, Dist( p, q ) );
     end
 
-    return  leash;
+    return  l_min, l_max;
 end
 
 function   compute_leash_from_arr( P::Polygon{N,T},
@@ -335,7 +338,8 @@ function   compute_leash_from_arr( P::Polygon{N,T},
                                    ) where {N,T}
     curr::Int64 = 1;
     len::Int64 = length( arr );
-    leash::T = 0.0;
+    l_max::T = 0.0;
+    l_min::T = 0.0;
 
     while  curr <= len
         eid = arr[ curr ];
@@ -344,7 +348,7 @@ function   compute_leash_from_arr( P::Polygon{N,T},
         j = EID_j( eid );
 
         if  EID_i_is_vert( eid )  &&  EID_j_is_vert( eid )
-            leash = max( leash, Dist( P[ i ], Q[ j ] ) );
+            l_min = max( l_min, Dist( P[ i ], Q[ j ] ) );
             curr = curr + 1;
             continue;
         end
@@ -364,14 +368,14 @@ function   compute_leash_from_arr( P::Polygon{N,T},
 
             if ( low == hi )
                 curr = curr + 1;
-                leash = max( leash,
-                             dist_iseg_nn_point( q_a, q_b,
-                                                P[ EID_i( eid_start ) ] ) );
+                l_min = max( l_min, dist_iseg_nn_point( q_a, q_b,
+                                                P[ EID_i( eid_start ) ] )
+                             );
                 continue;
             end
 
-            leash = max_leash( leash, q_a, q_b, P, EID_i( eid_start ),
-                               EID_i( eid_end ) );
+            l_min, l_max = max_leash( l_min, l_max, q_a, q_b, P, EID_i( eid_start ),
+                                      EID_i( eid_end ) );
             curr = hi + 1;
             continue;
         end
@@ -391,13 +395,13 @@ function   compute_leash_from_arr( P::Polygon{N,T},
 
             if ( low == hi )
                 curr = curr + 1;
-                leash = max( leash,
+                l_min = max( l_min,
                              dist_iseg_nn_point( p_a, p_b,
                                                 Q[ EID_j( eid_start ) ] ) );
                 continue;
             end
 
-            leash = max_leash( leash, p_a, p_b, Q, EID_j( eid_start ),
+            l_min, l_max = max_leash( l_min, l_max, p_a, p_b, Q, EID_j( eid_start ),
                                EID_j( eid_end ) );
             curr = hi + 1;
             continue;
@@ -406,14 +410,23 @@ function   compute_leash_from_arr( P::Polygon{N,T},
         @assert( false );
     end
 
-    return  leash;
+    l_max = max( l_min, l_max );
+    return  l_min, l_max;
 end
 
 
-function   frechet_ve_r_compute_mono_dist( P::Polygon{N,T},
-                                           Q::Polygon{N,T},
-                                           upper_bound::T
-                                           ) where {N,T}
+"""
+    frechet_ve_r_compute_range
+
+    Return a range of distances. The lower end is the VE-Frechet
+    distance, the upper end is a constructive upper bound on the
+    Frechet idstnace.
+
+"""
+function   frechet_ve_r_compute_range( P::Polygon{N,T},
+                                       Q::Polygon{N,T},
+                                       upper_bound::T
+                                       ) where {N,T}
     f_debug::Bool = false;
     c::FRContext{N,T} = FR_Context( P, Q )
     c.f_upper_bound = true;
@@ -458,9 +471,9 @@ function   frechet_ve_r_compute_mono_dist( P::Polygon{N,T},
 
     out_arr = f_r_extract_solution_ids( P, Q, end_id, start_id, c.dict );
 
-    leash = compute_leash_from_arr( P, Q, out_arr )
+    l_min, l_max = compute_leash_from_arr( P, Q, out_arr )
 
-    return  leash
+    return  l_min,l_max
 end
 
 
