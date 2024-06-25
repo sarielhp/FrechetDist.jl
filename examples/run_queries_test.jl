@@ -411,6 +411,9 @@ function frechet_decider_PID( PID, i, j, r )::Int64
         PA, wP = ph_approx( P_ph, w_trg );
         QA, wQ = ph_approx( Q_ph, w_trg );
 
+        @assert( wP <= w_trg );
+        @assert( wQ <= w_trg );
+                 
 
 
         if  (     ( cardin( PA ) > round(Int64, cardin( P ) * 0.9 ) )
@@ -422,8 +425,9 @@ function frechet_decider_PID( PID, i, j, r )::Int64
         #println( cardin( PA ), " / ", cardin( P ),  "   |   ",
         #         cardin( QA ), " / ", cardin( Q ) );
 
-        l_min, l_max = frechet_ve_r_compute_range( PA, QA, ub_start );
+        l_min, l_max = frechet_ve_r_compute_range( PA, QA, 2.0+ub_start );
 
+        # VERIFY
         m_verify = frechet_ve_r_compute( PA, QA );
         l_min_2 = m_verify.leash;
         m_m_verify = Morphing_monotonize( m_verify )
@@ -454,7 +458,7 @@ function frechet_decider_PID( PID, i, j, r )::Int64
         lb = l_min - wP - wQ
         ub = l_max + wP + wQ
 
-        println( "   ", lb, "...", ub, "    ", r );
+        println( "RANGE:  ", lb, "...", ub, "    ", r );
 
         #println( "m_leash  : ", l_max );
         #println( "lb: ", lb, "  ub: ", ub, "     r :", r );
@@ -640,8 +644,8 @@ function  test_files( PID, base_dir, queries_file, prefix,
         sgn = frechet_decider_PID( PID, t.i_P, t.i_Q, t.rad );
 
         if  ( f_verify )
-            sgn_a = frechet_decider_PID_slow( PID, t.i_P, t.i_Q, t.rad )
-            if  ( sgn != sgn_a )
+            sgn_slow = frechet_decider_PID_slow( PID, t.i_P, t.i_Q, t.rad )
+            if  ( sgn != sgn_slow )
                 P = PID.polys[ t.i_P ];
                 Q = PID.polys[ t.i_Q ];
                 m = frechet_c_compute( P, Q );
@@ -649,11 +653,11 @@ function  test_files( PID, base_dir, queries_file, prefix,
                 sgn_real::Int64 = round(Int64, sign( m.leash - t.rad ) );
                 if  ( sgn != sgn_real )
                     println( "sgn      : ", sgn );
-                    println( "sgn_a    : ", sgn_a );
+                    println( "sgn_slow : ", sgn_slow );
                     println( "sgn_real : ", sgn_real );
                     println( "r        : ", t.rad );
                     println( "m.leash  : ", m.leash );
-                    @assert( sgn == sgn_a );
+                    @assert( sgn == sgn_slow );
                 end
             end
         end
