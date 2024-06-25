@@ -416,8 +416,9 @@ function frechet_decider_PID( PID, i, j, r )::Int64
         m_leash = frechet_ve_r_compute_mono_dist( PA, QA, ub );
 
         lb = m_leash - wP - wQ
+        ub = m_leash + wP + wQ
 
-
+        println( "lb: ", lb, "  ub: ", ub, "     r :", r );
         if  f_debug
             println( "---------------------------------------------------" );
             println( "|P_a|: ", cardin( PA ) );
@@ -432,7 +433,6 @@ function frechet_decider_PID( PID, i, j, r )::Int64
             return  +1;
         end
 
-        ub = m_leash + wP + wQ
         f_debug  &&  println( "ub B : ", ub );
         if  ( ub < r )
             return  -1;
