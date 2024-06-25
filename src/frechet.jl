@@ -1082,6 +1082,7 @@ function  frechet_c_approx( poly_a::Polygon{N,T},
 
     f_debug::Bool = false;
 
+    t_approx::Float64 = approx;
     @assert( ( cardin( poly_a ) > 1 )  &&  ( cardin( poly_b ) > 1 ) )
     @assert( approx > 1.0 )
 
@@ -1121,8 +1122,8 @@ function  frechet_c_approx( poly_a::Polygon{N,T},
 
             f_debug &&  println( "cardins: ", cardin( P ), " , ",
                                  cardin( Q )  );
-            m = frechet_mono_via_refinement( P, Q,
-                                             3.0/4.0 + approx / 4.0 )[1];
+            t_approx = 3.0/4.0 + t_approx / 4.0
+            m = frechet_mono_via_refinement( P, Q, t_approx )[1];
             d = m.leash;  #        frechet_ve_r_compute_dist( P, Q )
             f_debug  &&  println( "d : ", d );
             if  ( floating_equal( d,0 ) )
@@ -1153,7 +1154,7 @@ function  frechet_c_approx( poly_a::Polygon{N,T},
         m_q = frechet_c_mono_approx_subcurve( poly_b, Q, q_indices )[ 1 ];
         Morphing_swap_sides!( m_q );
 
-        err = max( m_p.leash, m_q.leash );
+        #err = max( m_p.leash, m_q.leash );
         #println( "Error: ", err );
 
         # m = m_p * mm * m_q
@@ -1168,11 +1169,12 @@ function  frechet_c_approx( poly_a::Polygon{N,T},
         f_debug && Morphing_verify_valid( m_q );
         f_debug && Morphing_verify_valid( mmu );
 
-        lbx = d - 2.0*err
+        total_err = m_p.leash + m_q.leash;
+        lbx = (m.leash / t_approx) - total_err;
         if  ( d == 0.0 )
             ratio = 1.0;
         else
-            ratio = mm_out.leash/ lbx;
+            ratio = mm_out.leash / lbx;
         end
         f_debug &&  println( "Ratio :", ratio );
         if  ratio <=  approx
