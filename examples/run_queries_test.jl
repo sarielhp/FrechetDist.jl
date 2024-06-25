@@ -337,7 +337,7 @@ function frechet_decider_PID_slow( PID, i, j, r )::Int64
         end
         lb = m.leash / m.ratio;
         if  lb > r
-            return  1;
+            return  +1;
         end
 
         ratio = ((r / lb) - 1.0) / 2.0 + 1.0; # min( m.ratio, 1.01 );
@@ -427,7 +427,7 @@ function frechet_decider_PID( PID, i, j, r )::Int64
         if  ( l_min < r < l_max )  &&  ( ( w_P + w_Q ) < ( l_max - l_min ) )
             l_min = l_max = frechet_c_compute( PA, QA );
         end
-        println( l_min, "...", l_max );
+        print( l_min, "...", l_max );
         #=
         mz = frechet_ve_r_compute( PA, QA );
         mm = Morphing_monotonize( mz );
@@ -440,6 +440,8 @@ function frechet_decider_PID( PID, i, j, r )::Int64
         =#
         lb = l_min - wP - wQ
         ub = l_max + wP + wQ
+
+        println( "   ", lb, "...", ub, "    ", r );
 
         #println( "m_leash  : ", l_max );
         #println( "lb: ", lb, "  ub: ", ub, "     r :", r );
