@@ -427,6 +427,7 @@ function frechet_decider_PID( PID, i, j, r )::Int64
         if  ( l_min < r < l_max )  &&  ( ( w_P + w_Q ) < ( l_max - l_min ) )
             l_min = l_max = frechet_c_compute( PA, QA );
         end
+        println( l_min, "...", l_max );
         #=
         mz = frechet_ve_r_compute( PA, QA );
         mm = Morphing_monotonize( mz );
