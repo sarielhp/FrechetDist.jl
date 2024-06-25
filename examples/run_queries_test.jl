@@ -112,6 +112,7 @@ function   ph_approx( ph::PolygonHierarchy, w::Float64,
     Z, Z_indices, wZ = frechet_approx_from_pallete( ph.P, ph.plt,
                                                     w / simp_threshold );
     #w = ph_push_target_exp( phA,   max( wA - wZ, 0.0 ), Z, lmt, wZ )
+    # VERIFY code...
     mu = frechet_c_mono_approx_subcurve( ph.P, Z, Z_indices )[ 1 ];
     diff = mu.leash - wZ;
     if  ( abs(diff) >= 1e-10 )
@@ -124,7 +125,7 @@ function   ph_approx( ph::PolygonHierarchy, w::Float64,
     X, X_indices = frechet_simplify_w_exp( Z, wtmp );
     mX = frechet_c_mono_approx_subcurve( Z, X, X_indices )[ 1 ];
 
-    w_out = 1.00001 * (mX.leash + wZ);
+    w_out = 1.001 * (mX.leash + wZ);
 
     push!( ph.polys, X );
     push!( ph.widths, w_out );
@@ -435,10 +436,11 @@ function frechet_decider_PID( PID, i, j, r )::Int64
         # 
         if  ( l_min < r < l_max )  &&  ( ( w_P + w_Q ) < ( l_max - l_min ) )
             l_min = l_max = frechet_c_compute( PA, QA );
+            println( "EXACT" );
         end
         println( "----" );
         println( l_min, "...", l_max );
-        println( l_min_2, "...", l_max_2 );
+        println( l_min_2, "...", l_max_2, "   L: ", l_max_2 - l_min_2 );
         #=
         mz = frechet_ve_r_compute( PA, QA );
         mm = Morphing_monotonize( mz );
