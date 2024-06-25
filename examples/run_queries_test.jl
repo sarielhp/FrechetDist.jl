@@ -398,7 +398,7 @@ function frechet_decider_PID( PID, i, j, r )::Int64
         if  iter > 200
             break;
         end
-        w_trg = delta / 2.0 #1.5 # / 2.0
+        w_trg = delta / 3.0 #1.5 # / 2.0
         PA, wP = ph_approx( P_ph, w_trg );
         QA, wQ = ph_approx( Q_ph, w_trg );
 
