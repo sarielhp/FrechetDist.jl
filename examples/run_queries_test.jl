@@ -307,14 +307,11 @@ end
 ##########################################################################33
 
 
-function frechet_decider_PID_old( PID, i, j, r )::Int64
+function frechet_decider_PID_slow( PID, i, j, r )::Int64
     f_debug::Bool = false;
 
     P = PID.polys[ i ];
     Q = PID.polys[ j ];
-
-    f_debug && println( "\n\n@@@@@@@@a@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@" );
-    f_debug  &&  println( "|P|: ", cardin( P ), " |Q|: ", cardin( Q ) );
 
     l_a =  Dist( first( P ), first( Q ) );
     if  l_a > r
@@ -324,85 +321,9 @@ function frechet_decider_PID_old( PID, i, j, r )::Int64
     if  l_b > r
         return  1;
     end
-    P_ph = PID.PHA[ i ];
-    Q_ph = PID.PHA[ j ];
 
-    w_P = P_ph.widths[ 1 ];
-    w_Q = Q_ph.widths[ 1 ];
-
-    f_debug && print( "w_P  : ", w_P );
-    f_debug && print( "    w_Q  : ", w_Q );
-
-    ub = max( l_a, l_b ) + w_P + w_Q;
-    if  ub < r
-        return  -1;
-    end
-    lb = max( l_a, l_b ) - w_P - w_Q;
-    if  lb > r
-        return  +1;
-    end
-
-    ratio::Float64 = 5.0;
-    delta = min( abs( r - lb ), abs( r - ub ) );
-    mi = max( length( P_ph.polys ), length( Q_ph.polys ) );
-    for  iv in 2:mi
-        iP = min( iv, length( P_ph.widths ) );
-        iQ = min( iv, length( Q_ph.widths ) );
-        w_P = P_ph.widths[ iP ];
-        w_Q = Q_ph.widths[ iQ ];
-
-        if  ( ( w_P + w_Q ) > delta )
-            continue;
-        end
-        P_a = P_ph.polys[ iP ];
-        Q_a = Q_ph.polys[ iQ ];
-
-        m_leash = frechet_ve_r_compute_mono_dist( P_a, Q_a, ub );
-
-        #=
-        m = frechet_ve_r_compute( P_a, Q_a );
-        mm_leash =  Morphing_monotone_leash( m );
-
-        if  ( ! eq( m_leash, mm_leash, 0.000001 ) )
-            println( "XXX :", m_leash, "   ", mm_leash );
-            exit( -1 );
-        end
-        =#
-        ## m_leash = frechet_ve_r_compute( P_a, Q_a );
-        lb = m_leash - w_P - w_Q
-
-
-        if  f_debug
-            println( "---------------------------------------------------" );
-            println( "|P_a|: ", cardin( P_a ) );
-            println( "|Q_a|: ", cardin( Q_a ) );
-            println( "r    : ", r );
-            println( "ve_l : ", m_leash );
-            println( "w_P  : ", w_P );
-            println( "w_Q  : ", w_Q );
-            println( "lb A : ", lb );
-        end
-        if  ( lb > r )
-            return  +1;
-        end
-        lb = m_leash - w_P - w_Q
-        f_debug  &&  println( "lb B : ", lb );
-        if  ( lb > r )
-            return  +1;
-        end
-
-        ub = m_leash + w_P + w_Q
-        f_debug  &&  println( "ub B : ", ub );
-        if  ( ub < r )
-            return  -1;
-        end
-        delta = abs( m_leash - r );
-    end
-
-#    println( "SHOGI!" );
-
+    ratio = 4.0;
     for  i in 1:10
-#        println( "Iter: ", i );
         f_debug &&  ( i > 5 )  &&   println( "ratio: ", ratio );
         m = frechet_c_approx( P, Q, ratio );
         if  m.leash < r
@@ -413,7 +334,6 @@ function frechet_decider_PID_old( PID, i, j, r )::Int64
             return  1;
         end
 
-        #    ratio = (r / lb min( m.ratio, 1.01 );
         ratio = ((r / lb) - 1.0) / 2.0 + 1.0; # min( m.ratio, 1.01 );
         ratio = min( ratio, 1.1 );
         if  ( ratio <= 1.01 )
@@ -426,11 +346,7 @@ function frechet_decider_PID_old( PID, i, j, r )::Int64
             end
             return  0;
         end
-#        if  i > 2
-#            println( "RATIO  ", i, " : ", ratio );
-#        end
     end
-    f_debug  &&  println( "UNDECIDED" );
     @assert( false );
 
     return  0;
@@ -638,6 +554,8 @@ function  test_files( PID, base_dir, queries_file, prefix,
                       count::AtomicInt,
                       i_second::Int64 = 1
                       )
+    f_verify::Bool = true;
+
     println( prefix, " : ", queries_file );
     df = CSV.read( queries_file, DataFrame, types=String, header=false );
 
@@ -681,6 +599,11 @@ function  test_files( PID, base_dir, queries_file, prefix,
         end
         t = tests[ i ];
         sgn = frechet_decider_PID( PID, t.i_P, t.i_Q, t.rad );
+
+        if  ( f_verify )
+            sgn_a = frechet_decider_PID_slow( PID, t.i_P, t.i_Q, t.rad )
+            @assert( sgn == sgn_a );
+        end
 
         Threads.atomic_add!( count, 1 )
         #if ( count[] > 1000 )
