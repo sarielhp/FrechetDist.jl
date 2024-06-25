@@ -636,7 +636,7 @@ function  test_files( PID, base_dir, queries_file, prefix,
                 m = frechet_c_compute( P, Q );
                 println( "sgn     : ", sgn );
                 println( "sgn_a   : ", sgn_a );
-                println( "sign    : ", sign( m.leash - r ) );
+                println( "sign    : ", sign( m.leash - t.rad ) );
                 println( "r       : ", t.rad );
                 println( "m.leash : ", m.leash );
             end
