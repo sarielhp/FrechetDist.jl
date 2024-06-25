@@ -602,9 +602,10 @@ function  test_files( PID, base_dir, queries_file, prefix,
 
         if  ( f_verify )
             sgn_a = frechet_decider_PID_slow( PID, t.i_P, t.i_Q, t.rad )
-            println( "sgn  : ", sgn );
-            println( "sgn_a: ", sgn_a );
-            
+            if  ( sgn != sgn_a )
+                println( "sgn  : ", sgn );
+                println( "sgn_a: ", sgn_a );
+            end
             @assert( sgn == sgn_a );
         end
 
