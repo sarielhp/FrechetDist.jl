@@ -234,7 +234,7 @@ function  Base.getindex( P::PolygonsInDir, s::String)
 end
 
 function   read_polygons_in_dir( base_dir, f_parallel::Bool )
-    limit::Int64 = 2000;
+    limit::Int64 = 200000;
 
     count::Int64 = 0;
     P = PolygonsInDir( Vector{PolygonHierarchy}(),
@@ -415,9 +415,9 @@ function frechet_decider_PID( PID, i, j, r )::Int64
             break;
         end
 
-        print( "delta: ", delta, "  wP: ", wP, "  wQ: ", wQ, "  " );
-        println( cardin( PA ), " / ", cardin( P ),  "   |   ",
-                 cardin( QA ), " / ", cardin( Q ) );
+        #print( "delta: ", delta, "  wP: ", wP, "  wQ: ", wQ, "  " );
+        #println( cardin( PA ), " / ", cardin( P ),  "   |   ",
+        #         cardin( QA ), " / ", cardin( Q ) );
 
         l_min, l_max = frechet_ve_r_compute_range( PA, QA, ub );
 
@@ -440,8 +440,8 @@ function frechet_decider_PID( PID, i, j, r )::Int64
         lb = l_min - wP - wQ
         ub = l_max + wP + wQ
 
-        println( "m_leash  : ", l_max );
-        println( "lb: ", lb, "  ub: ", ub, "     r :", r );
+        #println( "m_leash  : ", l_max );
+        #println( "lb: ", lb, "  ub: ", ub, "     r :", r );
         if  f_debug
             println( "---------------------------------------------------" );
             println( "|P_a|: ", cardin( PA ) );
