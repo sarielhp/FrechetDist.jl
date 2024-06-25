@@ -103,7 +103,8 @@ function   ph_approx( ph::PolygonHierarchy, w::Float64,
     #println( "---------------------" );
     for  i  in  1:length(ph.widths)
         #println( ph.widths[ i ] );
-        if  ( ph.widths[ i ] < w <= ( resolution * ph.widths[ i ] ) )
+        if  ( ( ph.widths[ i ] < w )
+              &&  ( w <= ( resolution * ph.widths[ i ] ) ) )
             #println( "Bingo!" );
             return  ph.polys[ i ], ph.widths[ i ]
         end
@@ -120,12 +121,12 @@ function   ph_approx( ph::PolygonHierarchy, w::Float64,
 
         exit(-1 );
     end
-    wtmp = max( w-wZ, 0.0 );
+    wtmp = 0.999 * max( w-wZ, 0.0 );
 
     X, X_indices = frechet_simplify_w_exp( Z, wtmp );
     mX = frechet_c_mono_approx_subcurve( Z, X, X_indices )[ 1 ];
 
-    w_out = 1.001 * (mX.leash + wZ);
+    w_out = (mX.leash + wZ);
 
     push!( ph.polys, X );
     push!( ph.widths, w_out );
