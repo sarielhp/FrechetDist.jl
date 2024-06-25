@@ -346,9 +346,9 @@ function frechet_decider_PID_slow( PID, i, j, r )::Int64
         ratio = min( ratio, 1.1 );
         if  ( ratio <= 1.01 )
             m = frechet_c_compute( P, Q );
-            println( "***" );
+            println( "*** m.leash - r: ", m.leash - r );
             if  m.leash > r
-                return  1;
+                return  +1;
             end
             if  m.leash < r
                 return  -1;
