@@ -598,6 +598,8 @@ struct  test_info_t
     i_P::Int64
     i_Q::Int64
     rad::Float64;
+    f_l_a::String
+    f_l_b::String
 end
 
 function  test_files( PID, base_dir, queries_file, prefix,
@@ -634,7 +636,7 @@ function  test_files( PID, base_dir, queries_file, prefix,
         ind_a = GetIndex( PID, s_a );
         ind_b = GetIndex( PID, s_b );
 
-        t = test_info_t( ind_a, ind_b, rad );
+        t = test_info_t( ind_a, ind_b, rad, fl_a, fl_b );
         push!( tests, t );
     end
 
@@ -667,6 +669,9 @@ function  test_files( PID, base_dir, queries_file, prefix,
                     println( "r        : ", t.rad );
                     println( "m.leash  : ", m.leash );
                     #@assert( sgn == sgn_slow );
+                    open( "errors_log.txt", "a" ) do file
+                        println( file, t.f_l_a, " ", t.f_l_b, " ", t.rad );
+                    end
                 end
             end
         end
