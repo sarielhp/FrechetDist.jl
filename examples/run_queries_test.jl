@@ -634,13 +634,17 @@ function  test_files( PID, base_dir, queries_file, prefix,
                 P = PID.polys[ t.i_P ];
                 Q = PID.polys[ t.i_Q ];
                 m = frechet_c_compute( P, Q );
-                println( "sgn     : ", sgn );
-                println( "sgn_a   : ", sgn_a );
-                println( "sign    : ", sign( m.leash - t.rad ) );
-                println( "r       : ", t.rad );
-                println( "m.leash : ", m.leash );
+
+                sgn_real::Int64 = round(Int64, sign( m.leash - t.rad ) );
+                if  ( sgn != sgn_real )
+                    println( "sgn      : ", sgn );
+                    println( "sgn_a    : ", sgn_a );
+                    println( "sgn_real : ", sgn_real );
+                    println( "r        : ", t.rad );
+                    println( "m.leash  : ", m.leash );
+                    @assert( sgn == sgn_a );
+                end
             end
-            @assert( sgn == sgn_a );
         end
 
         Threads.atomic_add!( count, 1 )
