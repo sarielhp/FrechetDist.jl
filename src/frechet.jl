@@ -1421,8 +1421,8 @@ function  frechet_c_compute( P::Polygon{N,T},
         pz = ( ( lower_bound * ones( length( pl ) ) ) - pl ) / factor
         qz = ( ( lower_bound * ones( length( ql ) ) ) - ql ) / factor
 
-        propogate_mins( pz, 4 );
-        propogate_mins( qz, 4 );
+        propogate_mins( pz, 8 );
+        propogate_mins( qz, 8 );
 
 
         #propogate_negs( pz );
