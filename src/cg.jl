@@ -1205,7 +1205,7 @@ function  Polygon_read_file( filename, dchar = "," )
     end
 
     if  ( cardin( P ) <= 1 )
-        Polygon_push( P, deepcopy( first( P ) ) );
+        Polygon_push( P, first( P ) );
     end
     return  P
 end

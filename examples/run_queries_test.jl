@@ -261,6 +261,10 @@ function   read_polygons_in_dir( base_dir, f_parallel::Bool )
             poly = Polygon_read_file( base_dir * file );
             width = frechet_width_approx( poly );
 
+            if  ( cardin( poly ) <= 1 )
+                println( "Bad poly file: \n\n", base_dir*file,"\n\n" );
+                
+            end
             @assert( cardin( poly ) > 1 );
 
             push!( P.polys, poly );
