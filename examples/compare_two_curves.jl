@@ -13,10 +13,16 @@ function frechet_comp( P::Polygon{D,T}, Q::Polygon{D,T}
      )::Int64  where {D,T}
     ratio::Float64 = 5.0;
 
-    println( P );
-    println( Q );
+    #println( P );
+    #println( Q );
     println( "|P|:", cardin( P ), "  |Q| :", cardin( Q ) );
 
+    m = frechet_mono_via_refinement( P, Q, 1.00001 )[1];
+    m_d = frechet_c_compute( P, Q );
+    println( m.leash );
+    println( m_d.leash );
+    exit( -1 );
+    
     for  i in 1:10
         println( "approx( #", cardin(P ), ", ", cardin(Q), ")   approx: ",
                  ratio );

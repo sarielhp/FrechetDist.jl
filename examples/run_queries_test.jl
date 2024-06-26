@@ -110,6 +110,7 @@ function   ph_approx( ph::PolygonHierarchy, w::Float64,
         end
     end
 
+
     Z, Z_indices, wZ = frechet_approx_from_pallete( ph.P, ph.plt,
                                                     w / simp_threshold );
     #w = ph_push_target_exp( phA,   max( wA - wZ, 0.0 ), Z, lmt, wZ )
@@ -218,6 +219,8 @@ function  compute_simp_hierarchy( P::Polygon2F )
 end
 
 
+###################################################################3
+
 struct  PolygonsInDir
     PHA::Vector{PolygonHierarchy};
     polys::Vector{Polygon2F};
@@ -231,17 +234,86 @@ function  GetIndex( P::PolygonsInDir, s::String)
 end
 
 
-function  Base.getindex( P::PolygonsInDir, s::String)
-    return   P.polys[ P.d[ s ] ];
+function  Base.getindex( PID::PolygonsInDir, s::String)
+    return   P.polys[ PID.d[ s ] ];
+end
+
+function  PID_init()
+    return  PolygonsInDir( Vector{PolygonHierarchy}(),
+                       Vector{Polygon2F}(), Vector{Float64}(),
+                       Dict( "empty" => -1 ) );
+end
+
+
+function   PID_read_polygon( PID::PolygonsInDir,
+                             filename::String,
+                             key::String,
+                             f_compute_hier::Bool = false )::Bool
+    if  ! isfile( filename )
+        println( "ERROR. Unable to open [", filename, "]" );
+        return  false;
+    end
+
+    poly = Polygon_read_file( filename );
+    width = frechet_width_approx( poly );
+
+    if  ( cardin( poly ) <= 1 )
+        println( "Bad poly file: \n\n", base_dir*file,"\n\n" );
+    end
+    @assert( cardin( poly ) > 1 );
+
+    push!( PID.polys, poly );
+    push!( PID.widths, width );
+    PID.d[ key ] = length( PID.polys );
+
+    if  f_compute_hier
+        ph = compute_simp_hierarchy( poly )
+        push!( PID.PHA,  ph );
+    end
+
+    return  true;
+end
+
+
+function  PID_compute_simp_hierarchy( PID::PolygonsInDir, f_parallel::Bool )
+    phx = compute_simp_hierarchy( PID.polys[1] )
+    for  i  in 1:length(PID.polys)
+        push!( PID.PHA, phx );
+    end
+
+    println( "Computing simplification hierarchies..." );
+    cnt_ph = AtomicInt( 0 );
+
+    if  f_parallel
+        Threads.@threads for  i  in 1:length(PID.polys)
+            #println( i );
+            poly = PID.polys[ i ];
+            ph = compute_simp_hierarchy( poly )
+            PID.PHA[ i ] = ph;
+            Threads.atomic_add!( cnt_ph, 1 )
+            if  ( cnt_ph[] & 0xff) == 0
+                print( cnt_ph[], "        \r" );
+            end
+        end
+        return
+    end
+
+    for  i  in 1:length(PID.polys)
+        poly = PID.polys[ i ];
+        ph = compute_simp_hierarchy( poly )
+        PID.PHA[ i ] = ph;
+        Threads.atomic_add!( cnt_ph, 1 )
+        if  ( cnt_ph[] & 0xff) == 0
+            print( cnt_ph[], "        \r" );
+        end
+    end
 end
 
 function   read_polygons_in_dir( base_dir, f_parallel::Bool )
     limit::Int64 = 200000;
 
     count::Int64 = 0;
-    P = PolygonsInDir( Vector{PolygonHierarchy}(),
-                       Vector{Polygon2F}(), Vector{Float64}(),
-                       Dict( "empty" => -1 ) );
+    PID = PID_init();
     for (root, dirs, files) in walkdir( base_dir )
         if  ( count > limit )
             break;
@@ -258,53 +330,13 @@ function   read_polygons_in_dir( base_dir, f_parallel::Bool )
             if  (count & 0xfff) == 0xfff
                 println( count, "  Reading: ", base_dir * file, "      \r" );
             end
-            poly = Polygon_read_file( base_dir * file );
-            width = frechet_width_approx( poly );
-
-            if  ( cardin( poly ) <= 1 )
-                println( "Bad poly file: \n\n", base_dir*file,"\n\n" );
-                
-            end
-            @assert( cardin( poly ) > 1 );
-
-            push!( P.polys, poly );
-            push!( P.widths, width );
-            P.d[ file ] = length( P.polys );
+            PID_read_polygon( PID, base_dir * file, file )
         end
     end
 
-    phx = compute_simp_hierarchy( P.polys[1] )
-    for  i  in 1:length(P.polys)
-        push!( P.PHA, phx );
-    end
+    PID_compute_simp_hierarchy( PID, f_parallel );
 
-    println( "Computing simplification hierarchies..." );
-    cnt_ph = AtomicInt( 0 );
-
-    if  f_parallel
-        Threads.@threads for  i  in 1:length(P.polys)
-            #println( i );
-            poly = P.polys[ i ];
-            ph = compute_simp_hierarchy( poly )
-            P.PHA[ i ] = ph;
-            Threads.atomic_add!( cnt_ph, 1 )
-            if  ( cnt_ph[] & 0xff) == 0
-                print( cnt_ph[], "        \r" );
-            end
-        end
-    else
-        for  i  in 1:length(P.polys)
-            #println( i );
-            poly = P.polys[ i ];
-            ph = compute_simp_hierarchy( poly )
-            P.PHA[ i ] = ph;
-            Threads.atomic_add!( cnt_ph, 1 )
-            if  ( cnt_ph[] & 0xff) == 0
-                print( cnt_ph[], "        \r" );
-            end
-        end
-    end
-    return P;
+    return PID;
 end
 
 
@@ -367,11 +399,13 @@ function frechet_decider_PID_slow( PID, i, j, r )::Int64
 end
 
 function frechet_decider_PID( PID, i, j, r )::Int64
-    f_debug::Bool = false;
+    f_debug::Bool = true;
+    f_verify::Bool = true;
 
     P = PID.polys[ i ];
     Q = PID.polys[ j ];
 
+    println( "\n\n\n\n\n" );
     f_debug && println( "\n\n@@@@@@@@a@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@" );
     f_debug  &&  println( "|P|: ", cardin( P ), " |Q|: ", cardin( Q ) );
 
@@ -416,13 +450,17 @@ function frechet_decider_PID( PID, i, j, r )::Int64
         PA, wP = ph_approx( P_ph, w_trg );
         QA, wQ = ph_approx( Q_ph, w_trg );
 
+        m_P_verify = frechet_c_compute( PA, P );
+        println( "LEASH: ", m_P_verify.leash, "  ", wP );
+        @assert( m_P_verify.leash <= wP );
+
         if  ( wP > w_trg ) ||   ( wQ > w_trg )
             println( "wP: ", wP, " > ", w_trg );
             println( "wQ: ", wQ, " > ", w_trg );
         end
         @assert( wP <= w_trg );
         @assert( wQ <= w_trg );
-                 
+
 
 
         if  (     ( cardin( PA ) > round(Int64, cardin( P ) * 0.9 ) )
@@ -434,28 +472,43 @@ function frechet_decider_PID( PID, i, j, r )::Int64
         #println( cardin( PA ), " / ", cardin( P ),  "   |   ",
         #         cardin( QA ), " / ", cardin( Q ) );
 
-        l_min, l_max = frechet_ve_r_compute_range( PA, QA, 2.0+ub_start );
-
+        l_min, l_max = frechet_ve_r_compute_range( PA, QA, 2000000.0+ub_start );
+        if  f_verify
+            a_dist = frechet_c_compute( P, PA );
+            b_dist = frechet_c_compute( PA, QA );
+            c_dist = frechet_c_compute( QA, Q );
+            all_dist = frechet_c_compute( P, Q, false );
+            println( "dist( P, PA ): ", a_dist.leash );
+            println( "dist( PA, QA ): ", b_dist.leash );
+            println( "dist( QA, Q ): ", c_dist.leash );
+            println( "dist( P, Q ): ", all_dist.leash );
+            m_a = Morphing_combine( a_dist, b_dist );
+            m_b = Morphing_combine( m_a, c_dist );
+            println( "merged leash: ", m_b.leash );
+            m_new = frechet_mono_via_refinement( P, Q, 1.0001 )[1]
+            println( "d(P,Q) via refinement  : ", m_new.leash );
+        end
+        
         # VERIFY
-        m_verify = frechet_ve_r_compute( PA, QA );
-        l_min_2 = m_verify.leash;
-        m_m_verify = Morphing_monotonize( m_verify )
-        l_max_2 = m_m_verify.leash;
+        if  f_verify
+            m_verify = frechet_ve_r_compute( PA, QA );
+            l_min_2 = m_verify.leash;
+            m_m_verify = Morphing_monotonize( m_verify )
+            l_max_2 = m_m_verify.leash;
+            println( l_min_2, "...", l_max_2, "   L: ", l_max_2 - l_min_2 );
+        end
 
-        
-        
+
         # Are we in the not very common situation that monotonicity is
         # the source of our troubles?
-        # 
+        #
         if  ( l_min < r < l_max )  &&  ( ( w_P + w_Q ) < ( l_max - l_min ) )
             l_min = l_max = frechet_c_compute( PA, QA );
             println( "EXACT" );
         end
-        #=
-        println( "----" );
+        println( "==== r: ", r );
         println( l_min, "...", l_max );
-        println( l_min_2, "...", l_max_2, "   L: ", l_max_2 - l_min_2 );
-        =#
+
         #=
         mz = frechet_ve_r_compute( PA, QA );
         mm = Morphing_monotonize( mz );
@@ -494,7 +547,7 @@ function frechet_decider_PID( PID, i, j, r )::Int64
         delta = min( abs( l_max - r ), delta / 1.1 );
     end
 
-#    println( "SHOGI!" );
+    println( "SHOGI!" );
 
     for  i in 1:10
 #        println( "Iter: ", i );
@@ -606,43 +659,13 @@ struct  test_info_t
     f_l_b::String
 end
 
-function  test_files( PID, base_dir, queries_file, prefix,
-                      count::AtomicInt,
-                      i_second::Int64 = 1
-                      )::Int64
-    f_verify::Bool = true;
+
+function  run_tests( PID::PolygonsInDir, tests::Vector{test_info_t}, i_second::Int64,
+                     prefix::String, count::AtomicInt )
     errors::Int64 = 0;
-    
-    println( prefix, " : ", queries_file );
-    df = CSV.read( queries_file, DataFrame, types=String, header=false );
+    f_verify::Bool = true;
 
-    tests = Vector{test_info_t}();
-
-    nr = nrow(df);
-
-    #    nr = min( 10, nr );
-    for  i in  1:nr
-        #println( "i: ", i );
-        s_a = df[i,1];
-        s_b = df[i,2];
-
-        fl_a = base_dir * df[i,1];
-        fl_b = base_dir * df[i,2];
-        #println( fl_a, "  ", fl_b );
-        #println( "=======================================" );
-        rad = parse( Float64, df[i,3] );
-        if  ! haskey( PID.d, s_a )
-            continue;
-        end
-        if  ! haskey( PID.d, s_b )
-            continue;
-        end
-        ind_a = GetIndex( PID, s_a );
-        ind_b = GetIndex( PID, s_b );
-
-        t = test_info_t( ind_a, ind_b, rad, fl_a, fl_b );
-        push!( tests, t );
-    end
+    typeof( tests );
 
     for  i in  1:length( tests )
         if  ( i < i_second )
@@ -650,8 +673,7 @@ function  test_files( PID, base_dir, queries_file, prefix,
         end
         if  ( ( count[]  & 0x1fff ) == 0x1fff )
             println( count[], " T",
-                Threads.threadid(),"D : ", prefix, i, "/", length( tests ), " ",
-                base_dir * df[i,1], "   ", base_dir * df[i,2] );
+                Threads.threadid(),"D : ", prefix, i, "/", length( tests ) );
             flush( stdout );
         end
         t = tests[ i ];
@@ -686,6 +708,57 @@ function  test_files( PID, base_dir, queries_file, prefix,
         #end;
     end
 
+    return  errors;
+end
+
+function  read_query_file( base_dir, queries_file, tests, PID )
+    df = CSV.read( queries_file, DataFrame, types=String, header=false );
+
+    nr = nrow(df);
+
+    for  i in  1:nr
+        s_a = df[i,1];
+        s_b = df[i,2];
+
+        fl_a = base_dir * df[i,1];
+        fl_b = base_dir * df[i,2];
+
+        rad = parse( Float64, df[i,3] );
+        if  ! haskey( PID.d, s_a )
+            if  ( !PID_read_polygon( PID, fl_a, s_a, true ) )
+                continue;
+            end
+        end
+        if  ! haskey( PID.d, s_b )
+            if  ( !PID_read_polygon( PID, fl_b, s_b, true ) )
+                continue;
+            end
+        end
+        ind_a = GetIndex( PID, s_a );
+        ind_b = GetIndex( PID, s_b );
+
+        t = test_info_t( ind_a, ind_b, rad, fl_a, fl_b );
+        push!( tests, t );
+    end
+end
+
+
+function  test_files( PID, base_dir, queries_file, prefix,
+                      count::AtomicInt,
+                      i_second::Int64 = 1
+                      )::Int64
+    f_verify::Bool = true;
+    errors::Int64 = 0;
+
+    println( prefix, " : ", queries_file );
+
+    #df = CSV.read( queries_file, DataFrame, types=String, header=false );
+
+    tests = Vector{test_info_t}();
+    read_query_file( base_dir, queries_file, tests, PID )
+
+    errors = run_tests( PID, tests, i_second, prefix, count )
+
     println( "ERRORS: ", errors );
     #println( "Text completed on : ", queries_file );
 
@@ -693,9 +766,17 @@ function  test_files( PID, base_dir, queries_file, prefix,
     return  errors;
 end
 
+function  test_single_file( filename )
+    tests = Vector{test_info_t}();
+    PID = PID_init();
+    read_query_file( "", filename, tests, PID )
+
+    count = AtomicInt( 0 );
+
+    return  run_tests( PID, tests, 1, "", count );
+end
 
 
-num_args = length( ARGS );
 
 
 
@@ -776,12 +857,20 @@ function  test_files_from_file( filename, base_dir,
     flush( stdout );
 end
 
+########################################################
+########### Main
 
-if   num_args == 2
-    test_files( ARGS[1], ARGS[2] );
-    exit( -1 );
+num_args = length( ARGS );
+
+#if   num_args == 2
+#    test_files( ARGS[1], ARGS[2] );
+#    exit( -1 );
+#end
+
+if   num_args == 2  &&  ( ARGS[ 1 ] == "test_file" )
+    test_single_file( ARGS[2] );
+    exit( 0 );
 end
-
 if   num_args == 3  &&  ( ARGS[ 1 ] == "file" )
     println( "ARGS[3]: ", ARGS[3 ] );
     test_files_from_file( ARGS[3], ARGS[2] );

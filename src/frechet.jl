@@ -1238,7 +1238,7 @@ end
 function  propogate_mins( qz, rounds::Int64 = 1 )
     a = deepcopy( qz );
     for  r  in 1:rounds
-        for  i  in  length( a )
+        for  i  in  1:length( a )
             if  ( i == 1 )  ||  ( i == length( qz ) )
                 continue;
             end
@@ -1246,7 +1246,7 @@ function  propogate_mins( qz, rounds::Int64 = 1 )
             a[ i ] = min( qz[ i - 1 ], qz[ i ], qz[ i + 1 ] );
         end
 
-        for  i  in  length( a )
+        for  i  in  1:length( a )
             qz[ i ] = a[ i ];
         end
     end
@@ -1421,12 +1421,13 @@ function  frechet_c_compute( P::Polygon{N,T},
         pz = ( ( lower_bound * ones( length( pl ) ) ) - pl ) / factor
         qz = ( ( lower_bound * ones( length( ql ) ) ) - ql ) / factor
 
-        propogate_mins( pz, 4 * round * round )
-        propogate_mins( qz, 4 * round * round )
+        propogate_mins( pz, 4 );
+        propogate_mins( qz, 4 );
+
 
         #propogate_negs( pz );
         #propogate_negs( qz );
-#        f_deprintln( pz );
+        # f_deprintln( pz );
 
         if  f_debug
             p_count = count_below_zero( pz );

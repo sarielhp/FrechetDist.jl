@@ -2,9 +2,13 @@
 
 export JULIA_NUM_THREADS=auto
 
+TDIR=/tmp/frechet_dist
+mkdir -p $TDIR >& /dev/null
+TFL=$TDIR/geolife.txt
+
 rm *.txt >& /dev/null
 
-find data/queries/geolife -type f > geolife.txt
+find data/queries/geolife -type f > $TFL
 
 
 start=`date +%s`
@@ -15,7 +19,7 @@ start=`date +%s`
 
 julia examples/run_queries_test.jl sfile \
                              data/geolife/ \
-                             geolife.txt
+                             $TFL
 end=`date +%s`
 
 
