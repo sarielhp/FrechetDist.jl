@@ -403,7 +403,7 @@ end
 
 function frechet_decider_PID( PID, i, j, r )::Int64
     f_debug::Bool = false;
-    f_verify::Bool = false;
+    f_verify::Bool = true;
 
     P = PID.polys[ i ];
     Q = PID.polys[ j ];
@@ -660,7 +660,7 @@ end
 function  run_tests( PID::PolygonsInDir, tests::Vector{test_info_t}, i_second::Int64,
                      prefix::String, count::AtomicInt )
     errors::Int64 = 0;
-    f_verify::Bool = false;
+    f_verify::Bool = true;
 
     typeof( tests );
 
@@ -756,7 +756,9 @@ function  test_files( PID, base_dir, queries_file, prefix,
 
     errors = run_tests( PID, tests, i_second, prefix, count )
 
-    println( "ERRORS: ", errors );
+    if  ( errors > 0 )
+        println( "ERRORS: ", errors );
+    end
     #println( "Text completed on : ", queries_file );
 
     #print( df );
