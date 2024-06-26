@@ -86,7 +86,8 @@ end
 
 function   ph_approx( ph::PolygonHierarchy, w::Float64,
                       resolution::Float64 = 1.4 )
-
+    f_verify::Bool = false;
+    
     if  ( cardin( ph.P ) <= 10 )
         return  ph.P, 0.0;
     end
@@ -115,12 +116,14 @@ function   ph_approx( ph::PolygonHierarchy, w::Float64,
                                                     w / simp_threshold );
     #w = ph_push_target_exp( phA,   max( wA - wZ, 0.0 ), Z, lmt, wZ )
     # VERIFY code...
-    mu = frechet_c_mono_approx_subcurve( ph.P, Z, Z_indices )[ 1 ];
-    diff = mu.leash - wZ;
-    if  ( abs(diff) >= 1e-8 )
-        println( "ERROR diff: ", mu.leash - wZ, " ",mu.leash, " ", wZ );
+    if  f_verify
+        mu = frechet_c_mono_approx_subcurve( ph.P, Z, Z_indices )[ 1 ];
+        diff = mu.leash - wZ;
+        if  ( abs(diff) >= 1e-8 )
+            println( "ERROR diff: ", mu.leash - wZ, " ",mu.leash, " ", wZ );
 
-        #exit(-1 );
+            #exit(-1 );
+        end
     end
     wtmp = 0.999 * max( w-wZ, 0.0 );
 
@@ -399,13 +402,13 @@ function frechet_decider_PID_slow( PID, i, j, r )::Int64
 end
 
 function frechet_decider_PID( PID, i, j, r )::Int64
-    f_debug::Bool = true;
-    f_verify::Bool = true;
+    f_debug::Bool = false;
+    f_verify::Bool = false;
 
     P = PID.polys[ i ];
     Q = PID.polys[ j ];
 
-    println( "\n\n\n\n\n" );
+    #println( "\n\n\n\n\n" );
     f_debug && println( "\n\n@@@@@@@@a@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@" );
     f_debug  &&  println( "|P|: ", cardin( P ), " |Q|: ", cardin( Q ) );
 
@@ -450,9 +453,9 @@ function frechet_decider_PID( PID, i, j, r )::Int64
         PA, wP = ph_approx( P_ph, w_trg );
         QA, wQ = ph_approx( Q_ph, w_trg );
 
-        m_P_verify = frechet_c_compute( PA, P );
-        println( "LEASH: ", m_P_verify.leash, "  ", wP );
-        @assert( m_P_verify.leash <= wP );
+        #m_P_verify = frechet_c_compute( PA, P );
+        #println( "LEASH: ", m_P_verify.leash, "  ", wP );
+        #@assert( m_P_verify.leash <= wP );
 
         if  ( wP > w_trg ) ||   ( wQ > w_trg )
             println( "wP: ", wP, " > ", w_trg );
@@ -460,8 +463,6 @@ function frechet_decider_PID( PID, i, j, r )::Int64
         end
         @assert( wP <= w_trg );
         @assert( wQ <= w_trg );
-
-
 
         if  (     ( cardin( PA ) > round(Int64, cardin( P ) * 0.9 ) )
               ||  ( cardin( QA ) > round(Int64, cardin( Q ) * 0.9 ) ) )
@@ -473,7 +474,7 @@ function frechet_decider_PID( PID, i, j, r )::Int64
         #         cardin( QA ), " / ", cardin( Q ) );
 
         l_min, l_max = frechet_ve_r_compute_range( PA, QA, 2000000.0+ub_start );
-        if  f_verify
+        if  f_debug
             a_dist = frechet_c_compute( P, PA );
             b_dist = frechet_c_compute( PA, QA );
             c_dist = frechet_c_compute( QA, Q );
@@ -488,8 +489,8 @@ function frechet_decider_PID( PID, i, j, r )::Int64
             m_new = frechet_mono_via_refinement( P, Q, 1.0001 )[1]
             println( "d(P,Q) via refinement  : ", m_new.leash );
         end
-        
-        # VERIFY
+
+        #=
         if  f_verify
             m_verify = frechet_ve_r_compute( PA, QA );
             l_min_2 = m_verify.leash;
@@ -497,17 +498,17 @@ function frechet_decider_PID( PID, i, j, r )::Int64
             l_max_2 = m_m_verify.leash;
             println( l_min_2, "...", l_max_2, "   L: ", l_max_2 - l_min_2 );
         end
-
+        =#
 
         # Are we in the not very common situation that monotonicity is
         # the source of our troubles?
         #
         if  ( l_min < r < l_max )  &&  ( ( w_P + w_Q ) < ( l_max - l_min ) )
             l_min = l_max = frechet_c_compute( PA, QA );
-            println( "EXACT" );
+            #println( "EXACT" );
         end
-        println( "==== r: ", r );
-        println( l_min, "...", l_max );
+        #println( "==== r: ", r );
+        #println( l_min, "...", l_max );
 
         #=
         mz = frechet_ve_r_compute( PA, QA );
@@ -522,10 +523,6 @@ function frechet_decider_PID( PID, i, j, r )::Int64
         lb = l_min - wP - wQ
         ub = l_max + wP + wQ
 
-        # println( "RANGE:  ", lb, "...", ub, "    ", r );
-
-        #println( "m_leash  : ", l_max );
-        #println( "lb: ", lb, "  ub: ", ub, "     r :", r );
         if  f_debug
             println( "---------------------------------------------------" );
             println( "|P_a|: ", cardin( PA ) );
@@ -547,7 +544,7 @@ function frechet_decider_PID( PID, i, j, r )::Int64
         delta = min( abs( l_max - r ), delta / 1.1 );
     end
 
-    println( "SHOGI!" );
+    #println( "SHOGI!" );
 
     for  i in 1:10
 #        println( "Iter: ", i );
@@ -663,7 +660,7 @@ end
 function  run_tests( PID::PolygonsInDir, tests::Vector{test_info_t}, i_second::Int64,
                      prefix::String, count::AtomicInt )
     errors::Int64 = 0;
-    f_verify::Bool = true;
+    f_verify::Bool = false;
 
     typeof( tests );
 
