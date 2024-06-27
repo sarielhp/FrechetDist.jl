@@ -2,9 +2,12 @@
 
 export JULIA_NUM_THREADS=auto
 
-rm *.txt >& /dev/null
+TDIR=/tmp/frechet_dist
+mkdir -p $TDIR >& /dev/null
+TFL=$TDIR/characters_list.txt
 
-find data/queries/characters -type f > characters.txt
+
+find data/queries/characters -type f > $TFL
 
 
 start=`date +%s`
@@ -13,12 +16,10 @@ start=`date +%s`
 # sfile: Run the test using a single thread...
 
 
-# BINGO
-#julia -O3 --min-optlevel=3  \
 julia \
              examples/run_queries_test.jl sfile \
                              data/characters/ \
-                             characters.txt
+                             $TFL
 end=`date +%s`
 
 runtime=$((end-start))
@@ -26,7 +27,3 @@ echo  "Running time: " $runtime
 exit  -1;
 
 rm *.txt >& /dev/null
-# examples/run_queries_test.jl data/characters/
-# data/tests/characters/characters_query_decider_10_0_plus.txt | gi
-# undeci
-

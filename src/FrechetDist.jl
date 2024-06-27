@@ -40,6 +40,9 @@ export  Morphing_as_polygons
 export  Morphing_extract_vertex_radii, Morphing_extract_offsets
 export  Morphing_monotone_leash
 
+export  frechet_refinement;
+export  frechet_mono_via_refinement_delta
+
 
 export  Morphing_SweepDist_price
 export  Morphing_SweepDist_approx_price

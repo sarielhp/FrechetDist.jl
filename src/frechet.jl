@@ -601,7 +601,7 @@ function  frechet_width_approx( P::Polygon{N,T},
     seg = Segment{N,T}( P[ first( rng ) ], P[ last( rng ) ] );
 
     t::Float64 = 0;
-    curr::Point{N,T} = deepcopy( P[ first( rng ) ] ) ;
+    curr::Point{N,T} = P[ first( rng ) ] ;
     leash::Float64 = 0;
     for  i  in  first(rng)+1:last(rng)-1
         q = Segment_nn_point( seg, P[ i ] );
@@ -912,6 +912,14 @@ function  extract_refined_polygon( poly::Polygon{N,T},
 end
 
 
+function  frechet_refinement( P::Polygon{N,T}, Q::Polygon{N,T},
+                              m::Morphing{N,T} ) where {N,T}
+    poly_a_2 = extract_refined_polygon( P, m.pes, 1 );
+    poly_b_2 = extract_refined_polygon( Q, m.qes, 1 );
+
+    return  poly_a_2, poly_b_2;
+end
+
 function  frechet_mono_via_refinement_ext( Pa::Polygon{N,T}, Qa::Polygon{N,T},
                                            out::Vector{Morphing{N,T}},
                                            f_snapshots::Bool,
@@ -937,7 +945,7 @@ function  frechet_mono_via_refinement_ext( Pa::Polygon{N,T}, Qa::Polygon{N,T},
         mm = Morphing_monotonize( m );
 
         if  ( f_snapshots )
-            push!( out, deepcopy( m ) );
+            push!( out, m );
         end
 
         fr_retract = m.leash;
@@ -974,9 +982,53 @@ function  frechet_mono_via_refinement_ext( Pa::Polygon{N,T}, Qa::Polygon{N,T},
         mm = Morphing_from_prm( prm, Pa, Qa );
     end
 
+    mm.lower_bound = m.leash;
+
     #println( "RETURNING!" );
     return  mm, f_exact, P, Q
 end
+
+
+function  frechet_mono_via_refinement_delta( Pa::Polygon{N,T},
+    Qa::Polygon{N,T},
+    delta::Float64,
+    f_fix_prm::Bool = false
+)  where {N,T}
+    f_debug::Bool = false;
+
+    P = Pa;
+    Q = Qa;
+    #println( "ROUNDS\n" );
+    local  m, mm;
+    count::Int64 = 0;
+    for  count  in 0:64
+        #( count > 0 )  &&  println( "FVER round: ", count );
+        
+        m = frechet_ve_r_compute( P, Q )
+        mm = Morphing_monotonize( m );
+
+        ( ( mm.leash - m.leash ) <= delta )  &&  break;
+
+        poly_a_2 = extract_refined_polygon( P, m.pes, 1 );
+        poly_b_2 = extract_refined_polygon( Q, m.qes, 1 );
+
+        P = poly_a_2;
+        Q = poly_b_2;
+    end
+
+    # We potentially need to flatten the morphing back to the original
+    # curves...
+    if   f_fix_prm  &&  ( ( cardin( mm.P ) != cardin( Pa ) )
+                          ||  ( cardin( mm.Q ) != cardin( Qa ) ) )
+        prm = Morphing_extract_prm( mm );
+        mm = Morphing_from_prm( prm, Pa, Qa );
+    end
+
+    mm.lower_bound = m.leash;
+
+    return  mm, P, Q
+end
+
 
 
 """
@@ -1693,7 +1745,7 @@ function  exp_search_width_prefix( P::Polygon{N,T},
 
     while  hi < len
         r = frechet_width_approx( P, start:hi )
-        ( r > w )  &&  return  min( hi + 10, len );
+        ( r > w )  &&  return  min( hi + 5, len );
         hi = start + 2 * ( hi - start )
     end
 

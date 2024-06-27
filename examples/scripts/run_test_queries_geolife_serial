@@ -25,7 +25,6 @@ end=`date +%s`
 
 runtime=$((end-start))
 echo  "Running time: " $runtime
-rm *.txt >& /dev/null
 exit  -1;
 
 # examples/run_queries_test.jl data/characters/

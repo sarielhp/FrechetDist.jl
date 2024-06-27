@@ -2,10 +2,11 @@
 
 export JULIA_NUM_THREADS=auto
 
-rm *.txt >& /dev/null
+TDIR=/tmp/frechet_dist
+mkdir -p $TDIR >& /dev/null
+TFL=$TDIR/geolife.txt
 
-find data/queries/geolife -type f > geolife.txt
-
+find data/queries/geolife -type f > $TFL
 
 start=`date +%s`
 
@@ -15,16 +16,12 @@ start=`date +%s`
 
 julia examples/run_queries_test.jl file \
                              data/geolife/ \
-                             geolife.txt
+                             $TFL
 end=`date +%s`
 
 
 runtime=$((end-start))
+
 echo  "Running time: " $runtime
-rm *.txt >& /dev/null
+
 exit  -1;
-
-# examples/run_queries_test.jl data/characters/
-# data/tests/characters/characters_query_decider_10_0_plus.txt | gi
-# undeci
-

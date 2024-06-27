@@ -2,9 +2,12 @@
 
 export JULIA_NUM_THREADS=auto
 
-rm *.txt
+TDIR=/tmp/frechet_dist
+mkdir -p $TDIR >& /dev/null
+TFL=$TDIR/sigspatial_list.txt
 
-find data/queries/sigspatial -type f > sigspatial.txt
+
+find data/queries/sigspatial -type f > $TFL
 
 
 start=`date +%s`
@@ -13,11 +16,13 @@ julia \
     -O3 --min-optlevel=3 \
     examples/run_queries_test.jl sfile \
                              data/sigspatial/ \
-                             sigspatial.txt
+                             $TFL
 end=`date +%s`
 
 runtime=$((end-start))
+
 echo  "Running time: " $runtime
+
 exit  -1;
 
 # examples/run_queries_test.jl data/characters/
