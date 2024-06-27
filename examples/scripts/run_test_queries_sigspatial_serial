@@ -12,8 +12,9 @@ find data/queries/sigspatial -type f > $TFL
 
 start=`date +%s`
 #e --track-allocation=user
+#    -O3 --min-optlevel=3 \
+#    --track-allocation=user \
 julia \
-    -O3 --min-optlevel=3 \
     examples/run_queries_test.jl sfile \
                              data/sigspatial/ \
                              $TFL

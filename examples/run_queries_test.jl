@@ -9,6 +9,8 @@ using FrechetDist
 using FrechetDist.cg
 using PrettyTables
 #using Profile
+#using InteractiveUtils
+#using ProfileView
 
 AtomicInt = Threads.Atomic{Int}
 
@@ -34,8 +36,18 @@ function ph_push!( ph::PolygonHierarchy, Q::Polygon2F, w::Float64 )
             pop!( ph.widths );
         end
     end
-    push!( ph.polys, Q );
-    push!( ph.widths, w );
+    Ps = ph.polys;
+    Ws = ph.widths
+    push!( Ps, Q );
+    push!( Ws, w );
+
+    # sort in decreasing order...
+    i = length( ph.polys )
+    while  ( i > 1 )  &&   ( Ws[ i - 1 ] < Ws[ i ] )
+        Ws[ i - 1 ], Ws[ i ] = Ws[ i ], Ws[ i - 1 ] 
+        Ps[ i - 1 ], Ps[ i ] = Ps[ i ], Ps[ i - 1 ] 
+        i = i - 1;
+    end
 end
 
 
@@ -67,6 +79,48 @@ function  ph_print( ph::PolygonHierarchy )
 end
 
 
+function   ph_find_linear( Ws::Vector{Float64}, w, resolution )
+    for  i  in  1:length( Ws )
+        #println( ph.widths[ i ] );
+        if  ( Ws[ i ] <= w )
+            if  ( w <= ( resolution * Ws[ i ] ) )
+                #println( "Bingo!" );
+                return  i
+            else
+                return  -1;
+            end
+        end
+    end
+    return  -1;
+end
+function   ph_approx_inner( Ws, i, j, w, resolution )
+    while  true
+        #println( "[",i,"...",j, "]" );
+        # w[i] >= w >= w[j]
+        ( i > j )       &&  return  -1;
+        if  ( Ws[ i ] <= w)
+            if  ( w <= Ws[ i ]*resolution ) 
+                return  i;
+            else
+                return  -1;
+            end
+        end
+        
+        # Ws[i] > w
+        if  ( i == j )
+            return  -1;
+        end
+
+        mid = ( i + j ) >> 1;
+        if  Ws[ mid ] >= w
+            i = mid + 1;  # continuing into mid+1:j
+            continue;
+        end
+        # Ws[mid ] < w
+        j = mid;
+    end
+end
+
 function   ph_approx( ph::PolygonHierarchy, w::Float64,
                       resolution::Float64 = 4.0 )
     f_verify::Bool = false
@@ -74,26 +128,9 @@ function   ph_approx( ph::PolygonHierarchy, w::Float64,
     if  ( cardin( ph.P ) <= 10 )
         return  ph.P, 0.0;
     end
-
-    #resolution, simp_rsolution = 1.1, 4.0; # 242 seconds
-    # resolution, simp_rsolution = 4.0, 4.0; # 205
-    #resolution, simp_rsolution = 8.0, 4.0; # 213
-    #resolution, simp_rsolution = 1.4, 4.0; # 215
-    #resolution, simp_rsolution = 1.4, 2.0; # 215
-
-    #println( "---------------------" );
-    for  i  in  1:length(ph.widths)
-        #println( ph.widths[ i ] );
-        if  ( ph.widths[ i ] < w )
-#              &&  ( w <= ( resolution * ph.widths[ i ] ) ) )
-            #println( "Bingo!" );
-            return  ph.polys[ i ], ph.widths[ i ]
-        end
-    end
-
-    println( "APPROX!!! ", w );
-
-    ph_print( ph );
+    
+    i = ph_find_linear( ph.widths, w, resolution );
+    ( i > 0 )  && return  ph.polys[ i ], ph.widths[ i ]
     
     simp_threshold::Float64 = 4.0;
     Z, Z_indices, wZ = frechet_approx_from_pallete( ph.P, ph.plt,
@@ -101,6 +138,7 @@ function   ph_approx( ph::PolygonHierarchy, w::Float64,
     #println( "|Z| : ", cardin( Z ), " ... ", cardin( ph.P ) );
     #w = ph_push_target( phA,   max( wA - wZ, 0.0 ), Z, lmt, wZ )
     # VERIFY code...
+    #=
     if  f_verify
         mu = frechet_c_mono_approx_subcurve( ph.P, Z, Z_indices )[ 1 ];
         diff = mu.leash - wZ;
@@ -109,10 +147,9 @@ function   ph_approx( ph::PolygonHierarchy, w::Float64,
 
             #exit(-1 );
         end
-    end
-    wtmp = 0.999 * max( w-wZ, 0.0 );
+    end =#
 
-    X, X_indices = frechet_simplify_w_exp( Z, wtmp );
+    X, X_indices = frechet_simplify_w_exp( Z, max( w-wZ, 0.0 ) );
     mX = frechet_c_mono_approx_subcurve( Z, X, X_indices )[ 1 ];
 
     w_out = (mX.leash + wZ);
@@ -250,8 +287,8 @@ function  PID_init_simp_hierarchy( PID::PolygonsInDir, f_parallel::Bool )
         poly = PID.polys[ i ];
         ph = ph_init( poly )
         #lock( PID.lock );
-        ph_compute_hierarchy( ph, 1.1,
-            max( 400, round( Int64, cardin( poly ) / 4) ) );
+        ph_compute_hierarchy( ph, 1.3,
+            max( 100, round( Int64, cardin( poly ) / 4) ) );
         PID.PHA[ i ] = ph;
         #unlock( PID.lock );
 
@@ -373,6 +410,149 @@ end
 
 function frechet_decider_PID( PID, i, j, r )::Int64
     f_debug::Bool = false;
+    f_verify::Bool = true;
+
+    
+    P = PID.polys[ i ];
+    Q = PID.polys[ j ];
+
+    #println( "\n\n\n\n\n" );
+    f_debug &&   println( "\n\n@@@@@@@@a@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@" );
+    f_debug  &&  println( "|P|: ", cardin( P ), " |Q|: ", cardin( Q ) );
+
+    l_a =  Dist( first( P ), first( Q ) );
+    if  l_a > r
+        #println( "RETURN 1" );
+        return  1;
+    end
+    l_b = Dist( last( P ), last( Q ) );
+    if  l_b > r
+        #println( "RETURN 2" );
+        return  1;
+    end
+    P_ph = PID.PHA[ i ];
+    Q_ph = PID.PHA[ j ];
+
+    w_P = P_ph.widths[ 1 ];
+    w_Q = Q_ph.widths[ 1 ];
+
+    f_debug && print( "w_P  : ", w_P );
+    f_debug && print( "    w_Q  : ", w_Q );
+
+    ub_start = ub = max( l_a, l_b ) + w_P + w_Q;
+    if  ub < r
+        #println( "RETURN -1" );
+        return  -1;
+    end
+    lb = max( l_a, l_b ) - w_P - w_Q;
+    if  lb > r
+        #println( "RETURN +1.1" );
+        return  +1;
+    end
+
+    ratio::Float64 = 5.0;
+    delta = min( abs( r - lb ), abs( r - ub ) );
+    #mi = max( length( P_ph.polys ), length( Q_ph.polys ) );
+    #println( "\n" );
+    iter::Int64 = 0;
+    while  true
+        iter = iter + 1;
+        #println( iter, "    \n" );
+        if  iter > 200
+            break;
+        end
+        w_trg = delta / 3.0 #1.5 # / 2.0
+        #@time "PA"
+        PA, wP = ph_approx( P_ph, w_trg );
+        #@time "QA"
+        QA, wQ = ph_approx( Q_ph, w_trg );
+                 
+        #m_P_verify = frechet_c_compute( PA, P );
+        #println( "LEASH: ", m_P_verify.leash, "  ", wP );
+        #@assert( m_P_verify.leash <= wP );
+
+        if  ( wP > w_trg ) ||   ( wQ > w_trg )
+            println( "wP: ", wP, " > ", w_trg );
+            println( "wQ: ", wQ, " > ", w_trg );
+        end
+        @assert( wP <= w_trg );
+        @assert( wQ <= w_trg );
+
+        if  (     ( cardin( PA ) > round(Int64, cardin( P ) * 0.9 ) )
+              ||  ( cardin( QA ) > round(Int64, cardin( Q ) * 0.9 ) ) )
+            break;
+        end
+
+        #print( "delta: ", delta, "  wP: ", wP, "  wQ: ", wQ, "  " );
+        #println( cardin( PA ), " / ", cardin( P ),  "   |   ",
+        #         cardin( QA ), " / ", cardin( Q ) );
+
+        #println( "regular ve_r_range" );
+        #@time
+        l_min, l_max = frechet_ve_r_compute_range( PA, QA, 2000000.0+ub_start )
+        if  ( l_min < r < l_max )
+            delta = min( abs( l_min -r ), abs( l_max - r ), delta );
+            #println( "zoom in..." );
+            #@time
+            m, PA_A, QA_A = frechet_mono_via_refinement_delta( PA, QA,
+                                                               delta / 3.0,
+                                                            false );
+            l_min = m.lower_bound;#leash / m.ratio;
+            l_max = m.leash;
+        end
+        lb = l_min - wP - wQ
+        ub = l_max + wP + wQ
+
+        if  ( lb > r )
+            return  +1;
+        end
+
+        if  ( ub < r )
+            return  -1;
+        end
+        delta = min( abs( l_max - r ), delta / 1.1 );
+    end
+
+    #println( "SHOGI!" );
+
+    for  i in 1:10
+#        println( "Iter: ", i );
+        f_debug &&  ( i > 5 )  &&   println( "ratio: ", ratio );
+        m = frechet_c_approx( P, Q, ratio );
+        if  m.leash < r
+            return  -1;
+        end
+        lb = m.leash / m.ratio;
+        if  lb > r
+            return  1;
+        end
+
+        #    ratio = (r / lb min( m.ratio, 1.01 );
+        ratio = ((r / lb) - 1.0) / 2.0 + 1.0; # min( m.ratio, 1.01 );
+        ratio = min( ratio, 1.1 );
+        if  ( ratio <= 1.01 )
+            m = frechet_c_compute( P, Q );
+            if  m.leash > r
+                return  1;
+            end
+            if  m.leash < r
+                return  -1;
+            end
+            return  0;
+        end
+#        if  i > 2
+#            println( "RATIO  ", i, " : ", ratio );
+#        end
+    end
+    f_debug  &&  println( "UNDECIDED" );
+    @assert( false );
+
+    return  0;
+end
+
+
+function frechet_decider_PID_new( PID, i, j, r )::Int64
+    f_debug::Bool = false;
 
     P = PID.polys[ i ];
     Q = PID.polys[ j ];
@@ -426,11 +606,22 @@ function frechet_decider_PID( PID, i, j, r )::Int64
         @assert( wP <= w_trg );
         @assert( wQ <= w_trg );
 
-        m, PA_A, QA_A = frechet_mono_via_refinement_delta( PA, QA, delta / 3.0,
-                                                            false );
-        l_min = m.lower_bound;#leash / m.ratio;
-        l_max = m.leash;
+        #println( "=========== ve_r " );
+        @time l_min, l_max = frechet_ve_r_compute_range( PA, QA, 2000000.0+ub_start );
+        println( "===========aprox" );
+        @time  frechet_c_approx( PA, QA, 1.01 );
 
+        
+        if  ( l_min < r < l_max )
+            delta = min( abs( l_min -r ), abs( l_max - r ), delta );
+            println( "delta: ", delta );
+            m, PA_A, QA_A = frechet_mono_via_refinement_delta( PA, QA,
+                                                               delta / 3.0,
+                                                            false );
+            l_min = m.lower_bound;#leash / m.ratio;
+            l_max = m.leash;
+        end
+        
         #println( iters, ": ", l_min, "...", l_max, "  r: ", r );
         
         if  f_debug
@@ -567,6 +758,7 @@ struct  test_info_t
     rad::Float64;
     f_l_a::String
     f_l_b::String
+    ms::Float64
 end
 
 
@@ -576,20 +768,24 @@ function  run_tests( PID::PolygonsInDir, tests::Vector{test_info_t},
 )
     errors::Int64 = 0;
 
-     if  ( rng == 0:0 )
+    if  ( rng == 0:0 )
         rng = 1:length( tests );
     end
 
     f_verify  &&  println( "Verification is on, test would run much slower..." );
     for  i in  rng
+        if  i > 1000000
+            return 0;
+        end
         if  ( ( count[]  & 0x1fff ) == 0x1fff )
             println( count[], " T",
                 Threads.threadid(),"D : ", i, "/", length( tests ) );
             flush( stdout );
         end
         t = tests[ i ];
-        sgn = frechet_decider_PID( PID, t.i_P, t.i_Q, t.rad );
-
+        ms = @timed sgn = frechet_decider_PID( PID, t.i_P, t.i_Q, t.rad );
+        t.ms = ms.time;
+        
         if  ( f_verify )
             #println( "verifying!" );
             sgn_slow = frechet_decider_PID_slow( PID, t.i_P, t.i_Q, t.rad )
@@ -649,7 +845,7 @@ function  read_query_file( base_dir, queries_file, tests, PID )
         ind_a = GetIndex( PID, s_a );
         ind_b = GetIndex( PID, s_b );
 
-        t = test_info_t( ind_a, ind_b, rad, fl_a, fl_b );
+        t = test_info_t( ind_a, ind_b, rad, fl_a, fl_b, 0.0 );
         push!( tests, t );
     end
 end
@@ -666,7 +862,9 @@ function  test_files( PID, base_dir, queries_file, prefix,
     read_query_file( base_dir, queries_file, tests, PID )
 
     errors = run_tests( PID, tests, count, f_verify )
-
+    #@profile    errors = run_tests( PID, tests, count, f_verify )
+    #Profile.print()
+    
     if  ( errors > 0 )
         println( "ERRORS: ", errors );
     end
