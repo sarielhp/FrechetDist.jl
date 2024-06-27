@@ -35,11 +35,9 @@ function  draw_polygon( cr, P, T::Affine2d )
     for  i in 2:nv
         #println( T * P[ i ] );
         po = T * P.pnts[ i - 1 ];
-        p = po.x;
         qo = T * P.pnts[ i ];
-        q = qo.x;
-        move_to( cr,  p[1], p[2] )
-        line_to( cr, q[1], q[2] );
+        move_to( cr,  po[1], po[2] )
+        line_to( cr, qo[1], qo[2] );
         #println( q[1], " ", q[2] );
     end
     Cairo.stroke( cr );

@@ -18,6 +18,7 @@ start=`date +%s`
 
 
 julia --min-optlevel=3 -O3 \
+     --gcthreads 15 \
              examples/run_queries_test.jl sfile \
                              data/characters/ \
                              $TFL

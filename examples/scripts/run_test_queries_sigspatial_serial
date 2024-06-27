@@ -6,7 +6,6 @@ TDIR=/tmp/frechet_dist
 mkdir -p $TDIR >& /dev/null
 TFL=$TDIR/sigspatial_list.txt
 
-
 find data/queries/sigspatial -type f > $TFL
 
 
@@ -15,6 +14,7 @@ start=`date +%s`
 #    -O3 --min-optlevel=3 \
 #    --track-allocation=user \
 julia \
+     --gcthreads 15 \
     examples/run_queries_test.jl sfile \
                              data/sigspatial/ \
                              $TFL
