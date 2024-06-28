@@ -801,7 +801,8 @@ end
 
 
 function  Polygon_push( pout::Polygon{D,T}, p::Point{D,T} ) where  {D,T}
-    push!( pout, deepcopy( p ) );
+#    push!( pout, deepcopy( p ) );
+    push!( pout, p );
 end
 
 

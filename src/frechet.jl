@@ -177,7 +177,8 @@ function f_r_create_event( R::Polygon{N,T}, i::Int64,
     end
     #        println( "TTT= ", t );
 
-    return  EventPoint( deepcopy( p ), i, PT_ON_EDGE, t );
+#    return  EventPoint( deepcopy( p ), i, PT_ON_EDGE, t );
+    return  EventPoint( p, i, PT_ON_EDGE, t );
 end
 
 
@@ -1288,6 +1289,7 @@ end
 
 
 function  propogate_mins( qz, rounds::Int64 = 1 )
+#    a = deepcopy( qz );
     a = deepcopy( qz );
     for  r  in 1:rounds
         for  i  in  1:length( a )
