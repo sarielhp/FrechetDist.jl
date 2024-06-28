@@ -763,13 +763,11 @@ end
 
 function  Polygon_push_smart( pout::Polygon{D,T}, p::Point{D,T} ) where  {D,T}
     if  ( cardin( pout ) == 0 )
-#        push!( pout, deepcopy( p ) );
-        push!( pout, p );
+        push!( pout, deepcopy( p ) );
         return  true;
     end
-    if  ( Dist( last( pout ), p ) > 0.0 )
-#        push!( pout, deepcopy( p ) );
-        push!( pout, p );
+    if  ( Dist( last( pout ), deepcopy( p ) ) > 0.0 )
+        push!( pout, deepcopy( p ) );
         return  true;
     end
     return  false
@@ -801,8 +799,7 @@ end
 
 
 function  Polygon_push( pout::Polygon{D,T}, p::Point{D,T} ) where  {D,T}
-#    push!( pout, deepcopy( p ) );
-    push!( pout, p );
+    push!( pout, deepcopy( p ) );
 end
 
 
