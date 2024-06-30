@@ -1207,91 +1207,110 @@ end
 
 function  generate_examples()
     if  is_rebuild( "output/01" )
+        println( "Example 1" );
         gen_example_1()
     end
     if  is_rebuild( "output/02" )
+        println( "Example 2" );
         poly_a,poly_b = example_2();
         create_demo( "Example 2", "output/02/", poly_a,poly_b );
     end
 
     if  is_rebuild( "output/03" )
+        println( "Example 3" );
         poly_a,poly_b = example_3();
         create_demo( "Example 3", "output/03/", poly_a,poly_b );
     end
 
     if  is_rebuild( "output/04" )
+        println( "Example 4" );
         poly_a,poly_b = example_4();
         create_demo( "Example 4", "output/04/", poly_a,poly_b );
     end
 
     if  is_rebuild( "output/05" )
+        println( "Example 5" );
         poly_a,poly_b = example_5();
         create_demo( "Example 5", "output/05/", poly_a,poly_b );
     end
 
     if  is_rebuild( "output/06" )
+        println( "Example 6" );
         gen_example_6()
     end
 
     if  is_rebuild( "output/07" )
+        println( "Example 7" );
         poly_a,poly_b = example_7();
         create_demo( "Example 7", "output/07/", poly_a,poly_b );
     end
 
     if  is_rebuild( "output/08" )
+        println( "Example 8" );
         poly_a,poly_b = example_8_ext(3);
         create_demo( "Example 8 (3)", "output/08/", poly_a,poly_b );
     end
 
     if  is_rebuild( "output/09" )
+        println( "Example 9" );
         poly_a,poly_b = example_9(  3, 4 );
         create_demo( "Example 9 (double zig-zag 3+4)", "output/09/",
                      poly_a,poly_b );
     end
 
     if  is_rebuild( "output/10" )
+        println( "Example 10" );
         poly_a,poly_b = example_10( 3, 4);
         create_demo( "Example 10", "output/10/", poly_a,poly_b );
     end
 
     if   is_rebuild( "output/11" )
+        println( "Example 11" );
         # data/010/trajectory/20070910074631
         # data/010/trajectory/20070919122147
         create_demo_files( "Example of big curves (GPS tracks)",
                            "output/11/",
-                           "data/geolife/1326.txt",
-                           "data/geolife/1327.txt",
+                           "data/geolife/8718.txt",
+                           "data/geolife/1328.txt",
                            true, false );
     end
 
     if  is_rebuild( "output/12" )
+        println( "Example 12" );
         gen_example_12();
     end
 
     if  is_rebuild( "output/13" )
+        println( "Example 13" );
         poly_a,poly_b = example_13();
         create_demo( "Example 13 (7 fixed)", "output/13/", poly_a,poly_b );
     end
 
     if  is_rebuild( "output/14" )
+        println( "Example 14" );
         gen_example_14()
     end
 
     if  is_rebuild( "output/15" )
+        println( "Example 15" );
         gen_example_15()
     end
 
     if  is_rebuild( "output/16" )
+        println( "Example 16" );
         gen_example_16()
     end
     if  is_rebuild( "output/17" )
+        println( "Example 17" );
         gen_example_17()
     end
     if  is_rebuild( "output/18" )
+        println( "Example 18" );
         gen_example_18()
     end
 
     if   is_rebuild( "output/19" )
+        println( "Example 19" );
         if  ( isfile( "data/birds/1787_1.plt" ) )
             create_demo_files( "Example of birds migration (GPS tracks)",
                                "output/19/",
@@ -1302,6 +1321,7 @@ function  generate_examples()
     end
 
     if   is_rebuild( "output/20" )
+        println( "Example 20" );
         if  ( isfile( "data/birds/1787_1.plt" ) )
             create_demo_files( "Example II of birds migration (GPS tracks)",
                 "output/20/",
@@ -1312,6 +1332,7 @@ function  generate_examples()
     end
 
     if   is_rebuild( "output/21" )
+        println( "Example 21" );
         if  ( isfile( "data/birds/2322_2.plt" ) )
             create_demo_files( "Example III of birds migration (GPS tracks)",
                                "output/21/",
@@ -1323,6 +1344,7 @@ function  generate_examples()
 
 
     if   is_rebuild( "output/22" )
+        println( "Example 22" );
         create_demo_files( "Paper example 1 (birds: 1787_1 vs 1797_1",
                            "output/22/",
                            "data/birds/1787_1.plt",
@@ -1330,6 +1352,7 @@ function  generate_examples()
                            true, false );
     end
     if   is_rebuild( "output/23" )
+        println( "Example 23" );
         create_demo_files( "Paper example 2 (birds: 2307_3 vs 2859_3",
                            "output/23/",
                            "data/birds/2307_3.plt",
@@ -1337,6 +1360,7 @@ function  generate_examples()
                            true, false );
     end
     if   is_rebuild( "output/24" )
+        println( "Example 24" );
         create_demo_files( "Paper example 3 (birds: 2322_2 vs 1793_4",
                            "output/24/",
                            "data/birds/2322_2.plt",
@@ -1344,6 +1368,7 @@ function  generate_examples()
                            true, false );
     end
     if   is_rebuild( "output/25" )
+        println( "Example 25" );
         # data/010/trajectory/20080928160000.plt
         # data/010/trajectory/20081219114010.plt
         create_demo_files(
@@ -1354,6 +1379,7 @@ function  generate_examples()
             true, false );
     end
     if   is_rebuild( "output/26" )
+        println( "Example 26" );
         # data/041/trajectory/20090708221430.plt
         # data/041/trajectory/20090712044248.plt
         create_demo_files(
@@ -1364,6 +1390,7 @@ function  generate_examples()
             true, false );
     end
     if   is_rebuild( "output/27" )
+        println( "Example 27" );
         create_demo_files(
             "Paper example 6: Pigeons RH887_1 / RH887_11",
             "output/27/",
@@ -1372,6 +1399,7 @@ function  generate_examples()
             true, true );
     end
     if   is_rebuild( "output/28" )
+        println( "Example 28" );
         create_demo_files(
             "Paper example 7: Pigeons C369_5 / C873_6",
             "output/28/",
@@ -1380,6 +1408,7 @@ function  generate_examples()
             true, false );
     end
     if   is_rebuild( "output/29" )
+        println( "Example 29" );
         create_demo_files(
             "Paper example 8: Pigeons C360_10 / C480_9",
             "output/29/",
