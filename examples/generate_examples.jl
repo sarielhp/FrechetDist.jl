@@ -1258,7 +1258,7 @@ function  generate_examples()
         create_demo_files( "Example of big curves (GPS tracks)",
                            "output/11/",
                            "data/geolife/1326.txt",
-                           "data/geolife/1328.txt",
+                           "data/geolife/1327.txt",
                            true, false );
     end
 
