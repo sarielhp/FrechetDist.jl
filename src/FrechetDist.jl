@@ -21,6 +21,8 @@ include( "frechet_discrete.jl" );
 include( "frechet.jl" );
 include( "SweepDist.jl" );
 include( "utils.jl" );
+include( "polygon_hierarchy.jl" );
+include( "palette.jl" )
 
 ##########################################################################
 
@@ -75,14 +77,32 @@ export  frechet_simplify_w_exp
 export  frechet_c_approx
 export  frechet_c_compute
 
-export  frechet_pallete
-export  frechet_approx_from_pallete
-
 export  DTW_d_compute;
 
 export  SweepDist_compute;
 export  SweepDist_lb_compute;
 export  SweepDist_compute_refine_mono;
 export  SweepDist_compute_split;
+
+#########################################################################
+# Palette: Is an array of floats that encodes approximation info about
+# a polygon. Using such a precomputed palette, one can quickly extract
+# a simplification.
+
+export  frechet_palette
+export  frechet_approx_from_palette
+
+#########################################################################
+# Polygon hierarchy...
+export   PolygonHierarchy
+
+export  ph_push!
+export  ph_print
+export  ph_approx
+export  ph_compute_hierarchy
+export  ph_init
+
+
+
 
 end
