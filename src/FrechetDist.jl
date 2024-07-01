@@ -90,7 +90,8 @@ export  SweepDist_compute_split;
 # a simplification.
 
 export  frechet_palette
-export  frechet_approx_from_palette
+export  frechet_palette_approx
+export  frechet_palette_level
 
 #########################################################################
 # Polygon hierarchy...

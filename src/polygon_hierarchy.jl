@@ -138,7 +138,7 @@ function   ph_approx( ph::PolygonHierarchy{D,T}, w::Float64,
         Z, wZ = ph.polys[ i ],  ph.widths[ i ]
         #println( "TRINGO!" );
     else
-        Z, grb, wZ = frechet_approx_from_palette( ph.P, ph.plt, new_w );
+        Z, grb, wZ = frechet_palette_approx( ph.P, ph.plt, new_w );
     end
         #println( "|Z| : ", cardin( Z ), " ... ", cardin( ph.P ) );
     #w = ph_push_target( phA,   max( wA - wZ, 0.0 ), Z, lmt, wZ )
@@ -178,7 +178,7 @@ function  ph_compute_hierarchy( ph::PolygonHierarchy{D,T},
         end
         wA = w / ratio;
 
-        Z, Z_indices, wZ = frechet_approx_from_palette( P, ph.plt, wA / 4.0 );
+        Z, Z_indices, wZ = frechet_palette_approx( P, ph.plt, wA / 4.0 );
 
         w = ph_push_target( ph,   max( wA - wZ, 0.0 ), Z, lmt, wZ )
         ( w < -0.5 )  &&  break;

@@ -50,11 +50,23 @@ function  p_extract( pout::Polygon{N,T},
     #println( "w_l :", w_l );
     return  max( w_l, w_r );
 end
-0
 
-function   frechet_approx_from_palette( P::Polygon{N,T},
-                                        plt::Vector{T},
-                                        w::T
+
+"""
+    frechet_palette_approx
+
+Extract an approximation to P using the palette, and a width
+parameter. The output polygon Q has the property the Frechet distance
+betwwen P and Q is at most w (might be smaller).
+
+The approximation provided is fast (i.e., running time proportional to
+the nubmer of vertices of Q, but the approximation might be of low
+quality.
+
+"""
+function   frechet_palette_approx( P::Polygon{N,T},
+                                   plt::Vector{T},
+                                   w::T
                                         ) where {N,T}
     len = length( plt );
 
@@ -79,4 +91,47 @@ function   frechet_approx_from_palette( P::Polygon{N,T},
     push!( pout_is, len );
 
     return  pout, pout_is, w;
+end
+
+
+function  p_extract_level( pout::Polygon{N,T},
+                     pout_is::Vector{Int64},
+                     P::Polygon{N,T}, plt::Vector{T},
+                     i::Int64, j::Int64,
+                     level::Int64 )  where {N,T}
+    ( ( i > j )  ||  ( level <= 0 ))  &&  return;
+
+    mid = (i + j) >> 1;
+    if  ( mid == i )  ||  ( mid == j )
+        return;
+    end
+    w_l = p_extract_level( pout, pout_is, P, plt, i, mid, level - 1 );
+    push!( pout, P[ mid ] );
+    push!( pout_is, mid );
+    w_r = p_extract_level( pout, pout_is, P, plt, mid, j, level - 1 );
+end
+
+
+"""
+    frechet_palette_level
+
+Extract the approximate polygon by specifying a level of the
+approximation. 
+
+"""
+function frechet_palette_level( P::Polygon{N,T},
+plt::Vector{T}, level::Int64 ) where {N,T} @assert( cardin( P ) > 0 );
+
+    pout = Polygon{N,T}();
+    pout_is = Vector{Int64}();
+    
+    push!( pout, P[ 1 ] );
+    push!( pout_is, 1 );
+
+    w = p_extract_level( pout, pout_is, P, plt, 1, len, w );
+
+    push!( pout, P[ len ] );
+    push!( pout_is, len );
+
+    return  pout, pout_is;
 end
