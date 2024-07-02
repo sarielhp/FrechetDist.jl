@@ -21,6 +21,12 @@ function frechet_comp( P::Polygon{D,T}, Q::Polygon{D,T}
     m_d = frechet_c_compute( P, Q );
     @time m = frechet_mono_via_refinement( P, Q, 1.00001 )[1];
     @time m_d = frechet_c_compute( P, Q );
+    @time m_d = frechet_c_compute( P, Q );
+
+    println( "frechet_compute range..." );
+    @time frechet_ve_r_compute_range( P, Q, 10000000.0 )
+
+
     println( m.leash );
     println( m_d.leash );
     exit( -1 );
