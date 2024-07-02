@@ -99,16 +99,18 @@ function  p_extract_level( pout::Polygon{N,T},
                      P::Polygon{N,T}, plt::Vector{T},
                      i::Int64, j::Int64,
                      level::Int64 )  where {N,T}
-    ( ( i > j )  ||  ( level <= 0 ))  &&  return;
-
-    mid = (i + j) >> 1;
+    if ( ( i > j )  ||  ( level <= 0 ))
+        return;
+    end
+    
+    mid::Int64 = (i + j) >> 1;
     if  ( mid == i )  ||  ( mid == j )
         return;
     end
-    w_l = p_extract_level( pout, pout_is, P, plt, i, mid, level - 1 );
+    p_extract_level( pout, pout_is, P, plt, i, mid, level - 1 );
     push!( pout, P[ mid ] );
     push!( pout_is, mid );
-    w_r = p_extract_level( pout, pout_is, P, plt, mid, j, level - 1 );
+    p_extract_level( pout, pout_is, P, plt, mid, j, level - 1 );
 end
 
 
@@ -120,7 +122,10 @@ approximation.
 
 """
 function frechet_palette_level( P::Polygon{N,T},
-plt::Vector{T}, level::Int64 ) where {N,T} @assert( cardin( P ) > 0 );
+    plt::Vector{T}, level::Int64 ) where {N,T}
+
+    len = cardin( P );
+    @assert( len > 0 );
 
     pout = Polygon{N,T}();
     pout_is = Vector{Int64}();
@@ -128,10 +133,10 @@ plt::Vector{T}, level::Int64 ) where {N,T} @assert( cardin( P ) > 0 );
     push!( pout, P[ 1 ] );
     push!( pout_is, 1 );
 
-    w = p_extract_level( pout, pout_is, P, plt, 1, len, w );
+    p_extract_level( pout, pout_is, P, plt, 1, len, level );
 
     push!( pout, P[ len ] );
     push!( pout_is, len );
-
+    println( "|pout|: ", cardin( pout ) );
     return  pout, pout_is;
 end

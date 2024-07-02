@@ -14,7 +14,7 @@ mutable struct  PolygonHierarchy{D,T}
     lock::ReentrantLock;
 end
 
-function ph_push!( ph::PolygonHierarchy{D,T}, Q::Polygon2F, w::Float64
+function ph_push!( ph::PolygonHierarchy{D,T}, Q::Polygon{D,T}, w::Float64
                    )   where {D,T}
     @assert( cardin( Q ) > 1 )
 
