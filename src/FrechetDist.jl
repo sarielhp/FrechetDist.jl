@@ -23,6 +23,7 @@ include( "SweepDist.jl" );
 include( "utils.jl" );
 include( "polygon_hierarchy.jl" );
 include( "palette.jl" )
+include( "fever.jl" )
 
 ##########################################################################
 
@@ -62,6 +63,9 @@ export  frechet_width_approx
 export  frechet_offsets
 
 export  frechet_ve_r_compute_range
+
+export  FEVER_compute_range
+
 
 export  frechet_mono_via_refinement, frechet_mono_via_refinement_ext
 

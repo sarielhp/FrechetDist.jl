@@ -17,8 +17,12 @@ function frechet_comp( P::Polygon{D,T}, Q::Polygon{D,T}
     #println( Q );
     println( "|P|:", cardin( P ), "  |Q| :", cardin( Q ) );
 
+    #=
     m = frechet_mono_via_refinement( P, Q, 1.00001 )[1];
     m_d = frechet_c_compute( P, Q );
+    =#
+    l_min_a, l_max_a =  FEVER_compute_range( P, Q, 10000000.0 );
+    #=println( l_min_a, "...", l_min_b );
     @time m = frechet_mono_via_refinement( P, Q, 1.00001 )[1];
     @time m_d = frechet_c_compute( P, Q );
     @time m_d = frechet_c_compute( P, Q );
@@ -26,9 +30,21 @@ function frechet_comp( P::Polygon{D,T}, Q::Polygon{D,T}
     println( "frechet_compute range..." );
     @time frechet_ve_r_compute_range( P, Q, 10000000.0 )
 
+    println( "FEVER_compute range..." );
+    =#
+    @time l_min_b, l_max_b = FEVER_compute_range( P, Q, 10000000.0 );
 
+    println( l_min_a, " ", l_min_b );
+    println( l_max_a, " ", l_max_b );
+    
+    #=
+    println( "FEVER_compute range..." );
+    @time FEVER_compute_range( P, Q, 10000000.0 );
+    println( "FEVER_compute range..." );
+    @time FEVER_compute_range( P, Q, 10000000.0 );
     println( m.leash );
     println( m_d.leash );
+    =#
     exit( -1 );
     
     for  i in 1:10
