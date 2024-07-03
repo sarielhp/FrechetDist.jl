@@ -1,0 +1,916 @@
+        - # Originally contributed by S. Har-Peled
+        - # under MIT License
+        - 
+        - #---------------------------------------------------------
+        - # Morphing
+        - #
+        - # A morphing is the matching between two polygons as computed by by
+        - # the Frechet distance.
+        - #---------------------------------------------------------
+        - 
+        - using Parameters
+        - using DataStructures
+        - using Printf
+        - 
+        - include( "DistFunc.jl" );
+        - 
+        - 
+        - @enum FPointType begin
+        -     PT_VERTEX = 1
+        -     PT_ON_EDGE = 2
+        - end
+        - 
+        - ############################################################
+        - # A vertex edge event descriptor.
+        - #
+        - # p: Location of the point being matched. Not necessarily a vetex of
+        - #    the polygon.
+        - # i: Vertex number in polygon/or edge number where p lies.
+        - # type:
+        - # t: Convex combination coefficient if p is on the edge. t=0 means its
+        - #    the ith vertex, t=1 means it is on the i+1 vertex.
+        - ############################################################
+        - #@with_kw
+        - mutable struct EventPoint{N,T}
+        -     p::Point{N,T}
+        -     i::Int64;
+        -     type::FPointType;
+        -     t::Float64;
+        - end
+        - 
+        - # leash = maximum length of an edge in the encoded matching.
+        - #         (That is, the Frechet distance.)
+        - """
+        -     Morphing
+        - 
+        - Encoding of a moprhing (i.e., matching) between two polygonal cuves.
+        - 
+        - """
+        - @with_kw mutable struct  Morphing{N,T}
+        -     P::Polygon{N,T}
+        -     Q::Polygon{N,T}
+        -     pes::Vector{EventPoint{N,T}}; # P event sequence
+        -     qes::Vector{EventPoint{N,T}}; # Q event sequence
+        -     leash::Float64
+        - #    leash_offsets::Float64
+        -     iters::Int64
+        -     ratio::Float64
+        -     monotone_err::Float64
+        -     sol_value::Float64
+        - 
+        -     f_is_monotone_init::Bool
+        -     f_is_monotone::Bool
+        - 
+        -     lower_bound::T;
+        - end
+        - 
+        - function   Morphing_init( P::Polygon{N,T}, Q::Polygon{N,T},
+        -     pes::Vector{EventPoint{N,T}},
+        -     qes::Vector{EventPoint{N,T}} ) where {N,T}
+        - 
+        -     @assert( length( pes ) == length( qes ) );
+        -     m = Morphing( P, Q, pes, qes,
+        -         0.0, 0, 0.0, 0.0, 0.0, false, false,
+        -         0.0 # lower_bound
+        -     );
+        -     Morphing_recompute_leash( m );
+        - 
+        -     return  m;
+        - end
+        - 
+        - 
+        - function  Morphing_get_max_edges_err( m::Morphing{D,T} ) where {D,T}
+        -     mx::Float64 = 0.0;
+        - 
+        -     io = jo = -1;
+        - 
+        -     P = m.P;
+        -     Q = m.Q;
+        - 
+        -     l_p = cardin( P );
+        -     l_q = cardin( Q );
+        - 
+        -     len = length( m.pes );
+        -     for  ind in  1:len
+        -         i = m.pes[ ind ].i;
+        -         j = m.qes[ ind ].i;
+        - 
+        -         if  ( i== l_p )  ||  ( j == l_q )
+        -             continue;
+        -         end
+        - 
+        -         d = max( Dist( P[ i ], Q[ j ] ),
+        -                  Dist( P[ i ], Q[ j + 1 ] ),
+        -                  Dist( P[ i + 1 ], Q[ j ] ),
+        -                  Dist( P[ i + 1 ], Q[ j + 1 ] ) );
+        -         ld = iseg_iseg_dist( P[ i ], P[ i + 1 ], Q[ j ], Q[ j + 1 ] );
+        -         delta = d - ld;
+        -         #println( "delta : ", delta, " (", i, ", ", j, ")" );
+        -         if  ( delta > mx )
+        -             mx = delta;
+        -             io, jo = i, j;
+        -         end
+        -     end
+        - 
+        -     return   io, jo, mx;
+        - end
+        - 
+        - 
+        - ####################################################
+        - # Compute for every vertex the maximum leash length used with this
+        - # vertex.
+        - ####################################################
+        - 
+        - function   extract_vertex_leash( P::Polygon{N,T},
+        -     pes::Vector{EventPoint{N,T}},
+        -     qes::Vector{EventPoint{N,T}}
+        - ) where {N,T}
+        0     P_len = cardin( P );
+        0     len = length( pes );
+        0     vl = zeros( Float64, P_len )
+        0     for  i in  1:len
+        0         ev = pes[ i ];
+        0         evx = qes[ i ];
+        -         # BUG: If should not have been there... We are being very
+        -         # conservative about vertices that should not be simplified.
+        - 
+        -         # if ( ev.type == PT_VERTEX )
+        0         vl[ ev.i ] = max( vl[ ev.i ], Dist( ev.p, evx.p ) );
+        -         #end
+        0     end
+        - 
+        0     return  vl;
+        - end
+        - 
+        - 
+        - """
+        -     Morphing_extract_vertex_radii
+        - 
+        -     Computes for each polygon vertex, the length of the longest edge
+        -     in the matching attached ot it. It is a cheap upper bound on the
+        -     local Frechet distance for each vertex (and implicitly the
+        -     attached edge).
+        - """
+        - function   Morphing_extract_vertex_radii( m::Morphing{N,T} ) where {N,T}
+        -     pl = extract_vertex_leash( m.P, m.pes, m.qes );
+        -     ql = extract_vertex_leash( m.Q, m.qes, m.pes );
+        -     return  pl, ql
+        - end
+        - 
+        - 
+        - function   Morphing_swap_sides!( m::Morphing{N,T} ) where {N,T}
+        -     m.P, m.Q = m.Q, m.P
+        - #    swap!( m.P, m.Q );
+        -     #swap!( m.pes, m.qes );
+        -     m.pes, m.qes = m.qes, m.pes;
+        - end
+        - 
+        - """
+        -     Morphing_empty
+        - 
+        - Returns an empty morhping (i.e., a constructor).
+        - """
+        - function   Morphing_empty( P::Polygon{N,T}, Q::Polygon{N,T} )  where {N,T}
+        -     pes = Vector{EventPoint{N,T}}();
+        -     qes = Vector{EventPoint{N,T}}()
+        -     r::Float64 = -1;
+        -     return  Morphing( P, Q, pes, qes, r, 0, 0.0, 0.0, 0.0, false, false, 0.0 );
+        - end
+        - 
+        - 
+        - ###################################################################
+        - # Check if the matching is monotone. That is the endpoints of the
+        - # matching on each curve are sorted, in the same order as the
+        - # matching.
+        - ##################################################################
+        - function  events_seq_is_monotone( s::Vector{EventPoint{N,T}}
+        - ) where {N,T}
+        - 
+        0     len = length( s );
+        -     i::Int64 = 1;
+        0     while  ( i <= len )
+        0         ep = s[ i ];
+        0         if  ep.type == PT_VERTEX
+        0             i = i + 1;
+        -             continue;
+        -         end
+        - 
+        -         j = i
+        0         loc = s[ i ].i;
+        0         while  ( ( j < len )
+        -             &&  ( s[ j + 1 ].type == PT_ON_EDGE )
+        -             &&  ( s[ j + 1 ].i == loc ) )
+        0             j = j + 1
+        -         end
+        - 
+        -         # i:j is the sequence of edge-vertex events
+        0         for  k  in i:(j-1)
+        0             if  s[ k + 1 ].t < s[ k ].t
+        0 	        return  false;
+        -             end
+        0         end
+        0         i = j + 1;
+        0     end
+        - 
+        0     return  true;
+        - end
+        - 
+        - 
+        - ##############################################################################
+        - # Make the matching (which might be potentially not monotone) into a monotone
+        - # one.
+        - ##############################################################################
+        - function  events_seq_make_monotone( P::Polygon{N,T},
+        -                                     s::Vector{EventPoint{N,T}} ) where {N,T}
+        0     ns = Vector{EventPoint{N,T}}();
+        - 
+        0     len = length( s );
+        -     i::Int64 = 1;
+        -     delta = 0.0;
+        0     while  ( i <= len )
+        0         ep = s[ i ];
+        0         if  ep.type == PT_VERTEX
+        0             up = deepcopy( ep );
+        0             push!( ns, up )
+        0             i = i + 1;
+        -             continue;
+        -         end
+        - 
+        -         j = i
+        0         loc = s[ i ].i;
+        0         t = s[ i ].t
+        0         while  ( ( j < len )
+        -                  &&  ( s[ j + 1 ].type == PT_ON_EDGE )
+        -                  &&  ( s[ j + 1 ].i == loc ) )
+        0             nep = deepcopy( s[ j ] );
+        0             t = max( t, nep.t );
+        0             if  ( t > nep.t )
+        0                 ell = Dist( P[ nep.i ], P[ nep.i + 1 ] );
+        0                 delta = max( delta, ( t - nep.t ) * ell );
+        0                 nep.t = t;
+        0                 nep.p = convex_comb( P[ nep.i ], P[ nep.i + 1 ],
+        -                                      t  );
+        -             end
+        0             push!( ns, nep );
+        0             j = j + 1
+        -         end
+        - 
+        0         nep = deepcopy( s[ j ] );
+        0         if  ( t > nep.t )
+        0             ell = Dist( P[ nep.i ], P[ nep.i + 1 ] );
+        0             delta = max( delta, ( t - nep.t ) * ell );
+        0             nep.t = t;
+        0             nep.p = convex_comb( P[ nep.i ], P[ nep.i + 1 ],
+        -                                  t );
+        -         end
+        0         push!( ns, nep );
+        - 
+        0         i = j + 1;
+        0     end
+        - 
+        0     @assert( length( ns ) == length( s ) );
+        0     return  ns, delta;
+        - end
+        - 
+        - 
+        - ##############################################################################
+        - # Make the matching (which might be potentially not monotone) into a monotone
+        - # one.
+        - ##############################################################################
+        - function  events_seq_get_monotone_leash( P::Polygon{N,T},
+        -     s::Vector{EventPoint{N,T}},
+        -     s_alt::Vector{EventPoint{N,T}},
+        -     leash::T ) where {N,T}
+        - 
+        -     len = length( s );
+        -     i::Int64 = 1;
+        -     while  ( i <= len )
+        -         ep = s[ i ];
+        -         if  ep.type == PT_VERTEX
+        -             i = i + 1;
+        -             continue;
+        -         end
+        - 
+        -         j = i
+        -         loc = s[ i ].i;
+        -         t = s[ i ].t
+        -         while  ( ( j < len )
+        -                  &&  ( s[ j + 1 ].type == PT_ON_EDGE )
+        -                  &&  ( s[ j + 1 ].i == loc ) )
+        -             nep = s[ j ];
+        -             t = max( t, nep.t );
+        -             if  ( t > nep.t )
+        -                 ell = Dist( P[ nep.i ], P[ nep.i + 1 ] );
+        -                 new_p = convex_comb( P[ nep.i ], P[ nep.i + 1 ],
+        -                                      t  );
+        -                 leash = max( leash, Dist( new_p, s_alt[ j ].p ) );
+        -             end
+        -             j = j + 1
+        -         end
+        - 
+        -         nep = s[ j ];
+        -         if  ( t > nep.t )
+        -             ell = Dist( P[ nep.i ], P[ nep.i + 1 ] );
+        -             new_p = convex_comb( P[ nep.i ], P[ nep.i + 1 ], t );
+        -             leash = max( leash, Dist( new_p, s_alt[ j ].p ) );
+        -         end
+        -         i = j + 1;
+        -     end
+        - 
+        -     return  leash;
+        - end
+        - 
+        - 
+        - function  Morphing_recompute_leash( m::Morphing{N,T} ) where  {N,T}
+        0     @assert( length( m.pes ) == length( m.qes ) );
+        -     r = 0;
+        0     for  i  in eachindex( m.pes )
+        0         ell = Dist( m.pes[ i ].p, m.qes[ i ].p )
+        0         if   ell > r
+        -             r = ell;
+        -         end
+        0     end
+        0     if  ( m.leash != r )   &&   ( m.leash != 0 )
+        0         println( "ERROR old leash:" , m.leash );
+        0         println( "ERROR new leash:" , r );
+        0         exit( -1 );
+        -     end
+        0     m.leash = r;
+        - end
+        - 
+        - """
+        -     Morphing_as_polygons
+        - 
+        - Turns the morphing matching into a "true" matching, by creating two
+        - polygons that their edges are directly matched.  The output polygons P
+        - and Q will definitely have reapeated points.
+        - 
+        - """
+        - function  Morphing_as_polygons( m::Morphing{N,T} ) where  {N,T}
+        -     P = Polygon{N,T}();
+        -     Q = Polygon{N,T}();
+        - 
+        -     for  i  in eachindex( m.pes )
+        -         push!( P, m.pes[ i ].p );
+        -         push!( Q, m.qes[ i ].p );
+        -     end
+        - 
+        -     return  P, Q
+        - end
+        - 
+        - 
+        - function   Morphing_is_monotone( m::Morphing{N,T} ) where {N,T}
+        -     if  m.f_is_monotone_init
+        -         return  m.f_is_monotone
+        -     end
+        -     m.f_is_monotone = ( events_seq_is_monotone( m.pes )
+        -                       && events_seq_is_monotone( m.qes ) )
+        -     m.f_is_monotone_init = true;
+        - 
+        -     return  m.f_is_monotone
+        - end
+        - 
+        - ##########################################################3
+        - # Turn the morphing into monotone morphing...
+        - ##########################################################3
+        - """
+        -     Morphing_monotonize
+        - 
+        - Turns a morphing into a monotone morphing, by simply not going back,
+        - staying in place if necessary.
+        - """
+        - function  Morphing_monotonize( m::Morphing{N,T} ) where {N,T}
+        0     if  Morphing_is_monotone( m )
+        0         return  m; # deepcopy( m );
+        -     end
+        0     P = m.P;
+        0     Q = m.Q;
+        - 
+        0     pes_new, da = events_seq_make_monotone( P, m.pes );
+        0     qes_new, db = events_seq_make_monotone( Q, m.qes );
+        - 
+        - 
+        0     m_out = Morphing_init( P, Q, pes_new, qes_new );
+        - 
+        0     m_out.monotone_err = max( da, db );
+        - 
+        0     return  m_out;
+        - end
+        - 
+        - 
+        - function  Morphing_monotone_leash( m::Morphing{N,T} ) where {N,T}
+        -     if  Morphing_is_monotone( m )
+        -         return  m.leash; # deepcopy( m );
+        -     end
+        - 
+        -     leash = m.leash;
+        -     leash = events_seq_get_monotone_leash( m.P, m.pes, m.qes, leash );
+        -     leash = events_seq_get_monotone_leash( m.Q, m.qes, m.pes, leash );
+        - 
+        -     return  leash;
+        - end
+        - 
+        - 
+        - 
+        - ##########################################################################
+        - 
+        - 
+        - function  check_times( V::Vector{EventPoint{N,T}} ) where {N,T}
+        0     for  ev in V
+        0         if  ( ev.t < 0.0 )  ||  (ev.t > 1.0 )
+        0             println( "Event time is wrong? ", ev.t );
+        0             exit( -1 );
+        -         end
+        0     end
+        - end
+        - 
+        - 
+        - """
+        -     Morphing_verify_valid
+        - 
+        - Does some minimal checks that the morphing is valid. Speciifcally,
+        - check the times stemps of the events are valid.
+        - """
+        - function  Morphing_verify_valid( m::Morphing{N,T} ) where {N,T}
+        -     check_times( m.pes );
+        -     check_times( m.qes );
+        - end
+        - 
+        - 
+        - """
+        -     extract_param_inner
+        - 
+        - Takes the sequence of events (i.e., sequence of points along the
+        - curve), and outputs a corresponding sequence of real numbers, where
+        - the ith nubmer if the distance of the ith point in sequence from the
+        - beginning of the curve. Here, distance means the total distance of the
+        - subcurve from the start point, to the current point.
+        - """
+        - function  extract_param_inner( P::Polygon{N,T},
+        -                                V::Vector{EventPoint{N,T}} ) where {N,T}
+        0     lens::Vector{Float64} = Polygon_prefix_lengths( P )
+        0     out = Vector{Float64}();
+        0     check_times( V );
+        - 
+        0     n = cardin( P );
+        0     for  i in eachindex( V )
+        0         ev::EventPoint{N,T} = V[ i ];
+        0         if  ev.type == PT_VERTEX
+        0             push!( out, lens[ ev.i ] );
+        -             continue;
+        -         end
+        -         #println( "ev.t: ", ev.t, "  i: ", i,"  len(V): ", length( V )  );
+        0         curr = lens[ ev.i ];
+        0         next = lens[ min( n, ev.i + 1 ) ]
+        0         push!( out, curr + ev.t * (next - curr) )
+        0     end
+        - 
+        0     return  out
+        - end
+        - 
+        - 
+        - """
+        -     Morphing_extract_prm
+        - 
+        -     A parameterization is a polygonal curve that starts at (0,0) and
+        -     end at (m,n).  The polygonal curve either have positive slope edge,
+        -     or vertical or horizontal edges. It can be thought of as a
+        -     piecewise linear function from [0,m] to [0,n]. Here m and n are the
+        -     lengths of the two given polygons of P and Q, respectively.
+        - 
+        - """
+        - function  Morphing_extract_prm( m::Morphing{N,T} )::cg.Polygon2F where {N,T}
+        0     P::Polygon{N,T} = m.P;
+        0     Q::Polygon{N,T} = m.Q;
+        0     peout::Vector{EventPoint{N,T}} = m.pes;
+        0     qeout::Vector{EventPoint{N,T}} = m.qes;
+        - 
+        0     check_times( m.pes );
+        - 
+        0     check_times( m.qes );
+        - 
+        -     # pps and qps are two
+        0     pps::Vector{Float64} = extract_param_inner( P, peout );
+        0     qps::Vector{Float64} = extract_param_inner( Q, qeout );
+        - 
+        0     @assert( length( pps ) == length( qps ) )
+        - 
+        0     out = cg.Polygon2F();
+        0     for  i in eachindex(pps)
+        0         push!( out, point( pps[ i ], qps[ i ] ) )
+        0     end
+        0     return  out;
+        - end
+        - 
+        - 
+        - function  eval_pl_func_on_dim( p::Point{N,T}, q::Point{N,T}, val::Float64,
+        -                                d::Int64 )  where {N,T}
+        0     @assert( p[ d ] <= q[ d ] );
+        0     t = (val - p[d]) / (q[d] - p[d]);
+        - 
+        0     return  convex_comb( p, q, t );
+        - end
+        - 
+        - function  eval_pl_func( p::Point2F, q::Point2F, val::Float64 )
+        -     o = eval_pl_func_on_dim( p, q, val, 1 );
+        -     return  o[2];
+        - end
+        - function  eval_inv_pl_func( p::Point2F, q::Point2F, val::Float64 )
+        -     o = eval_pl_func_on_dim( p, q, val, 2 );
+        -     return  o[1];
+        - end
+        - 
+        - function  check_monotone_top( out::Polygon2F )
+        0     l = cardin( out )
+        0     if  l < 2
+        0         return;
+        -     end
+        0     p = out[ l - 1 ];
+        0     q = out[ l ];
+        -     factor::Float64 = 1.0001
+        0     if  ( p[ 1 ] > factor*q[1] ) || ( p[2] > factor*q[2] )
+        0         println( p[ 1 ], "  >  ", q[1] );
+        0         println( p[ 2 ], "  >  ", q[2] );
+        0         println( "Error (not monotone top): " );
+        0         for i in 1:l
+        0             println( i, " : ", out[ i ] );
+        0         end
+        -         #println( out );
+        0         println( "Error (not monotone top): " );
+        0         exit( -1 );
+        -     end
+        - end
+        - 
+        - 
+        - function  floating_ratio( a::Float64, b::Float64 )::Float64
+        -     if   a == b
+        -         return  1.0;
+        -     end
+        -     return  abs( a - b ) / (abs( a)  + abs(b) );
+        - end
+        - 
+        - function  floating_equal( a::Float64, b::Float64 )::Bool
+        -     if   a == b
+        -         return  true;
+        -     end
+        -     return  abs( a - b ) <= (0.000001* (abs( a)  + abs(b) ))
+        - end
+        - 
+        - 
+        - function  floating_equal( a, b )::Bool
+        -     return  a == b;
+        - end
+        - 
+        - 
+        - ##############################################################3
+        - # parameterization_combine
+        - # Given two parameterization f, g, compute f(g( . ))
+        - ###############################################################
+        - function   parameterization_combine( f::Polygon2F,
+        -                                      g::Polygon2F )::Polygon2F
+        0     if  ( ! floating_equal( last( g )[2], last( f )[ 1 ] ) )
+        0         println( last( g )[2], " != ",  last( f )[ 1 ] );
+        0         @assert( floating_equal( last( g )[2], last( f )[ 1 ] ) )
+        -     end
+        -     idf::Int64 = 1;
+        -     idg::Int64 = 1;
+        0     out::Polygon2F = Polygon2F();
+        - 
+        0     l_f = cardin( f )
+        0     l_g = cardin( g )
+        - 
+        0     @assert( l_f > 1 );
+        0     @assert( l_g > 1 );
+        - 
+        - 
+        -     # x = dim(g,1)
+        -     # y = dim(g,2) = dim(f, 1)
+        -     # z = dim(f,2)
+        0     while (true)
+        0         check_monotone_top( out );
+        - 
+        -         # The two points under consideration, on the y axis
+        0         yf = f[ idf ][1];
+        0         yg = g[ idg ][2];
+        0         f_equal_yf_yg::Bool = floating_equal( yf, yg )
+        0         if  ( f_equal_yf_yg )  &&  ( idf == l_f )  &&  ( idg == l_g )
+        0             push!( out, point( g[ idg ][1], f[ idf ][2] ) )
+        -             break;
+        -         end
+        0         if  ( f_equal_yf_yg   &&  ( idf < l_f )
+        -               &&  ( f[ idf + 1 ][1] == yf ) )
+        0             push!( out, point( g[ idg ][1], f[ idf ][2] ) )
+        0             idf = idf + 1
+        -             continue;
+        -         end
+        0         if  ( f_equal_yf_yg   &&  ( idg < l_g )
+        -               &&  ( floating_equal( g[ idg + 1 ][2], yg ) ) )
+        0             push!( out, point( g[ idg ][1], f[ idf ][2] ) )
+        0             idg = idg + 1
+        -             continue;
+        -         end
+        0         if  f_equal_yf_yg
+        0             push!( out, point( g[ idg ][1], f[ idf ][2] ) )
+        0             idf = min( idf + 1, l_f );
+        0             idg = min( idg + 1, l_g );
+        -             continue;
+        -         end
+        0         if  ( yf < yg )
+        - #            println( "idf :", idf  );
+        - #            println( "idg :", idg );
+        - #            println( "yf :" ,yf );
+        - #            println( "yg :" ,yg );
+        - #            println( g );
+        - 
+        -             # compute g( yf )...
+        0             xg = eval_inv_pl_func( g[idg - 1], g[ idg ], yf )
+        -     #        println( "xg: ", xg );
+        - 
+        -             # A bit of a hack... Because of floating point errors,
+        -             # things can go a bit backward, which we really should not
+        -             # allow.
+        0             if  ( xg < g[ idg - 1 ][ 1 ] )
+        0                 xg = g[ idg - 1 ][ 1 ]
+        -             end
+        0             push!( out, point( xg, f[ idf ][ 2 ] ) )
+        0             idf = min( idf + 1, l_f );
+        -             continue;
+        -         end
+        0         if  ( yf > yg )
+        0             zf = eval_pl_func( f[idf - 1], f[ idf ], yg )
+        -             # A bit of a hack again...
+        0             if  ( zf > f[ idf ][ 2 ] )
+        0                 zf = f[ idf ][ 2 ]
+        -             end
+        0             if  ( zf < f[ idf - 1 ][ 2 ] )
+        0                 zf = f[ idf - 1 ][ 2 ]
+        -             end
+        0             push!( out, point( g[ idg ][ 1 ], zf ) )
+        0             idg = min( idg + 1, l_g );
+        -             continue;
+        -         end
+        0         @assert( false );
+        0     end
+        - 
+        -     # We monotononize the output because of floating point error...
+        -     # Should really just get rid of tiny flatting point jitters.
+        0     curr::Point2F = deepcopy( out[ 1 ] );
+        0     for  i in 2:cardin( out )
+        0         for  j in 1:2
+        0             curr[ j ] = max( curr[ j ], out[ i ][ j ] )
+        0             out[ i ][ j ] = curr[ j ];
+        0         end
+        0     end
+        - 
+        0     return  out;
+        - end
+        - 
+        - """
+        -     get_point
+        - 
+        - Returns the point along P that is in distance pos from the begining of
+        - P ( lenfgth. This is the inner function, where we also provide the
+        - edge it lies on, and the prefix sums (lens) of the lengths of the
+        - edgss of P.
+        - 
+        - """
+        - 
+        - function  get_point(
+        -     P::Polygon{N,T}, lens::Vector{Float64},
+        -     i::Int64, pos::Float64 ) where {N,T}
+        - 
+        0     if  ( i == length( lens ) )
+        0         return  last( P ),1;
+        -     end
+        0     edge_len = lens[ i + 1 ] - lens[ i ];
+        0     t = ( pos - lens[ i ] ) / edge_len;
+        - 
+        0     if  ( 0 > t > -0.00000001 )
+        -         t = 0;
+        -     end
+        0     if  ( 1.0 < t < 1.000000001 )
+        -         t = 1;
+        -     end
+        - 
+        - #    println( "inside... 3" );
+        0     if  ( t == 0 )
+        0         return  P[ i ], .00;
+        -     end
+        0     if  ( t == 1 )
+        0         return  P[ i + 1 ], 1.0;
+        -     end
+        0     p = convex_comb( P[ i ], P[i + 1], t );
+        - #    println( "inside... 4" );
+        0     return p, t;
+        - end
+        - 
+        - function  event_sequences_extract( prm::Polygon2F, P::Polygon{N,T},
+        -                                    Q::Polygon{N,T} ) where {N,T}
+        - 
+        -     i_p::Int64 = 1;
+        -     i_q::Int64 = 1;
+        0     pes = Vector{EventPoint{N,T}}(); # P event sequence
+        0     qes = Vector{EventPoint{N,T}}(); # Q event sequence
+        - 
+        0     len_q = cardin( Q );
+        0     len_p = cardin( P );
+        - 
+        0     lp::Vector{Float64} = Polygon_prefix_lengths( P )
+        0     lq::Vector{Float64} = Polygon_prefix_lengths( Q )
+        - 
+        0     for  i in 1:( cardin( prm ) - 1 )
+        - #        println( "before?? A" );
+        0         curr = prm[ i ];
+        0         p_loc = curr[ 1 ];
+        - 
+        0         while  ( i_p < length( lp ) )  &&  ( p_loc >= lp[ i_p + 1 ] )
+        0             i_p = i_p + 1;
+        -         end
+        0         if  ( ! ( lp[ i_p ] <= p_loc ) )
+        0             println( "-----------------------" );
+        0             println( "lp[ i_p - 1]  : ", lp[ i_p - 1 ] );
+        0             println( "lp[ i_p ]     : ", lp[ i_p ] );
+        0             println( "lp[ i_p + 1 ] : ", lp[ i_p + 1] );
+        0             println( "p_loc         : ", p_loc );
+        0             println( " i_p : ", i_p );
+        0             println( " len : ", length( lp ) );
+        0             println( prm[ i - 1 ] );
+        0             println( prm[ i     ] );
+        0             println( prm[ i + 1 ] );
+        - #            println( prm );
+        - 
+        -         end
+        -         #println( lp[ i_p ], "<=", p_loc );
+        0         @assert( lp[ i_p ] <= p_loc  );
+        0         while  ( i_q < length( lq ) )  &&  ( curr[ 2 ] >= lq[ i_q + 1 ] )
+        0             i_q = i_q + 1;
+        -         end
+        - 
+        -         #        println( "get_point P..." );
+        -         #t_p::Float64;
+        0         pcurr,t_p = get_point( P, lp, i_p, p_loc );
+        0         @assert( 0 <= t_p  &&  t_p <= 1.0 )
+        -         #        println( "get_point Q ..." );
+        0         get_point( Q, lq, i_q, curr[ 2 ] );
+        - #        println( "get_point Q!!!!!!!!!! ..." );
+        0         qcurr,t_q = get_point( Q, lq, i_q, curr[ 2 ] );
+        - 
+        0         if  ( ! ( 0.0 <= t_q <= 1.0 ) )
+        0             println( "t_q: ", t_q );
+        0             @assert( 0.0 <= t_q <= 1.0 );
+        -         end
+        -         #        println( "here? " );
+        - 
+        0         if  ( t_p == 0.0 ) ||  ( ( t_p == 1.0 )  &&  ( i_p == len_p ) )
+        0             push!( pes, EventPoint( pcurr, i_p, PT_VERTEX, 0.0 ) );
+        -         else
+        0             push!( pes, EventPoint( pcurr, i_p, PT_ON_EDGE, T(t_p) ) );
+        -         end
+        - 
+        0         if  ( t_q == 0.0 ) ||  ( ( t_q == 1 )  &&  ( i_q == len_q ) )
+        0             push!( qes, EventPoint( qcurr, i_q, PT_VERTEX, 0.0 ) );
+        -         else
+        0             push!( qes, EventPoint( qcurr, i_q, PT_ON_EDGE, T(t_q) ) );
+        -         end
+        -         #       println( "here? B" );
+        0     end
+        - 
+        0     push!( pes, EventPoint( last(P), cardin( P ), PT_VERTEX, 0.0 ) );
+        0     push!( qes, EventPoint( last(Q), cardin( Q ), PT_VERTEX, 0.0 ) );
+        - 
+        -     #=
+        -     for  i in 1:length( qes )
+        -         if ( ( pes[ i ].type == PT_ON_EDGE ) &&
+        -             ( qes[ i ].type != PT_ON_EDGE ) )
+        -             println( "double edge event?" );
+        -             println( "i:", i );
+        -             println( "qes[ i ].t:", qes[ i ].t );
+        -             println( "pes[ i ].t:", pes[ i ].t );
+        -             println( length( qes ) );
+        -         end
+        -         @assert( ( pes[ i ].type != PT_ON_EDGE )
+        -                  ||  ( qes[ i ].type != PT_ON_EDGE ) );
+        -     end
+        -     =#
+        - 
+        0     return  pes, qes
+        - end
+        - 
+        - ########################################################################
+        - """
+        -     Morphing_from_prm( prm, P, Q )
+        - 
+        -     Construct a morphing from a parameterization of the two polygons P
+        -     and Q.
+        - 
+        - """
+        - function  Morphing_from_prm( prm::Polygon2F,
+        -                              P::Polygon{N,T},
+        -                              Q::Polygon{N,T} ) where {N,T}
+        -     pes, qes = event_sequences_extract( prm, P, Q );
+        -     return  Morphing_init( P, Q, pes, qes );
+        - end
+        - 
+        - 
+        - function   compute_offsets( P::Polygon{N,T},
+        -                             pes::Vector{EventPoint{N,T}},
+        -                             qes::Vector{EventPoint{N,T}},
+        -                             )  where  {N,T}
+        -     offs = zeros( Float64, cardin( P ) );
+        - 
+        -     for  i  in eachindex( pes )
+        -         ev = pes[ i ];
+        -         evx = qes[ i ];
+        -         r = Dist( ev.p, evx.p );
+        -         offs[ ev.i ] = max( offs[ ev.i ], r )
+        -     end
+        - 
+        -     return  offs
+        - end
+        - 
+        - """
+        -     Morphing_extract_offsets
+        - """
+        - function  Morphing_extract_offsets( m::Morphing )
+        -     p_offs = Vector{Float64}();
+        -     q_offs = Vector{Float64}();
+        - 
+        - 
+        -     p_offs = compute_offsets( m.P, m.pes, m.qes );
+        -     q_offs = compute_offsets( m.Q, m.qes, m.pes );
+        -     ; # P event sequence
+        - 
+        -     return  p_offs, q_offs
+        - end
+        - 
+        - 
+        - 
+        - 
+        - 
+        - ###########################################################################
+        - # Compute the morphing src(v) -> trg(u): That is u(v(t))
+        - ###########################################################################
+        - 
+        - """
+        -     Morphing_combine
+        - 
+        - Gets two morphings u, v (i.e., two parameterizations) and combine them
+        - into a single morphing u(v(.)).
+        - 
+        - For example, if u: γ → δ  and  v: δ → ξ, then the returned morphing is
+        - u(v(⋅)): γ → ξ.
+        - 
+        - """
+        - function  Morphing_combine( u::Morphing{N,T}, v::Morphing{N,T} ) where {N,T}
+        0     u_prm = Morphing_extract_prm( u );
+        0     v_prm = Morphing_extract_prm( v );
+        - 
+        0     @assert( cardin( u_prm ) > 1 );
+        0     @assert( cardin( v_prm ) > 1 );
+        - 
+        -     #println( "b5678" );
+        0     prm = parameterization_combine( v_prm, u_prm );
+        - 
+        0     pes, qes = event_sequences_extract( prm, u.P, v.Q );
+        - 
+        0     m = Morphing_init( u.P, v.Q, pes, qes );
+        - 
+        0     return  m;
+        - end
+        - 
+        - function  Morphing_SweepDist_approx_price( m::Morphing{N,T} ) where  {N,T}
+        -     P,Q = Morphing_as_polygons( m );
+        - 
+        -     len = cardin( P );
+        -     price::Float64 = 0;
+        -     for  i in 1: len-1
+        -         price = price + segs_match_price( P[ i ], P[ i + 1 ],
+        -                                           Q[ i ], Q[ i + 1 ] );
+        -     end
+        - 
+        -     return  price;
+        - end
+        - 
+        - 
+        - function  Morphing_SweepDist_price( m::Morphing{N,T} ) where  {N,T}
+        -     P,Q = Morphing_as_polygons( m );
+        - 
+        -     len = cardin( P );
+        -     price::Float64 = 0.0;
+        -     for  i in 1: len-1
+        -         delta::Float64 = SweepDist_segs( P[ i ], P[ i + 1 ],
+        -                                          Q[ i ], Q[ i + 1 ] )
+        -         price = price + delta;
+        -         #println( "DELTA: ", delta );
+        -     end
+        - 
+        -     #println( "PRICE: ", price );
+        -     return  price;
+        - end
+        - 
+        - 
+        - Morphing2F = Morphing{2,Float64};
+        - 
+        - #
+        - # End of file
+        - ##########################################################################
