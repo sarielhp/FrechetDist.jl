@@ -275,7 +275,7 @@ function frechet_decider_PID( PID, i, j, r )::Int64
 
     ratio::Float64 = 5.0;
     #delta = min( abs( r - lb ), abs( r - ub ), r ) / 1.01;
-    delta = ( abs( r - lb )_ abs( r - ub ) ) / 2.01;
+    delta = ( abs( r - lb ), abs( r - ub ) ) / 2.01;
     #=
     println( "Lower bound: ", lb );
     println( "Upper bound: ", ub );
