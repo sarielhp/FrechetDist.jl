@@ -270,7 +270,6 @@ function frechet_decider_PID( PID, i, j, r )::Int64
     w_Q = Q_ph.widths[ 1 ];
 
     lb = max( l_a, l_b );
-    dist = lb + abs( w_P - w_Q );
 
     f_debug && print( "w_P  : ", w_P );
     f_debug && print( "    w_Q  : ", w_Q );
@@ -287,8 +286,7 @@ function frechet_decider_PID( PID, i, j, r )::Int64
     #println( "-------" );
 
     ratio::Float64 = 5.0;
-    #delta = abs( r - dist ) / 10.0;
-    delta = min( abs( r - lb ), abs( r - ub ), r ) / 10.0;
+    delta = min( abs( r - lb ), abs( r - ub ), r / 5.0 ) / 2.0;
     #=
     println( "Lower bound: ", lb );
     println( "Upper bound: ", ub );
