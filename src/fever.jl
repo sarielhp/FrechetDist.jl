@@ -355,9 +355,8 @@ function   fever_comp_leash( c::FEVERContext{N,T},
             curr = curr + 1;
             continue;
         end
+        ID_get_fields( eid, arr[ hi ], fe );
         if  ( fc.i_is_vert  &&  ( ! fc.j_is_vert ) )
-            ID_get_fields( eid, arr[ hi ], fe );
-
             q_a = Q[ fc.j ];
             q_b = Q[ fc.j + 1 ];
             l_min, l_max = max_leash( l_min, l_max, q_a, q_b, P, fc.i,
@@ -367,8 +366,6 @@ function   fever_comp_leash( c::FEVERContext{N,T},
         end
 
         if  ( ( ! fc.i_is_vert )  &&  (  fc.j_is_vert ) )
-            ID_get_fields( eid, arr[ hi ], fe );
-
             p_a = P[ fc.i ];
             p_b = P[ fc.i + 1 ];
             l_min, l_max = max_leash( l_min, l_max, p_a, p_b, Q, fc.j, fe.j );
