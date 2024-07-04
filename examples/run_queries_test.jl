@@ -274,7 +274,7 @@ function frechet_decider_PID( PID, i, j, r )::Int64
     end
 
     ratio::Float64 = 5.0;
-    delta = min( abs( r - lb ), abs( r - ub ) ) / 0.9;
+    delta = min( abs( r - lb ), abs( r - ub ) );# / 0.9;
     #delta = min( delta, (w_P + w_Q) /4.0 );
     #    delta = ( abs( r - lb ) + abs( r - ub ) ) / 3.01;
     #=
