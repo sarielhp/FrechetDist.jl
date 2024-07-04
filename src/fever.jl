@@ -353,14 +353,11 @@ function   fever_comp_leash( c::FEVERContext{N,T},
             low = curr;
             hi = fever_same_status( arr, curr, len )
 
-            q_a = Q[ fc.j ];
-            q_b = Q[ fc.j + 1 ];
-
             if ( low == hi )
                 curr = curr + 1;
-                l_min = max( l_min, dist_iseg_nn_point( q_a, q_b,
-                                                P[ fc.i ] )
-                             );
+                #new_val = dist_iseg_nn_point( q_a, q_b, P[ fc.i ] );
+                #@assert( floating_equal( c.vals[ id_curr ], new_val ) );
+                l_min = max( l_min, c.vals[ id_curr ] );
                 continue;
             end
 
@@ -379,6 +376,8 @@ function   fever_comp_leash( c::FEVERContext{N,T},
             @assert( fc.i <= fe.i );
             #println( " [[[ ", l_min, "...", l_max, " ]]]", fc.i, "...",  fe.i,
             #"       >>>", fc.j );
+            q_a = Q[ fc.j ];
+            q_b = Q[ fc.j + 1 ];
             l_min, l_max = max_leash( l_min, l_max, q_a, q_b, P, fc.i,
                 fe.i );
             #println( "[[[[ ", l_min, "...", l_max, " ]]]" );
@@ -393,7 +392,9 @@ function   fever_comp_leash( c::FEVERContext{N,T},
             p_b = P[ fc.i + 1 ];
             if ( low == hi )
                 curr = curr + 1;
-                l_min = max( l_min,dist_iseg_nn_point( p_a, p_b, Q[fc.j] ));
+                #new_val = dist_iseg_nn_point( p_a, p_b, Q[fc.j] );
+                l_min = max( l_min, c.vals[ id_curr ] );
+                #@assert( floating_equal( c.vals[ id_curr ], new_val ) );
                 continue;
             end
 
