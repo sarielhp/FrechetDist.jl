@@ -240,16 +240,10 @@ function frechet_decider_PID( PID, i, j, r )::Int64
     f_debug::Bool = false;
     f_verify::Bool = false;
 
-    #println( "frechet_decider_PID" );
-
     P = PID.polys[ i ];
     Q = PID.polys[ j ];
 
-    #println( "|P|: ", cardin( P ) );
-    #println( "|Q|: ", cardin( Q ) );
-
-    #println( "\n\n\n\n\n" );
-    f_debug &&   println( "\n\n@@@@@@@@a@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@" );
+    f_debug  &&  println( "\n\n@@@@@@@@a@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@" );
     f_debug  &&  println( "|P|: ", cardin( P ), " |Q|: ", cardin( Q ) );
 
     l_a =  Dist( first( P ), first( Q ) );
@@ -257,9 +251,8 @@ function frechet_decider_PID( PID, i, j, r )::Int64
         #println( "RETURN 1" );
         return  1;
     end
-    l_b = Dist( last( P ), last( Q ) );
-    if  l_b > r
-        #println( "RETURN 2" );
+    lb = max( l_a, Dist( last( P ), last( Q ) ) );
+    if  lb > r
         return  1;
     end
 
@@ -269,24 +262,19 @@ function frechet_decider_PID( PID, i, j, r )::Int64
     w_P = P_ph.widths[ 1 ];
     w_Q = Q_ph.widths[ 1 ];
 
-    lb = max( l_a, l_b );
-
     f_debug && print( "w_P  : ", w_P );
     f_debug && print( "    w_Q  : ", w_Q );
 
     ub_start = ub = lb + w_P + w_Q;
+#    if  ( ( w_P/2.0 - w_Q - lb ) > lb )
+#        println( "STRANGE, but possible..." );
+#    end
     if  ub < r
-        #println( "RETURN -1" );
         return  -1;
     end
-    if  lb > r
-        #println( "RETURN +1.1" );
-        return  +1;
-    end
-    #println( "-------" );
 
     ratio::Float64 = 5.0;
-    delta = min( abs( r - lb ), abs( r - ub ), r / 5.0 ) / 2.0;
+    delta = min( abs( r - lb ), abs( r - ub ), r / 2.0 ) / 1.5;
     #=
     println( "Lower bound: ", lb );
     println( "Upper bound: ", ub );
