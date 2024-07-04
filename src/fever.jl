@@ -342,75 +342,35 @@ function   fever_comp_leash( c::FEVERContext{N,T},
         id_curr::Int64 = arr[ curr ];
 
         ID_get_fields( eid, id_curr, fc );
+        l_min = max( l_min, c.vals[ id_curr ] );
 
         if  ( fc.i_is_vert  &&  fc.j_is_vert )
-            l_min = max( l_min, Dist( P[ fc.i ], Q[ fc.j ] ) );
             curr = curr + 1;
             continue;
         end
-
+        
+        low = curr;
+        hi = fever_same_status( arr, curr, len )
+        if ( low == hi )
+            curr = curr + 1;
+            continue;
+        end
         if  ( fc.i_is_vert  &&  ( ! fc.j_is_vert ) )
-            low = curr;
-            hi = fever_same_status( arr, curr, len )
-
-            if ( low == hi )
-                curr = curr + 1;
-                #new_val = dist_iseg_nn_point( q_a, q_b, P[ fc.i ] );
-                #@assert( floating_equal( c.vals[ id_curr ], new_val ) );
-                l_min = max( l_min, c.vals[ id_curr ] );
-                continue;
-            end
-
-            ( low > hi )  && @assert( false );
-
             ID_get_fields( eid, arr[ hi ], fe );
 
-            if  ( fe.j != fc.j )
-                println( low, "...", hi );
-                for  i in low:hi
-                    println( ID_status( arr[ i ] ) );
-                end
-                @assert( fc.j == fe.j );
-            end
-
-            @assert( fc.i <= fe.i );
-            #println( " [[[ ", l_min, "...", l_max, " ]]]", fc.i, "...",  fe.i,
-            #"       >>>", fc.j );
             q_a = Q[ fc.j ];
             q_b = Q[ fc.j + 1 ];
             l_min, l_max = max_leash( l_min, l_max, q_a, q_b, P, fc.i,
                 fe.i );
-            #println( "[[[[ ", l_min, "...", l_max, " ]]]" );
             curr = hi + 1;
             continue;
         end
 
         if  ( ( ! fc.i_is_vert )  &&  (  fc.j_is_vert ) )
-            low = curr;
-            hi = fever_same_status( arr, curr, len )
+            ID_get_fields( eid, arr[ hi ], fe );
+
             p_a = P[ fc.i ];
             p_b = P[ fc.i + 1 ];
-            if ( low == hi )
-                curr = curr + 1;
-                #new_val = dist_iseg_nn_point( p_a, p_b, Q[fc.j] );
-                l_min = max( l_min, c.vals[ id_curr ] );
-                #@assert( floating_equal( c.vals[ id_curr ], new_val ) );
-                continue;
-            end
-
-            ( low > hi ) &&  @assert( false );
-
-            ID_get_fields( eid, arr[ hi ], fe );
-            if  ( fe.i != fc.i )
-                println( low, "...", hi );
-                for  i in low:hi
-                    println( ID_status( arr[ i ] ) );
-                end
-                @assert( fc.i == fe.i );
-            end
-
-
-            @assert( fc.j <= fe.j );
             l_min, l_max = max_leash( l_min, l_max, p_a, p_b, Q, fc.j, fe.j );
             curr = hi + 1;
             continue;
