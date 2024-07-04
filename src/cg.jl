@@ -387,9 +387,13 @@ function  iseg_iseg_dist( a_p::Point{D,T}, a_q::Point{D,T},
     # v(s,t) = a_p*(1-s) + a_q * s - b_p*(1-t) - b_q * t
     #      = (a_p - b_p)  +  s * (a_q-a_p)  +  t * (b_p-b_q)
     #      = v_1  +  s * v_2  +  t * v_3
+    v_1::Point{D,T};
+    v_2::Point{D,T};
+    v_3::Point{D,T};
+    
     v_1 = sub(a_p, b_p);
     v_2 = sub(a_q, a_p);
-    v_3 = sub(b_p,  b_q);
+    v_3 = sub(b_p, b_q);
 
     #=
 
@@ -522,8 +526,11 @@ function dist_iseg_nn_point( s_p::Point{D,T}, s_q::Point{D,T}, qr::Point{D,T}
     #        So D(t) = a*t^2 + b t + c
     # The minimum distance is achived at
     #    t^* = -b/(2a).
+    #dff = Point{D,T}()
+    
+    #sub_dst( s_p, qr, dff );
     dff = sub( s_p, qr );
-
+    
     a = DistSq( s_p, s_q );
     b = 2.0* dot( dff, sub( s_q, s_p ) );
 
@@ -573,9 +580,10 @@ bisector, the pramaterized location (tm), and the intersection piont
 itself.
 
 """
-function  Segment_get_bisection_point( seg::Segment{D,T}, p, q  ) where {D,T}
+function  Segment_get_bisection_point( seg::Segment{D,T}, p::Point{D,T},
+    q::Point{D,T}  ) where {D,T}
     # Consider the segment going through p and q, and its middle point (mid).
-    dir = q - p;
+    dir = sub( q, p );
     mid = ( q + p ) /2;
     pos = dot( dir, mid );
 

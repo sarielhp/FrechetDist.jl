@@ -126,7 +126,7 @@ function   ph_approx( ph::PolygonHierarchy{D,T}, w::Float64,
     i = ph_find_linear( ph.widths, w, resolution );
     if  ( i > 0 )
         len = length( ph.polys );
-        while  ( i < len )  &&  ( cardin( ph.polys[ i + 1 ] ) < 10 )
+        while  ( i < len )  &&  ( cardin( ph.polys[ i + 1 ] ) < 30 )
             i = i + 1;
         end
         return  ph.polys[ i ], ph.widths[ i ]

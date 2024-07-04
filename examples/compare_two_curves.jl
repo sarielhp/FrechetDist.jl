@@ -17,26 +17,43 @@ function frechet_comp( P::Polygon{D,T}, Q::Polygon{D,T}
     #println( Q );
     println( "|P|:", cardin( P ), "  |Q| :", cardin( Q ) );
 
+    l_min_a, l_max_a =  FEVER_compute_range( deepcopy(P), deepcopy(Q), 10000000.0 );
+    println( "FEVER A: ", l_min_a, "...", l_max_a );
+    println( "frechet_compute_range..." );
+    @time l_min_r, l_max_r = frechet_ve_r_compute_range( P, Q, 100000000.0 )
+    println( "f_e_r  : ", l_min_r, "...", l_max_r );
+
     #=
     m = frechet_mono_via_refinement( P, Q, 1.00001 )[1];
     m_d = frechet_c_compute( P, Q );
     =#
-    l_min_a, l_max_a =  FEVER_compute_range( P, Q, 10000000.0 );
-    #=println( l_min_a, "...", l_min_b );
+    m_d_x = frechet_c_compute( P, Q );
+    println( "frechet_c_compute: ", m_d_x.leash );
+    l_min_d, l_max_d =  FEVER_compute_range( deepcopy(P), deepcopy(Q), 10000000.0 );
+    println( "FEVER d: ", l_min_d, "...", l_max_d );
+
+    #println( l_min_a, "...", l_min_b );
+    m = frechet_mono_via_refinement( P, Q, 1.00001 )[1];
+    m_d = frechet_c_compute( P, Q );
+    m_d_b = frechet_c_compute( P, Q );
+
     @time m = frechet_mono_via_refinement( P, Q, 1.00001 )[1];
     @time m_d = frechet_c_compute( P, Q );
     @time m_d = frechet_c_compute( P, Q );
 
-    println( "frechet_compute range..." );
-    @time frechet_ve_r_compute_range( P, Q, 10000000.0 )
+    println( "frechet_compute..." );
 
-    println( "FEVER_compute range..." );
-    =#
+    @time m_reg = frechet_ve_r_compute( P, Q )
+
+    println( l_min_r, "...", l_max_r );
+    #
+    println( "\nFEVER_compute range..." );
     @time l_min_b, l_max_b = FEVER_compute_range( P, Q, 10000000.0 );
 
-    println( l_min_a, " ", l_min_b );
-    println( l_max_a, " ", l_max_b );
-    
+    println( "FEVER A: ", l_min_a, "...", l_max_a );
+    println( "FEVER B: ", l_min_b, "...", l_max_b );
+    println( m_reg.leash );
+    println( "Real distnace :" ,m_d.leash );
     #=
     println( "FEVER_compute range..." );
     @time FEVER_compute_range( P, Q, 10000000.0 );

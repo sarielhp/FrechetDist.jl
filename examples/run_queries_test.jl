@@ -238,7 +238,7 @@ end
 
 function frechet_decider_PID( PID, i, j, r )::Int64
     f_debug::Bool = false;
-    f_verify::Bool = true;
+    f_verify::Bool = false;
 
     #println( "frechet_decider_PID" );
 
@@ -287,7 +287,7 @@ function frechet_decider_PID( PID, i, j, r )::Int64
     #println( "-------" );
 
     ratio::Float64 = 5.0;
-    delta = abs( r - dist ) / 10.0;
+    #delta = abs( r - dist ) / 10.0;
     delta = min( abs( r - lb ), abs( r - ub ) ) / 2;
     #=
     println( "Lower bound: ", lb );
@@ -295,7 +295,7 @@ function frechet_decider_PID( PID, i, j, r )::Int64
     println( "dist: ", dist );
     println( "r: ", r );
     =#
-    
+
     #mi = max( length( P_ph.polys ), length( Q_ph.polys ) );
     #println( "\n" );
     for  iters::Int64 in 1:14
@@ -303,15 +303,24 @@ function frechet_decider_PID( PID, i, j, r )::Int64
         PA, wP = ph_approx( P_ph, w_trg );
         QA, wQ = ph_approx( Q_ph, w_trg );
 
-        #=
-        println( "iter: ", iters );
-        print( "delta: ", delta, "  wP: ", wP, "  wQ: ", wQ, "  " );
-        println( cardin( PA ), " / ", cardin( P ),  "   |   ",
-                 cardin( QA ), " / ", cardin( Q ) );
-        =#
-        #println( "regular ve_r_range" );
-        #@time
-        l_min, l_max = frechet_ve_r_compute_range( PA, QA, 2000000.0+ub_start )
+        l_min, l_max = FEVER_compute_range( PA, QA, 20000000.0 + ub_start )
+
+        # the strange thing is that the max does not need to be equal...
+        if  f_verify
+            println( "VERIFY" );
+            l_min_a, l_max_a = frechet_ve_r_compute_range( PA, QA,
+                                                    20000000.0 + ub_start )
+            if  ( ! eq( l_min, l_min_a, 0.00001 ) ) #  ||  ( l_max != l_max_a ) )
+                println( "l_min  : ", l_min );
+                println( "l_min_a: ", l_min_a );
+                println( "l_max  : ", l_max );
+                println( "l_max_a: ", l_max_a );
+                Polygon_write_to_file( PA, "bad_a.txt" );
+                Polygon_write_to_file( QA, "bad_b.txt" );
+                @assert( l_min == l_min_a );
+            end
+        end
+
         #println( l_min, "...", l_max, "   r:", r );
         #if  ( l_min < r < l_max )  &&  ( iters > 7 )
         if  ( ( iters > 0 )  &&  ( l_min < r < l_max )
@@ -393,7 +402,7 @@ function frechet_decider_PID_new( PID, i, j, r )::Int64
     P = PID.polys[ i ];
     Q = PID.polys[ j ];
 
-    
+
     #f_debug  &&
     #println( "\n\n@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@" );
     f_debug  &&  println( "|P|: ", cardin( P ), " |Q|: ", cardin( Q ) );
@@ -626,6 +635,7 @@ function  run_tests( PID::PolygonsInDir, tests::Vector{test_info_t},
         end
         t = tests[ i ];
         #println( "Before frechet_decider..." );
+        #println( i,":   fl_a: ", t.f_l_a, "   fl_b: ", t.f_l_b );
         ms = @timed sgn = frechet_decider_PID( PID, t.i_P, t.i_Q, t.rad );
         t.runtime = ms.time;
 
@@ -671,7 +681,7 @@ function  run_tests( PID::PolygonsInDir, tests::Vector{test_info_t},
             println( file, t.f_l_a, " ", t.f_l_b, " ", t.rad, " ", t.runtime );
         end
     end
-    
+
     return  errors;
 end
 

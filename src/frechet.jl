@@ -374,8 +374,12 @@ function   compute_leash_from_arr( P::Polygon{N,T},
                 continue;
             end
 
-            l_min, l_max = max_leash( l_min, l_max, q_a, q_b, P, EID_i( eid_start ),
+            #println( " ((( ", l_min, "...", l_max, " )))", EID_i( eid_start ),
+            #    "...",  EID_i( eid_end ),  "    >>>", EID_j( eid_start ) );
+            l_min, l_max = max_leash( l_min, l_max, q_a, q_b, P,
+                                      EID_i( eid_start ),
                                       EID_i( eid_end ) );
+            #println( "(((( ", l_min, "...", l_max, " )))");
             curr = hi + 1;
             continue;
         end
@@ -449,6 +453,10 @@ function   frechet_ve_r_compute_range( P::Polygon{N,T},
         i = EID_i( id );
         j = EID_j( id );
 
+        #println( "J", Int64(EID_i_is_vert( id )),
+        #     Int64(EID_j_is_vert( id )),
+        #    " (", i, ", ", j, ") ", value );
+        
         if  id == start_id
             f_r_schedule_event( EID( 1, false, 1, true ), id, c );
             f_r_schedule_event( EID( 1, true, 1, false ), id, c );
