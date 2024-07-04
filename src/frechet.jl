@@ -332,7 +332,7 @@ function    max_leash( l_min::T, l_max::T, p_a::Point{N,T}, p_b::Point{N,T},
 
         dst = Dist( p, q );
         l_min = max( l_min, dst );
-        new_t = len_from_p_a / len_seg; #Segment_get_convex_coef( seg, q );
+        new_t = len_from_p_a; #Segment_get_convex_coef( seg, q );
         if  ( new_t >= max_t )
             max_t = new_t;
             max_q = q; #convex_comb( p_a, p_b, max_t );
