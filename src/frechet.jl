@@ -322,6 +322,7 @@ function    max_leash( l_min::T, l_max::T, p_a::Point{N,T}, p_b::Point{N,T},
     end
 
     max_t = 0.0;
+    max_q = p_a;
     for  j in low:hi
         p = P[ j ];
         #q = Segment_nn_point( seg, p );
@@ -334,9 +335,9 @@ function    max_leash( l_min::T, l_max::T, p_a::Point{N,T}, p_b::Point{N,T},
         new_t = len_from_p_a / len_seg; #Segment_get_convex_coef( seg, q );
         if  ( new_t >= max_t )
             max_t = new_t;
+            max_q = q; #convex_comb( p_a, p_b, max_t );
         else # new_t < max_t
-            q = convex_comb( p_a, p_b, max_t );
-            dst = Dist( p, q );
+            dst = Dist( p, max_q );
             l_max = max( l_max, dst );
         end
     end
