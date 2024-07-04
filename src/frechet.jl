@@ -312,18 +312,30 @@ end
 
 function    max_leash( l_min::T, l_max::T, p_a::Point{N,T}, p_b::Point{N,T},
                        P::Polygon{N,T}, low::Int64, hi::Int64 ) where {N,T}
-    seg = Segment( p_a, p_b );
+    #seg = Segment( p_a, p_b );
+    len_seg::Float64 = Dist( p_a, p_b );
+    if  ( len_seg == 0.0 )
+        for  j in low:hi
+            l_min = max( l_min, Dist( p_a, P[ j ] ) );
+        end
+        return  l_min, max( l_min, l_max );
+    end
+
     max_t = 0.0;
     for  j in low:hi
         p = P[ j ];
-        q = Segment_nn_point( seg, p );
+        #q = Segment_nn_point( seg, p );
+        q = iseg_nn_point( p_a, p_b, p );
+
+        len_from_p_a = Dist( q, p_a );
+
         dst = Dist( p, q );
         l_min = max( l_min, dst );
-        new_t = Segment_get_convex_coef( seg, q );
+        new_t = len_from_p_a / len_seg; #Segment_get_convex_coef( seg, q );
         if  ( new_t >= max_t )
             max_t = new_t;
         else # new_t < max_t
-            q = Segment_get_on( seg, max_t )
+            q = convex_comb( p_a, p_b, max_t );
             dst = Dist( p, q );
             l_max = max( l_max, dst );
         end
@@ -456,7 +468,7 @@ function   frechet_ve_r_compute_range( P::Polygon{N,T},
         #println( "J", Int64(EID_i_is_vert( id )),
         #     Int64(EID_j_is_vert( id )),
         #    " (", i, ", ", j, ") ", value );
-        
+
         if  id == start_id
             f_r_schedule_event( EID( 1, false, 1, true ), id, c );
             f_r_schedule_event( EID( 1, true, 1, false ), id, c );
@@ -1011,7 +1023,7 @@ function  frechet_mono_via_refinement_delta( Pa::Polygon{N,T},
     count::Int64 = 0;
     for  count  in 0:64
         #( count > 0 )  &&  println( "FVER round: ", count );
-        
+
         m = frechet_ve_r_compute( P, Q )
         mm = Morphing_monotonize( m );
 
