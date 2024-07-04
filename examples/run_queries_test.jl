@@ -316,10 +316,10 @@ function frechet_decider_PID( PID, i, j, r )::Int64
             #delta = min( abs( l_min -r ), abs( l_max - r ), delta );
             #println( "zoom in..." );
             #@time
-            PA, wP = ph_approx( P_ph, w_trg / 4.0 );
-            QA, wQ = ph_approx( Q_ph, w_trg / 4.0 );
+            PA, wP = ph_approx( P_ph, w_trg / 8.0 );
+            QA, wQ = ph_approx( Q_ph, w_trg / 8.0 );
             m, PA_A, QA_A = frechet_mono_via_refinement_delta( PA, QA,
-                                                               delta / 3.1,
+                                                               delta / 1.1,
                                                             false );
             l_min = m.lower_bound;#leash / m.ratio;
             l_max = m.leash;
