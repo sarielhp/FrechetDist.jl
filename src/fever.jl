@@ -227,7 +227,7 @@ function  fever_event_value( c::FEVERContext{N,T}, i::Int64,
     id::Int64
 ) where {N,T}
 
-    ( c.vals[ id ] >= 0 ) &&  return  vals[ id ];
+    ( c.vals[ id ] >= 0 ) &&  return  c.vals[ id ];
         
     P = c.P
     Q = c.Q
