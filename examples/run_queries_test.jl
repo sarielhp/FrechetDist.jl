@@ -277,7 +277,7 @@ function frechet_decider_PID( PID::PolygonsInDir, i::Int64, j::Int64, r::Float64
     delta = min( abs( r - lb ), abs( r - ub ) );# / 0.9;
     #delta = min( delta, (w_P + w_Q) /4.0 );
     #    delta = ( abs( r - lb ) + abs( r - ub ) ) / 3.01;
-    if  f_debug 
+    if  f_debug
         println( "Lower bound: ", lb );
         println( "Upper bound: ", ub );
         #println( "dist: ", dist );
@@ -297,7 +297,7 @@ function frechet_decider_PID( PID::PolygonsInDir, i::Int64, j::Int64, r::Float64
         if  f_monotone
             f_debug  &&  println( "MONOTONE" );
             m, PA_A, QA_A = frechet_mono_via_refinement_delta( PA, QA,
-                                                               delta / 2.1,
+                                                               delta,
                                                             false );
             l_min = m.lower_bound;#leash / m.ratio;
             l_max = m.leash;
@@ -323,7 +323,7 @@ function frechet_decider_PID( PID::PolygonsInDir, i::Int64, j::Int64, r::Float64
 
         f_debug && println( l_min, "...", l_max, "   r:", r );
         #if  ( l_min < r < l_max )  &&  ( iters > 7 )
-        if  ! f_monotone 
+        if  ! f_monotone
             if  ( ( iters > 0 )  &&  ( l_min < r < l_max )
                   &&  ( ( l_max - l_min ) > 2.0*delta ) )
                 #delta = min( abs( l_min -r ), abs( l_max - r ), delta );
