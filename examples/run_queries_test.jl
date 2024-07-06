@@ -325,7 +325,7 @@ function frechet_decider_PID( PID::PolygonsInDir, i::Int64, j::Int64, r::Float64
         #if  ( l_min < r < l_max )  &&  ( iters > 7 )
         if  ! f_monotone
             if  ( ( iters > 0 )  &&  ( l_min < r < l_max )
-                  &&  ( ( l_max - l_min ) > 2.0*delta ) )
+                  &&  ( ( l_max - l_min ) > 4.0*delta ) )
                 #delta = min( abs( l_min -r ), abs( l_max - r ), delta );
                 f_debug  &&  println( "zoom in..." );
                 f_monotone = true;
