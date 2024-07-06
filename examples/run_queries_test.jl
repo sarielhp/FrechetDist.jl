@@ -236,7 +236,7 @@ function frechet_decider_PID_slow( PID, i, j, r )::Int64
     return  0;
 end
 
-function frechet_decider_PID( PID, i, j, r )::Int64
+function frechet_decider_PID( PID::PolygonsInDir, i::Int64, j::Int64, r::Float64 )::Int64
     f_debug::Bool = false;
     f_verify::Bool = false;
 
@@ -277,13 +277,16 @@ function frechet_decider_PID( PID, i, j, r )::Int64
     delta = min( abs( r - lb ), abs( r - ub ) );# / 0.9;
     #delta = min( delta, (w_P + w_Q) /4.0 );
     #    delta = ( abs( r - lb ) + abs( r - ub ) ) / 3.01;
+    if  f_debug 
+        println( "Lower bound: ", lb );
+        println( "Upper bound: ", ub );
+        #println( "dist: ", dist );
+        println( "r: ", r );
+    end
     #=
-    println( "Lower bound: ", lb );
-    println( "Upper bound: ", ub );
-    println( "dist: ", dist );
-    println( "r: ", r );
     =#
 
+    f_monotone::Bool = false;
     #mi = max( length( P_ph.polys ), length( Q_ph.polys ) );
     #println( "\n" );
     for  iters::Int64 in 1:14
@@ -291,7 +294,16 @@ function frechet_decider_PID( PID, i, j, r )::Int64
         PA, wP = ph_approx( P_ph, w_trg );
         QA, wQ = ph_approx( Q_ph, w_trg );
 
-        l_min, l_max = FEVER_compute_range( PA, QA, 20000000.0 + ub_start )
+        if  f_monotone
+            f_debug  &&  println( "MONOTONE" );
+            m, PA_A, QA_A = frechet_mono_via_refinement_delta( PA, QA,
+                                                               delta / 2.1,
+                                                            false );
+            l_min = m.lower_bound;#leash / m.ratio;
+            l_max = m.leash;
+        else
+            l_min, l_max = FEVER_compute_range( PA, QA, 20000000.0 + ub_start )
+        end
 
         # the strange thing is that the max does not need to be equal...
         if  f_verify
@@ -309,21 +321,24 @@ function frechet_decider_PID( PID, i, j, r )::Int64
             end
         end
 
-        #println( l_min, "...", l_max, "   r:", r );
+        f_debug && println( l_min, "...", l_max, "   r:", r );
         #if  ( l_min < r < l_max )  &&  ( iters > 7 )
-        if  ( ( iters > 0 )  &&  ( l_min < r < l_max )
-            &&  ( ( l_max - l_min ) > 5.0*delta ) )
-            #delta = min( abs( l_min -r ), abs( l_max - r ), delta );
-            #println( "zoom in..." );
-            #@time
-            PA, wP = ph_approx( P_ph, w_trg / 9.0 );
-            QA, wQ = ph_approx( Q_ph, w_trg / 9.0 );
-            m, PA_A, QA_A = frechet_mono_via_refinement_delta( PA, QA,
-                                                               delta / 1.1,
-                                                            false );
-            l_min = m.lower_bound;#leash / m.ratio;
-            l_max = m.leash;
-            #println( "NEW: ", l_min, "...", l_max, "   r:", r );
+        if  ! f_monotone 
+            if  ( ( iters > 0 )  &&  ( l_min < r < l_max )
+                  &&  ( ( l_max - l_min ) > 2.0*delta ) )
+                #delta = min( abs( l_min -r ), abs( l_max - r ), delta );
+                f_debug  &&  println( "zoom in..." );
+                f_monotone = true;
+                #@time
+                PA, wP = ph_approx( P_ph, w_trg / 9.0 );
+                QA, wQ = ph_approx( Q_ph, w_trg / 9.0 );
+                m, PA_A, QA_A = frechet_mono_via_refinement_delta( PA, QA,
+                                                                   delta / 1.1,
+                                                                   false );
+                l_min = m.lower_bound;#leash / m.ratio;
+                l_max = m.leash;
+                #println( "NEW: ", l_min, "...", l_max, "   r:", r );
+            end
         end
         lb = max( lb, l_min - wP - wQ )
         ub = min( ub, l_max + wP + wQ )
@@ -344,43 +359,6 @@ function frechet_decider_PID( PID, i, j, r )::Int64
 
     m = frechet_c_compute( P, Q )
     return  round(Int64, sign( m.leash - r ) )
-    #=
-
-    for  i in 1:10
-#        println( "Iter: ", i );
-        f_debug &&  ( i > 5 )  &&   println( "ratio: ", ratio );
-        m = frechet_c_approx( P, Q, ratio );
-        if  m.leash < r
-            return  -1;
-        end
-        lb = m.leash / m.ratio;
-        if  lb > r
-            return  1;
-        end
-
-        #    ratio = (r / lb min( m.ratio, 1.01 );
-        ratio = ((r / lb) - 1.0) / 2.0 + 1.0; # min( m.ratio, 1.01 );
-        ratio = min( ratio, 1.1 );
-        if  ( ratio <= 1.01 )
-            m = frechet_c_compute( P, Q );
-            if  m.leash > r
-                return  1;
-            end
-            if  m.leash < r
-                return  -1;
-            end
-            return  0;
-        end
-#        if  i > 2
-#            println( "RATIO  ", i, " : ", ratio );
-#        end
-    end
-
-    f_debug  &&  println( "UNDECIDED" );
-    @assert( false );
-
-    return  0;
-    =#
 end
 
 
@@ -605,6 +583,7 @@ function  run_tests( PID::PolygonsInDir, tests::Vector{test_info_t},
 )
     errors::Int64 = 0;
 
+    mask::Int64 = 0x1fff; #0x1; #0x1fff
     #println( "run_tests..." );
 
     if  ( rng == 0:0 )
@@ -616,7 +595,7 @@ function  run_tests( PID::PolygonsInDir, tests::Vector{test_info_t},
         if  i > 10000000
             return 0;
         end
-        if  ( ( count[]  & 0x1fff ) == 0x1fff )
+        if  ( ( count[]  & mask ) == mask )
             println( count[], " T",
                 Threads.threadid(),"D : ", i, "/", length( tests ) );
             flush( stdout );
