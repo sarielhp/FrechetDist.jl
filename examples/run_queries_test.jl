@@ -329,6 +329,7 @@ function frechet_decider_PID( PID::PolygonsInDir, i::Int64, j::Int64, r::Float64
                 #delta = min( abs( l_min -r ), abs( l_max - r ), delta );
                 f_debug  &&  println( "zoom in..." );
                 f_monotone = true;
+                continue;
                 #@time
                 #=
                 PA, wP = ph_approx( P_ph, w_trg / 9.0 );
