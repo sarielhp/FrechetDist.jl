@@ -885,7 +885,8 @@ end
 """
 function  extract_refined_polygon( poly::Polygon{N,T},
                                    s::Vector{EventPoint{N,T}},
-                                   points_to_add::Int64 = 1 ) where {N,T}
+                                   points_to_add::Int64 = 1,
+                                   delta::Float64 = 0.0 ) where {N,T}
     pout = Polygon{N,T}()
     opnts = Vector{EventPoint{N,T}}();
 
@@ -915,7 +916,11 @@ function  extract_refined_polygon( poly::Polygon{N,T},
             push!( times, s[ k ].t );
         end
 
-        if   is_monotone_inc( times )
+        seg = Segment( poly[ loc ], poly[ loc + 1 ] );
+        lnx = Dist( poly[ loc ], poly[ loc + 1 ] );
+
+        if  (  is_monotone_inc( times )
+               ||  ( lnx < (delta / 2.0 ) ) )
             for  k in i:j
                 Polygon_push_smart( pout, s[k].p );
             end
@@ -923,8 +928,12 @@ function  extract_refined_polygon( poly::Polygon{N,T},
             continue
         end
 
-        seg = Segment( poly[ loc ], poly[ loc + 1 ] );
-        add_points_along_seg( pout, seg, times, points_to_add );
+        times::Int64 = points_to_add;
+        if  ( delta > 0.0 )
+            times::Int64 = round( Int64, lnx / delta );
+            times = max( min( times, 7 ), 1 );
+        end
+        add_points_along_seg( pout, seg, times, times );
 
         i = j + 1
     end
@@ -1029,10 +1038,11 @@ function  frechet_mono_via_refinement_delta( Pa::Polygon{N,T},
         mm = Morphing_monotonize( m );
 
         ( ( mm.leash - m.leash ) <= delta )  &&  break;
-
-        times::Int64 = 4;# min( round(Int64, (mm.leash - m.leash) / delta ), 7 );;
-        poly_a_2 = extract_refined_polygon( P, m.pes, times );
-        poly_b_2 = extract_refined_polygon( Q, m.qes, times );
+        
+        #times::Int64 = 4;# min( round(Int64,
+        #   (mm.leash - m.leash) / delta ), 7 );;
+        poly_a_2 = extract_refined_polygon( P, m.pes, delta );
+        poly_b_2 = extract_refined_polygon( Q, m.qes, delta );
 
         P = poly_a_2;
         Q = poly_b_2;
