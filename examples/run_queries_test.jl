@@ -330,6 +330,7 @@ function frechet_decider_PID( PID::PolygonsInDir, i::Int64, j::Int64, r::Float64
                 f_debug  &&  println( "zoom in..." );
                 f_monotone = true;
                 #@time
+                #=
                 PA, wP = ph_approx( P_ph, w_trg / 9.0 );
                 QA, wQ = ph_approx( Q_ph, w_trg / 9.0 );
                 m, PA_A, QA_A = frechet_mono_via_refinement_delta( PA, QA,
@@ -337,6 +338,7 @@ function frechet_decider_PID( PID::PolygonsInDir, i::Int64, j::Int64, r::Float64
                                                                    false );
                 l_min = m.lower_bound;#leash / m.ratio;
                 l_max = m.leash;
+                =#
                 #println( "NEW: ", l_min, "...", l_max, "   r:", r );
             end
         end
