@@ -302,7 +302,7 @@ function frechet_decider_PID( PID::PolygonsInDir, i::Int64, j::Int64, r::Float64
             l_min = m.lower_bound;#leash / m.ratio;
             l_max = m.leash;
         else
-            l_min, l_max = FEVER_compute_range( PA, QA, 20000000.0 + ub_start )
+            l_min, l_max = FEVER_compute_range( PA, QA, ub )
         end
 
         # the strange thing is that the max does not need to be equal...
