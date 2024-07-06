@@ -1041,8 +1041,8 @@ function  frechet_mono_via_refinement_delta( Pa::Polygon{N,T},
         
         #times::Int64 = 4;# min( round(Int64,
         #   (mm.leash - m.leash) / delta ), 7 );;
-        poly_a_2 = extract_refined_polygon( P, m.pes, delta );
-        poly_b_2 = extract_refined_polygon( Q, m.qes, delta );
+        poly_a_2 = extract_refined_polygon( P, m.pes, 3, delta );
+        poly_b_2 = extract_refined_polygon( Q, m.qes, 3, delta );
 
         P = poly_a_2;
         Q = poly_b_2;
