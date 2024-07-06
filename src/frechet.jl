@@ -1030,8 +1030,8 @@ function  frechet_mono_via_refinement_delta( Pa::Polygon{N,T},
 
         ( ( mm.leash - m.leash ) <= delta )  &&  break;
 
-        poly_a_2 = extract_refined_polygon( P, m.pes, 1 );
-        poly_b_2 = extract_refined_polygon( Q, m.qes, 1 );
+        poly_a_2 = extract_refined_polygon( P, m.pes, 3 );
+        poly_b_2 = extract_refined_polygon( Q, m.qes, 3 );
 
         P = poly_a_2;
         Q = poly_b_2;
