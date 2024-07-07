@@ -241,38 +241,33 @@ function frechet_decider_PID( PID::PolygonsInDir, i::Int64,
     f_debug::Bool = false;
     f_verify::Bool = false;
 
-    P = PID.polys[ i ];
-    Q = PID.polys[ j ];
+    PA = PID.polys[ i ];
+    QA = PID.polys[ j ];
 
-    #f_debug  &&  println( "\n\n@@@@@@@@a@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@" );
-    #f_debug  &&  println( "|P|: ", cardin( P ), " |Q|: ", cardin( Q ) );
-
-    l_a =  Dist( first( P ), first( Q ) );
+    l_a =  Dist( first( PA ), first( QA ) );
     ( l_a > r )  &&   return  1;
-    lb = max( l_a, Dist( last( P ), last( Q ) ) );
 
+    lb = max( l_a, Dist( last( PA ), last( QA ) ) );
     ( lb > r )   &&   return  1;
 
     P_ph = PID.PHA[ i ];
     Q_ph = PID.PHA[ j ];
 
-    w_P = P_ph.widths[ 1 ];
-    w_Q = Q_ph.widths[ 1 ];
+    wP = P_ph.widths[ 1 ];
+    wQ = Q_ph.widths[ 1 ];
 
-    f_debug && print( "w_P  : ", w_P );
-    f_debug && print( "    w_Q  : ", w_Q );
+    f_debug && print( "wP      : ", wP );
+    f_debug && print( "    wQ  : ", wQ );
 
-    ub = lb + w_P + w_Q;
-    if  ub < r
-        return  -1;
-    end
+    ub = lb + wP + wQ;
+    ( ub < r )   &&   return  -1;
 
     delta = min( abs( r - lb ), abs( r - ub ), (w_P + w_Q)/4.0 );# / 0.9;
     f_debug  &&  println( "Lower bound: ", lb, "\nUpper bound: ", ub,
                           "\nr: ", r );
 
     f_monotone::Bool = false;
-    for  iters::Int64 in 1:14
+    for  iters::Int64 in 1:100
         w_trg = delta / 2.0 #2.0 #1.5 # / 2.0
         PA, wP = ph_approx( P_ph, w_trg );
         QA, wQ = ph_approx( Q_ph, w_trg );
