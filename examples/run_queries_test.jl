@@ -244,8 +244,8 @@ function frechet_decider_PID( PID::PolygonsInDir, i::Int64,
     P = PID.polys[ i ];
     Q = PID.polys[ j ];
 
-    f_debug  &&  println( "\n\n@@@@@@@@a@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@" );
-    f_debug  &&  println( "|P|: ", cardin( P ), " |Q|: ", cardin( Q ) );
+    #f_debug  &&  println( "\n\n@@@@@@@@a@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@" );
+    #f_debug  &&  println( "|P|: ", cardin( P ), " |Q|: ", cardin( Q ) );
 
     l_a =  Dist( first( P ), first( Q ) );
     ( l_a > r )  &&   return  1;
@@ -268,14 +268,8 @@ function frechet_decider_PID( PID::PolygonsInDir, i::Int64,
     end
 
     delta = min( abs( r - lb ), abs( r - ub ), (w_P + w_Q)/4.0 );# / 0.9;
-    #delta = min( delta, (w_P + w_Q) /4.0 );
-    #    delta = ( abs( r - lb ) + abs( r - ub ) ) / 3.01;
-    if  f_debug
-        println( "Lower bound: ", lb, "\nUpper bound: ", ub,
-                 "\nr: ", r );
-    end
-    #=
-    =#
+    f_debug  &&  println( "Lower bound: ", lb, "\nUpper bound: ", ub,
+                          "\nr: ", r );
 
     f_monotone::Bool = false;
     for  iters::Int64 in 1:14
@@ -323,16 +317,13 @@ function frechet_decider_PID( PID::PolygonsInDir, i::Int64,
         lb = max( lb, l_min - wP - wQ )
         ub = min( ub, l_max + wP + wQ )
 
-        if  ( lb > r )
-            return  +1;
-        end
+        ( lb > r )  &&  return  +1;
 
-        if  ( ub < r )
-            return  -1;
-        end
+        ( ub < r )  &&  return  -1;
+
         delta = min( abs( l_max - r ), abs( l_min - r ),
-                     ub - r, r- lb,
-                     delta / 2.0 );
+                     ub - r, r - lb,
+                     delta / 3.0 );
     end
 
     println( "SHOGI!" );
