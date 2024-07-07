@@ -353,9 +353,9 @@ function frechet_decider_PID( PID::PolygonsInDir, i::Int64, j::Int64, r::Float64
         if  ( ub < r )
             return  -1;
         end
-        delta = min( abs( l_max - r ), abs( l_min - r ),
-            abs( ub - r ), abs( lb - r ),
-            delta / 2.0 );
+        delta = min( #abs( l_max - r ), abs( l_min - r ),
+                     ub - r, abs( lb - r ),
+                     delta / 2.0 );
     end
 
     println( "SHOGI!" );
