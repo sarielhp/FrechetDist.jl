@@ -262,7 +262,7 @@ function frechet_decider_PID( PID::PolygonsInDir, i::Int64,
     ub = lb + wP + wQ;
     ( ub < r )   &&   return  -1;
 
-    delta = min( abs( r - lb ), abs( r - ub ), (w_P + w_Q)/4.0 );# / 0.9;
+    delta = min( abs( r - lb ), abs( r - ub ), (wP + wQ)/4.0 );# / 0.9;
     f_debug  &&  println( "Lower bound: ", lb, "\nUpper bound: ", ub,
                           "\nr: ", r );
 
