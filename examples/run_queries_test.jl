@@ -236,7 +236,8 @@ function frechet_decider_PID_slow( PID, i, j, r )::Int64
     return  0;
 end
 
-function frechet_decider_PID( PID::PolygonsInDir, i::Int64, j::Int64, r::Float64 )::Int64
+function frechet_decider_PID( PID::PolygonsInDir, i::Int64,
+                              j::Int64, r::Float64 )::Int64
     f_debug::Bool = false;
     f_verify::Bool = false;
 
@@ -247,14 +248,10 @@ function frechet_decider_PID( PID::PolygonsInDir, i::Int64, j::Int64, r::Float64
     f_debug  &&  println( "|P|: ", cardin( P ), " |Q|: ", cardin( Q ) );
 
     l_a =  Dist( first( P ), first( Q ) );
-    if  l_a > r
-        #println( "RETURN 1" );
-        return  1;
-    end
+    ( l_a > r )  &&   return  1;
     lb = max( l_a, Dist( last( P ), last( Q ) ) );
-    if  lb > r
-        return  1;
-    end
+
+    ( lb > r )   &&   return  1;
 
     P_ph = PID.PHA[ i ];
     Q_ph = PID.PHA[ j ];
@@ -265,30 +262,22 @@ function frechet_decider_PID( PID::PolygonsInDir, i::Int64, j::Int64, r::Float64
     f_debug && print( "w_P  : ", w_P );
     f_debug && print( "    w_Q  : ", w_Q );
 
-    ub_start = ub = lb + w_P + w_Q;
-#    if  ( ( w_P/2.0 - w_Q - lb ) > lb )
-#        println( "STRANGE, but possible..." );
-#    end
+    ub = lb + w_P + w_Q;
     if  ub < r
         return  -1;
     end
 
-    ratio::Float64 = 5.0;
     delta = min( abs( r - lb ), abs( r - ub ), (w_P + w_Q)/4.0 );# / 0.9;
     #delta = min( delta, (w_P + w_Q) /4.0 );
     #    delta = ( abs( r - lb ) + abs( r - ub ) ) / 3.01;
     if  f_debug
-        println( "Lower bound: ", lb );
-        println( "Upper bound: ", ub );
-        #println( "dist: ", dist );
-        println( "r: ", r );
+        println( "Lower bound: ", lb, "\nUpper bound: ", ub,
+                 "\nr: ", r );
     end
     #=
     =#
 
     f_monotone::Bool = false;
-    #mi = max( length( P_ph.polys ), length( Q_ph.polys ) );
-    #println( "\n" );
     for  iters::Int64 in 1:14
         w_trg = delta / 2.0 #2.0 #1.5 # / 2.0
         PA, wP = ph_approx( P_ph, w_trg );
@@ -309,7 +298,7 @@ function frechet_decider_PID( PID::PolygonsInDir, i::Int64, j::Int64, r::Float64
         if  f_verify
             println( "VERIFY" );
             l_min_a, l_max_a = frechet_ve_r_compute_range( PA, QA,
-                                                    20000000.0 + ub_start )
+                                                    20000000.0 + ub )
             if  ( ! eq( l_min, l_min_a, 0.00001 ) ) #  ||  ( l_max != l_max_a ) )
                 println( "l_min  : ", l_min );
                 println( "l_min_a: ", l_min_a );
@@ -322,7 +311,6 @@ function frechet_decider_PID( PID::PolygonsInDir, i::Int64, j::Int64, r::Float64
         end
 
         f_debug && println( l_min, "...", l_max, "   r:", r );
-        #if  ( l_min < r < l_max )  &&  ( iters > 7 )
         if  ! f_monotone
             if  ( ( iters > 0 )  &&  ( l_min < r < l_max )
                   &&  ( ( l_max - l_min ) > 4.0*delta ) )
@@ -330,17 +318,6 @@ function frechet_decider_PID( PID::PolygonsInDir, i::Int64, j::Int64, r::Float64
                 f_debug  &&  println( "zoom in..." );
                 f_monotone = true;
                 continue;
-                #@time
-                #=
-                PA, wP = ph_approx( P_ph, w_trg / 9.0 );
-                QA, wQ = ph_approx( Q_ph, w_trg / 9.0 );
-                m, PA_A, QA_A = frechet_mono_via_refinement_delta( PA, QA,
-                                                                   delta / 1.1,
-                                                                   false );
-                l_min = m.lower_bound;#leash / m.ratio;
-                l_max = m.leash;
-                =#
-                #println( "NEW: ", l_min, "...", l_max, "   r:", r );
             end
         end
         lb = max( lb, l_min - wP - wQ )
@@ -353,8 +330,8 @@ function frechet_decider_PID( PID::PolygonsInDir, i::Int64, j::Int64, r::Float64
         if  ( ub < r )
             return  -1;
         end
-        delta = min( #abs( l_max - r ), abs( l_min - r ),
-                     ub - r, abs( lb - r ),
+        delta = min( abs( l_max - r ), abs( l_min - r ),
+                     ub - r, r- lb,
                      delta / 2.0 );
     end
 
