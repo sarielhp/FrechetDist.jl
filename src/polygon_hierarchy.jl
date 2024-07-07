@@ -126,16 +126,10 @@ hierarchy, and returns it.
 
 """
 function   ph_approx( ph::PolygonHierarchy{D,T}, w::Float64,
-                      n_max::Int64 = 40,
+                      n_max::Int64 = 60,
                       resolution::Float64 = 4.0 ) where  {D,T}
     f_verify::Bool = false
 
-    #=
-    if  ( cardin( ph.P ) <= 10 )
-        return  ph.P, 0.0;
-    end
-    =#
-    
     i = ph_find_linear( ph.widths, w, resolution );
     if  ( i > 0 )
         len = length( ph.polys );
@@ -149,23 +143,9 @@ function   ph_approx( ph::PolygonHierarchy{D,T}, w::Float64,
     i = ph_find_linear( ph.widths, new_w, resolution );
     if  ( i > 0 )
         Z, wZ = ph.polys[ i ],  ph.widths[ i ]
-        #println( "TRINGO!" );
     else
         Z, grb, wZ = frechet_palette_approx( ph.P, ph.plt, new_w );
     end
-        #println( "|Z| : ", cardin( Z ), " ... ", cardin( ph.P ) );
-    #w = ph_push_target( phA,   max( wA - wZ, 0.0 ), Z, lmt, wZ )
-    # VERIFY code...
-    #=
-    if  f_verify
-        mu = frechet_c_mono_approx_subcurve( ph.P, Z, Z_indices )[ 1 ];
-        diff = mu.leash - wZ;
-        if  ( abs(diff) >= 1e-8 )
-            println( "ERROR diff: ", mu.leash - wZ, " ",mu.leash, " ", wZ );
-
-            #exit(-1 );
-        end
-    end =#
 
     X, X_indices = frechet_simplify_w_exp( Z, max( w-wZ, 0.0 ) );
     mX = frechet_c_mono_approx_subcurve( Z, X, X_indices )[ 1 ];
