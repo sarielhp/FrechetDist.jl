@@ -291,8 +291,8 @@ function frechet_decider_PID( PID::PolygonsInDir, i::Int64, j::Int64, r::Float64
     #println( "\n" );
     for  iters::Int64 in 1:14
         w_trg = delta / 2.0 #2.0 #1.5 # / 2.0
-        PA, wP = ph_approx( P_ph, w_trg );
-        QA, wQ = ph_approx( Q_ph, w_trg );
+        PA, wP = ph_approx( P_ph, w_trg, 100.0 );
+        QA, wQ = ph_approx( Q_ph, w_trg, 100.0 );
 
         if  f_monotone
             f_debug  &&  println( "MONOTONE" );
@@ -595,9 +595,9 @@ function  run_tests( PID::PolygonsInDir, tests::Vector{test_info_t},
 
     f_verify  &&  println( "Verification is on, test would run much slower..." );
     for  i in  rng
-        if  i > 10000000
+        #=if  i > 10000000
             return 0;
-        end
+        end=#
         if  ( ( count[]  & mask ) == mask )
             println( count[], " T",
                 Threads.threadid(),"D : ", i, "/", length( tests ) );
