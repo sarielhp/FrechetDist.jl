@@ -291,8 +291,8 @@ function frechet_decider_PID( PID::PolygonsInDir, i::Int64, j::Int64, r::Float64
     #println( "\n" );
     for  iters::Int64 in 1:14
         w_trg = delta / 2.0 #2.0 #1.5 # / 2.0
-        PA, wP = ph_approx( P_ph, w_trg, 100.0 );
-        QA, wQ = ph_approx( Q_ph, w_trg, 100.0 );
+        PA, wP = ph_approx( P_ph, w_trg, 10.0 );
+        QA, wQ = ph_approx( Q_ph, w_trg, 10.0 );
 
         if  f_monotone
             f_debug  &&  println( "MONOTONE" );
