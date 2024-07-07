@@ -141,8 +141,8 @@ function   ph_approx( ph::PolygonHierarchy{D,T}, w::Float64,
         len = length( ph.polys );
         while  ( i < len )  &&  ( cardin( ph.polys[ i + 1 ] ) < n_max )
             i = i + 1;
+            println( "FLOGI" );
         end
-        println( "FLOGI" );
         return  ph.polys[ i ], ph.widths[ i ]
     end
 
