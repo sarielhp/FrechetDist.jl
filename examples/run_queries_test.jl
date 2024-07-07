@@ -289,6 +289,7 @@ function frechet_decider_PID( PID::PolygonsInDir, i::Int64,
         end
 
         # the strange thing is that the max does not need to be equal...
+        #=
         if  f_verify
             println( "VERIFY" );
             l_min_a, l_max_a = frechet_ve_r_compute_range( PA, QA,
@@ -303,7 +304,8 @@ function frechet_decider_PID( PID::PolygonsInDir, i::Int64,
                 @assert( l_min == l_min_a );
             end
         end
-
+        =#
+        
         f_debug && println( l_min, "...", l_max, "   r:", r );
         if  ! f_monotone
             if  ( ( iters > 0 )  &&  ( l_min < r < l_max )
@@ -315,10 +317,9 @@ function frechet_decider_PID( PID::PolygonsInDir, i::Int64,
             end
         end
         lb = max( lb, l_min - wP - wQ )
-        ub = min( ub, l_max + wP + wQ )
-
         ( lb > r )  &&  return  +1;
 
+        ub = min( ub, l_max + wP + wQ )
         ( ub < r )  &&  return  -1;
 
         delta = min( abs( l_max - r ), abs( l_min - r ),
