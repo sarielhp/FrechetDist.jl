@@ -931,7 +931,7 @@ function  extract_refined_polygon( poly::Polygon{N,T},
         n_times::Int64 = points_to_add;
         if  ( delta > 0.0 )
             n_times = round( Int64, lnx / delta );
-            n_times = max( min( n_times, 7 ), 1 );
+            n_times = max( min( n_times, 3 ), 1 );
         end
         add_points_along_seg( pout, seg, times, n_times );
 
