@@ -126,7 +126,7 @@ hierarchy, and returns it.
 
 """
 function   ph_approx( ph::PolygonHierarchy{D,T}, w::Float64,
-                      n_max::Int64 = 60,
+                      n_max::Int64 = 25,
                       resolution::Float64 = 4.0 ) where  {D,T}
     f_verify::Bool = false
 
