@@ -793,7 +793,7 @@ end
 ########################################################################
 ########### Main
 
-f_verify_run::Bool = true;
+f_verify_run::Bool = false;
 
 num_args = length( ARGS );
 
