@@ -113,7 +113,20 @@ function   ph_approx_binary_search( Ws, i, j, w, resolution )
     end
 end
 
+"""
+    ph_approx
+
+Tries to find an approximation of the curve with width at most w that
+was already computed, as long as w is not smaller than
+w/resolution. If such a simplification was found, then we try to find
+the best simplification with at most n_max vertices.
+
+Otherwise, it computes such a simplification, stores it in the
+hierarchy, and returns it.
+
+"""
 function   ph_approx( ph::PolygonHierarchy{D,T}, w::Float64,
+                      n_max::Int64 = 40,
                       resolution::Float64 = 4.0 ) where  {D,T}
     f_verify::Bool = false
 
@@ -126,9 +139,10 @@ function   ph_approx( ph::PolygonHierarchy{D,T}, w::Float64,
     i = ph_find_linear( ph.widths, w, resolution );
     if  ( i > 0 )
         len = length( ph.polys );
-        while  ( i < len )  &&  ( cardin( ph.polys[ i + 1 ] ) < 20 )
+        while  ( i < len )  &&  ( cardin( ph.polys[ i + 1 ] ) < n_max )
             i = i + 1;
         end
+        println( "FLOGI" );
         return  ph.polys[ i ], ph.widths[ i ]
     end
 
