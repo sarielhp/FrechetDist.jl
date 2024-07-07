@@ -928,12 +928,12 @@ function  extract_refined_polygon( poly::Polygon{N,T},
             continue
         end
 
-        times::Int64 = points_to_add;
+        n_times::Int64 = points_to_add;
         if  ( delta > 0.0 )
-            times::Int64 = round( Int64, lnx / delta );
-            times = max( min( times, 7 ), 1 );
+            n_times = round( Int64, lnx / delta );
+            n_times = max( min( n_times, 7 ), 1 );
         end
-        add_points_along_seg( pout, seg, times, times );
+        add_points_along_seg( pout, seg, times, n_times );
 
         i = j + 1
     end
