@@ -54,7 +54,7 @@ end
 
 function  norm(p::MVector{D,T} ) where {D,T}
     sum = 0;
-    for i in 1:D
+    @inbounds for i in 1:D
         sum +=  p[i]^2;
     end
     return  sqrt( sum );
@@ -176,7 +176,7 @@ function  convex_comb( p::Point{D,T}, q::Point{D,T}, t::Float64 ) where{D,T}
     o = Point{D,T}(undef )
 
     #@inbounds
-    for  i in 1:D
+    @inbounds for  i in 1:D
         #o[ i ] = p[ i ] * (1.0 - t)  + q[ i] * t;
         o[ i ] = p[ i ]  + ( q[ i] - p[ i ] ) * t;
 #        o[ i ] = p[ i ] * s + q[ i] * t;
