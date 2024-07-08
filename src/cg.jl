@@ -40,7 +40,7 @@ function Point{D,T}() where  {D,T}
     return  Point{D,T}( zeros( T, D ) );
 end
 
-#= POINT 
+#= POINT
 function  Base.getindex(p::Point{D,T}, i::Int) where {D,T}
    return   p.x[ i ];
 end
@@ -123,12 +123,16 @@ end
 #    return  LinearAlgebra.dot( p, q );
 #end
 function  dot( p::Point{D,T}, q::Point{D,T}) where  {D,T}
+    return  sum( p .* q );
+    #=
     s = zero( T );
     for i in 1:D
-        s += p[ i ] * q[ i ]; 
+        s += p[ i ] * q[ i ];
     end
     return  s;
+
     #return  LinearAlgebra.dot( p, q );
+    =#
 end
 
 # Define standard lexicographical ordering on points
@@ -410,7 +414,7 @@ function  iseg_iseg_dist( a_p::Point{D,T}, a_q::Point{D,T},
     v_1::Point{D,T};
     v_2::Point{D,T};
     v_3::Point{D,T};
-    
+
     v_1 = sub(a_p, b_p);
     v_2 = sub(a_q, a_p);
     v_3 = sub(b_p, b_q);
@@ -480,7 +484,7 @@ function  iseg_iseg_dist( a_p::Point{D,T}, a_q::Point{D,T},
     #println( "b.size: ", size( b ) );
     s = b[ 1 ];
     t = b[ 2 ];
-    
+
     # Snap solution if needed to the [0,1.0] interval....
     s = max( min( s, 1.0 ), 0.0 )
     t = max( min( t, 1.0 ), 0.0 )
@@ -493,7 +497,7 @@ function  iseg_iseg_dist( a_p::Point{D,T}, a_q::Point{D,T},
                 dist_iseg_nn_point( b_p, b_q, a_p ),
                 dist_iseg_nn_point( b_p, b_q, a_q ) );
 
-    
+
     da = Dist( a_p, b_p );
     if  ( da < d )  &&  ( abs( da - d ) > (1e-8 * (d + da ) ) )
         println( "da < d? " );
@@ -503,7 +507,7 @@ function  iseg_iseg_dist( a_p::Point{D,T}, a_q::Point{D,T},
         println( "t: ", t );
         println( "b: ", b );
         exit( -1 );
-        
+
     end
     db = Dist( a_q, b_q );
     if  ( db < d )  &&  ( abs( db - d ) > (1e-8 * (d + db ) ) )
@@ -547,10 +551,10 @@ function dist_iseg_nn_point( s_p::Point{D,T}, s_q::Point{D,T}, qr::Point{D,T}
     # The minimum distance is achived at
     #    t^* = -b/(2a).
     #dff = Point{D,T}()
-    
+
     #sub_dst( s_p, qr, dff );
     dff = sub( s_p, qr );
-    
+
     a = DistSq( s_p, s_q );
     b = 2.0* dot( dff, sub( s_q, s_p ) );
 
@@ -923,7 +927,7 @@ function  Polygon_simplify_radii( P::Polygon{D,T}, r::Vector{T} ) where {D,T}
         Polygon_push( pout, P[ len ] )
         push!( pindices, len );
     end
-    
+
     return  pout, pindices;
 end
 
@@ -1191,7 +1195,7 @@ function  Polygon_read_plt_orig_file( filename, dchar = "," )
     for  r  in 7:size(a,1)
         line = a[r,1]
         #println( "line: [", line, "]" );
-        
+
         parts::Vector{SubString{String}} = split.( line, dchar );
         x = parse( Float64, parts[ 1 ] );
         y = parse( Float64, parts[ 2 ] );
@@ -1288,7 +1292,7 @@ export BBox2F, Segment2F, Polygon2F, Point2F
 
 export  add, sub, mult, norm
 
-# 
+#
 export  BBox_init, BBox_bound, BBox_expand, BBox_print, BBox_width
 export  cardin, Dist, DistSq, VecPolygon2F
 export  BBox_bottom_left, BBox_top_right
