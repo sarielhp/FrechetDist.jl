@@ -135,7 +135,7 @@ end
 
 # Define standard lexicographical ordering on points
 function Base.isless( p::Point{D,T}, q::Point{D,T} ) where {D,T}
-    for i in 1:D
+    @inbounds for i in 1:D
         if  p[ i ] < q[ i ]
             return  true;
         else
@@ -149,7 +149,7 @@ end
 
 function  DistSq(p::Point{D,T}, q::Point{D,T})::T where {D,T}
     sum = zero(T);
-    for  i in 1:D
+    @inbounds for  i in 1:D
         sum += ( p[i] - q[i] )^2
     end
 
