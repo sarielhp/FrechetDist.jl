@@ -159,7 +159,7 @@ end
 function  Dist(p::Point{D,T}, q::Point{D,T}) where {D,T}
     sum = 0.0;
     @inbounds for  i in 1:D
-        sum +=  ( p[i] - q[i] )^2
+        @fastmath sum +=  ( p[i] - q[i] )^2
     end
 
     return  sqrt( sum ) #norm( p1.x - p2.x );
