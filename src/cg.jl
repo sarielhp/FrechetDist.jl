@@ -156,7 +156,7 @@ end
 function  Dist(p::Point{D,T}, q::Point{D,T}) where {D,T}
     sum = 0.0;
      for  i in 1:D
-        sum += + ( p[i] - q[i] )^2
+        sum +=  ( p[i] - q[i] )^2
     end
 
     return  sqrt( sum ) #norm( p1.x - p2.x );
@@ -170,7 +170,15 @@ function  convex_comb( p::Point{D,T}, q::Point{D,T}, t::Float64 ) where{D,T}
         return  q;
     end
 
-    return  add( mult( p, 1.0-t), mult( q, t ) );
+    s = 1.0 - t;
+    o = Point[D,T}(undef)
+
+    @inbounds for  i in 1:D
+        o[ i ] = p[ i ] * s + q[ i] * t;
+    end
+
+    return  0;
+#    return  add( mult( p, 1.0-t), mult( q, t ) );
 end
 
 
