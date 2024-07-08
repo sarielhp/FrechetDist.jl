@@ -171,7 +171,7 @@ function  convex_comb( p::Point{D,T}, q::Point{D,T}, t::Float64 ) where{D,T}
     end
 
     s = 1.0 - t;
-    o = Point[D,T}(undef)
+    o = Point{D,T}(undef)
 
     @inbounds for  i in 1:D
         o[ i ] = p[ i ] * s + q[ i] * t;
