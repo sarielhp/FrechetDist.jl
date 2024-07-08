@@ -155,7 +155,7 @@ function  DistSq(p::Point{D,T}, q::Point{D,T}) where {D,T}
 end
 function  Dist(p::Point{D,T}, q::Point{D,T}) where {D,T}
     sum = 0.0;
-    @simd for  i in 1:D
+    for  i in 1:D
         sum +=  ( p[i] - q[i] )^2
     end
 
