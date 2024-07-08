@@ -131,7 +131,6 @@ function  dot( p::Point{D,T}, q::Point{D,T}) where  {D,T}
     return  s;
 
     #return  LinearAlgebra.dot( p, q );
-    =#
 end
 
 # Define standard lexicographical ordering on points
