@@ -14,6 +14,7 @@ using Parameters
 using StaticArrays
 using LinearAlgebra
 using DelimitedFiles
+using LoopVectorization
 
 ###################################################################
 ### Point type
@@ -53,8 +54,8 @@ end
 
 function  norm(p::MVector{D,T} ) where {D,T}
     sum = 0;
-    for i in 1:D
-        sum = sum + p[i]^2;
+    @turbo for i in 1:D
+        sum +=  p[i]^2;
     end
     return  sqrt( sum );
 end
@@ -118,8 +119,16 @@ end
 #    return  Point( u );
 #end
 
+#function  dot( p::Point{D,T}, q::Point{D,T}) where  {D,T}
+#    return  LinearAlgebra.dot( p, q );
+#end
 function  dot( p::Point{D,T}, q::Point{D,T}) where  {D,T}
-    return  LinearAlgebra.dot( p, q );
+    s = zero( T );
+    @turbo for i in 1:D
+        s += p[ i ] * q[ i ]; 
+    end
+    return  s;
+    #return  LinearAlgebra.dot( p, q );
 end
 
 # Define standard lexicographical ordering on points
@@ -138,16 +147,16 @@ end
 
 function  DistSq(p::Point{D,T}, q::Point{D,T}) where {D,T}
     sum = 0.0;
-    for  i in 1:D
-        sum = sum + ( p[i] - q[i] )^2
+    @turbo for  i in 1:D
+        sum += ( p[i] - q[i] )^2
     end
 
     return  sum  #norm( p1.x - p2.x );
 end
 function  Dist(p::Point{D,T}, q::Point{D,T}) where {D,T}
     sum = 0.0;
-    for  i in 1:D
-        sum = sum + ( p[i] - q[i] )^2
+    @turbo for  i in 1:D
+        sum += + ( p[i] - q[i] )^2
     end
 
     return  sqrt( sum ) #norm( p1.x - p2.x );
