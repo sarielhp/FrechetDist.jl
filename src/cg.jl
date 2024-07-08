@@ -123,11 +123,10 @@ end
 #    return  LinearAlgebra.dot( p, q );
 #end
 function  dot( p::Point{D,T}, q::Point{D,T}) where  {D,T}
-    return  sum( p .* q );
-    #=
+#    return  sum( p .* q );
     s = zero( T );
     for i in 1:D
-        s += p[ i ] * q[ i ];
+        @inbounds s += p[ i ] * q[ i ];
     end
     return  s;
 
