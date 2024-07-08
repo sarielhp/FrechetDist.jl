@@ -145,8 +145,8 @@ function Base.isless( p::Point{D,T}, q::Point{D,T} ) where {D,T}
     return  false;
 end
 
-function  DistSq(p::Point{D,T}, q::Point{D,T}) where {D,T}
-    sum = 0.0;
+function  DistSq(p::Point{D,T}, q::Point{D,T})::T where {D,T}
+    sum = zero(T);
     for  i in 1:D
         sum += ( p[i] - q[i] )^2
     end
