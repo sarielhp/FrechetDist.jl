@@ -15,6 +15,7 @@ using StaticArrays
 using LinearAlgebra
 using DelimitedFiles
 #using LoopVectorization
+#using SIMD
 
 ###################################################################
 ### Point type
@@ -150,7 +151,7 @@ end
 function  DistSq(p::Point{D,T}, q::Point{D,T})::T where {D,T}
     sum = zero(T);
     @inbounds for  i in 1:D
-        sum += ( p[i] - q[i] )^2
+        @fastmath sum += ( p[i] - q[i] )^2
     end
 
     return  sum  #norm( p1.x - p2.x );
