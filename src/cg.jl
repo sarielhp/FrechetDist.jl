@@ -125,8 +125,8 @@ end
 function  dot( p::Point{D,T}, q::Point{D,T}) where  {D,T}
 #    return  sum( p .* q );
     s = zero( T );
-    for i in 1:D
-        @inbounds s += p[ i ] * q[ i ];
+    @inbounds for i in 1:D
+        s += p[ i ] * q[ i ];
     end
     return  s;
 
@@ -157,7 +157,7 @@ function  DistSq(p::Point{D,T}, q::Point{D,T})::T where {D,T}
 end
 function  Dist(p::Point{D,T}, q::Point{D,T}) where {D,T}
     sum = 0.0;
-    for  i in 1:D
+    @inbounds for  i in 1:D
         sum +=  ( p[i] - q[i] )^2
     end
 
