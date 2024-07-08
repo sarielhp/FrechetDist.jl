@@ -178,7 +178,7 @@ function  convex_comb( p::Point{D,T}, q::Point{D,T}, t::Float64 ) where{D,T}
         o[ i ] = p[ i ] * s + q[ i] * t;
     end
 
-    return  0;
+    return  o;
 #    return  add( mult( p, 1.0-t), mult( q, t ) );
 end
 
