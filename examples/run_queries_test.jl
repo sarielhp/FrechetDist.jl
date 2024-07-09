@@ -241,8 +241,8 @@ function frechet_decider_PID( PID::PolygonsInDir, i::Int64,
     f_debug::Bool = false;
     f_verify::Bool = false;
 
-    PA = PID.polys[ i ];
-    QA = PID.polys[ j ];
+    PA = P_orig = PID.polys[ i ];
+    QA = Q_orig = PID.polys[ j ];
 
     l_a =  Dist( first( PA ), first( QA ) );
     ( l_a > r )  &&   return  1;
@@ -272,6 +272,17 @@ function frechet_decider_PID( PID::PolygonsInDir, i::Int64,
         PA, wP = ph_approx( P_ph, w_trg );
         QA, wQ = ph_approx( Q_ph, w_trg );
 
+        if  ( cardin( PA ) > div( cardin( P_orig ), 2 ) )
+            PA = P_orig;
+            wP = 0.0;
+            #println( "BOBOBOB" );
+        end
+        if  ( cardin( QA ) > div( cardin( Q_orig ), 2 ) )
+            QA = Q_orig;
+            wQ = 0.0;
+            #println( "BOBOBOB" );
+        end
+        
         if  f_monotone
             f_debug  &&  println( "MONOTONE" );
             m, PA_A, QA_A = frechet_mono_via_refinement_delta( PA, QA,

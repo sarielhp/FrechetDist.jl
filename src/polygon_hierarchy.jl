@@ -152,6 +152,15 @@ function   ph_approx( ph::PolygonHierarchy{D,T}, w::Float64,
 
     w_out = (mX.leash + wZ);
 
+    m = frechet_c_compute( X, ph.P );
+    #println( cardin( ph.P ), " ",cardin( X ), " err: ", w_out, " rerr: ", m.leash );
+    #=
+    if  ( ( cardin( X ) == 28 )  &&  (cardin( ph.P ) > 200 ) )
+        Polygon_write_to_file( X, "X.txt" );
+        Polygon_write_to_file( ph.P, "P.txt" );
+        exit( -1 );
+    end
+    =#
     ph_push!( ph, X, w_out );
 
     return  X, w_out;
