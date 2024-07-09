@@ -273,10 +273,17 @@ function frechet_decider_PID( PID::PolygonsInDir, i::Int64,
     f_last::Bool = false;
     for  iters::Int64 in 1:100
         w_trg = delta / 2.0 #2.0 #1.5 # / 2.0
-        PA, wP = ph_approx( P_ph, w_trg );
-        QA, wQ = ph_approx( Q_ph, w_trg );
-
-        f_last  &&  println( "LASt???" );
+        if  f_last
+            PA = P_orig;
+            QA = Q_orig;
+            wQ = wP = 0.0;
+            f_last = true;
+            f_monotne = false;
+        else
+            PA, wP = ph_approx( P_ph, w_trg );
+            QA, wQ = ph_approx( Q_ph, w_trg );
+        end
+        #f_last  &&  println( "LASt???" );
         if  ( cardin( PA ) > P_limit )
             PA = P_orig;
             f_monotne = false;
