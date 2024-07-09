@@ -266,18 +266,21 @@ function frechet_decider_PID( PID::PolygonsInDir, i::Int64,
     f_debug  &&  println( "Lower bound: ", lb, "\nUpper bound: ", ub,
                           "\nr: ", r );
 
+    P_limit::Int64 = round( Int64, 0.75 * cardin( P_orig ) );
+    Q_limit::Int64 = round( Int64, 0.75 * cardin( Q_orig ) );
+    
     f_monotone::Bool = false;
     for  iters::Int64 in 1:100
         w_trg = delta / 2.0 #2.0 #1.5 # / 2.0
         PA, wP = ph_approx( P_ph, w_trg );
         QA, wQ = ph_approx( Q_ph, w_trg );
 
-        if  ( cardin( PA ) > 0.666* cardin( P_orig ) )
+        if  ( cardin( PA ) > P_limit )
             PA = P_orig;
             wP = 0.0;
             #println( "BOBOBOB" );
         end
-        if  ( cardin( QA ) > 0.666 * cardin( Q_orig ) )
+        if  ( cardin( QA ) > Q_limit )
             QA = Q_orig;
             wQ = 0.0;
             #println( "BOBOBOB" );
