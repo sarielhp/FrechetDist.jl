@@ -266,8 +266,8 @@ function frechet_decider_PID( PID::PolygonsInDir, i::Int64,
     f_debug  &&  println( "Lower bound: ", lb, "\nUpper bound: ", ub,
                           "\nr: ", r );
 
-    P_limit::Int64 = round( Int64, 0.5 * cardin( P_orig ) );
-    Q_limit::Int64 = round( Int64, 0.5 * cardin( Q_orig ) );
+    P_limit::Int64 = round( Int64, 0.8 * cardin( P_orig ) );
+    Q_limit::Int64 = round( Int64, 0.8 * cardin( Q_orig ) );
     
     f_monotone::Bool = false;
     f_last::Bool = false;
