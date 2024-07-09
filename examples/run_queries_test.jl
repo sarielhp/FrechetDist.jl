@@ -272,12 +272,12 @@ function frechet_decider_PID( PID::PolygonsInDir, i::Int64,
         PA, wP = ph_approx( P_ph, w_trg );
         QA, wQ = ph_approx( Q_ph, w_trg );
 
-        if  ( cardin( PA ) > div( cardin( P_orig ), 2 ) )
+        if  ( cardin( PA ) > div( cardin( P_orig ), 4 ) )
             PA = P_orig;
             wP = 0.0;
             #println( "BOBOBOB" );
         end
-        if  ( cardin( QA ) > div( cardin( Q_orig ), 2 ) )
+        if  ( cardin( QA ) > div( cardin( Q_orig ), 4 ) )
             QA = Q_orig;
             wQ = 0.0;
             #println( "BOBOBOB" );
