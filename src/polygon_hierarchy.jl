@@ -152,7 +152,7 @@ function   ph_approx( ph::PolygonHierarchy{D,T}, w::Float64,
 
     w_out = (mX.leash + wZ);
 
-    m = frechet_c_compute( X, ph.P );
+    #m = frechet_c_compute( X, ph.P );
     #println( cardin( ph.P ), " ",cardin( X ), " err: ", w_out, " rerr: ", m.leash );
     #=
     if  ( ( cardin( X ) == 28 )  &&  (cardin( ph.P ) > 200 ) )
