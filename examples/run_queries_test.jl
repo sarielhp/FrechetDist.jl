@@ -281,8 +281,8 @@ function frechet_decider_PID( PID::PolygonsInDir, i::Int64,
             QA = Q_orig;
             wQ = wP = 0.0;
         else
-            PA, wP = ph_approx( P_ph, w_trg );
-            QA, wQ = ph_approx( Q_ph, w_trg );
+            PA, wP = ph_approx( P_ph, w_trg, 1.1 );
+            QA, wQ = ph_approx( Q_ph, w_trg, 1.1 );
             #f_last  &&  println( "LASt???" );
             if  ( cardin( PA ) > P_limit )
                 PA = P_orig;
@@ -300,7 +300,7 @@ function frechet_decider_PID( PID::PolygonsInDir, i::Int64,
             end
         end
 
-        #if  f_monotone
+        if  f_monotone
             f_debug  &&  println( "MONOTONE" );
             # println( "delta" )
             m, PA_A, QA_A = frechet_mono_via_refinement_delta( PA, QA,
@@ -308,11 +308,9 @@ function frechet_decider_PID( PID::PolygonsInDir, i::Int64,
                                                             false );
             l_min = m.lower_bound;#leash / m.ratio;
             l_max = m.leash;
-        #=
         else
             l_min, l_max = FEVER_compute_range( PA, QA, ub )
         end
-        =#
 
         # the strange thing is that the max does not need to be equal...
         #=
