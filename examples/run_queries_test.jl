@@ -270,28 +270,22 @@ function frechet_decider_PID( PID::PolygonsInDir, i::Int64,
     Q_limit::Int64 = round( Int64, 0.82 * cardin( Q_orig ) );
 
     f_monotone::Bool = false;
-    f_last::Bool = false;
-    #println( "-------------------------------------------" );
+    f_orig::Bool = false;
     for  iters::Int64 in 1:100
-        #println( "I: ", iters, "  [", lb, "..", ub, "]: ", r,
-        #          " δ: ", delta );
         w_trg = delta / 2.0
-        if  f_last
+        if  f_orig
             PA = P_orig;
             QA = Q_orig;
             wQ = wP = 0.0;
         else
             PA, wP = ph_approx( P_ph, w_trg );
             QA, wQ = ph_approx( Q_ph, w_trg );
-            #f_last  &&  println( "LASt???" );
-            if  ( cardin( PA ) > P_limit )
+            if  ( ( cardin( PA ) > P_limit )
+                ||  ( cardin( QA ) > Q_limit ) )
                 PA = P_orig;
                 f_monotne = false;
                 wP = 0.0;
-                f_last = true;
-                #println( "BOBOBOB" );
-            end
-            if  ( cardin( QA ) > Q_limit )
+                f_orig = true;
                 QA = Q_orig;
                 wQ = 0.0;
                 f_monotne = false;
@@ -310,29 +304,7 @@ function frechet_decider_PID( PID::PolygonsInDir, i::Int64,
             l_max = m.leash;
         else
             l_min, l_max = FEVER_compute_range( PA, QA, ub )
-        end
 
-        # the strange thing is that the max does not need to be equal...
-        #=
-        if  f_verify
-            println( "VERIFY" );
-            l_min_a, l_max_a = frechet_ve_r_compute_range( PA, QA,
-                                                    20000000.0 + ub )
-            if  ( ! eq( l_min, l_min_a, 0.00001 ) ) #  ||  ( l_max != l_max_a ) )
-                println( "l_min  : ", l_min );
-                println( "l_min_a: ", l_min_a );
-                println( "l_max  : ", l_max );
-                println( "l_max_a: ", l_max_a );
-                Polygon_write_to_file( PA, "bad_a.txt" );
-                Polygon_write_to_file( QA, "bad_b.txt" );
-                @assert( l_min == l_min_a );
-            end
-        end
-        =#
-
-
-        f_debug && println( l_min, "...", l_max, "   r:", r );
-        if  ! f_monotone
             if  ( ( iters > 0 )  &&  ( l_min < r < l_max )
                   &&  ( ( l_max - l_min ) > 4.0*delta ) )
                 #delta = min( abs( l_min -r ), abs( l_max - r ), delta );
