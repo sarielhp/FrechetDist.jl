@@ -243,7 +243,7 @@ function frechet_decider_PID( PID::PolygonsInDir, i::Int64,
 
     PA = P_orig = PID.polys[ i ];
     QA = Q_orig = PID.polys[ j ];
-
+    
     l_a =  Dist( first( PA ), first( QA ) );
     ( l_a > r )  &&   return  1;
 
@@ -255,6 +255,9 @@ function frechet_decider_PID( PID::PolygonsInDir, i::Int64,
 
     wP = P_ph.widths[ 1 ];
     wQ = Q_ph.widths[ 1 ];
+
+    f_debug && print( "wP      : ", wP );
+    f_debug && print( "    wQ  : ", wQ );
 
     ub = lb + wP + wQ;
     ( ub < r )   &&   return  -1;
@@ -268,7 +271,7 @@ function frechet_decider_PID( PID::PolygonsInDir, i::Int64,
 
     f_monotone::Bool = false;
     f_orig::Bool = false;
-    for  iters::Int64 in 1:12
+    for  iters::Int64 in 1:20
         w_trg = delta / 2.0
         if  f_orig
             PA = P_orig;
@@ -296,7 +299,7 @@ function frechet_decider_PID( PID::PolygonsInDir, i::Int64,
         else
             l_min, l_max = FEVER_compute_range( PA, QA, ub )
 
-             if  ( ( iters > 0 )  &&  ( l_min < r < l_max )
+            if  ( ( iters > 0 )  &&  ( l_min < r < l_max )
                   &&  ( ( l_max - l_min ) > 4.0*delta ) )
                 f_monotone = true;
                 delta = delta / 2.0;
