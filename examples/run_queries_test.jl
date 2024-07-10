@@ -271,7 +271,10 @@ function frechet_decider_PID( PID::PolygonsInDir, i::Int64,
     
     f_monotone::Bool = false;
     f_last::Bool = false;
+    #println( "-------------------------------------------" );
     for  iters::Int64 in 1:100
+        #println( "I: ", iters, "  [", lb, "..", ub, "]: ", r,
+        #          " δ: ", delta );
         w_trg = delta / 2.0 #2.0 #1.5 # / 2.0
         if  f_last
             PA = P_orig;
@@ -297,17 +300,20 @@ function frechet_decider_PID( PID::PolygonsInDir, i::Int64,
             end
         end
         
-        if  f_monotone
+        #if  f_monotone
             f_debug  &&  println( "MONOTONE" );
+            # println( "delta" )
             m, PA_A, QA_A = frechet_mono_via_refinement_delta( PA, QA,
                                                                delta,
                                                             false );
             l_min = m.lower_bound;#leash / m.ratio;
             l_max = m.leash;
+        #=
         else
             l_min, l_max = FEVER_compute_range( PA, QA, ub )
         end
-
+        =#
+        
         # the strange thing is that the max does not need to be equal...
         #=
         if  f_verify
