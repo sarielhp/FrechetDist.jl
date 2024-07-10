@@ -256,9 +256,6 @@ function frechet_decider_PID( PID::PolygonsInDir, i::Int64,
     wP = P_ph.widths[ 1 ];
     wQ = Q_ph.widths[ 1 ];
 
-    f_debug && print( "wP      : ", wP );
-    f_debug && print( "    wQ  : ", wQ );
-
     ub = lb + wP + wQ;
     ( ub < r )   &&   return  -1;
 
@@ -271,7 +268,7 @@ function frechet_decider_PID( PID::PolygonsInDir, i::Int64,
 
     f_monotone::Bool = false;
     f_orig::Bool = false;
-    for  iters::Int64 in 1:100
+    for  iters::Int64 in 1:12
         w_trg = delta / 2.0
         if  f_orig
             PA = P_orig;
@@ -299,14 +296,10 @@ function frechet_decider_PID( PID::PolygonsInDir, i::Int64,
         else
             l_min, l_max = FEVER_compute_range( PA, QA, ub )
 
-            if  ( ( iters > 0 )  &&  ( l_min < r < l_max )
+             if  ( ( iters > 0 )  &&  ( l_min < r < l_max )
                   &&  ( ( l_max - l_min ) > 4.0*delta ) )
-                #delta = min( abs( l_min -r ), abs( l_max - r ), delta );
-                f_debug  &&  println( "zoom in..." );
                 f_monotone = true;
                 delta = delta / 2.0;
-
-                #println( "Delta: ", delta );
                 continue;
             end
         end
@@ -321,9 +314,7 @@ function frechet_decider_PID( PID::PolygonsInDir, i::Int64,
                      delta / 2.0 );
     end
 
-    #println( "SHOGI!" );
-
-    m = frechet_c_compute( P, Q )
+    m = frechet_c_compute( P_orig, Q_orig )
     return  round(Int64, sign( m.leash - r ) )
 end
 
