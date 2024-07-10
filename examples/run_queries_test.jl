@@ -281,8 +281,8 @@ function frechet_decider_PID( PID::PolygonsInDir, i::Int64,
             QA = Q_orig;
             wQ = wP = 0.0;
         else
-            PA, wP = ph_approx( P_ph, w_trg, P_limit, 1.1 );
-            QA, wQ = ph_approx( Q_ph, w_trg, Q_limit, 1.1 );
+            PA, wP = ph_approx( P_ph, w_trg, P_limit, 2.0 );
+            QA, wQ = ph_approx( Q_ph, w_trg, Q_limit, 2.0 );
             #f_last  &&  println( "LASt???" );
             if  ( cardin( PA ) > P_limit )
                 PA = P_orig;
@@ -338,6 +338,7 @@ function frechet_decider_PID( PID::PolygonsInDir, i::Int64,
                 #delta = min( abs( l_min -r ), abs( l_max - r ), delta );
                 f_debug  &&  println( "zoom in..." );
                 f_monotone = true;
+                delta = delta / 2.0;
                 continue;
             end
         end
