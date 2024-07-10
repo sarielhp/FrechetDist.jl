@@ -282,21 +282,19 @@ function frechet_decider_PID( PID::PolygonsInDir, i::Int64,
             QA, wQ = ph_approx( Q_ph, w_trg );
             if  ( ( cardin( PA ) > P_limit )
                 ||  ( cardin( QA ) > Q_limit ) )
+                QA = Q_orig;
                 PA = P_orig;
                 f_monotne = false;
                 wP = 0.0;
                 f_orig = true;
-                QA = Q_orig;
                 wQ = 0.0;
                 f_monotne = false;
-                f_last = true;
+                #f_last = true;
                 #println( "BOBOBOB" );
             end
         end
 
         if  f_monotone
-            f_debug  &&  println( "MONOTONE" );
-            # println( "delta" )
             m, PA_A, QA_A = frechet_mono_via_refinement_delta( PA, QA,
                                                                delta,
                                                             false );
@@ -310,7 +308,7 @@ function frechet_decider_PID( PID::PolygonsInDir, i::Int64,
                 #delta = min( abs( l_min -r ), abs( l_max - r ), delta );
                 f_debug  &&  println( "zoom in..." );
                 f_monotone = true;
-                delta = delta / 2.0;
+                delta = delta / 4.0;
                 continue;
             end
         end
@@ -325,7 +323,7 @@ function frechet_decider_PID( PID::PolygonsInDir, i::Int64,
                      delta / 2.0 );
     end
 
-    println( "SHOGI!" );
+    #println( "SHOGI!" );
 
     m = frechet_c_compute( P, Q )
     return  round(Int64, sign( m.leash - r ) )
