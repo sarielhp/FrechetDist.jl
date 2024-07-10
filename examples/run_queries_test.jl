@@ -309,7 +309,8 @@ function frechet_decider_PID( PID::PolygonsInDir, i::Int64,
                 f_debug  &&  println( "zoom in..." );
                 f_monotone = true;
                 delta = delta / 8.0;
-                println( "Delta: ", delta );
+
+                #println( "Delta: ", delta );
                 continue;
             end
         end
