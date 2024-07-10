@@ -268,7 +268,7 @@ function frechet_decider_PID( PID::PolygonsInDir, i::Int64,
 
     P_limit::Int64 = round( Int64, 0.9 * cardin( P_orig ) );
     Q_limit::Int64 = round( Int64, 0.9 * cardin( Q_orig ) );
-    
+
     f_monotone::Bool = false;
     f_last::Bool = false;
     #println( "-------------------------------------------" );
@@ -299,7 +299,7 @@ function frechet_decider_PID( PID::PolygonsInDir, i::Int64,
                 #println( "BOBOBOB" );
             end
         end
-        
+
         #if  f_monotone
             f_debug  &&  println( "MONOTONE" );
             # println( "delta" )
@@ -313,7 +313,7 @@ function frechet_decider_PID( PID::PolygonsInDir, i::Int64,
             l_min, l_max = FEVER_compute_range( PA, QA, ub )
         end
         =#
-        
+
         # the strange thing is that the max does not need to be equal...
         #=
         if  f_verify
@@ -331,7 +331,8 @@ function frechet_decider_PID( PID::PolygonsInDir, i::Int64,
             end
         end
         =#
-        
+
+
         f_debug && println( l_min, "...", l_max, "   r:", r );
         if  ! f_monotone
             if  ( ( iters > 0 )  &&  ( l_min < r < l_max )
