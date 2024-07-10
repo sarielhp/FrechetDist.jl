@@ -284,13 +284,9 @@ function frechet_decider_PID( PID::PolygonsInDir, i::Int64,
                 ||  ( cardin( QA ) > Q_limit ) )
                 QA = Q_orig;
                 PA = P_orig;
-                f_monotne = false;
-                wP = 0.0;
+                wP = wQ = 0.0;
                 f_orig = true;
-                wQ = 0.0;
-                f_monotne = false;
-                #f_last = true;
-                #println( "BOBOBOB" );
+                #f_monotne = false;
             end
         end
 
