@@ -266,8 +266,8 @@ function frechet_decider_PID( PID::PolygonsInDir, i::Int64,
     f_debug  &&  println( "Lower bound: ", lb, "\nUpper bound: ", ub,
                           "\nr: ", r );
 
-    P_limit::Int64 = round( Int64, 0.9 * cardin( P_orig ) );
-    Q_limit::Int64 = round( Int64, 0.9 * cardin( Q_orig ) );
+    P_limit::Int64 = round( Int64, 0.82 * cardin( P_orig ) );
+    Q_limit::Int64 = round( Int64, 0.82 * cardin( Q_orig ) );
 
     f_monotone::Bool = false;
     f_last::Bool = false;
@@ -275,14 +275,14 @@ function frechet_decider_PID( PID::PolygonsInDir, i::Int64,
     for  iters::Int64 in 1:100
         #println( "I: ", iters, "  [", lb, "..", ub, "]: ", r,
         #          " δ: ", delta );
-        w_trg = delta / 2.0 #2.0 #1.5 # / 2.0
+        w_trg = delta / 2.0
         if  f_last
             PA = P_orig;
             QA = Q_orig;
             wQ = wP = 0.0;
         else
-            PA, wP = ph_approx( P_ph, w_trg, P_limit, 2.0 );
-            QA, wQ = ph_approx( Q_ph, w_trg, Q_limit, 2.0 );
+            PA, wP = ph_approx( P_ph, w_trg );
+            QA, wQ = ph_approx( Q_ph, w_trg );
             #f_last  &&  println( "LASt???" );
             if  ( cardin( PA ) > P_limit )
                 PA = P_orig;
