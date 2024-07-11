@@ -81,6 +81,22 @@ function  draw_polygon( cr, P )
     Cairo.stroke( cr );
 end
 
+
+function  draw_points( cr, P::Vector{Point2F} )
+    nv::Int64 = length( P );
+    rad::Float64 = 0.005
+    println( "nv:", nv );
+    for  i in 1:nv
+        p = P[ i ];
+        move_to( cr, p[1] - rad , p[2] )
+        
+        arc( cr, p[1], p[2], rad, 0.0, 2 * 3.1415 );
+#        move_to( cr,  p[1], p[2] )
+#        line_to( cr,  p[1]+0.01, p[2] )
+    end
+    Cairo.stroke( cr );
+end
+
 function  draw_polygon_vertices( cr, P, r::Float64 )
     nv::Int64 = cardin( P );
     #r = Polygon_length( P ) / (100.0*cardin( P ));
