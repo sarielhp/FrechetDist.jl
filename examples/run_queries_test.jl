@@ -12,6 +12,8 @@ using PrettyTables
 #using InteractiveUtils
 #using ProfileView
 
+const  TIME_RESULTS = false
+
 AtomicInt = Threads.Atomic{Int}
 
 ######################################################################
@@ -569,12 +571,13 @@ function  run_tests( PID::PolygonsInDir, tests::Vector{test_info_t},
         t = tests[ i ];
         #println( "Before frechet_decider..." );
         #println( i,":   fl_a: ", t.f_l_a, "   fl_b: ", t.f_l_b );
-        #ms = @timed sgn = frechet_decider_PID( PID, t.i_P, t.i_Q, t.rad );
-        #t.runtime = ms.time;
-        #ms = @timed
-        sgn = frechet_decider_PID( PID, t.i_P, t.i_Q, t.rad );
-        t.runtime = 0 #ms.time;
-
+        @static if  TIME_RESULTS
+            ms = @timed sgn = frechet_decider_PID( PID, t.i_P, t.i_Q, t.rad );
+            t.runtime = ms.time;
+        else
+            sgn = frechet_decider_PID( PID, t.i_P, t.i_Q, t.rad );
+            t.runtime = 0
+        end
         if  ( f_verify )
             #println( "verifying!" );
             sgn_slow = frechet_decider_PID_slow( PID, t.i_P, t.i_Q, t.rad )
@@ -605,21 +608,22 @@ function  run_tests( PID::PolygonsInDir, tests::Vector{test_info_t},
         #end;
     end
 
-    #=
-    sort!( tests );
+    @static if TIME_RESULTS
+        sort!( tests );
 
-    open( "tests.txt", "w" ) do file
-        for  t in tests
-            println( file, t.f_l_a, " ", t.f_l_b, " ", t.rad );
+        open( "tests.txt", "w" ) do file
+            for  t in tests
+                println( file, t.f_l_a, " ", t.f_l_b, " ", t.rad );
+            end
+        end
+        open( "tests_times.txt", "w" ) do file
+            for  t in tests
+                println( file, t.f_l_a, " ", t.f_l_b, " ", t.rad, " ",
+                    t.runtime );
+            end
         end
     end
-    open( "tests_times.txt", "w" ) do file
-        for  t in tests
-            println( file, t.f_l_a, " ", t.f_l_b, " ", t.rad, " ", t.runtime );
-        end
-    end
-    =#
-    
+
     return  errors;
 end
 
