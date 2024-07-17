@@ -667,6 +667,7 @@ end
 ### Polygon type
 ###############################################33
 
+<<<<<<< HEAD
 @static if  POLYGON_AS_DIRECT_ARRAY
     Polygon{D,T} = Vector{Point{D,T}};
 else
@@ -689,10 +690,26 @@ else
         return  Polygon{D,T}( vec );
     end
 end
+=======
+
+#Point{D,T} = MVector{D,T};
+
+Polygon{D,T} = Vector{Point{D,T}};
+
+
+#function Polygon{D,T}()  where {D,T}
+#    return  Vector{Point{D,T}}();
+    #return  Polygon{D,T}( vec );
+#end
+>>>>>>> refs/remotes/origin/main
 
 
 function  Polygon_translate!( P::Polygon{D,T}, v::Point{D,T} ) where {D,T}
+<<<<<<< HEAD
     for  i in 1:length(Points(P))
+=======
+    for  i in 1:length(P)
+>>>>>>> refs/remotes/origin/main
         # POINT p.x = p.x - v.x;
         P[i] = sub( P[i], v );
     end
@@ -737,8 +754,13 @@ end
 
 
 function  Polygon_as_matrix( P::Polygon{D,T} ) where {D,T}
+<<<<<<< HEAD
     m = zeros( T, D, length( Points(P) ) );
     for  i in 1:length( Points(P) )
+=======
+    m = zeros( T, D, length( P ) );
+    for  i in 1:length( P )
+>>>>>>> refs/remotes/origin/main
         m[:,i] = P[ i ];
     end
     return  m;
@@ -765,6 +787,7 @@ function  VecPnts_as_matrix( v::Vector{Point{D,T}} ) where {D,T}
     return  m;
 end
 
+<<<<<<< HEAD
 @static if  ! POLYGON_AS_DIRECT_ARRAY
     function Base.last( poly::Polygon{D,T} ) where {D,T}
         #    println( "last??? " );
@@ -783,7 +806,29 @@ end
     function  Base.setindex!(a::Polygon{D,T}, v, i::Int) where {D,T}
         a.pnts[ i ] = v;
     end
+=======
+#=
+function Base.last( poly::Polygon{D,T} ) where {D,T}
+#    println( "last??? " );
+    return  last( poly );
 end
+
+function Base.first( poly::Polygon{D,T} ) where {D,T}
+#    println( "last??? " );
+    return  first( poly );
+end
+=#
+
+#=
+function  Base.getindex(a::Polygon{D,T}, i::Int) where {D,T}
+    return   a[ i ];
+end
+
+function  Base.setindex!(a::Polygon{D,T}, v, i::Int) where {D,T}
+    a.pnts[ i ] = v;
+>>>>>>> refs/remotes/origin/main
+end
+=#
 
 
 function Base.show(io::IO, p::Point{D,T}) where {D,T}
@@ -800,7 +845,11 @@ end
 
 function Base.show(io::IO, poly::Polygon{D,T}) where {D,T}
     f_iter::Bool = false;
+<<<<<<< HEAD
     for p in Points( poly)
+=======
+    for p in poly
+>>>>>>> refs/remotes/origin/main
         if  f_iter
             print( io, "-" );
         else
@@ -877,14 +926,24 @@ end
 function Polygon_move_to_origin( P::Polygon{D,T} ) where {D,T}
     pout::Polygon{D,T} = Polygon{D,T}();
     p = P[ 1 ]
+<<<<<<< HEAD
     for q in Points( P )
         push_smart!( pout, q - p );
+=======
+    for q in P
+        Polygon_push_smart( pout, q - p );
+>>>>>>> refs/remotes/origin/main
     end
     return  pout;
 end
 
+<<<<<<< HEAD
 function  cardin( P::Polygon{D,T} )::Int64 where {D,T}
     return  length( Points( P ) );
+=======
+function  cardin( p::Polygon{D,T} )::Int64 where {D,T}
+    return  length( p );
+>>>>>>> refs/remotes/origin/main
 end
 
 
@@ -974,6 +1033,7 @@ end
 #    return  p.pnts[ i ];
 #end
 
+<<<<<<< HEAD
 @static if  ! POLYGON_AS_DIRECT_ARRAY
     function Base.push!( c::Polygon{D,T}, p::Point{D,T}) where {D,T}
         push!(c.pnts, p);
@@ -988,6 +1048,21 @@ end
 function  Polygon_length( poly::Polygon{D,T} ) where {D,T}
     len::Float64 = 0.0;
     for i in firstindex(Points(poly)) : lastindex(Points(poly))-1
+=======
+#=
+function Base.push!( c::Polygon{D,T}, p::Point{D,T}) where {D,T}
+    push!(c, p);
+end
+
+function Base.pop!( c::Polygon{D,T}) where {D,T}
+    pop!(c);
+end
+=#
+
+function  Polygon_length( poly::Polygon{D,T} ) where {D,T}
+    len::Float64 = 0.0;
+    for i in firstindex(poly) : lastindex(poly)-1
+>>>>>>> refs/remotes/origin/main
         len += Dist( poly[ i ], poly[ i + 1 ] );
     end
 
@@ -1000,7 +1075,11 @@ function  Polygon_prefix_lengths( poly::Polygon{D,T}
     v = Vector{Float64}();
     push!( v,  zero(Float64) );
     len::Float64 = 0.0;
+<<<<<<< HEAD
     for i in firstindex(Points(poly)) : lastindex(Points(poly))-1
+=======
+    for i in firstindex(poly) : lastindex(poly)-1
+>>>>>>> refs/remotes/origin/main
         p = poly[ i ];
         q = poly[ i + 1 ];
         len += Dist( p, q );
@@ -1024,11 +1103,19 @@ end
 #    [0, euclidean_length( poly ) ]
 function  Polygon_get_point_on( poly, prefix_len, t )
     if  t <= 0
+<<<<<<< HEAD
         return first( Points(poly) );
     end
     #println( prefix_len, " : ", t );
     if  t >= last( prefix_len )
         return  last( Points(poly) );
+=======
+        return first( poly );
+    end
+    #println( prefix_len, " : ", t );
+    if  t >= last( prefix_len )
+        return  last( poly );
+>>>>>>> refs/remotes/origin/main
     end
     i = searchsortedfirst( prefix_len, t )
     #    println( "i= ", i );
@@ -1047,7 +1134,7 @@ function  Polygon_get_point_on( poly, prefix_len, t )
     delta = prefix_len[ i ] - prefix_len[ i - 1 ];  # length of segment
     x = (t - prefix_len[ i - 1 ]) / delta;
 
-    return  convex_comb( poly.pnts[ i - 1 ], poly.pnts[ i ], x );
+    return  convex_comb( poly[ i - 1 ], poly[ i ], x );
 end
 
 
@@ -1103,7 +1190,11 @@ function  Polygon_sample_uniformly( P::Polygon{D,T}, n::Int64 ) where {D,T}
     delta = len / (n-1);
 
     new_P::Polygon{D,T} = Polygon{D,T}( );
+<<<<<<< HEAD
     push_smart!( new_P, first( Points(P) ) );
+=======
+    Polygon_push_smart( new_P, first( P ) );
+>>>>>>> refs/remotes/origin/main
 
     sz = cardin( P );
 
