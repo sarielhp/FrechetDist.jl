@@ -1,6 +1,7 @@
 #! /bin/bash
 
 export JULIA_NUM_THREADS=auto
+#export JULIA_NUM_THREADS=32
 
 TDIR=/tmp/frechet_dist
 mkdir -p $TDIR >& /dev/null

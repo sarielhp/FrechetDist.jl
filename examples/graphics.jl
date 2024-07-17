@@ -67,7 +67,7 @@ function  draw_polygon_w_offs( cr, P::Polygon2F, offs::VecFloat )
 end
 
 
-function  draw_polygon( cr, P )
+function  draw_polygon( cr, P, f_close::Bool = false )
     nv::Int64 = cardin( P );
     for  i in 2:nv
         p = P.pnts[ i - 1 ];
@@ -78,6 +78,10 @@ function  draw_polygon( cr, P )
         line_to( cr, q[1], q[2] );
         #println( q[1], " ", q[2] );
     end
+    if  (nv > 0 )  &&  ( f_close )
+        q = P.pnts[ 1 ];
+        line_to( cr, q[1], q[2] );
+    end
     Cairo.stroke( cr );
 end
 
@@ -85,7 +89,7 @@ end
 function  draw_points( cr, P::Vector{Point2F} )
     nv::Int64 = length( P );
     rad::Float64 = 0.005
-    println( "nv:", nv );
+    #println( "nv:", nv );
     for  i in 1:nv
         p = P[ i ];
         move_to( cr, p[1] - rad , p[2] )
@@ -915,7 +919,7 @@ function  output_frechet_diagram( m::Morphing{N,T}, filename )  where {N,T}
     len = length( P_coords );
     poly = Polygon2F();
     for  i in 1:len
-        Polygon_push_smart( poly, point( P_coords[ i ], Q_coords[ i ] ) );
+        push_smart!( poly, point( P_coords[ i ], Q_coords[ i ] ) );
     end
 
     psum::Vector{Float64} = Polygon_prefix_lengths( m.P )

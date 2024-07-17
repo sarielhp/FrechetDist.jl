@@ -239,11 +239,11 @@ end
 function frechet_decider_PID( PID::PolygonsInDir, i::Int64,
                               j::Int64, r::Float64 )::Int64
     f_debug::Bool = false;
-    f_verify::Bool = false;
+    #f_verify::Bool = false;
 
     PA = P_orig = PID.polys[ i ];
     QA = Q_orig = PID.polys[ j ];
-    
+
     l_a =  Dist( first( PA ), first( QA ) );
     ( l_a > r )  &&   return  1;
 
@@ -272,6 +272,10 @@ function frechet_decider_PID( PID::PolygonsInDir, i::Int64,
     f_monotone::Bool = false;
     f_orig::Bool = false;
     for  iters::Int64 in 1:20
+        if  f_debug
+            println( "Iter: ", iters );
+            println( lb, "..", ub, "   r: ", r );
+        end
         w_trg = delta / 2.0
         if  f_orig
             PA = P_orig;
@@ -289,8 +293,13 @@ function frechet_decider_PID( PID::PolygonsInDir, i::Int64,
                 #f_monotne = false;
             end
         end
+        if  ( cardin( PA ) > 1000 )  ||  ( cardin( QA ) > 1000 )
+            break;
+        end
 
         if  f_monotone
+            f_debug  &&  println( "mono_via_refinement( ", cardin( PA), ", ",
+                cardin( QA ) );
             m, PA_A, QA_A = frechet_mono_via_refinement_delta( PA, QA,
                                                                delta,
                                                             false );
@@ -328,9 +337,6 @@ function frechet_decider_PID_new( PID, i, j, r )::Int64
     P = PID.polys[ i ];
     Q = PID.polys[ j ];
 
-
-    #f_debug  &&
-    #println( "\n\n@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@" );
     f_debug  &&  println( "|P|: ", cardin( P ), " |Q|: ", cardin( Q ) );
 
     l_a =  Dist( first( P ), first( Q ) );
@@ -563,8 +569,11 @@ function  run_tests( PID::PolygonsInDir, tests::Vector{test_info_t},
         t = tests[ i ];
         #println( "Before frechet_decider..." );
         #println( i,":   fl_a: ", t.f_l_a, "   fl_b: ", t.f_l_b );
-        ms = @timed sgn = frechet_decider_PID( PID, t.i_P, t.i_Q, t.rad );
-        t.runtime = ms.time;
+        #ms = @timed sgn = frechet_decider_PID( PID, t.i_P, t.i_Q, t.rad );
+        #t.runtime = ms.time;
+        #ms = @timed
+        sgn = frechet_decider_PID( PID, t.i_P, t.i_Q, t.rad );
+        t.runtime = 0 #ms.time;
 
         if  ( f_verify )
             #println( "verifying!" );
@@ -596,6 +605,7 @@ function  run_tests( PID::PolygonsInDir, tests::Vector{test_info_t},
         #end;
     end
 
+    #=
     sort!( tests );
 
     open( "tests.txt", "w" ) do file
@@ -608,7 +618,8 @@ function  run_tests( PID::PolygonsInDir, tests::Vector{test_info_t},
             println( file, t.f_l_a, " ", t.f_l_b, " ", t.rad, " ", t.runtime );
         end
     end
-
+    =#
+    
     return  errors;
 end
 
@@ -731,7 +742,8 @@ function  test_files_from_file( filename, base_dir,
     count = AtomicInt( 0 );
 
     if  ( f_serial )
-        @time do_array( PID, lines, base_dir, nr, count, f_verify )
+        #@time
+        do_array( PID, lines, base_dir, nr, count, f_verify )
     else
         nt = Threads.nthreads();
         chunks = Iterators.partition(lines, length(lines) ÷ nt )
@@ -749,6 +761,10 @@ end
 
 ########################################################################
 ########### Main
+
+#P = Polygon2F();
+#println( fieldnames(Polygon2F) );
+#exit( -1 );
 
 f_verify_run::Bool = false;
 

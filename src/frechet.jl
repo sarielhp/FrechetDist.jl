@@ -844,7 +844,7 @@ function   add_points_along_seg( pout::Polygon{N,T},
             continue;
         end
 
-        Polygon_push_smart( pout, Segment_get_on( seg, tm ) )
+        push_smart!( pout, Segment_get_on( seg, tm ) )
     end
 end
 
@@ -897,7 +897,7 @@ function  extract_refined_polygon( poly::Polygon{N,T},
     while  ( i <= len )
         ep = s[ i ];
         if  ep.type == PT_VERTEX
-            Polygon_push_smart( pout, s[i].p );
+            push_smart!( pout, s[i].p );
             i = i + 1;
             continue;
         end
@@ -922,7 +922,7 @@ function  extract_refined_polygon( poly::Polygon{N,T},
         if  (  is_monotone_inc( times )
                ||  ( lnx < (delta / 2.0 ) ) )
             for  k in i:j
-                Polygon_push_smart( pout, s[k].p );
+                push_smart!( pout, s[k].p );
             end
             i = j + 1
             continue
@@ -1699,7 +1699,7 @@ function  frechet_simplify_to_width( P::Polygon{D,T}, w::T ) where {D,T}
     if  ( len == 0 )
         return pout;
     end
-    if  ( Polygon_push_smart( pout, P[1] ) )
+    if  ( push_smart!( pout, P[1] ) )
         push!( pindices, 1 );
     end
 
@@ -1793,7 +1793,7 @@ function  frechet_simplify_w_exp( P::Polygon{D,T}, w::T ) where {D,T}
     if  ( len == 0 )
         return pout;
     end
-    if  ( Polygon_push_smart( pout, P[1] ) )
+    if  ( push_smart!( pout, P[1] ) )
         push!( pindices, 1 );
     end
 

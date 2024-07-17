@@ -9,6 +9,13 @@
 
 module cg
 
+### Conditional flag to determine whether a polygon is an array of
+### points, or a struct containing a field which is an array of
+### points. Seems to have no impact on performance. Arguably, having
+### it as a distinct struct is "safer" type-wise. 
+const  POLYGON_AS_DIRECT_ARRAY = false
+
+
 #using PrecompileTools
 using Parameters
 using StaticArrays
@@ -34,6 +41,8 @@ using DelimitedFiles
 # end
 
 Point{D,T} = MVector{D,T};
+Point2I = Point{2,Int64};
+Point2F = Point{2,Float64};
 
 function Point{D,T}() where  {D,T}
 #    x::MVector{D,T} = zeros( T, D );
@@ -186,6 +195,26 @@ function  convex_comb( p::Point{D,T}, q::Point{D,T}, t::Float64 ) where{D,T}
     return  o;
 #    return  add( mult( p, 1.0-t), mult( q, t ) );
 end
+
+
+function  is_left_turn( p::Point2F, q::Point2F, r::Point2F )
+    q_x = q[1] - p[1];
+    q_y = q[2] - p[2];
+    r_x = r[1] - p[1];
+    r_y = r[2] - p[2];
+
+    return   ( q_x * r_y - q_y * r_x ) >  0.0;
+end
+function  is_right_turn( p::Point2F, q::Point2F, r::Point2F )
+    q_x = q[1] - p[1];
+    q_y = q[2] - p[2];
+    r_x = r[1] - p[1];
+    r_y = r[2] - p[2];
+
+    return   ( q_x * r_y - q_y * r_x ) <  0.0;
+end
+
+
 
 
 ######################################################################
@@ -638,22 +667,34 @@ end
 ### Polygon type
 ###############################################33
 
-struct Polygon{D,T}
-    pnts::Vector{Point{D,T}};
+@static if  POLYGON_AS_DIRECT_ARRAY
+    Polygon{D,T} = Vector{Point{D,T}};
+else
+    struct Polygon{D,T}
+        pnts::Vector{Point{D,T}};
+    end
 end
 
 
-function Polygon{D,T}()  where {D,T}
-    vec = Vector{Point{D,T}}();
-    return  Polygon{D,T}( vec );
+@static if  POLYGON_AS_DIRECT_ARRAY
+    function Points( P::Polygon{D,T} ) where {D,T}
+        return  P;
+    end
+else
+    function Points( P::Polygon{D,T} ) where {D,T}
+        return  P.pnts;
+    end
+    function Polygon{D,T}()  where {D,T}
+        vec = Vector{Point{D,T}}();
+        return  Polygon{D,T}( vec );
+    end
 end
-
 
 
 function  Polygon_translate!( P::Polygon{D,T}, v::Point{D,T} ) where {D,T}
-    for  i in 1:length(P.pnts)
+    for  i in 1:length(Points(P))
         # POINT p.x = p.x - v.x;
-        P.pnts[i] = sub( P.pnts[i], v );
+        P[i] = sub( P[i], v );
     end
 
     return P;
@@ -670,11 +711,11 @@ function  Polygon_split_single_edge( P::Polygon{D,T}, i::Int64 ) where {D, T}
 #    println( "iiii: ", i );
     Q = Polygon{D,T}();
     for t in 1:i
-        Polygon_push_smart( Q, P[ t ] );
+        push_smart!( Q, P[ t ] );
     end
-    Polygon_push_smart( Q, (P[ i ] + P[ i+1 ] ) / 2.0 );
+    push_smart!( Q, (P[ i ] + P[ i+1 ] ) / 2.0 );
     for t in i+1:cardin(P)
-        Polygon_push_smart( Q, P[ t ] );
+        push_smart!( Q, P[ t ] );
     end
     return  Q;
 end
@@ -696,9 +737,9 @@ end
 
 
 function  Polygon_as_matrix( P::Polygon{D,T} ) where {D,T}
-    m = zeros( T, D, length( P.pnts ) );
-    for  i in 1:length( P.pnts )
-        m[:,i] = P.pnts[ i ];
+    m = zeros( T, D, length( Points(P) ) );
+    for  i in 1:length( Points(P) )
+        m[:,i] = P[ i ];
     end
     return  m;
 end
@@ -724,24 +765,24 @@ function  VecPnts_as_matrix( v::Vector{Point{D,T}} ) where {D,T}
     return  m;
 end
 
+@static if  ! POLYGON_AS_DIRECT_ARRAY
+    function Base.last( poly::Polygon{D,T} ) where {D,T}
+        #    println( "last??? " );
+        return  last( Points( poly ) );
+    end
 
-function Base.last( poly::Polygon{D,T} ) where {D,T}
-#    println( "last??? " );
-    return  last( poly.pnts );
-end
+    function Base.first( poly::Polygon{D,T} ) where {D,T}
+        #    println( "last??? " );
+        return  first( Points( poly ) );
+    end
 
-function Base.first( poly::Polygon{D,T} ) where {D,T}
-#    println( "last??? " );
-    return  first( poly.pnts );
-end
+    function  Base.getindex(a::Polygon{D,T}, i::Int) where {D,T}
+        return   a.pnts[ i ];
+    end
 
-
-function  Base.getindex(a::Polygon{D,T}, i::Int) where {D,T}
-    return   a.pnts[ i ];
-end
-
-function  Base.setindex!(a::Polygon{D,T}, v, i::Int) where {D,T}
-    a.pnts[ i ] = v;
+    function  Base.setindex!(a::Polygon{D,T}, v, i::Int) where {D,T}
+        a.pnts[ i ] = v;
+    end
 end
 
 
@@ -759,7 +800,7 @@ end
 
 function Base.show(io::IO, poly::Polygon{D,T}) where {D,T}
     f_iter::Bool = false;
-    for p in poly.pnts
+    for p in Points( poly)
         if  f_iter
             print( io, "-" );
         else
@@ -790,9 +831,7 @@ function  DistInfty( P::Polygon{D,T},
 end
 
 
-
-
-function  Polygon_push_smart( pout::Polygon{D,T}, p::Point{D,T} ) where  {D,T}
+function  push_smart!( pout::Polygon{D,T}, p::Point{D,T} ) where  {D,T}
     if  ( cardin( pout ) == 0 )
         push!( pout, deepcopy( p ) );
         return  true;
@@ -820,10 +859,10 @@ function  Polygon_split_edges( P::Polygon{D,T} ) where {D,T}
     end;
     for  i in 1:l-1
         p::Point{D,T} = convex_comb( P[ i ], P[ i + 1 ], 0.5 );
-        Polygon_push_smart( Q, P[ i ] );
-        Polygon_push_smart( Q, p );
+        push_smart!( Q, P[ i ] );
+        push_smart!( Q, p );
     end
-    Polygon_push_smart( Q, P[ l ] );
+    push_smart!( Q, P[ l ] );
 
     return  Q;
 end
@@ -838,14 +877,14 @@ end
 function Polygon_move_to_origin( P::Polygon{D,T} ) where {D,T}
     pout::Polygon{D,T} = Polygon{D,T}();
     p = P[ 1 ]
-    for q in P.pnts
-        Polygon_push_smart( pout, q - p );
+    for q in Points( P )
+        push_smart!( pout, q - p );
     end
     return  pout;
 end
 
-function  cardin( p::Polygon{D,T} )::Int64 where {D,T}
-    return  length( p.pnts );
+function  cardin( P::Polygon{D,T} )::Int64 where {D,T}
+    return  length( Points( P ) );
 end
 
 
@@ -858,7 +897,7 @@ function  Polygon_simplify_ext( P::Polygon{D,T}, r::T ) where {D,T}
     if  ( len == 0 )
         return pout;
     end
-    if  ( Polygon_push_smart( pout, P[1] ) )
+    if  ( push_smart!( pout, P[1] ) )
         push!( pindices, 1 );
     end
 
@@ -866,7 +905,7 @@ function  Polygon_simplify_ext( P::Polygon{D,T}, r::T ) where {D,T}
     for i in 2:len
         if  ( Dist( P[i], curr ) > r )
             curr = P[ i ];
-            if  ( Polygon_push_smart( pout, P[i] ) )
+            if  ( push_smart!( pout, P[i] ) )
                 push!( pindices, i );
             end
         end
@@ -900,7 +939,7 @@ function  Polygon_simplify_radii( P::Polygon{D,T}, r::Vector{T} ) where {D,T}
     if  ( len == 0 )
         return pout, pindices;
     end
-    if  Polygon_push_smart( pout, P[1] )
+    if  push_smart!( pout, P[1] )
         push!( pindices, 1 );
     end
 
@@ -913,12 +952,12 @@ function  Polygon_simplify_radii( P::Polygon{D,T}, r::Vector{T} ) where {D,T}
             if  ( i < len )
                 curr_r = r[ i + 1 ];
             end
-            if  Polygon_push_smart( pout, P[i] )
+            if  push_smart!( pout, P[i] )
                 push!( pindices, i );
             end
         end
     end
-    if  Polygon_push_smart( pout, P[ len ] )
+    if  push_smart!( pout, P[ len ] )
         push!( pindices, len );
     end
     #println( "STRLEN: ", length( pindices ) )
@@ -935,17 +974,20 @@ end
 #    return  p.pnts[ i ];
 #end
 
-function Base.push!( c::Polygon{D,T}, p::Point{D,T}) where {D,T}
-    push!(c.pnts, p);
+@static if  ! POLYGON_AS_DIRECT_ARRAY
+    function Base.push!( c::Polygon{D,T}, p::Point{D,T}) where {D,T}
+        push!(c.pnts, p);
+    end
+
+    function Base.pop!( c::Polygon{D,T}) where {D,T}
+        pop!(c.pnts);
+    end
 end
 
-function Base.pop!( c::Polygon{D,T}) where {D,T}
-    pop!(c.pnts);
-end
 
 function  Polygon_length( poly::Polygon{D,T} ) where {D,T}
     len::Float64 = 0.0;
-    for i in firstindex(poly.pnts) : lastindex(poly.pnts)-1
+    for i in firstindex(Points(poly)) : lastindex(Points(poly))-1
         len += Dist( poly[ i ], poly[ i + 1 ] );
     end
 
@@ -958,9 +1000,9 @@ function  Polygon_prefix_lengths( poly::Polygon{D,T}
     v = Vector{Float64}();
     push!( v,  zero(Float64) );
     len::Float64 = 0.0;
-    for i in firstindex(poly.pnts) : lastindex(poly.pnts)-1
-        p = poly.pnts[ i ];
-        q = poly.pnts[ i + 1 ];
+    for i in firstindex(Points(poly)) : lastindex(Points(poly))-1
+        p = poly[ i ];
+        q = poly[ i + 1 ];
         len += Dist( p, q );
         push!( v, Float64( len ) );
     end
@@ -982,16 +1024,16 @@ end
 #    [0, euclidean_length( poly ) ]
 function  Polygon_get_point_on( poly, prefix_len, t )
     if  t <= 0
-        return first( poly.pnts );
+        return first( Points(poly) );
     end
     #println( prefix_len, " : ", t );
     if  t >= last( prefix_len )
-        return  last( poly.pnts );
+        return  last( Points(poly) );
     end
     i = searchsortedfirst( prefix_len, t )
     #    println( "i= ", i );
     if  prefix_len[ i ] == t
-        return  poly.pnts[ i ];
+        return  poly[ i ];
     end
 
 #    if  ( i > 1 )
@@ -1061,7 +1103,7 @@ function  Polygon_sample_uniformly( P::Polygon{D,T}, n::Int64 ) where {D,T}
     delta = len / (n-1);
 
     new_P::Polygon{D,T} = Polygon{D,T}( );
-    Polygon_push_smart( new_P, first( P.pnts ) );
+    push_smart!( new_P, first( Points(P) ) );
 
     sz = cardin( P );
 
@@ -1072,10 +1114,10 @@ function  Polygon_sample_uniformly( P::Polygon{D,T}, n::Int64 ) where {D,T}
 
         ns::Int64 = floor( Int64, ell / delta );
         for  j  in 1:ns
-            Polygon_push_smart( new_P,
+            push_smart!( new_P,
                                 Segment_get_on( s, j / ( ns + 1 ) ) );
         end
-        Polygon_push_smart( new_P, P[ i + 1 ] );
+        push_smart!( new_P, P[ i + 1 ] );
     end
 
     return  new_P;
@@ -1139,8 +1181,6 @@ end
 #####################################################################
 # Predefined useful types...
 
-Point2I = Point{2,Int64};
-Point2F = Point{2,Float64};
 
 Polygon2I = Polygon{2,Int64};
 Polygon2F = Polygon{2,Float64};
@@ -1198,7 +1238,7 @@ function  Polygon_read_plt_orig_file( filename, dchar = "," )
         parts::Vector{SubString{String}} = split.( line, dchar );
         x = parse( Float64, parts[ 1 ] );
         y = parse( Float64, parts[ 2 ] );
-        Polygon_push_smart( P, point( x, y ) );
+        push_smart!( P, point( x, y ) );
     end
 
     return  P
@@ -1232,7 +1272,7 @@ function  Polygon_read_file( filename, dchar = "," )
             pieces = get_numbers_in_line( line, ',' );
         end
         @assert( length( pieces ) >= 2 );
-        Polygon_push_smart( P, point( pieces[ 1 ], pieces[ 2 ] ) );
+        push_smart!( P, point( pieces[ 1 ], pieces[ 2 ] ) );
     end
 
     if  ( cardin( P ) <= 1 )
@@ -1287,9 +1327,15 @@ export BBox
 export point
 export BBox2F, Segment2F, Polygon2F, Point2F
 
+
+########################################################
 # Basic operations on points
 
 export  add, sub, mult, norm
+
+export   is_left_turn
+export   is_right_turn
+
 
 #
 export  BBox_init, BBox_bound, BBox_expand, BBox_print, BBox_width
@@ -1308,7 +1354,7 @@ export  Segment_length
 export  Segment_get_bisection_point
 
 export  Polygon_length, Polygon_move_to_origin
-export  Polygon_sample_uniformly, Polygon_push_smart, Polygon_spine
+export  Polygon_sample_uniformly, push_smart!, Polygon_spine
 
 export  Polygon_read_file
 export  Polygon_read_plt_orig_file
