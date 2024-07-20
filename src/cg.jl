@@ -1196,6 +1196,20 @@ function  BBox_bound(  bb::BBox{D,T}, P::Polygon{D,T} )  where  {D,T}
     end
 end
 
+"""
+    BBox_init
+
+"""
+function  BBox_init( P::Polygon{D,T},
+                     range::UnitRange{Int64} ) where  {D,T}
+    bb = BBox()
+    for  i in range
+        BBox_bound( bb, P[ i ] );
+    end
+    
+    return  bb;
+end
+
 function  BBox_bound(  bb::BBox{D,T},
                        list::Vector{Polygon{D,T}} )  where  {D,T}
     for  x in list
