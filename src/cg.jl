@@ -306,7 +306,6 @@ end
 function  Point_random( D,T )
     x::MVector{D,T} = MVector{D,T}( undef );
 
-    
     @inbounds for i in eachindex( x )
         x[ i ] = T( rand() );
     end
@@ -691,6 +690,13 @@ else
     end
 end
 
+function   Polygon_diff( src::Polygon{D,T}, sub::Polygon{D,T}
+                  )::Polygon{D,T} where {D,T}
+    PSX = setdiff( Points(src), Points( sub ) );
+    PSA = Polygon_from_array( PSX );
+    return  PSA;
+end
+
 
 function Polygon_from_array( arr::Vector{Point{D,T}} )  where {D,T}
     P = Polygon{D,T}();
@@ -1003,6 +1009,12 @@ end
 #end
 
 @static if  ! POLYGON_AS_DIRECT_ARRAY
+    function Base.push!( c::Polygon{D,T}, P::Polygon{D,T}) where {D,T}
+        for p in P
+            push!(c.pnts, p);
+        end
+    end
+
     function Base.push!( c::Polygon{D,T}, p::Point{D,T}) where {D,T}
         push!(c.pnts, p);
     end
@@ -1115,6 +1127,22 @@ function  Polygon_spine( P::Polygon{D,T} )  where {D,T}
     Polygon_push( pout, last( P ) );
 
     return  pout
+end
+
+"""
+    Polygon_sample
+
+Randomly sample each vertex of input polygon, with probability prob.
+"""
+function  Polygon_sample( P::Polygon{D,T}, prob::Float64 ) where  {D,T}
+    out = Polygon{D,T}();
+    for  p in P
+        if  rand() <= prob
+            push!( out, p )
+        end
+    end
+
+    return  out;
 end
 
 
@@ -1236,11 +1264,14 @@ BBox2F = BBox{2,Float64};
 
 
 
-function  Polygon_random( D, T, n::Int64 )
-    P = Polygon{D,T}();
+function  Polygon_random( D,T,  n::Int64 )
+    #x::T = zero(T);
+    #x = x + x;
 
+    P = Polygon{D,T}();
     for  i in 1:n
-        push!( P, Point_random( D, T ) );
+        p::Point{D,T} = Point_random( D, T );
+        push!( P, p  );
     end
 
     return P;
@@ -1418,6 +1449,7 @@ export  Polygon_split_edges
 export  Polygon_split_single_edge
 export  Polygon_edge_length
 export  Polygon_from_array
+export  Polygon_sample
 export  Points;
 export  Centroid;
 
@@ -1428,5 +1460,7 @@ export  dist_iseg_nn_point
 export  convex_comb
 
 export  segs_match_price
+
+export  Polygon_diff
 
 end
