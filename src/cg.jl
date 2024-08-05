@@ -254,6 +254,16 @@ function  BBox_get_dim( bb, d )
     return  ( bb.mini[ d ], bb.maxi[ d ] )
 end
 
+function  BBox_middle( bb::BBox{D,T}, d ) where  {D,T}
+    return   (bb.mini[ d ] + bb.maxi[ d ]) / 2.0;
+end
+function  BBox_min( bb::BBox{D,T}, d ) where  {D,T}
+    return  bb.mini[ d ];
+end
+function  BBox_max( bb::BBox{D,T}, d ) where  {D,T}
+    return  bb.maxi[ d ];
+end
+
 function  BBox_init( bb::BBox{D,T}, p, q ) where  {D,T}
     f_init = true;
     for  i in 1:D
@@ -261,6 +271,70 @@ function  BBox_init( bb::BBox{D,T}, p, q ) where  {D,T}
         bb.maxi[ i ] = max( p[i ], q[ i ] );
     end
 end
+
+
+function  BBox_diam( bb::BBox{D,T} )  where  {D,T}
+    ( ! bb.f_init )  &&  return  zero( T );
+
+    sum = zero( T );
+    for  i in 1:D
+        sum += (bb.maxi[ i ] - bb.mini[ i ])^2;
+    end
+
+    return  sqrt( sum );
+end
+
+function  BBox_dist_in_dim( b::BBox{D,T}, c::BBox{D,T}, i::Int64
+                             )  where  {D,T}
+
+    ( b.mini[ i ] > c.maxi[ i ] )  &&  return  ( b.mini[ i ] - c.maxi[ i ] );
+    ( b.maxi[ i ] < c.mini[ i ] )  &&  return  ( c.mini[ i ] - b.maxi[ i ] );
+
+    return  zero( T );
+end
+
+"""
+    BBox_extent_in_dim
+
+    The maximum distance between two points in this dimension, that
+belongs to the two bounding boxes.
+"""
+function  BBox_max_dist_in_dim( b::BBox{D,T}, c::BBox{D,T}, i::Int64
+                               )  where  {D,T}
+
+    ( b.mini[ i ] >= c.maxi[ i ] )  &&  return  ( b.maxi[ i ] - c.mini[ i ] );
+    ( b.maxi[ i ] <= c.mini[ i ] )  &&  return  ( c.maxi[ i ] - b.mini[ i ] );
+
+    # Boxes must intersect.... 
+    return  max( abs( b.mini[ i ] - c.mini[ i ] ),
+                 abs( b.maxi[ i ] - c.maxi[ i ] ),
+                 abs( b.mini[ i ] - c.maxi[ i ] ),
+                 abs( b.maxi[ i ] - c.mini[ i ] ) );
+end
+
+function  BBox_dist( b::BBox{D,T}, c::BBox{D,T} )  where  {D,T}
+    ( ! f_init )  &&  return  zero( T );
+
+    sum = zero( T );
+    for  i in 1:D
+        sum += ( BBox_dist_in_dim( b, c, i ) )^2;
+    end
+
+    return  sqrt( sum );
+end
+
+
+function  BBox_max_dist( b::BBox{D,T}, c::BBox{D,T} )  where  {D,T}
+    ( ! f_init )  &&  return  zero( T );
+
+    sum = zero( T );
+    for  i in 1:D
+        sum += ( BBox_max_dist_in_dim( b, c, i ) )^2;
+    end
+
+    return  sqrt( sum );
+end
+
 
 function  BBox_bottom_left( bb::BBox{D,T} ) where  {D,T}
     return  Point{D,T}( bb.mini );
@@ -1230,11 +1304,11 @@ end
 """
 function  BBox_init( P::Polygon{D,T},
                      range::UnitRange{Int64} ) where  {D,T}
-    bb = BBox()
+    bb = BBox{D,T}()
     for  i in range
         BBox_bound( bb, P[ i ] );
     end
-    
+
     return  bb;
 end
 
@@ -1415,6 +1489,9 @@ export   is_right_turn
 export  BBox_init, BBox_bound, BBox_expand, BBox_print, BBox_width
 export  cardin, Dist, DistSq, VecPolygon2F
 export  BBox_bottom_left, BBox_top_right
+export  BBox_min, BBox_max, BBox_middle;
+export  BBox_diam;
+export  BBox_dist, BBox_max_dist
 
 export  iseg_nn_point
 
