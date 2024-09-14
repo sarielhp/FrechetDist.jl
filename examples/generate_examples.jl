@@ -1034,6 +1034,8 @@ function  create_demo( title::String,
                                   400, true );
         output_frechet_movie_mp4( m_d, prefix*"discrete_frechet.mp4",
                                   400, true );
+        output_frechet_movie( m_d, prefix*"discrete_frechet.pdf", 
+                              100, true );
         output_frechet_movie_mp4( m_d_r, prefix*"discrete_r_frechet.mp4",                                  400, true );
     end;
     if   f_SweepDist

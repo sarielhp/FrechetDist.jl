@@ -513,9 +513,9 @@ function  iseg_iseg_dist( a_p::Point{D,T}, a_q::Point{D,T},
     # v(s,t) = a_p*(1-s) + a_q * s - b_p*(1-t) - b_q * t
     #      = (a_p - b_p)  +  s * (a_q-a_p)  +  t * (b_p-b_q)
     #      = v_1  +  s * v_2  +  t * v_3
-    v_1::Point{D,T};
-    v_2::Point{D,T};
-    v_3::Point{D,T};
+    #v_1::Point{D,T};
+    #v_2::Point{D,T};
+    #v_3::Point{D,T};
 
     v_1 = sub(a_p, b_p);
     v_2 = sub(a_q, a_p);

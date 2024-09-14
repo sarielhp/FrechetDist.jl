@@ -438,6 +438,76 @@ function  compute_frames( pout, qout, total_frames )
 end
 
 
+<<<<<<< HEAD
+=======
+function  output_frechet_movie( m::Morphing{N,T},
+                                filename::String,
+    total_frames::Int64 = 800,
+    f_show_vertices::Bool = false ) where {N,T}
+
+    if  isfile( filename )
+        println( "\n\n",  filename, " already exists...\n\n\n" );
+        return;
+    end
+
+    c,cr,bb = cairo_setup( filename, [ m.P, m.Q ], true );
+
+    #   Cairo.save( cr );
+
+    set_line_width(cr, 0.5);
+    set_source_rgb(cr, 1.0, 0.0, 0.0 );
+
+
+    pout,qout = Morphing_as_polygons( m );
+
+    np::Int64 = cardin( pout );
+    nq::Int64 = cardin( qout );
+    if   np != nq
+        println( "Error np!= nq" );
+        exit( -1 );
+    end
+
+    lpout::Vector{Float64} = Polygon_prefix_lengths( pout )
+    lqout::Vector{Float64} = Polygon_prefix_lengths( qout )
+
+    lens::Vector{Float64} = lpout + lqout;
+
+    steps = length( lens ) - 1;
+    total_length = last( lens );
+    #println( lens );
+
+
+    # compute how many frames for each leg...
+    frames, steps = compute_frames( pout, qout, total_frames )
+
+    total_output_frames = sum( frames );
+    println( "Total number of frames: ", total_output_frames );
+    skip::Int64 = max( 1, floor( total_output_frames / total_frames ) );
+    f_do_skip::Bool = true ;
+
+    for  i in 1:steps
+        count = 0;
+        if  frames[ i ] == 0
+            continue;
+        end
+        if  ( ! f_do_skip )
+            f_output_frame = true;
+        else
+            f_output_frame = ( count % skip == 0 )  ||  ( i == steps );
+        end
+        count = count + 1;
+        if  ( f_output_frame )
+            sp = Segment( pout[ i ], pout[ i + 1 ] );
+            sq = Segment( qout[ i ], qout[ i + 1 ] );
+
+            draw_frames( cr, sp, sq, frames[ i ], m.P, m.Q, bb );
+        end
+    end
+
+    Cairo.finish(c);
+end
+
+>>>>>>> 7e19abc (minor changes)
 
 
 
