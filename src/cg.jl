@@ -755,6 +755,7 @@ end
         return  P;
     end
 else
+    
     function Points( P::Polygon{D,T} ) where {D,T}
         return  P.pnts;
     end
@@ -878,6 +879,10 @@ end
 @static if  ! POLYGON_AS_DIRECT_ARRAY
     function  Base.length( P::Polygon{D,T} ) where {D,T}
         return  length( Points(P) );
+    end
+
+    function Base.eachindex( P::Polygon{D,T} ) where {D,T}
+        return  eachindex( P.pnts );
     end
 
     function  Base.iterate( P::Polygon{D,T} ) where {D,T}

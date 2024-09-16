@@ -43,7 +43,7 @@ end
 """
     Morphing
 
-Encoding of a moprhing (i.e., matching) between two polygonal cuves.
+Encoding of a morphing (i.e., matching) between two polygonal cuves.
 
 """
 @with_kw mutable struct  Morphing{N,T}
@@ -358,6 +358,64 @@ function  Morphing_as_polygons( m::Morphing{N,T} ) where  {N,T}
     return  P, Q
 end
 
+
+"""
+    Morphing_as_polygons_w_times
+
+    Returns time for each pair of vertices in the morphing, between 0 and 1.
+"""
+function  Morphing_as_polygons_w_times( m::Morphing{N,T} ) where  {N,T}
+    P, Q = Morhing_as_polygons( m );
+    t = Vector{Float64}();
+    
+    len = Polygon_length( P ) + Polygon_length( Q );
+    if  len == 0.0
+        return  P, Q, zeros( length( P ) );
+    end
+    push!( t, 0.0 );
+    for  i  in  1:length(P) - 1 
+        delta = ( dist( P[ i ], P[ i + 1] )
+                  + dist( Q[ i ], Q[ i + 1] ) ) / len;
+        push!( t, delta );
+    end
+    if last( t ) != 1.0
+        pop!( t )
+        push!( t, 1.0 );
+    end
+    return  P, Q, t
+end
+
+
+function  polygons_get_loc_at_time( P::Polygon{D,T},
+                                    Q::Polygon{D,T},
+                                    times::Vector{T},
+                                    t::T
+                                    ) where {D,T}
+    ( t <= 0.0 ) &&  return first( P ), first( Q );
+    ( t >= 1.0 ) &&  return last( P ), last( Q );
+
+    pos = searchsortedfirst( times, t );
+    @assert( 1 < pos <= length( P ) );
+
+    prev = pos - 1;
+
+    delta = ( t - tims[ prev ] ) / (times[ pos ] - times[ prev ] );
+    p = convex_comb( P[ prev ], P[ pos ] )
+    q = convex_comb( Q[ prev ], Q[ pos ] )
+
+    return  p, q;
+end
+
+# XXX
+function   Morphing_sample_uniformly( m::Morphing{N,T}, n::Int64 ) where {N,T}
+    P, Q, times = Morphing_as_polygons_w_times( m );
+
+    for i in 0:n-1
+        t = i/(n-1)
+        p,q = polygons_get_loc_at_time( P, Q, times, t );
+    end
+    
+end
 
 function   Morphing_is_monotone( m::Morphing{N,T} ) where {N,T}
     if  m.f_is_monotone_init
@@ -674,7 +732,6 @@ edge it lies on, and the prefix sums (lens) of the lengths of the
 edgss of P.
 
 """
-
 function  get_point(
     P::Polygon{N,T}, lens::Vector{Float64},
     i::Int64, pos::Float64 ) where {N,T}
