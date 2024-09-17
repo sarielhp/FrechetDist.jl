@@ -765,6 +765,17 @@ else
     end
 end
 
+
+function  Polygon_fill( P::Polygon{D,T}, f, range ) where {D,T}
+    for  r ∈ range
+        p = f( r );
+        push!( P, cg.Point{D,T}(p...) ); 
+   end
+
+    return  P;
+end
+
+
 function   Polygon_diff( src::Polygon{D,T}, sub::Polygon{D,T}
                   )::Polygon{D,T} where {D,T}
     PSX = setdiff( Points(src), Points( sub ) );
@@ -1502,8 +1513,6 @@ export  iseg_nn_point
 
 export  iseg_iseg_dist
 
-export  Polygon_prefix_lengths
-
 export  Segment_nn_point
 export  Segment_get_on, Segment_get_convex_coef
 export  Segment_length
@@ -1516,8 +1525,7 @@ export  Polygon_read_file
 export  Polygon_read_plt_orig_file
 
 export  Polygon_read_txt_file
-
-
+export  Polygon_prefix_lengths
 export  Polygon_simplify, Polygon_push, DistInfty
 export  Polygon_simplify_radii
 export  Polygon_simplify_ext
@@ -1544,5 +1552,5 @@ export  convex_comb
 export  segs_match_price
 
 export  Polygon_diff
-
+export  Polygon_fill
 end

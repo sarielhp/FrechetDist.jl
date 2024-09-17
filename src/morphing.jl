@@ -365,7 +365,7 @@ end
     Returns time for each pair of vertices in the morphing, between 0 and 1.
 """
 function  Morphing_as_polygons_w_times( m::Morphing{N,T} ) where  {N,T}
-    P, Q = Morhing_as_polygons( m );
+    P, Q = Morphing_as_polygons( m );
     t = Vector{Float64}();
     
     len = Polygon_length( P ) + Polygon_length( Q );
@@ -374,9 +374,9 @@ function  Morphing_as_polygons_w_times( m::Morphing{N,T} ) where  {N,T}
     end
     push!( t, 0.0 );
     for  i  in  1:length(P) - 1 
-        delta = ( dist( P[ i ], P[ i + 1] )
-                  + dist( Q[ i ], Q[ i + 1] ) ) / len;
-        push!( t, delta );
+        delta = ( Dist( P[ i ], P[ i + 1] )
+                  + Dist( Q[ i ], Q[ i + 1] ) ) / len;
+        push!( t, last(t) + delta );
     end
     if last( t ) != 1.0
         pop!( t )
@@ -399,9 +399,9 @@ function  polygons_get_loc_at_time( P::Polygon{D,T},
 
     prev = pos - 1;
 
-    delta = ( t - tims[ prev ] ) / (times[ pos ] - times[ prev ] );
-    p = convex_comb( P[ prev ], P[ pos ] )
-    q = convex_comb( Q[ prev ], Q[ pos ] )
+    delta = ( t - times[ prev ] ) / (times[ pos ] - times[ prev ] );
+    p = convex_comb( P[ prev ], P[ pos ], delta )
+    q = convex_comb( Q[ prev ], Q[ pos ], delta )
 
     return  p, q;
 end
@@ -410,11 +410,15 @@ end
 function   Morphing_sample_uniformly( m::Morphing{N,T}, n::Int64 ) where {N,T}
     P, Q, times = Morphing_as_polygons_w_times( m );
 
+    m = zeros(n,2*N);
     for i in 0:n-1
         t = i/(n-1)
         p,q = polygons_get_loc_at_time( P, Q, times, t );
+        m[i+1, :] = [ p... ; q... ];
+#        m[ i, : ] = [ p... ; p... ];
     end
-    
+
+    return  m;
 end
 
 function   Morphing_is_monotone( m::Morphing{N,T} ) where {N,T}
