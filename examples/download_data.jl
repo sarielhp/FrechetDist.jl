@@ -5,6 +5,8 @@ push!(LOAD_PATH, pwd()*"../src/")
 
 using FrechetDist
 using FrechetDist.cg
+using FrechetDist.cg.point
+using FrechetDist.cg.polygon
 using CSV, DataFrames
 using Downloads
 using Dates;
@@ -162,7 +164,7 @@ function  splice( df, base_dir, id_col )
             x::Float64 = df[ i, 4 ];
             y::Float64 = df[ i, 5 ];
             #y = parse( Float64, df[ i, 4 ] )
-            push!( poly, point( x, y ) );
+            push!( poly, npoint( x, y ) );
         end
         poly_name = string( poly_id );
         if  ( prev_name != poly_name )
@@ -175,7 +177,7 @@ function  splice( df, base_dir, id_col )
 
         filename = base_dir * "/" * out_name;
         println( "Writing: ", filename );
-        Polygon_write_to_file( poly, filename );
+        write_to_file( poly, filename );
         prev_name = poly_name;
         #if  ( fin > 0 )
         #println( pos, "...", fin, "  ", df[ pos, id_col ] );

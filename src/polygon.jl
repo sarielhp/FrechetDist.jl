@@ -138,11 +138,11 @@ function  Polygon_as_matrix( P::Polygon{D,T} ) where {D,T}
 end
 
 """
-    Polygon_write_to_file
+    write_to_file
 
     Writes a plt file of the polygon.
 """
-function  Polygon_write_to_file( P::Polygon{D,T}, filename ) where {D,T}
+function  write_to_file( P::Polygon{D,T}, filename ) where {D,T}
     m = Polygon_as_matrix( P );
     open( filename, "w") do io
         writedlm( io, m', ',' )
@@ -570,6 +570,7 @@ export  Polygon_sample_uniformly, push_smart!, Polygon_spine
 export  read_file
 export  read_plt_orig_file
 export  read_txt_file
+export  write_to_file
 
 export  Polygon_prefix_lengths
 export  Polygon_simplify, Polygon_push, DistInfty
@@ -577,7 +578,6 @@ export  Polygon_simplify_radii
 export  Polygon_translate!
 export  Polygon_get_point_on
 export  Polygon_as_matrix
-export  Polygon_write_to_file
 export  Polygon_random
 export  Polygon_convex_comb
 export  Polygon_split_edges

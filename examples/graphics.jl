@@ -23,7 +23,7 @@ function  draw_hippodrome( cr, p::Point2F, q::Point2F, r::Float64 )
     fill_preserve( cr );
 
     v = (p - q) / Dist( p, q );
-    u = point( -v[2], v[1] );
+    u = npoint( -v[2], v[1] );
     px = p - r * u;
     qx = q - r * u;
     qy = q + r * u;
@@ -132,8 +132,8 @@ function  draw_bbox( cr, bb, scale )
     pa = BBox_bottom_left( bb );
     pc = BBox_top_right( bb );
 
-    pb = point( pc[1], pa[2] );
-    pd = point( pa[1], pc[2] )
+    pb = npoint( pc[1], pa[2] );
+    pd = npoint( pa[1], pc[2] )
 
     pa = pa * scale;
     pb = pb * scale;
@@ -935,7 +935,7 @@ function  output_frechet_diagram( m::Morphing{N,T}, filename )  where {N,T}
     len = length( P_coords );
     poly = Polygon2F();
     for  i in 1:len
-        push_smart!( poly, point( P_coords[ i ], Q_coords[ i ] ) );
+        push_smart!( poly, npoint( P_coords[ i ], Q_coords[ i ] ) );
     end
 
     psum::Vector{Float64} = Polygon_prefix_lengths( m.P )

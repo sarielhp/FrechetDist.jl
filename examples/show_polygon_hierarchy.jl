@@ -5,6 +5,8 @@ push!(LOAD_PATH, pwd()*"/src/")
 using Cairo
 using FrechetDist
 using FrechetDist.cg
+using FrechetDist.cg.point
+using FrechetDist.cg.polygon
 using Parameters
 
 VecFloat = Vector{Float64};
@@ -25,7 +27,7 @@ mutable struct  Affine2d
 end;
 
 function  Base.:*(t::Affine2d, p::Point{D,T}) where  {D,T}
-    return  point( ( p[ 1 ] + t.x)*t.scale,
+    return  npoint( ( p[ 1 ] + t.x)*t.scale,
         ( p[ 2 ] + t.y)*t.scale );
 end
 
@@ -63,8 +65,8 @@ function  draw_bbox( cr, bb, scale )
     pa = BBox_bottom_left( bb );
     pc = BBox_top_right( bb );
 
-    pb = point( pc[1], pa[2] );
-    pd = point( pa[1], pc[2] )
+    pb = npoint( pc[1], pa[2] );
+    pd = npoint( pa[1], pc[2] )
 
     pa = pa * scale;
     pb = pb * scale;
@@ -248,7 +250,7 @@ function  plt_show_ph( ARGS )
     bb = BBox2F();
     for  i in 1:num_args
         println( "Reading: ", ARGS[ i ] );
-        poly_a = Polygon_read_file( ARGS[ i ] );
+        poly_a = polygon.read_file( ARGS[ i ] );
         push!( list, poly_a );
         BBox_bound( bb, poly_a );
     end

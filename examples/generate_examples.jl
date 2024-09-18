@@ -734,8 +734,8 @@ function  create_demo( title::String,
 
 
 
-    Polygon_write_to_file( poly_a, prefix * "poly_a.txt" );
-    Polygon_write_to_file( poly_b, prefix * "poly_b.txt" );
+    write_to_file( poly_a, prefix * "poly_a.txt" );
+    write_to_file( poly_b, prefix * "poly_b.txt" );
 
     if  f_computed_d
         output_polygons_to_file(  [P, Q],

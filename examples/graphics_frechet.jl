@@ -294,7 +294,7 @@ function  output_frechet_diagram( m::Morphing{N,T}, filename )  where {N,T}
     len = length( P_coords );
     poly = Polygon2F();
     for  i in 1:len
-        push_smart!( poly, point( P_coords[ i ], Q_coords[ i ] ) );
+        push_smart!( poly, npoint( P_coords[ i ], Q_coords[ i ] ) );
     end
 
     psum::Vector{Float64} = Polygon_prefix_lengths( m.P )

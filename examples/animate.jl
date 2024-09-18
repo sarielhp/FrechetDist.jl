@@ -18,9 +18,9 @@ end
 #println( all_methods( FrechetDist ) );
 #exit(-1);
     
-P = polygon.fill( Polygon2F(), x->( sin(x), cos(x) )    , 0:0.01:2*pi )
+P = Polygon_fill( Polygon2F(), x->( sin(x), cos(x) )    , 0:0.01:2*pi )
 
-Q = polygon.fill( Polygon2F(), x->( sin(2.0*x), cos(x) ), 0:0.01:2*pi )
+Q = Polygon_fill( Polygon2F(), x->( sin(2.0*x), cos(x) ), 0:0.01:2*pi )
  
 mrp = FrechetDist.frechet_c_compute(P, Q);
 

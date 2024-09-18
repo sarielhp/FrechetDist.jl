@@ -4,6 +4,8 @@ push!(LOAD_PATH, pwd()*"/src/")
 
 using FrechetDist
 using FrechetDist.cg
+using FrechetDist.cg.point
+using FrechetDist.cg.polygon
 using Profile
 using InteractiveUtils
 
