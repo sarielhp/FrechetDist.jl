@@ -368,7 +368,7 @@ function  Morphing_as_polygons_w_times( m::Morphing{N,T} ) where  {N,T}
     P, Q = Morphing_as_polygons( m );
     t = Vector{Float64}();
     
-    len = Polygon_length( P ) + Polygon_length( Q );
+    len = polygon.total_length( P ) + polygon.total_length( Q );
     if  len == 0.0
         return  P, Q, zeros( length( P ) );
     end
@@ -559,7 +559,7 @@ function  Morphing_extract_prm( m::Morphing{N,T} )::cg.Polygon2F where {N,T}
 
     out = cg.Polygon2F();
     for  i in eachindex(pps)
-        push!( out, point( pps[ i ], qps[ i ] ) )
+        push!( out, npoint( pps[ i ], qps[ i ] ) )
     end
     return  out;
 end
@@ -656,23 +656,23 @@ function   parameterization_combine( f::Polygon2F,
         yg = g[ idg ][2];
         f_equal_yf_yg::Bool = floating_equal( yf, yg )
         if  ( f_equal_yf_yg )  &&  ( idf == l_f )  &&  ( idg == l_g )
-            push!( out, point( g[ idg ][1], f[ idf ][2] ) )
+            push!( out, npoint( g[ idg ][1], f[ idf ][2] ) )
             break;
         end
         if  ( f_equal_yf_yg   &&  ( idf < l_f )
               &&  ( f[ idf + 1 ][1] == yf ) )
-            push!( out, point( g[ idg ][1], f[ idf ][2] ) )
+            push!( out, npoint( g[ idg ][1], f[ idf ][2] ) )
             idf = idf + 1
             continue;
         end
         if  ( f_equal_yf_yg   &&  ( idg < l_g )
               &&  ( floating_equal( g[ idg + 1 ][2], yg ) ) )
-            push!( out, point( g[ idg ][1], f[ idf ][2] ) )
+            push!( out, npoint( g[ idg ][1], f[ idf ][2] ) )
             idg = idg + 1
             continue;
         end
         if  f_equal_yf_yg
-            push!( out, point( g[ idg ][1], f[ idf ][2] ) )
+            push!( out, npoint( g[ idg ][1], f[ idf ][2] ) )
             idf = min( idf + 1, l_f );
             idg = min( idg + 1, l_g );
             continue;
@@ -694,7 +694,7 @@ function   parameterization_combine( f::Polygon2F,
             if  ( xg < g[ idg - 1 ][ 1 ] )
                 xg = g[ idg - 1 ][ 1 ]
             end
-            push!( out, point( xg, f[ idf ][ 2 ] ) )
+            push!( out, npoint( xg, f[ idf ][ 2 ] ) )
             idf = min( idf + 1, l_f );
             continue;
         end
@@ -707,7 +707,7 @@ function   parameterization_combine( f::Polygon2F,
             if  ( zf < f[ idf - 1 ][ 2 ] )
                 zf = f[ idf - 1 ][ 2 ]
             end
-            push!( out, point( g[ idg ][ 1 ], zf ) )
+            push!( out, npoint( g[ idg ][ 1 ], zf ) )
             idg = min( idg + 1, l_g );
             continue;
         end

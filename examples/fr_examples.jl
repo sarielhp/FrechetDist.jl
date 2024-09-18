@@ -12,11 +12,11 @@ function  example_1()
     xs = 4;
     ys = 1.5;
 
-    push!( polya, point( 0.0, 0 ), point( xs*1.0, 0.0 ) );
+    push!( polya, npoint( 0.0, 0 ), npoint( xs*1.0, 0.0 ) );
     push!( polyb,
-           point( 0.0, ys*0.1 ), point( xs * 0.45, ys * 0.1 ),
-           point( xs*0.5, ys*0.9 ), point( xs*0.55  , ys*0.1),
-           point( xs*1.0, ys*0.1 ) );
+           npoint( 0.0, ys*0.1 ), npoint( xs * 0.45, ys * 0.1 ),
+           npoint( xs*0.5, ys*0.9 ), npoint( xs*0.55  , ys*0.1),
+           npoint( xs*1.0, ys*0.1 ) );
     return  polya, polyb;
 end
 
@@ -24,10 +24,10 @@ function  example_2()
     polya = Polygon2F( );
     polyb = Polygon2F();
 
-    push!( polya, point( 0.0, 0 ), point( 2.0, 0.0 ) );
-    push!( polyb, point( 0.0, 1.0),  point( 0.4, 0.2 ),
-           point( 0.6, 0.8 ),
-           point( 1.0,0.3 ), point( 2.0, 0.3)  );
+    push!( polya, npoint( 0.0, 0 ), npoint( 2.0, 0.0 ) );
+    push!( polyb, npoint( 0.0, 1.0),  npoint( 0.4, 0.2 ),
+           npoint( 0.6, 0.8 ),
+           npoint( 1.0,0.3 ), npoint( 2.0, 0.3)  );
     return  polya, polyb;
 end
 
@@ -35,23 +35,23 @@ function  example_3()
     polya = Polygon2F(  );
     polyb = Polygon2F(  );
 
-    push!( polya, point( 0.0, 0 ),
-           point( 1.1, 0.0 ),
-           point( 1.1, 0.1 ),
-           point( 1.0, 0.1 ),
-           point( 1.0, 0.2 ),
-           point( 1.2, 0.2 ),
-           point( 1.2, 0.0 ),
-           point( 2.0, 0.0 ) );
+    push!( polya, npoint( 0.0, 0 ),
+           npoint( 1.1, 0.0 ),
+           npoint( 1.1, 0.1 ),
+           npoint( 1.0, 0.1 ),
+           npoint( 1.0, 0.2 ),
+           npoint( 1.2, 0.2 ),
+           npoint( 1.2, 0.0 ),
+           npoint( 2.0, 0.0 ) );
     push!( polyb,
-           point( 0.0, 0.3),
-           point( 0.4, 0.3 ),
-           point( 0.4, 0.6 ),
-           point( 0.3, 0.6 ),
-           point( 0.3, 0.7 ),
-           point( 0.5, 0.7 ),
-           point( 0.5, 0.3 ),
-           point( 2.0, 0.3)  );
+           npoint( 0.0, 0.3),
+           npoint( 0.4, 0.3 ),
+           npoint( 0.4, 0.6 ),
+           npoint( 0.3, 0.6 ),
+           npoint( 0.3, 0.7 ),
+           npoint( 0.5, 0.7 ),
+           npoint( 0.5, 0.3 ),
+           npoint( 2.0, 0.3)  );
     return  polya, polyb;
 end
 
@@ -61,14 +61,14 @@ function  example_4()
     polyb = Polygon2F(  );
 
     push!( polya,
-           point( 0.0, 0 )
+           npoint( 0.0, 0 )
            ,
-           point( 0.0, 1 )
+           npoint( 0.0, 1 )
            );
     push!( polyb,
-           point( 0.1, 0.0 )
+           npoint( 0.1, 0.0 )
            ,
-           point( 1.1, 1.0)
+           npoint( 1.1, 1.0)
            );
     return  polya, polyb;
 end
@@ -80,7 +80,7 @@ function  zig_zag_x( poly::Polygon2F, delta_x, delta_y, n::Int64,
 #    println( "n: ", n );
     for  i in 1:n
         p::Point2F = last( poly );
-        q::Point2F = point( p[1] + delta_x, p[ 2 ] + delta_y );
+        q::Point2F = npoint( p[1] + delta_x, p[ 2 ] + delta_y );
         push!( poly, deepcopy( q ) );
         delta_x = - shrink * delta_x;
     end
@@ -93,22 +93,22 @@ function  example_5()
     max_x = 4.1;
 
     push!( polya,
-           point( 0.0, 0 )
+           npoint( 0.0, 0 )
            ,
-           point( max_x/3.5, 0 )
+           npoint( max_x/3.5, 0 )
            );
     zig_zag_x( polya, -max_x/4.0, 0.01, 6 );
     lp = last( polya );
-    push!( polya, point( max_x, lp[ 2 ] ) );
+    push!( polya, npoint( max_x, lp[ 2 ] ) );
 
     push!( polyb,
-           point( 0.0, 0.5 )
+           npoint( 0.0, 0.5 )
            ,
-           point( max_x* ( 1-1.0/3.5 ), 0.5 )
+           npoint( max_x* ( 1-1.0/3.5 ), 0.5 )
            );
     zig_zag_x( polyb, -max_x/4.0, 0.02, 6 );
     pl = last( polyb );
-    push!( polyb, point( max_x, pl[ 2 ] ) );
+    push!( polyb, npoint( max_x, pl[ 2 ] ) );
 
     return  polya, polyb;
 end
@@ -121,27 +121,27 @@ function  example_6_ext( zigs::Int64 )
     max_x = 4.1;
 
     push!( polya,
-           point( 0.0, 0 )
+           npoint( 0.0, 0 )
            ,
-           point( max_x/3.5, 0 )
+           npoint( max_x/3.5, 0 )
            );
     zig_zag_x( polya, -max_x/4.001, 0.03, zigs );
     lp = last( polya );
-    push!( polya, point( max_x, lp[ 2 ] ) );
+    push!( polya, npoint( max_x, lp[ 2 ] ) );
 
     new_y = lp[ 2 ] + 0.3;
     push!( polyb,
-           point( 0.0, new_y ),
-           point( max_x* 0.4, new_y ),
-           point( max_x* 0.41, new_y + 0.5 ),
-           point( max_x* 0.42, new_y ),
-           point( max_x* ( 1-1.0/3.5 ), new_y )
+           npoint( 0.0, new_y ),
+           npoint( max_x* 0.4, new_y ),
+           npoint( max_x* 0.41, new_y + 0.5 ),
+           npoint( max_x* 0.42, new_y ),
+           npoint( max_x* ( 1-1.0/3.5 ), new_y )
            );
     zig_zag_x( polyb, -max_x/4.111111111, 0.025, zigs );
     pl = last( polyb );
-    push!( polyb, point( 1.0*max_x, pl[ 2 ] ) );
-    push!( polyb, point( 0.8*max_x, 1.1*pl[ 2 ] ) );
-    push!( polyb, point( 1.0*max_x, 1.2*pl[ 2 ] ) );
+    push!( polyb, npoint( 1.0*max_x, pl[ 2 ] ) );
+    push!( polyb, npoint( 0.8*max_x, 1.1*pl[ 2 ] ) );
+    push!( polyb, npoint( 1.0*max_x, 1.2*pl[ 2 ] ) );
 
     return  polya, polyb;
 end
@@ -153,25 +153,25 @@ function  example_6()
     max_x = 4.1;
 
     push!( polya,
-           point( 0.0, 0 )
+           npoint( 0.0, 0 )
            ,
-           point( max_x/3.5, 0 )
+           npoint( max_x/3.5, 0 )
            );
     zig_zag_x( polya, -max_x/4.0, 0.03, 16 );
     lp = last( polya );
-    push!( polya, point( max_x, lp[ 2 ] ) );
+    push!( polya, npoint( max_x, lp[ 2 ] ) );
 
     new_y = lp[ 2 ] + 0.3;
     push!( polyb,
-           point( 0.0, new_y ),
-           point( max_x* 0.4, new_y ),
-           point( max_x* 0.41, new_y + 0.5 ),
-           point( max_x* 0.42, new_y ),
-           point( max_x* ( 1-1.0/3.5 ), new_y )
+           npoint( 0.0, new_y ),
+           npoint( max_x* 0.4, new_y ),
+           npoint( max_x* 0.41, new_y + 0.5 ),
+           npoint( max_x* 0.42, new_y ),
+           npoint( max_x* ( 1-1.0/3.5 ), new_y )
            );
     zig_zag_x( polyb, -max_x/4.0, 0.025, 24 );
     pl = last( polyb );
-    push!( polyb, point( max_x, pl[ 2 ] ) );
+    push!( polyb, npoint( max_x, pl[ 2 ] ) );
 
     return  polya, polyb;
 end
@@ -185,11 +185,11 @@ function  example_7()
 
     xs = 4;
 
-    push!( polya, point( 0.0, 0.1 ), point( xs*1.0, xs * 0.9 ) );
+    push!( polya, npoint( 0.0, 0.1 ), npoint( xs*1.0, xs * 0.9 ) );
     push!( polyb,
-           point( xs * 0.9, xs*1.0 )
+           npoint( xs * 0.9, xs*1.0 )
            ,
-           point( xs*0.7, 0 )
+           npoint( xs*0.7, 0 )
            );
     return  polya, polyb;
 end
@@ -203,18 +203,18 @@ function  example_8_ext( zigs::Int64 )
     max_x = 4.1;
 
     push!( polya,
-           point( 0.0, 0 )
+           npoint( 0.0, 0 )
            ,
-           point( max_x/2.5, 0 )
+           npoint( max_x/2.5, 0 )
            );
     zig_zag_x( polya, -max_x/4.0, 0.03, zigs );
     lp = last( polya );
-    push!( polya, point( max_x, lp[ 2 ] ) );
+    push!( polya, npoint( max_x, lp[ 2 ] ) );
 
     new_y = lp[ 2 ] + 0.3;
     push!( polyb,
-           point( 0.0, new_y ),
-           point( max_x, new_y ) )
+           npoint( 0.0, new_y ),
+           npoint( max_x, new_y ) )
 
     return  polya, polyb;
 end
@@ -227,24 +227,24 @@ function  example_9( zigs_a::Int64, zigs_b::Int64 )
     max_x = 4.1;
 
     push!( polya,
-           point( 0.0, 0 )
+           npoint( 0.0, 0 )
            ,
-           point( max_x/1.1, 0 )
+           npoint( max_x/1.1, 0 )
            );
     zig_zag_x( polya, -max_x/1.3, 0.03, zigs_a, 0.99 );
     lp = last( polya );
     pop!( polya );
-    push!( polya, point( max_x, lp[ 2 ] ) );
+    push!( polya, npoint( max_x, lp[ 2 ] ) );
 
     new_y = lp[ 2 ] + 0.3;
     push!( polyb,
-           point( 0.0, new_y ),
-           point( max_x / 1.1, new_y )
+           npoint( 0.0, new_y ),
+           npoint( max_x / 1.1, new_y )
            );
     zig_zag_x( polyb, -max_x/1.3, 0.025, zigs_b, 0.99 );
     pl = last( polyb );
     pop!( polyb );
-    push!( polyb, point( max_x, pl[ 2 ] ) );
+    push!( polyb, npoint( max_x, pl[ 2 ] ) );
 
     return  polya, polyb;
 end
@@ -257,8 +257,8 @@ function  example_10( zigs_a::Int64, zigs_b::Int64 )
     Q = Polygon2F( );
 
     pref::Float64 = 0.3
-    push!( P, point( pref/3.0, 0.0 ), point( pref, 0.0 ) );
-    push!( Q, point( 0.0, pref/3.0 ) );
+    push!( P, npoint( pref/3.0, 0.0 ), npoint( pref, 0.0 ) );
+    push!( Q, npoint( 0.0, pref/3.0 ) );
 
     if  zigs_a % 2 == 0
         zigs_a = zigs_a + 1
@@ -278,9 +278,9 @@ function  example_10( zigs_a::Int64, zigs_b::Int64 )
         else
             y = 1.0
         end
-        push!( P, point( pref + d_a * i, y ) )
+        push!( P, npoint( pref + d_a * i, y ) )
     end
-    push!( P, point(1.0 - pref/3.0, 1.0 ) )
+    push!( P, npoint(1.0 - pref/3.0, 1.0 ) )
 
     f_left = false;
     x::Float64 = 0.0;
@@ -291,9 +291,9 @@ function  example_10( zigs_a::Int64, zigs_b::Int64 )
         else
             x = 1.0
         end
-        push!( Q, point( x, pref + d_b * i ) )
+        push!( Q, npoint( x, pref + d_b * i ) )
     end
-    push!( Q, point( 1.0, 1.0 - pref/3.0 ) )
+    push!( Q, npoint( 1.0, 1.0 - pref/3.0 ) )
 
     return  P, Q;
 end
@@ -307,17 +307,17 @@ function  example_13()
     xs::Float64 = 4.0;
 
     push!( polya,
-           point( 0.0, 0.0 ),
-           point( 0.1*xs, 0.0 ),
-           point( 1.1*xs, xs * 1.0 ),
-           point( 1.2*xs, xs * 1.0 ),
+           npoint( 0.0, 0.0 ),
+           npoint( 0.1*xs, 0.0 ),
+           npoint( 1.1*xs, xs * 1.0 ),
+           npoint( 1.2*xs, xs * 1.0 ),
            );
 
     push!( polyb,
-           point( 1.2 * xs, 0.0 ),
-           point( 1.1 * xs, 0.0 ),
-           point( 0.1 * xs, xs * 1.0 ),
-           point( 0.0 * xs, xs * 1.0 )
+           npoint( 1.2 * xs, 0.0 ),
+           npoint( 1.1 * xs, 0.0 ),
+           npoint( 0.1 * xs, xs * 1.0 ),
+           npoint( 0.0 * xs, xs * 1.0 )
            );
     return  polya, polyb;
 end
@@ -331,20 +331,20 @@ function  example_14()
     max_x = 4.1;
 
     push!( polya,
-           point( 0.0, 0 )
+           npoint( 0.0, 0 )
            ,
-           point( max_x/3.5, 0 )
+           npoint( max_x/3.5, 0 )
            );
     zig_zag_x( polya, -max_x/4.0, 0.03, 16 );
     lp = last( polya );
-    push!( polya, point( max_x, lp[ 2 ] ) );
+    push!( polya, npoint( max_x, lp[ 2 ] ) );
 
     new_y = lp[ 2 ] + 0.3;
     push!( polyb,
-           point( 0.0, new_y ),
-           point( max_x, new_y ) );
+           npoint( 0.0, new_y ),
+           npoint( max_x, new_y ) );
 #    pl = last( polyb );
- #   push!( polyb, point( max_x, pl[ 2 ] ) );
+ #   push!( polyb, npoint( max_x, pl[ 2 ] ) );
 
     return  polya, polyb;
 end
@@ -358,7 +358,7 @@ function   spiral_ext( P::Polygon2F, cen::Point2F, r::Float64, k::Int64,
         alpha = start_range + delta * i;
         x = r * sin( alpha );
         y = r * cos( alpha );
-        push!( P, point( cen[ 1 ] + x, cen[ 2 ] + y ) );
+        push!( P, npoint( cen[ 1 ] + x, cen[ 2 ] + y ) );
         r = r * shrink;
     end
 
@@ -379,7 +379,7 @@ function  example_15()
     mid::Float64 = max_x/2.0;
     r = mid * 0.8;
 
-    cen = point( mid, mid );
+    cen = npoint( mid, mid );
     polya = spiral( cen, 0.9*r, 6, 0.85, float(pi) );
     polyb = spiral( cen,     r,  15, 0.98, float(pi) );
 
@@ -393,7 +393,7 @@ function  example_16()
     mid::Float64 = max_x/2.0;
     r = mid * 0.8;
 
-    cen = point( mid, mid );
+    cen = npoint( mid, mid );
     polya = spiral( cen, 0.9*r, 35*6, 0.99, 35*float(pi) );
     polyb = spiral( cen,     r,  40, 0.9, 3.999*float(pi) );
 
@@ -407,13 +407,13 @@ function  example_17_dtw()
 
     k = 200;
     
-    push!( polya, point(-1.0, -0.1 ), point( 6.0, -0.1 ) );
+    push!( polya, npoint(-1.0, -0.1 ), npoint( 6.0, -0.1 ) );
 
-    spiral_ext( polya, point(2.0,0.3), 1.0, k, 1.0, Float64(pi),
+    spiral_ext( polya, npoint(2.0,0.3), 1.0, k, 1.0, Float64(pi),
                 1.5 * Float64(pi) );
 
-    push!( polyb, point(-1.0, 0.6 ) );
-    spiral_ext( polyb, point(2.0,0.6), 1.1, k, 1.0, Float64(pi),
+    push!( polyb, npoint(-1.0, 0.6 ) );
+    spiral_ext( polyb, npoint(2.0,0.6), 1.1, k, 1.0, Float64(pi),
                 1.5* Float64(pi) );
 
     return  polya, polyb;
@@ -427,16 +427,16 @@ function  example_18()
     xs = 4;
 
     push!( polya,
-        point( 0.0, 0.4999 * xs  ),
-        point( 0.0, 0.499999 * xs  ),
-        point( xs*1.0, xs * 0.5 ),
-        point( xs*1.0, xs * 0.501 )
+        npoint( 0.0, 0.4999 * xs  ),
+        npoint( 0.0, 0.499999 * xs  ),
+        npoint( xs*1.0, xs * 0.5 ),
+        npoint( xs*1.0, xs * 0.501 )
     );
     push!( polyb,
-           point( xs * 0.4999, 0 ),
-           point( xs * 0.49999, 0 )           ,
-           point( xs * 0.600001, xs*1.0 ),
-           point( xs * 0.6, xs*1.0 )
+           npoint( xs * 0.4999, 0 ),
+           npoint( xs * 0.49999, 0 )           ,
+           npoint( xs * 0.600001, xs*1.0 ),
+           npoint( xs * 0.6, xs*1.0 )
            );
     return  polya, polyb;
 end

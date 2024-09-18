@@ -19,6 +19,8 @@ using Dates
 
 using FrechetDist
 using FrechetDist.cg
+using FrechetDist.cg.point
+using FrechetDist.cg.polygon
 #using cg
 
 include( "fr_examples.jl" )

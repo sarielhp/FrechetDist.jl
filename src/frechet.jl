@@ -691,8 +691,8 @@ function   discrete_frechet_sample( polya::Polygon{N,T},
                                     f_lopt::Bool = true
                                     )    where {N,T}
 #    polya,polyb = example_4()
-    lena = Polygon_length( polya );
-    lenb = Polygon_length( polyb );
+    lena = polygon.total_length( polya );
+    lenb = polygon.total_length( polyb );
 
 #    n::Int64 = 100;
     delta = (lena+ lenb)/ n;
@@ -1268,9 +1268,9 @@ function  frechet_c_approx( poly_a::Polygon{N,T},
                 println( "Leash lower bound: ", d - 2r );
                 println( "approx ratio          : ",ratio  );
                 println( "Required approximation: ", 1.0 + approx );
-                println( "||P||: ", Polygon_length( poly_a ),
+                println( "||P||: ", polygon.total_length( poly_a ),
                     "  ||Q||: ",
-                    Polygon_length( poly_b ) );
+                    polygon.total_length( poly_b ) );
             end
             mm_out.ratio = ratio;
             return  mm_out;
@@ -1437,8 +1437,8 @@ function  frechet_c_compute( P::Polygon{N,T},
     #println( "=#= Q :", cardin( mf.Q ) );
     ratio_2 = mf.ratio;
 
-    len_a = Polygon_length( P );
-    len_b = Polygon_length( Q );
+    len_a = polygon.total_length( P );
+    len_b = polygon.total_length( Q );
     f_debug  &&  println( "#", cardin( P ) )
     if  ( mf.leash == 0 )
         return  mf

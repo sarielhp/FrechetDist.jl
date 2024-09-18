@@ -11,8 +11,20 @@ using DataStructures
 using Printf
 
 
+#include( "point.jl" );
+#include( "polygon.jl" );
+
 include( "cg.jl" );
+
 using .cg
+using .cg.point
+using .cg.polygon
+
+
+#using .Point;
+#using .Polygon;
+#using .Point
+#using .Polygon
 #using .cg
 #using  cg;  # A submodule?
 
@@ -31,7 +43,7 @@ include( "fever.jl" )
 
 
 #-- Types -----------------------------------------------------
-export  Morphing, FPointType, EventPoint, PointType
+export  Morphing, FPointType, EventPoint#, PointType
 export  Morphing2F
 
 #export  FrechetCExtraInfo;
@@ -83,6 +95,7 @@ export  frechet_simplify_to_cardin
 export  frechet_simplify_w_exp
 
 export  frechet_c_approx
+
 export  frechet_c_compute
 
 export  DTW_d_compute;
