@@ -191,7 +191,7 @@ end
 function ph_init( P::Polygon{D,T}, ph_lock ) where  {D,T}
     ph = PolygonHierarchy{D,T}( 0.0, P, Vector{Int64}(), Vector{Polygon2F}(),
                            Vector{Float64}(), ph_lock );
-    ph.len = Polygon_length( P );
+    ph.len = polygon.total_length( P );
     ph.plt = frechet_palette( P );
 
     w = frechet_width_approx( P );

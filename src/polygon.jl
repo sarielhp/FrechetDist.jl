@@ -8,6 +8,7 @@ using DelimitedFiles
 
 #include( "point.jl" );
 using point;
+using segment;
 
 #import Point{D,T} = point.Point{D,T}
 
@@ -454,13 +455,122 @@ function  Polygon_sample_uniformly( P::Polygon{D,T}, n::Int64 ) where {D,T}
 end
 
 
-export  Polygon_length, Polygon_move_to_origin
+
+
+
+function  Polygon_random( D,T,  n::Int64 )
+    #x::T = zero(T);
+    #x = x + x;
+
+    P = Polygon{D,T}();
+    for  i in 1:n
+        p::Point{D,T} = Point_random( D, T );
+        push!( P, p  );
+    end
+
+    return P;
+end
+
+function  Polygon2F_random( n::Int64 )
+    P = Polygon2F();
+
+    for  i in 1:n
+        v = rand( 2 );
+        push!( P, npoint( v[1], v[2] ) );
+    end
+    return P;
+end
+
+
+"""
+    read_plt_orig_file
+
+    Reads a .plt file into a polygon (2d floating point).
+"""
+function  read_plt_orig_file( filename, dchar = "," )
+    P::Polygon2F = Polygon2F();
+
+    a = readdlm( filename );
+    d_a::Int64 = size(a,1)
+    #println( typeof( a ) );
+    #println( size( a ) )
+    # println( size(a,1) );
+    # println( size(a,2) );
+
+    for  r  in 7:size(a,1)
+        line = a[r,1]
+        #println( "line: [", line, "]" );
+
+        parts::Vector{SubString{String}} = split.( line, dchar );
+        x = parse( Float64, parts[ 1 ] );
+        y = parse( Float64, parts[ 2 ] );
+        push_smart!( P, npoint( x, y ) );
+    end
+
+    return  P
+end
+
+function get_numbers_in_line( s, ch )
+    pieces = split(s, ch, keepempty=false)
+    map(pieces) do piece
+        #println( "Piece: [", piece, "]  ch[", ch, "]" );
+        parse(Float64, piece)
+    end
+end
+
+
+function  read_file( filename, dchar = "," )
+    P::Polygon2F = Polygon2F();
+
+    lines = readlines( filename )
+    for  i  in 1:length( lines )
+        line = lines[ i ];
+
+        # the sigspatial file have a header line... Just ignore it.
+        if  ( line == "x y k tid" )
+            #println( "CONTINUE!" );
+            continue;
+        end
+        local pieces;
+        if  occursin( " ", line )
+            pieces = get_numbers_in_line( line, ' ' );
+        else
+            pieces = get_numbers_in_line( line, ',' );
+        end
+        @assert( length( pieces ) >= 2 );
+        push_smart!( P, npoint( pieces[ 1 ], pieces[ 2 ] ) );
+    end
+
+    if  ( cardin( P ) <= 1 )
+        Polygon_push( P, first( P ) );
+    end
+    return  P
+end
+
+
+function  read_txt_file( filename, dchar = "," )
+    P::Polygon2F = Polygon2F();
+
+    println( "here!" );
+    a = readdlm( filename );
+    d_a::Int64 = size(a,1)
+    println( typeof( a ) );
+    println( size( a ) )
+     println( size(a,1) );
+     println( size(a,2) );
+    exit(-1);
+
+    return  P
+end
+
+
+export  Polygon_move_to_origin
 export  Polygon_sample_uniformly, push_smart!, Polygon_spine
 
-export  Polygon_read_file
-export  Polygon_read_plt_orig_file
+export  read_file
+export  read_plt_orig_file
+export  read_txt_file
 
-export  Polygon_read_txt_file
 export  Polygon_prefix_lengths
 export  Polygon_simplify, Polygon_push, DistInfty
 export  Polygon_simplify_radii
@@ -478,10 +588,14 @@ export  Polygon_sample
 export  Polygon_diff
 export  Polygon_fill
 
-export Polygon;
-export Polygon2I, Polygon2F;
+export  total_length;
+
+export  Polygon;
+export  Polygon2I, Polygon2F;
 export  cardin
 export  Polygon_simplify_ext
+
+export  VecPnts_as_matrix
 
 
 end # // End module polygon

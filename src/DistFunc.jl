@@ -228,8 +228,8 @@ function  SweepDist_segs_p( p_a::Point{D,T},
     v_start = sub( q_a, p_a ) ;
     v_end = sub( q_b, p_b );
 
-    if  Dist( v_start, v_end ) < 0.0000001 * cg.norm( v_start )
-        return  len_edge_p * cg.norm( v_start );
+    if  Dist( v_start, v_end ) < 0.0000001 * point.norm( v_start )
+        return  len_edge_p * point.norm( v_start );
     end
 
     f_debug  &&  println( "v_start: ", v_start );
@@ -245,9 +245,9 @@ function  SweepDist_segs_p( p_a::Point{D,T},
     #
     # f(t) := ||p(t)|| = <p(t), p(t)>
     #       = t^2 * ||p_diff||^2 + 2*<p_diff,v_start> + <v_start,v_start>
-    a = cg.dot( p_diff, p_diff );
-    b = 2.0 * cg.dot( p_diff, v_start );
-    c = cg.dot( v_start, v_start );
+    a = point.dot( p_diff, p_diff );
+    b = 2.0 * point.dot( p_diff, v_start );
+    c = point.dot( v_start, v_start );
 
     f_debug  &&  println( "a: ",  a, " b: ", b, " c: ", c );
     f = dist_func( a, b, c );

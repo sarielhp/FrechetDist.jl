@@ -18,6 +18,7 @@ include( "cg.jl" );
 
 using .cg
 using .cg.point
+using .cg.segment
 using .cg.polygon
 
 

@@ -156,7 +156,7 @@ function f_r_create_event( R::Polygon{N,T}, i::Int64,
         return  ev;
     end
     seg = Segment( R[ i ], R[ i + 1 ] );
-    p = Segment_nn_point( seg, qr );
+    p = nn_point( seg, qr );
 
     t::Float64 = Segment_get_convex_coef( seg, p );
 
@@ -325,7 +325,7 @@ function    max_leash( l_min::T, l_max::T, p_a::Point{N,T}, p_b::Point{N,T},
     max_q = p_a;
     for  j in low:hi
         p = P[ j ];
-        #q = Segment_nn_point( seg, p );
+        #q = nn_point( seg, p );
         q = iseg_nn_point( p_a, p_b, p );
 
         len_from_p_a = Dist( q, p_a );
@@ -625,7 +625,7 @@ function  frechet_width_approx( P::Polygon{N,T},
     curr::Point{N,T} = P[ first( rng ) ] ;
     leash::Float64 = 0;
     for  i  in  first(rng)+1:last(rng)-1
-        q = Segment_nn_point( seg, P[ i ] );
+        q = nn_point( seg, P[ i ] );
         new_t = Segment_get_convex_coef( seg, q );
         if  ( new_t > t )
             t = new_t;
@@ -747,7 +747,7 @@ function    frechet_c_mono_approx_subcurve(
         seg = Segment( Q[ i ], Q[ i + 1 ] );
         for  j in (pind + 1):(pind_next - 1)
             p = P[ j ];
-            q = Segment_nn_point( seg, p );
+            q = nn_point( seg, p );
             new_t = Segment_get_convex_coef( seg, q );
             if  ( new_t >= max_t )
                 max_t = new_t;

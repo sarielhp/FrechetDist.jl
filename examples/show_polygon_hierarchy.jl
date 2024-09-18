@@ -45,7 +45,7 @@ end
 
 function  draw_polygon_vertices( cr, P, r::Float64 )
     nv::Int64 = cardin( P );
-    #r = Polygon_length( P ) / (100.0*cardin( P ));
+    #r = total_length( P ) / (100.0*cardin( P ));
     for  i in 1:nv
         p = P.pnts[ i ];
 #        set_line_width(cr, 2.00);

@@ -248,7 +248,7 @@ end
 
 function   SweepDist_compute_refine_mono( poly_a::Polygon{N,T},
                                      poly_b::Polygon{N,T} ) where {N,T}
-    ell = Polygon_length( poly_a ) + Polygon_length( poly_b );
+    ell = total_length( poly_a ) + total_length( poly_b );
 
     P = poly_a;
     Q = poly_b;

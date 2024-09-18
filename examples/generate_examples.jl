@@ -20,6 +20,7 @@ using Dates
 using FrechetDist
 using FrechetDist.cg
 using FrechetDist.cg.point
+using FrechetDist.cg.segment
 using FrechetDist.cg.polygon
 #using cg
 
@@ -131,9 +132,9 @@ end
 
 function  run_on_curves_files( filename_a, filename_b )
     println( "Reading curve: ", filename_a );
-    poly_a = Polygon_read_file( filename_a );
+    poly_a = polygon.read_file( filename_a );
     println( "Reading curve: ", filename_b );
-    poly_b = Polygon_read_file( filename_b );
+    poly_b = polygon.read_file( filename_b );
 
     return  run_on_curves( poly_a, poly_b );
 end
@@ -177,22 +178,22 @@ function  diagram_get_ev_loc( P::Polygon{N,T}, Q::Polygon{N,T},
     pl::Vector{T}, ql::Vector{T},
     i::Int64, j::Int64 ) where  {N,T}
     seg = Segment( P[ i ], P[ i + 1 ] );
-    p = Segment_nn_point( seg, Q[ j ] );
+    p = nn_point( seg, Q[ j ] );
     x = pl[ i ] + Dist( P[ i ], p )
     y = ql[ j ]
 
-    return point( x, y );
+    return npoint( x, y );
 end
 
 function  diagram_get_ve_loc( P::Polygon{N,T}, Q::Polygon{N,T},
     pl::Vector{T}, ql::Vector{T},
     i::Int64, j::Int64 ) where {N,T}
     seg = Segment( Q[ j ], Q[ j + 1 ] );
-    q = Segment_nn_point( seg, P[ i ] );
+    q = nn_point( seg, P[ i ] );
     x = pl[ i ]
     y = ql[ j ] + Dist( Q[ j ], q )
 
-    return point( x, y );
+    return  npoint( x, y );
 end
 
 
@@ -215,8 +216,8 @@ function  plot_curves_diagram( P::Polygon2F, Q::Polygon2F,
 
     f_debug  && println( "Getting ready to draw heatmap/graph/curves..." );
 
-    len_P = Polygon_length( P )
-    len_Q = Polygon_length( Q )
+    len_P = total_length( P )
+    len_Q = total_length( Q )
 
     pl = Polygon_prefix_lengths( P );
     ql = Polygon_prefix_lengths( Q );
@@ -296,14 +297,14 @@ function  plot_curves_diagram( P::Polygon2F, Q::Polygon2F,
         p_last = cardin(P)-1;
         q_last = cardin(Q)-1;
 
-        pnt_start::Point2F = point( 0.0, 0.0 );
-        pnt_end::Point2F = point( Polygon_length( P ), Polygon_length( Q ) );
+        pnt_start::Point2F = npoint( 0.0, 0.0 );
+        pnt_end::Point2F = npoint( total_length( P ), total_length( Q ) );
 
         pnts = Vector{Point2F}();
-        s_a = point( 0.0, 0.0 );
-        s_b = point( 0.0, 0.0 );
-        t_a = point( 0.0, 0.0 );
-        t_b = point( 0.0, 0.0 );
+        s_a = npoint( 0.0, 0.0 );
+        s_b = npoint( 0.0, 0.0 );
+        t_a = npoint( 0.0, 0.0 );
+        t_b = npoint( 0.0, 0.0 );
         counter::Int64 = 0;
         width = 1;
         ucolor = :pink;
@@ -327,7 +328,7 @@ function  plot_curves_diagram( P::Polygon2F, Q::Polygon2F,
                 f_use_t_a::Bool = (j < q_last);
                 f_use_t_b::Bool = (i < p_last);
                 if  ( i == p_last )  &&  ( j == q_last )
-                    t_a = t_b = point( last( pl ), last( ql ) );
+                    t_a = t_b = npoint( last( pl ), last( ql ) );
                     f_use_t_a = f_use_t_b = true;
                 else
                     t_a = diagram_get_ev_loc( P, Q, pl, ql, i, j + 1 )
@@ -774,12 +775,12 @@ function  create_demo( title::String,
     # Table...
     row_a = [ "<a href=\"poly_a.txt\">P</a>"
               string( cardin( poly_a ) )
-              string( Polygon_length( poly_a ) ) ]
+              string( total_length( poly_a ) ) ]
     row_a_x = permutedims( row_a );
 
     row_b =  ["<a href=\"poly_b.txt\">Q</a>"
               string( cardin( poly_b ) )
-              string( Polygon_length( poly_b ) )
+              string( total_length( poly_b ) )
               ];
     row_b_x = permutedims( row_b );
 
@@ -1087,8 +1088,8 @@ function  create_demo_files( title::String,
         return;
     end
 
-    poly_a = Polygon_read_file( f_a );
-    poly_b = Polygon_read_file( f_b );
+    poly_a = polygon.read_file( f_a );
+    poly_b = polygon.read_file( f_b );
     println( "#poly_a: ", cardin( poly_a ) );
     println( "#poly_b: ", cardin( poly_b ) );
     create_demo( title, prefix, poly_a, poly_b, f_draw_c, f_draw_ve, note );

@@ -353,8 +353,8 @@ function   frechet_d_r_compute_sample( polya::Polygon{D,T},
                                        f_lopt::Bool = true
                                      )    where {D,T}
 #    polya,polyb = example_4()
-    lena = Polygon_length( polya );
-    lenb = Polygon_length( polyb );
+    lena = polygon.total_length( polya );
+    lenb = polygon.total_length( polyb );
 
 #    n::Int64 = 100;
     delta = (lena+ lenb)/ n;

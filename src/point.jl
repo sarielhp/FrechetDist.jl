@@ -244,7 +244,9 @@ export Point2F
 
 export DistSq
 export Dist
-export Point_random, sub, convex_comb
+export Point_random, sub, convex_comb, dot
+
+export  add, sub, mult, norm
 
 export npoint
 
