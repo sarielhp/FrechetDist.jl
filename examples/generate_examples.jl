@@ -1120,6 +1120,18 @@ function  gen_example_12()
 end
 
 
+function  gen_example_30()
+    poly_a,poly_b = example_30();
+    create_demo( "Example 30: ZigZag does not math a Zag",
+                 "output/30/",
+                 poly_a,poly_b,
+                 true, true,
+                 "Zig-zag heavy example that shows the algorithm computing\n"
+                 * " the exact continuous monotone " * FrechetStr
+                 * " morphing, using refinement.\n",
+                 true
+                 );
+end
 function  gen_example_6()
     poly_a,poly_b = example_6();
     create_demo( "Example 6: Refinement in action",
@@ -1420,6 +1432,11 @@ function  generate_examples()
             "data/pigeons/C360_10.plt",
             "data/pigeons/C480_9.plt",
             true, true );
+    end
+
+    if   is_rebuild( "output/30" )
+        println( "Example 30" );
+        gen_example_30()
     end
 
 end

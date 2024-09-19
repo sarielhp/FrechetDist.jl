@@ -20,6 +20,20 @@ function  example_1()
     return  polya, polyb;
 end
 
+function  example_30()
+    polya = Polygon2F( );
+    polyb = Polygon2F( );
+
+    xs = 4;
+    ys = 0.2;
+
+    push!( polya, npoint( 0.0, 0 ), npoint( xs*1.0, 0.0 ) );
+    push!( polyb,
+           npoint( 0.0, ys ), npoint( xs , ys ),
+           npoint( 0.0, 2.0*ys ), npoint( xs , 2.0*ys ) );
+    return  polya, polyb;
+end
+
 function  example_2()
     polya = Polygon2F( );
     polyb = Polygon2F();

@@ -482,6 +482,13 @@ function  Polygon2F_random( n::Int64 )
 end
 
 
+function  slice( P::Polygon{D,T}, d ) where {D,T}
+    v = Vector{T}();
+    for  p ∈ P  push!( v, p[ d ] ) end;
+    return  v;
+end
+    
+    
 """
     read_plt_orig_file
 
@@ -564,6 +571,8 @@ function  read_txt_file( filename, dchar = "," )
 end
 
 
+
+
 export  Polygon_move_to_origin
 export  Polygon_sample_uniformly, push_smart!, Polygon_spine
 
@@ -594,6 +603,7 @@ export  Polygon;
 export  Polygon2I, Polygon2F;
 export  cardin
 export  Polygon_simplify_ext
+export  slice
 
 export  VecPnts_as_matrix
 
