@@ -24,8 +24,8 @@ function  example_30()
     polya = Polygon2F( );
     polyb = Polygon2F( );
 
-    xs = 4.0;
-    ys = 0.2;
+    xs = Float64( 4.0 );
+    ys = Float64( 0.2 ;
 
     push!( polya, npoint( 0.0, 0 ), npoint( xs*1.0, 0.0 ) );
     push!( polyb,
