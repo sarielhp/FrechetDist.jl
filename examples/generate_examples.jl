@@ -202,6 +202,7 @@ end
 
 
 
+
 function  plot_curves_diagram( P::Polygon2F, Q::Polygon2F,
                                filename_diagram,
                                f_draw_c::Bool = false,
@@ -210,87 +211,10 @@ function  plot_curves_diagram( P::Polygon2F, Q::Polygon2F,
                                f_m_out_defined = false,
                                m_out = nothing,
                                title::String = "",
-                               f_draw_graph_only::Bool = false
-                               )
-    f_debug::Bool = false;
-
-    f_debug  && println( "Getting ready to draw heatmap/graph/curves..." );
-
-    len_P = total_length( P )
-    len_Q = total_length( Q )
-
-    pl = Polygon_prefix_lengths( P );
-    ql = Polygon_prefix_lengths( Q );
-
-    x_range = range(0, len_P, length = 200 )
-    y_range = range(0, len_Q; length = 200 )
-
-    function  fz(x,y)
-        p = Polygon_get_point_on( P, pl, x );
-        q = Polygon_get_point_on( Q, ql, y );
-
-        return Dist( p, q );
-    end
-
-    f_debug && println( "Computing heat map..." );
-    ### f_draw_graph_only
-    if  f_draw_graph_only
-        plt = plot( x_range, y_range, 0,
-                    left_margin = 0 * Plots.mm,
-                    bottom_margin=0*Plots.mm,
-                    right_margin = 0.02 * Plots.mm,
-                    ticks = false, showaxis = false, framestyle=:none,
-                    dpi = 200 );
-    else
-        plt = heatmap( x_range, y_range, fz,
-                       color = :haline,
-                       left_margin = 0 * Plots.mm,
-                       bottom_margin=0*Plots.mm,
-                       right_margin = 0.02 * Plots.mm,
-                       ticks = false, showaxis = false, framestyle=:none,
-                       dpi = 200 );
-    end
-    if  ( length( title ) > 0 )
-        title!( plt, title );
-    end
-    f_debug && println( "Heat map drawing done..." );
-
-    function  draw_solution( plt )
-        if  ( f_draw_c )
-            m_c = frechet_c_compute( P, Q );
-            p_c_diag = Morphing_extract_prm( m_c );
-            m_c_diag = Polygon_as_matrix( p_c_diag );
-            plot!(plt, m_c_diag[1,:], m_c_diag[2,:],
-                linewidth=2, label=:none, ticks=false,
-                showaxis=false, grid=:false,
-                legend=false, framestyle=:none, lc=:red);
-        end
-        if  ( f_draw_ve )
-            m_ve = frechet_ve_r_compute( P, Q );
-            p_ve_diag = Morphing_extract_prm( m_ve );
-            m_ve_diag = Polygon_as_matrix( p_ve_diag );
-            plot!(plt, m_ve_diag[1,:], m_ve_diag[2,:],
-                linewidth=4,
-                label=:none, ticks=false, showaxis=false,
-                grid=:false, legend=false, framestyle=:none, lc=:red);
-        end
-        f_debug  &&  println( "Drawing arrows..." );
-    end
-
-    function  draw_grid( plot )
-        qlx = (ql[2:end-1])'
-        plx = (pl[2:end-1])'
-
-        if  f_draw_graph_only
-            plot!( plt, [0; len_P], [qlx;qlx], lw=0.5, lc=:lightblue,
-                   legend=false)
-            plot!( plt,  [plx;plx], [0; len_Q], lw=0.5, lc=:lightblue,
-                   legend=false)
-        else
-            plot!( plt, [0; len_P], [qlx;qlx], lw=2, lc=:black, legend=false)
-            plot!( plt,  [plx;plx], [0; len_Q], lw=2, lc=:black, legend=false)
-        end
-    end
+                               f_draw_graph_only::Bool = false;
+                               f_draw_grid::Bool = false )
+###----------------------------------------------------------------------
+### sub-function draw_graph start
     function  draw_graph( plt )
         draw_solution( plt )
 
@@ -308,7 +232,7 @@ function  plot_curves_diagram( P::Polygon2F, Q::Polygon2F,
         counter::Int64 = 0;
         width = 1;
         ucolor = :pink;
-        if   f_draw_graph_only
+        if   f_draw_graph_only  &&  ( ! f_draw_grid )
             width = 2;
             ucolor = :black;
         end
@@ -321,7 +245,6 @@ function  plot_curves_diagram( P::Polygon2F, Q::Polygon2F,
             for j in 1:q_last
                 s_a = diagram_get_ev_loc( P, Q, pl, ql, i, j )
                 s_b = diagram_get_ve_loc( P, Q, pl, ql, i, j )
-#                end
 
                 f_use_s_b::Bool = ( i > 1 )  ||  ( j == 1 );
 
@@ -344,10 +267,6 @@ function  plot_curves_diagram( P::Polygon2F, Q::Polygon2F,
                     collect_arrows( xs, ys, vx, vy, pnt_start, s_a );
                     collect_arrows( xs, ys, vx, vy, pnt_start, s_b );
                 end
-                #draw_arrow( plt, s_a, t_a, width, ucolor );
-                #draw_arrow( plt, s_a, t_b, width, ucolor );
-                #draw_arrow( plt, s_b, t_a, width, ucolor );
-                #draw_arrow( plt, s_b, t_b, width, ucolor );
 
                 push!( pnts, s_a )
                 f_use_s_b  &&  push!( pnts, s_b )
@@ -358,10 +277,10 @@ function  plot_curves_diagram( P::Polygon2F, Q::Polygon2F,
 
         f_debug && println( xs );
         quiver!(plt, xs, ys, quiver=(vx, vy),
-                color=ucolor,
-                linewidth=width,
-                label=:none, ticks=false, showaxis=false, grid=:false,
-                legend=false, framestyle=:none );
+            color=ucolor,
+            linewidth=width,
+            label=:none, ticks=false, showaxis=false, grid=:false,
+            legend=false, framestyle=:none );
 
         sort!( pnts );
         unique!( pnts );
@@ -377,12 +296,109 @@ function  plot_curves_diagram( P::Polygon2F, Q::Polygon2F,
 
 
         scatter!( plt, m_end_pnts[1,:], m_end_pnts[2,:], mc=:red,
-                  ms=4, ma=3.5 );
+            ms=4, ma=3.5 );
         #    display( plt )
     end
+### sub-function draw_graph end
+#------------------------------------------------------------------------
+
+    
+    ###----------------------------------------------------------------------
+    ### sub-function draw_solution start
+    function  draw_solution( plt )
+        if  ( f_draw_c )
+            m_c = frechet_c_compute( P, Q );
+            p_c_diag = Morphing_extract_prm( m_c );
+            m_c_diag = Polygon_as_matrix( p_c_diag );
+            plot!(plt, m_c_diag[1,:], m_c_diag[2,:],
+                linewidth=2, label=:none, ticks=false,
+                showaxis=false, grid=:false,
+                legend=false, framestyle=:none, lc=:red);
+        end
+        if  ( f_draw_ve )
+            m_ve = frechet_ve_r_compute( P, Q );
+            p_ve_diag = Morphing_extract_prm( m_ve );
+            m_ve_diag = Polygon_as_matrix( p_ve_diag );
+            plot!(plt, m_ve_diag[1,:], m_ve_diag[2,:],
+                linewidth=4,
+                label=:none, ticks=false, showaxis=false,
+                grid=:false, legend=false, framestyle=:none, lc=:red);
+        end
+        f_debug  &&  println( "Drawing arrows..." );
+    end
+    ### sub-function draw_solution end
+    #------------------------------------------------------------------------
+    
+    #------------------------------------------------------------------------
+    function  draw_grid( plot )
+        qlx = (ql[2:end-1])'
+        plx = (pl[2:end-1])'
+
+        if  f_draw_graph_only  &&  (! f_draw_grid )
+            plot!( plt, [0; len_P], [qlx;qlx], lw=0.5, lc=:lightblue,
+                   legend=false)
+            plot!( plt,  [plx;plx], [0; len_Q], lw=0.5, lc=:lightblue,
+                   legend=false)
+        else
+            plot!( plt, [0; len_P], [qlx;qlx], lw=2, lc=:black, legend=false)
+            plot!( plt,  [plx;plx], [0; len_Q], lw=2, lc=:black, legend=false)
+        end
+    end
+    ### sub-function draw_grid end
+    #------------------------------------------------------------------------
+
+    function  fz(x,y)
+        p = Polygon_get_point_on( P, pl, x );
+        q = Polygon_get_point_on( Q, ql, y );
+
+        return Dist( p, q );
+    end
+    ### sub-function fz end
+    #------------------------------------------------------------------------
+
+    
+    f_debug::Bool = false;
+
+    f_debug  && println( "Getting ready to draw heatmap/graph/curves..." );
+
+    len_P = total_length( P )
+    len_Q = total_length( Q )
+
+    pl = Polygon_prefix_lengths( P );
+    ql = Polygon_prefix_lengths( Q );
+
+    x_range = range(0, len_P, length = 200 )
+    y_range = range(0, len_Q; length = 200 )
+
+
+    f_debug && println( "Computing heat map..." );
+    ### f_draw_graph_only
+    if  f_draw_graph_only  && ( ! f_draw_grid )
+        plt = plot( x_range, y_range, 0,
+                    left_margin = 0 * Plots.mm,
+                    bottom_margin=0*Plots.mm,
+                    right_margin = 10.2 * Plots.mm,
+                    ticks = false, showaxis = false, framestyle=:none,
+                    dpi = 200 );
+    else
+        plt = heatmap( x_range, y_range, fz,
+                       color = :haline,
+                       left_margin = 0 * Plots.mm,
+                       bottom_margin=0*Plots.mm,
+                       right_margin = 10.02 * Plots.mm,
+                       ticks = false, showaxis = false, framestyle=:none,
+                       dpi = 200 );
+    end
+    if  ( length( title ) > 0 )
+        title!( plt, title );
+    end
+    f_debug && println( "Heat map drawing done..." );
+
+
+
     cardi::Int64 = cardin(P) + cardin( Q );
-    if  ( cardi < 2000 )
-        if f_draw_c  ||  f_draw_ve  ||  f_draw_graph
+    if  ( cardi < 2000 )  
+        if f_draw_c  ||  f_draw_ve  ||  f_draw_graph || f_draw_grid
             draw_grid( plt );
         end
     end
@@ -390,7 +406,7 @@ function  plot_curves_diagram( P::Polygon2F, Q::Polygon2F,
         f_debug  && println( "Drawing the graph..." );
         draw_graph( plt );
     else
-        draw_solution( plt )
+        (! f_draw_grid)  &&  draw_solution( plt )
     end
 
     if  ( f_m_out_defined )
@@ -663,6 +679,16 @@ function  create_demo( title::String,
     plot_curves_diagram( poly_a, poly_b, prefix*"diagram.png",
         false, false, false
     );
+
+    f_grid_only_drawn::Bool = false;
+    if  ( cardi < 100 )
+        plot_curves_diagram( poly_a, poly_b, prefix*"grid_only.pdf",
+            false, false, false; f_draw_grid = true );
+        plot_curves_diagram( poly_a, poly_b, prefix*"grid_only.png",
+            false, false, false; f_draw_grid = true );
+        f_grid_only_drawn = true;
+    end
+
     f_debug && println( "A12..." );
 
     if   f_refinements
@@ -710,7 +736,9 @@ function  create_demo( title::String,
         );
         plot_curves_diagram( poly_a, poly_b, prefix*"g_diagram.png",
             false, false, true
-                             );
+
+        );
+
         plot_curves_diagram( poly_a, poly_b, prefix*"graph_only.pdf",
                              false, false, true, false, nothing, "", true );
         plot_curves_diagram( poly_a, poly_b, prefix*"graph_only.png",
@@ -850,11 +878,29 @@ function  create_demo( title::String,
 
     #---------------------------------------------------------
 
-    write( fl, "<h2>Free space diagram heatmap:</h2>" )
-    write( fl, "<img src=\"diagram.png\">\n" );
+    write( fl, "<h2>Free space diagram heatmap:</h2>\n\n" )
+    write( fl, "<img src=\"diagram.png\" />\n" );
 
+
+    if  ( f_graph_drawn )
+        write( fl, "\n<hr>\n" 
+            *  "<a href=\"g_diagram.png\">graph + free space</a>\n"
+            * "[<a href=\"g_diagram.pdf\">PDF</a>]\n"
+            * " : "
+            *  " <a href=\"graph_only.png\">graph</a>\n"
+            * "[<a href=\"graph_only.pdf\">PDF</a>]\n<hr>\n"
+        );
+    end
+    
     write( fl, "\n<hr>\n" )
 
+    if  ( f_grid_only_drawn )
+        write( fl, "<h3>With the grid</h3>\n\n" );
+
+        write( fl, "<img src=\"grid_only.png\">\n" );
+
+        write( fl, "\n<hr>\n" )
+    end
     if  ( f_draw_ve  )
             write( fl, "<h2>VE-"*FrechetStr*" Retractable solution:</h2>" )
         write( fl, "<img src=\"ve_r_diagram.png\">\n" );
@@ -1037,7 +1083,7 @@ function  create_demo( title::String,
                                   400, true );
         output_frechet_movie_mp4( m_d, prefix*"discrete_frechet.mp4",
                                   400, true );
-        output_frechet_movie( m_d, prefix*"discrete_frechet.pdf", 
+        output_frechet_movie( m_d, prefix*"discrete_frechet.pdf",
                               100, true );
         output_frechet_movie_mp4( m_d_r, prefix*"discrete_r_frechet.mp4",                                  400, true );
     end;
