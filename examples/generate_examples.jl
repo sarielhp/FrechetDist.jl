@@ -302,7 +302,7 @@ function  plot_curves_diagram( P::Polygon2F, Q::Polygon2F,
 ### sub-function draw_graph end
 #------------------------------------------------------------------------
 
-    
+
     ###----------------------------------------------------------------------
     ### sub-function draw_solution start
     function  draw_solution( plt )
@@ -328,7 +328,7 @@ function  plot_curves_diagram( P::Polygon2F, Q::Polygon2F,
     end
     ### sub-function draw_solution end
     #------------------------------------------------------------------------
-    
+
     #------------------------------------------------------------------------
     function  draw_grid( plot )
         qlx = (ql[2:end-1])'
@@ -356,7 +356,7 @@ function  plot_curves_diagram( P::Polygon2F, Q::Polygon2F,
     ### sub-function fz end
     #------------------------------------------------------------------------
 
-    
+
     f_debug::Bool = false;
 
     f_debug  && println( "Getting ready to draw heatmap/graph/curves..." );
@@ -397,7 +397,7 @@ function  plot_curves_diagram( P::Polygon2F, Q::Polygon2F,
 
 
     cardi::Int64 = cardin(P) + cardin( Q );
-    if  ( cardi < 2000 )  
+    if  ( cardi < 2000 )
         if f_draw_c  ||  f_draw_ve  ||  f_draw_graph || f_draw_grid
             draw_grid( plt );
         end
@@ -883,7 +883,7 @@ function  create_demo( title::String,
 
 
     if  ( f_graph_drawn )
-        write( fl, "\n<hr>\n" 
+        write( fl, "\n<hr>\n"
             *  "<a href=\"g_diagram.png\">graph + free space</a>\n"
             * "[<a href=\"g_diagram.pdf\">PDF</a>]\n"
             * " : "
@@ -891,7 +891,7 @@ function  create_demo( title::String,
             * "[<a href=\"graph_only.pdf\">PDF</a>]\n<hr>\n"
         );
     end
-    
+
     write( fl, "\n<hr>\n" )
 
     if  ( f_grid_only_drawn )
@@ -1171,7 +1171,7 @@ function  gen_example_31()
                 13.0*cos(t)-5.0*cos(2*t) -2.0 *cos(3*t) - cos(4.0*t) )
     uheart(t) = (16*(sin(t))^3,
                  -(13.0*cos(t)-5.0*cos(2*t) -2.0 *cos(3*t) - cos(4.0*t) ) )
-    
+
     P = Polygon_fill( Polygon2F(), heart, -pi:0.02:pi );
     Q = Polygon_fill( Polygon2F(), uheart, 0:0.02:2.0*pi );
     create_demo( "Example 31:Inverse hearts",
@@ -1181,8 +1181,8 @@ function  gen_example_31()
                  "Matching of two hearts",
                  true
                  );
-    \emd
-    
+end
+
 function  gen_example_30()
     poly_a,poly_b = example_30();
     create_demo( "Example 30: ZigZag does not math a Zag",
