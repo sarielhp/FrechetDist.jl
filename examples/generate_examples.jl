@@ -1166,6 +1166,23 @@ function  gen_example_12()
 end
 
 
+function  gen_example_31()
+    heart(t) = (-16*(sin(t))^3,
+                13.0*cos(t)-5.0*cos(2*t) -2.0 *cos(3*t) - cos(4.0*t) )
+    uheart(t) = (16*(sin(t))^3,
+                 -(13.0*cos(t)-5.0*cos(2*t) -2.0 *cos(3*t) - cos(4.0*t) ) )
+    
+    P = Polygon_fill( Polygon2F(), heart, -pi:0.02:pi );
+    Q = Polygon_fill( Polygon2F(), uheart, 0:0.02:2.0*pi );
+    create_demo( "Example 31:Inverse hearts",
+                 "output/30/",
+                 poly_a,poly_b,
+                 true, true,
+                 "Matching of two hearts",
+                 true
+                 );
+    \emd
+    
 function  gen_example_30()
     poly_a,poly_b = example_30();
     create_demo( "Example 30: ZigZag does not math a Zag",
@@ -1178,6 +1195,7 @@ function  gen_example_30()
                  true
                  );
 end
+
 function  gen_example_6()
     poly_a,poly_b = example_6();
     create_demo( "Example 6: Refinement in action",
@@ -1483,6 +1501,10 @@ function  generate_examples()
     if   is_rebuild( "output/30" )
         println( "Example 30" );
         gen_example_30()
+    end
+    if   is_rebuild( "output/31" )
+        println( "Example 31" );
+        gen_example_31()
     end
 
 end
