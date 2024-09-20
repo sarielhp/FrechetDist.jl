@@ -1172,8 +1172,8 @@ function  gen_example_31()
     uheart(t) = (16*(sin(t))^3,
                  -(13.0*cos(t)-5.0*cos(2*t) -2.0 *cos(3*t) - cos(4.0*t) ) )
 
-    P = Polygon_fill( Polygon2F(), heart, -pi:0.02:pi );
-    Q = Polygon_fill( Polygon2F(), uheart, 0:0.02:2.0*pi );
+    poly_a = Polygon_fill( Polygon2F(), heart, -pi:0.02:pi );
+    poly_b = Polygon_fill( Polygon2F(), uheart, 0:0.02:2.0*pi );
     create_demo( "Example 31:Inverse hearts",
                  "output/30/",
                  poly_a,poly_b,
