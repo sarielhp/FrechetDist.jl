@@ -1516,9 +1516,15 @@ function  generate_examples()
         println( "Example 30" );
         gen_example_30()
     end
+    
     if   is_rebuild( "output/31" )
         println( "Example 31" );
         gen_example_31()
+    end
+
+    if   is_rebuild( "output/32" )
+        println( "Example 32" );
+        gen_example_32()
     end
 
 end
