@@ -20,6 +20,24 @@ function  example_1()
     return  polya, polyb;
 end
 
+############################################################
+# Various examples of curves for computing Frechet distance
+############################################################
+function  example_32()
+    polya = Polygon2F( );
+    polyb = Polygon2F( );
+
+    xs = 4;
+    ys = 1.5;
+
+    push!( polya, npoint( 0.0, 0 ), npoint( xs*1.0, 0.0 ) );
+    push!( polyb,
+           npoint( 0.0, ys*0.1 ), npoint( xs * 0.15, ys * 0.1 ),
+           npoint( xs*0.2, ys*0.9 ), npoint( xs*0.25  , ys*0.1),
+           npoint( xs*1.0, ys*0.1 ) );
+    return  polya, polyb;
+end
+
 function  example_30()
     polya = Polygon2F( );
     polyb = Polygon2F( );

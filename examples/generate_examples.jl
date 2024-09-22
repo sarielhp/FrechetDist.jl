@@ -1277,6 +1277,20 @@ function  gen_example_1()
                  * " happily yields the \"correct\" result.\n"
                  );
 end
+function  gen_example_32()
+    poly_a,poly_b = example_32();
+    create_demo( "Example 32", "output/32/",
+                 poly_a,
+                 poly_b,
+                 false, true,
+                 "A simple example demonstrating the main drawback \n"
+                 * " of the regular discrete "*FrechetStr*" morphing \n"
+                 * "which keeps the long leash after hitting the maximum \n"
+                 * "length. The retractable discrete version on the other \n"
+                 * "hand"
+                 * " happily yields the \"correct\" result.\n"
+                 );
+end
 
 function  is_rebuild( s::String )
     if  ( isdir( s ) )
