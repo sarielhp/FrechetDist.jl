@@ -1356,9 +1356,8 @@ function  generate_examples()
     if  is_rebuild( "output/10" )
         println( "Example 10" );
         poly_a,poly_b = example_10( 3, 4);
-        create_demo(XXX
-                    "Example 10", "output/10/", poly_a,poly_b,
-                    false, true, "", true );
+        create_demo( "Example 10", "output/10/", poly_a,poly_b,
+                     false, true, "", true );
     end
 
     if   is_rebuild( "output/11" )
