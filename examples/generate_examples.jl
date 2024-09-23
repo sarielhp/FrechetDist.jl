@@ -734,12 +734,14 @@ function  create_demo( title::String,
 #                s= chop_it( s, '0' );
             end
 
-            curves_out = dir*@sprintf( "curves_%06d", i );
+            base_out = @sprintf( "curves_%06d", i );
+            curves_out = dir * base_out;
             draw_m_polygon( mx, curves_out );
 
             title_frm = @sprintf( "Frame %02d   Monotonicity error: %s%%",
                               i, s )
-            png_out = dir*@sprintf( "%06d.png", i );
+            png_base = @sprintf( "%06d.png", i );
+            png_out = dir * png_base;
             plot_curves_diagram( poly_a, poly_b,
                                  png_out,
                                  false, false, false, true,
@@ -747,9 +749,9 @@ function  create_demo( title::String,
                                  title_frm
                                  );
             write( fl_s, "<hr>\n\n" );
-            write( fl_s, "<img src=\"" * png_out * "\" />\n" )
+            write( fl_s, "<img src=\"" * png_base * "\" />\n" )
             write( fl_s, "<hr>\n" )
-            write( fl_s, "<img src=\"" * curves_out * ".png" * "\" />\n" )
+            write( fl_s, "<img src=\"" * base_out * ".png" * "\" />\n" )
         end
         html_close( fl_s );
 
