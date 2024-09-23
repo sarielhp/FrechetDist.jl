@@ -256,7 +256,7 @@ function  output_polygons_to_file(  list::VecPolygon2F, filename,
     if  ( f_matching )  &&  ( cardin( list[ 1 ] ) ==  cardin( list[ 2 ] ) )
         P = list[ 1 ];
         Q = list[ 2 ];
-        set_line_width(cr, 1.5*u_width);
+        set_line_width(cr, 0.5*u_width);
         set_source_rgb( cr, 1.0, 0.0, 1.0 );
         for  i  in 1:cardin( P )
             p = P[ i ];
@@ -269,7 +269,7 @@ function  output_polygons_to_file(  list::VecPolygon2F, filename,
     end
 
     if  ( f_draw_vertices )
-        set_line_width(cr, 2.0*u_width);
+        set_line_width(cr, 0.9*u_width);
         set_source_rgb( cr, 1.0, 0.0, 0.0 );
         for  poly in  list
             draw_polygon_vertices( cr, poly, BBox_width( bb) / 200  );

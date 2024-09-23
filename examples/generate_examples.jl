@@ -539,6 +539,29 @@ function   html_write_video_file( fl, mvname::String,
     write( fl, "</video>\n\n" );
 end
 
+
+function  draw_m_polygon( m::Morphing2F, curves_out )
+    list = VecPolygon2F();
+
+    push!( list, deepcopy( m.P ) );
+    push!( list, deepcopy( m.Q ) );
+
+    bb = BBox2F();
+    BBox_bound( bb, m.P );
+    BBox_bound( bb, m.Q );
+
+    p = BBox_bottom_left( bb );
+    for  poly  in list
+        Polygon_translate!( poly, p );
+    end
+
+    output_polygons_to_file( list, curves_out * ".pdf", true, true );
+    output_polygons_to_file( list, curves_out * ".png", false, true );
+end
+
+
+
+
 function  create_demo( title::String,
                        prefix::String,
                        poly_a, poly_b,
@@ -645,7 +668,7 @@ function  create_demo( title::String,
     local m_refinements::Vector{Morphing2F} = Vector{Morphing2F}();
     #println( "BOGI!\n\n\n\n" );
     if   f_refinements
-        m_refinemenets = Vector{Morphing2F}();
+        m_refinements = Vector{Morphing2F}();
         frechet_mono_via_refinement_ext( poly_a, poly_b, m_refinements, true,
                                          1.000000001
                                       );
@@ -694,6 +717,8 @@ function  create_demo( title::String,
     if   f_refinements
         dir =  prefix * "steps/";
         is_mkdir( dir );
+
+        fl_s = html_open_w_file( dir * "index.html", "Refinement" );
         for  i in eachindex( m_refinements )
             mx = m_refinements[ i ];
             mm = Morphing_monotonize( mx );
@@ -709,6 +734,9 @@ function  create_demo( title::String,
 #                s= chop_it( s, '0' );
             end
 
+            curves_out = dir*@sprintf( "curves_%06d", i );
+            draw_m_polygon( mx, curves_out );
+
             title_frm = @sprintf( "Frame %02d   Monotonicity error: %s%%",
                               i, s )
             png_out = dir*@sprintf( "%06d.png", i );
@@ -718,7 +746,12 @@ function  create_demo( title::String,
                                  mx,
                                  title_frm
                                  );
+            write( fl_s, "<hr>\n\n" );
+            write( fl_s, "<img src=\"" * png_out * "\" />\n" )
+            write( fl_s, "<hr>\n" )
+            write( fl_s, "<img src=\"" * curves_out * ".png" * "\" />\n" )
         end
+        html_close( fl_s );
 
         println( "Generating gif..." );
 
@@ -1049,6 +1082,7 @@ function  create_demo( title::String,
                  * "This is easy and fast to do, and is the error \n"
                  * "accounted for in the below graphics.<br>" );
         write( fl, "<img src=\"refinements.gif\"><br>\n\n\n" );
+        write( fl, "<a href=\"steps/\">More info</a>\n\n" );
     end
 
     write( fl, "\n\n<h2>Animation: "*FrechetStr*" morphing as morphing</h2>" );
@@ -1518,7 +1552,7 @@ function  generate_examples()
         println( "Example 30" );
         gen_example_30()
     end
-    
+
     if   is_rebuild( "output/31" )
         println( "Example 31" );
         gen_example_31()
