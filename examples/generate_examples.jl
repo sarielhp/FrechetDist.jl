@@ -1231,7 +1231,7 @@ function  gen_example_31()
     poly_a = Polygon_fill( Polygon2F(), heart, -pi:0.02:pi );
     poly_b = Polygon_fill( Polygon2F(), uheart, 0:0.02:2.0*pi );
     create_demo( "Example 31:Inverse hearts",
-                 "output/30/",
+                 "output/31/",
                  poly_a,poly_b,
                  true, true,
                  "Matching of two hearts",
@@ -1583,6 +1583,13 @@ function  generate_examples()
     if   is_rebuild( "output/32" )
         println( "Example 32" );
         gen_example_32()
+    end
+
+    if  is_rebuild( "output/33" )
+        println( "Example 33" );
+        poly_a,poly_b = example_10( 1, 7);
+        create_demo( "Example 33", "output/33/", poly_a, poly_b,
+                     false, true, "", true );
     end
 
 end

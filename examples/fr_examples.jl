@@ -289,7 +289,10 @@ function  example_10( zigs_a::Int64, zigs_b::Int64 )
     Q = Polygon2F( );
 
     pref::Float64 = 0.3
-    push!( P, npoint( pref/3.0, 0.0 ), npoint( pref, 0.0 ) );
+    push!( P, npoint( pref/3.0, 0.0 ) )
+    if  ( zigs_a > 1 )
+        push!( P, npoint( pref, 0.0 ) );
+    end
     push!( Q, npoint( 0.0, pref/3.0 ) );
 
     if  zigs_a % 2 == 0
