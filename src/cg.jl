@@ -190,18 +190,6 @@ function Base.show(io::IO, p::Point{D,T}) where {D,T}
 end
 
 
-function Base.show(io::IO, poly::Polygon{D,T}) where {D,T}
-    f_iter::Bool = false;
-    for p in Points( poly)
-        if  f_iter
-            print( io, "-" );
-        else
-            f_iter = true;
-        end
-        show(io, p );
-    end
-end
-
 # get_max_pairwise_distance
 function  DistInfty( P::Polygon{D,T},
                      Q::Polygon{D,T} )  where {D,T}

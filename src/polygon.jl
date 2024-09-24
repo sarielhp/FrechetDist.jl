@@ -42,7 +42,7 @@ end
         return  P;
     end
 else
-    
+
     function Points( P::Polygon{D,T} ) where {D,T}
         return  P.pnts;
     end
@@ -60,7 +60,7 @@ end
 function  Polygon_fill( P::Polygon{D,T}, f, range ) where {D,T}
     for  r ∈ range
         p = f( r );
-        push!( P, Point{D,T}(p...) ); 
+        push!( P, Point{D,T}(p...) );
    end
 
     return  P;
@@ -111,6 +111,18 @@ function  Polygon_split_single_edge( P::Polygon{D,T}, i::Int64 ) where {D, T}
         push_smart!( Q, P[ t ] );
     end
     return  Q;
+end
+
+function Base.show(io::IO, poly::Polygon{D,T}) where {D,T}
+    f_iter::Bool = false;
+    for p in polygon.Points( poly)
+        if  f_iter
+            print( io, "-" );
+        else
+            f_iter = true;
+        end
+        show(io, p );
+    end
 end
 
 
@@ -518,8 +530,8 @@ function  slice( P::Polygon{D,T}, d ) where {D,T}
     for  p ∈ P  push!( v, p[ d ] ) end;
     return  v;
 end
-    
-    
+
+
 """
     read_plt_orig_file
 
@@ -601,7 +613,65 @@ function  read_txt_file( filename, dchar = "," )
     return  P
 end
 
+function  times( P::Polygon{D,T} ) where {D,T}
+    len = polygon.total_length( P );
+    if  len == 0.0
+        return  zeros( length( P ) );
+    end
+    push!( t, 0.0 );
+    for  i  in  1:length(P) - 1
+        delta = ( Dist( P[ i ], P[ i + 1] )
+                  + Dist( Q[ i ], Q[ i + 1] ) ) / len;
+        push!( t, last(t) + delta );
+    end
+    if last( t ) != 1.0
+        pop!( t )
+        push!( t, 1.0 );
+    end
+    return  t
+end
 
+function  at_time(
+    P::Polygon{D,T},
+    times::Vector{T},
+    t::T
+) where {D,T}
+    ( t <= 0.0 ) &&  return first( P );
+    ( t >= 1.0 ) &&  return last( P );
+
+    pos = searchsortedfirst( times, t );
+    @assert( 1 < pos <= length( P ) );
+    prev = pos - 1;
+
+    delta = ( t - times[ prev ] ) / (times[ pos ] - times[ prev ] );
+    p = convex_comb( P[ prev ], P[ pos ], delta )
+
+    return  p;
+end
+
+
+"""
+    at( P, t)
+
+Returns a point along P, parameterized uniformly on [0,1]. The
+function at_time is faster, but requires preprocessing.
+"""
+
+function  at( P::Polygon{D,T}, t::T ) where {D,T}
+    tiems = times( P );
+    return  at_times( P, times, t );
+end
+
+
+function  (Base.:|>)( P::Polygon{D,T}, t::Tuple{Vararg{T,D}} )  where {D,T}
+    push!( P, Point{D,T}( t... ) );
+    return  P;
+end
+
+
+###########################################################################
+###########################################################################
+###########################################################################
 
 
 export  Polygon_move_to_origin
@@ -638,5 +708,6 @@ export  slice
 
 export  VecPnts_as_matrix
 
+export  times, at_time, at;
 
 end # // End module polygon

@@ -367,13 +367,13 @@ end
 function  Morphing_as_polygons_w_times( m::Morphing{N,T} ) where  {N,T}
     P, Q = Morphing_as_polygons( m );
     t = Vector{Float64}();
-    
+
     len = polygon.total_length( P ) + polygon.total_length( Q );
     if  len == 0.0
         return  P, Q, zeros( length( P ) );
     end
     push!( t, 0.0 );
-    for  i  in  1:length(P) - 1 
+    for  i  in  1:length(P) - 1
         delta = ( Dist( P[ i ], P[ i + 1] )
                   + Dist( Q[ i ], Q[ i + 1] ) ) / len;
         push!( t, last(t) + delta );
