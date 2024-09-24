@@ -7,6 +7,8 @@ using Printf
 using CSV, DataFrames
 using FrechetDist
 using FrechetDist.cg
+using FrechetDist.cg.polygon
+using FrechetDist.cg.point
 using PrettyTables
 #using Profile
 #using InteractiveUtils
@@ -55,7 +57,7 @@ function   PID_read_polygon( PID::PolygonsInDir,
         return  false;
     end
 
-    poly = Polygon_read_file( filename );
+    poly = polygon.read_file( filename );
     width = frechet_width_approx( poly );
 
     if  ( cardin( poly ) <= 1 )

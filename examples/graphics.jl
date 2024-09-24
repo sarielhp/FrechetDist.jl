@@ -224,12 +224,13 @@ end
 function  output_polygons_to_file(  list::VecPolygon2F, filename,
                                     f_pdf::Bool,
                                     f_draw_vertices::Bool = false,
-                                    f_matching::Bool = false
+                                    f_matching::Bool = false;
+                                    u_width::Float64 = 3.0
                                     )
     c,cr,bb = cairo_setup( filename, list, f_pdf );
 
     println( BBox_width( bb) );
-    u_width::Float64 = 3.0; #1024.0 * (BBox_width( bb) / 200.0);
+     #1024.0 * (BBox_width( bb) / 200.0);
 #    u_width = 3;
 #    exit( -1 );
 
@@ -247,7 +248,7 @@ function  output_polygons_to_file(  list::VecPolygon2F, filename,
         if  len == 2  &&  count == 2
             set_source_rgb(cr, 0.0, 0.0, 1.0 );
         else
-            set_source_rgb( cr, 0.0, 1.0, 0.0 );
+            set_source_rgb( cr, 1.0, 0.0, 0.0 );
         end
 
         draw_polygon( cr, poly );

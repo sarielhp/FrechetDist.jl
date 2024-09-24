@@ -1727,7 +1727,7 @@ function  frechet_simplify_to_cardin( P::Polygon{D,T}, sz::Int64 ) where {D,T}
     @assert( cardin( P ) >= 2 );
     if  sz <= 2
         push!( pindices, 1, cardin( P ) );
-        return  Polygon_spine( P ), pindices;
+        return  spine( P ), pindices;
     end
     w = frechet_width_approx( P );
     ratio = 0.8;

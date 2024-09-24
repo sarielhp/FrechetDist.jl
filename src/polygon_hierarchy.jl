@@ -195,7 +195,7 @@ function ph_init( P::Polygon{D,T}, ph_lock ) where  {D,T}
     ph.plt = frechet_palette( P );
 
     w = frechet_width_approx( P );
-    ph_push!( ph, Polygon_spine( P ), w );
+    ph_push!( ph, spine( P ), w );
 
     return  ph;
 end

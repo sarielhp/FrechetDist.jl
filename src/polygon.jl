@@ -455,6 +455,37 @@ function  Polygon_sample_uniformly( P::Polygon{D,T}, n::Int64 ) where {D,T}
 end
 
 
+function  spine( P::Polygon{D,T} )  where {D,T}
+    pout = Polygon{D,T}();
+    if  ( cardin( P ) <= 0 )
+        return  pout;
+    end
+    if  ( cardin( P ) <= 1 )
+        Polygon_push( pout, P[ 1 ] );
+        Polygon_push( pout, P[ 1 ] );
+        return  pout;
+    end
+    Polygon_push( pout, P[ 1 ] );
+    Polygon_push( pout, last( P ) );
+
+    return  pout
+end
+
+"""
+    Polygon_sample
+
+Randomly sample each vertex of input polygon, with probability prob.
+"""
+function  Polygon_sample( P::Polygon{D,T}, prob::Float64 ) where  {D,T}
+    out = Polygon{D,T}();
+    for  p in P
+        if  rand() <= prob
+            push!( out, p )
+        end
+    end
+
+    return  out;
+end
 
 
 
@@ -574,7 +605,7 @@ end
 
 
 export  Polygon_move_to_origin
-export  Polygon_sample_uniformly, push_smart!, Polygon_spine
+export  Polygon_sample_uniformly, push_smart!, spine
 
 export  read_file
 export  read_plt_orig_file

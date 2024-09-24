@@ -203,16 +203,19 @@ end
 
 
 
-function  plot_curves_diagram( P::Polygon2F, Q::Polygon2F,
-                               filename_diagram,
-                               f_draw_c::Bool = false,
-                               f_draw_ve::Bool = true,
-                               f_draw_graph::Bool = true,
-                               f_m_out_defined = false,
-                               m_out = nothing,
-                               title::String = "",
-                               f_draw_graph_only::Bool = false;
-                               f_draw_grid::Bool = false )
+function  plot_curves_diagram(
+    P::Polygon2F, Q::Polygon2F,
+    filename_diagram,
+    f_draw_c::Bool = false,
+    f_draw_ve::Bool = true,
+    f_draw_graph::Bool = true,
+    f_m_out_defined = false,
+    m_out = nothing,
+    title::String = "",
+    f_draw_graph_only::Bool = false;
+    f_draw_grid::Bool = false,
+    f_draw_monotone = false
+)
 ###----------------------------------------------------------------------
 ### sub-function draw_graph start
     function  draw_graph( plt )
@@ -318,11 +321,21 @@ function  plot_curves_diagram( P::Polygon2F, Q::Polygon2F,
         if  ( f_draw_ve )
             m_ve = frechet_ve_r_compute( P, Q );
             p_ve_diag = Morphing_extract_prm( m_ve );
-            m_ve_diag = Polygon_as_matrix( p_ve_diag );
+            m_ve_diag = Polygon_as_matrix( p_ve_diag );            
+
             plot!(plt, m_ve_diag[1,:], m_ve_diag[2,:],
                 linewidth=4,
                 label=:none, ticks=false, showaxis=false,
                 grid=:false, legend=false, framestyle=:none, lc=:red);
+            if  ( f_draw_monotone )
+                mrp_ve_m = Morphing_monotonize( m_ve );
+                p_ve_m = Morphing_extract_prm( mrp_ve_m );
+                m_ve_m = Polygon_as_matrix( p_ve_m );            
+                plot!(plt, m_ve_m[1,:], m_ve_m[2,:],
+                    linewidth=4,
+                    label=:none, ticks=false, showaxis=false,
+                    grid=:false, legend=false, framestyle=:none, lc=:yellow);
+            end
         end
         f_debug  &&  println( "Drawing arrows..." );
     end
@@ -681,7 +694,8 @@ function  create_demo( title::String,
     # Creating movies/diagrams/etc
     #####################################################################
 
-    output_polygons_to_file(  [poly_a, poly_b], prefix * "curves.png", false );
+    output_polygons_to_file(  [poly_a, poly_b], prefix * "curves.png", false;
+                          u_width=10.0);
     f_debug && println( "A10.a..." );
 
     f_debug && println( "A10.b..." );
@@ -792,6 +806,10 @@ function  create_demo( title::String,
         plot_curves_diagram( poly_a, poly_b, prefix*"ve_r_diagram.png",
                              false, true, true
                              );
+        plot_curves_diagram( poly_a, poly_b, prefix*"ve_r_diagram_m.pdf",
+            false, true, true;     f_draw_monotone = true );
+        plot_curves_diagram( poly_a, poly_b, prefix*"ve_r_diagram_m.png",
+            false, true, true; f_draw_monotone = true );
     end
     # println( "   ", prefix*"f_c_movie.mp4" );
 
@@ -939,6 +957,8 @@ function  create_demo( title::String,
     if  ( f_draw_ve  )
             write( fl, "<h2>VE-"*FrechetStr*" Retractable solution:</h2>" )
         write( fl, "<img src=\"ve_r_diagram.png\">\n" );
+        write( fl, "<br><a href=\"ve_r_diagram_m.png\">Monotonized...</a>\n" );
+
     end
 
     write( fl, "<h2>" * FrechetStr * " cont+monotone solution:</h2>" )
@@ -1392,7 +1412,7 @@ function  generate_examples()
 
     if  is_rebuild( "output/10" )
         println( "Example 10" );
-        poly_a,poly_b = example_10( 3, 4);
+        poly_a,poly_b = example_10( 3, 7);
         create_demo( "Example 10", "output/10/", poly_a,poly_b,
                      false, true, "", true );
     end
