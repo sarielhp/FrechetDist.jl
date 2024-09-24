@@ -1587,7 +1587,7 @@ function  generate_examples()
 
     if  is_rebuild( "output/33" )
         println( "Example 33" );
-        poly_a,poly_b = example_10( 1, 7);
+        poly_a,poly_b = example_10( 0, 7);
         create_demo( "Example 33", "output/33/", poly_a, poly_b,
                      false, true, "", true );
     end
