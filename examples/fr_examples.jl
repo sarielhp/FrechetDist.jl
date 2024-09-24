@@ -295,7 +295,7 @@ function  example_10( zigs_a::Int64, zigs_b::Int64 )
     end
     push!( Q, npoint( 0.0, pref/3.0 ) );
 
-    if  zigs_a % 2 == 0
+    if  (zigs_a > 0 )  &&  ( zigs_a % 2 == 0 ) 
         zigs_a = zigs_a + 1
     end
     if  zigs_b % 2 == 0
@@ -316,7 +316,7 @@ function  example_10( zigs_a::Int64, zigs_b::Int64 )
         push!( P, npoint( pref + d_a * i, y ) )
     end
     push!( P, npoint(1.0 - pref/3.0, 1.0 ) )
-
+    
     f_left = false;
     x::Float64 = 0.0;
     for  i in 1:zigs_b
