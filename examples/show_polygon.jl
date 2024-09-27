@@ -185,10 +185,28 @@ function  output_polygons_to_file(  list::VecPolygon2F, filename,
         count = count + 1;
         println( count, "/", len, "   |P|:", cardin( poly ) );
         set_line_width(cr, 3.0 );
-        if  len == 2  &&  count == 2
-            set_source_rgb(cr, 0.0, 0.0, 1.0 );
-        else
+        if  count == 1
             set_source_rgb( cr, 1.0, 0.0, 0.0 );
+        elseif  count == 2
+            set_source_rgb(cr, 0.0, 0.0, 1.0 );
+        elseif  count == 3 
+            set_source_rgb(cr, 0.0, 1.0, 0.0 );
+        elseif  count == 4 
+            set_source_rgb(cr, 1.0, 1.0, 0.0 );
+        elseif  count == 5 
+            set_source_rgb(cr, 1.0, 0.0, 1.0 );
+        elseif  count == 6
+            set_source_rgb(cr, 0.0, 1.0, 1.0 );
+        elseif  count == 7
+            set_source_rgb(cr, 0.5, 0.5, 1.0 );
+        elseif  count == 8
+            set_source_rgb(cr, 0.5, 1.0, 0.5 );
+        elseif  count == 9
+            set_source_rgb(cr, 0.3, 0.5, 0.7 );
+        elseif  count == 10
+            set_source_rgb(cr, 0.7, 0.2, 0.4 );
+        else
+            set_source_rgb(cr, 0.5, 0.1, 0.5 );
         end
 
         draw_polygon( cr, poly, T );
@@ -233,7 +251,7 @@ function  plt_show( ARGS )
     bb = BBox2F();
     for  i in 1:num_args
         println( "Reading: ", ARGS[ i ] );
-        poly_a = Polygon_read_file( ARGS[ i ] );
+        poly_a = read_file( ARGS[ i ] );
         push!( list, poly_a );
         BBox_bound( bb, poly_a );
     end

@@ -437,7 +437,7 @@ end
 
     Return a range of distances. The lower end is the VE-Frechet
     distance, the upper end is a constructive upper bound on the
-    Frechet idstnace.
+    Frechet distnace.
 
 """
 function   frechet_ve_r_compute_range( P::Polygon{N,T},
@@ -752,7 +752,7 @@ function    frechet_c_mono_approx_subcurve(
             if  ( new_t >= max_t )
                 max_t = new_t;
             else # new_t < max_t
-                q = Segment_get_on( seg, max_t )
+                q = at( seg, max_t )
             end
             max_d = max( max_d, Dist( P[ j ], q ) );
             push!( pes, EventPoint( P[ j ], j, PT_VERTEX, 0.0 ) );
@@ -844,7 +844,7 @@ function   add_points_along_seg( pout::Polygon{N,T},
             continue;
         end
 
-        push_smart!( pout, Segment_get_on( seg, tm ) )
+        push_smart!( pout, at( seg, tm ) )
     end
 end
 

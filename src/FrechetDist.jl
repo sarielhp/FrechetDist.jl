@@ -59,6 +59,8 @@ export  Morphing_monotone_leash
 export  frechet_refinement;
 export  frechet_mono_via_refinement_delta
 
+export  Morphing_as_function_w_times;
+
 
 export  Morphing_SweepDist_price
 export  Morphing_SweepDist_approx_price
@@ -67,6 +69,7 @@ export  Morphing_get_max_edges_err;
 
 export  Morphing_sample_uniformly
 
+export  polygons_get_loc_at_time
 
 #####################################################################
 export  frechet_d_compute

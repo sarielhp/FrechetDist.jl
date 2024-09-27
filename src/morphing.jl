@@ -386,6 +386,27 @@ function  Morphing_as_polygons_w_times( m::Morphing{N,T} ) where  {N,T}
 end
 
 
+function  Morphing_as_function_w_times( m::Morphing{N,T} ) where  {N,T}
+    P, Q = Morphing_as_polygons( m );
+    t = Vector{Float64}();
+
+    len = polygon.total_length( P );
+    if  len == 0.0
+        return  P, Q, zeros( length( P ) );
+    end
+    push!( t, 0.0 );
+    for  i  in  1:length(P) - 1
+        delta = Dist( P[ i ], P[ i + 1] ) / len;
+        push!( t, last(t) + delta );
+    end
+    if last( t ) != 1.0
+        pop!( t )
+        push!( t, 1.0 );
+    end
+    return  P, Q, t
+end
+
+
 function  polygons_get_loc_at_time( P::Polygon{D,T},
                                     Q::Polygon{D,T},
                                     times::Vector{T},

@@ -46,7 +46,7 @@ function  Segment{D,T}() where{D,T}
     return   Segment{D,T}(Point{D,T}(), Point{D,T}() );
 end
 
-function  Segment_get_on( seg::Segment{D,T}, t::Float64 ) where{D,T}
+function  at( seg::Segment{D,T}, t::Float64 ) where{D,T}
     return convex_comb( seg.p, seg.q, t );
 end
 
@@ -347,7 +347,7 @@ function  Segment_get_bisection_point( seg::Segment{D,T}, p::Point{D,T},
     tm::Float64 = ( pos - point.dot( dir, seg.p ) ) / point.dot( dir, vec ) ;
 
     f_on::Bool = (0.0 <= tm <= 1.0);
-    out = Segment_get_on( seg, tm );
+    out = at( seg, tm );
 
 #    println( "" );
 #    println( "DDDD 1:", Dist( p, out ), "  D2: ", Dist( q, out ) );
@@ -364,7 +364,7 @@ export  Segment, Segment2F;
 
 export  Segment_get_bisection_point
 export  nn_point
-export  Segment_get_on, Segment_get_convex_coef
+export  at, Segment_get_convex_coef
 export  Segment_length
 export  Segment_get_bisection_point
 export  dist_iseg_nn_point

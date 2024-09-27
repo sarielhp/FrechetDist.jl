@@ -421,8 +421,8 @@ function  draw_frames( cr, sp::Segment2F, sq::Segment2F,
 
         set_line_width(cr, 10.5);
         set_source_rgb( cr, 1,0,0 );
-        p::Point2F = Segment_get_on( sp, t );
-        q::Point2F = Segment_get_on( sq, t );
+        p::Point2F = segment.at( sp, t );
+        q::Point2F = segment.at( sq, t );
 
         move_to( cr,  p[1], p[2]  )
         line_to( cr, q[1], q[2] );
@@ -623,8 +623,8 @@ function  draw_frames_images( cm::ContextMovie, sp::Segment2F, sq::Segment2F,
     t::Float64 = 0.0;
 
     for i in 1:frames
-        p::Point2F = Segment_get_on( sp, t );
-        q::Point2F = Segment_get_on( sq, t );
+        p::Point2F = segment.at( sp, t );
+        q::Point2F = segment.at( sq, t );
 
         draw_image_record( cm, P, Q, p, q, vec )
 #        cm::ContextMovie, P, Q, p, q,

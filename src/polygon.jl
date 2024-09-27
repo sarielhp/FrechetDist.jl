@@ -457,8 +457,7 @@ function  Polygon_sample_uniformly( P::Polygon{D,T}, n::Int64 ) where {D,T}
 
         ns::Int64 = floor( Int64, ell / delta );
         for  j  in 1:ns
-            push_smart!( new_P,
-                                Segment_get_on( s, j / ( ns + 1 ) ) );
+            push_smart!( new_P, at( s, j / ( ns + 1 ) ) );
         end
         push_smart!( new_P, P[ i + 1 ] );
     end
@@ -658,7 +657,7 @@ function at_time is faster, but requires preprocessing.
 """
 
 function  at( P::Polygon{D,T}, t::T ) where {D,T}
-    tiems = times( P );
+    times = times( P );
     return  at_times( P, times, t );
 end
 
