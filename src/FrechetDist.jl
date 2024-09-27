@@ -55,6 +55,7 @@ export  Morphing_combine, Morphing_extract_prm
 export  Morphing_as_polygons
 export  Morphing_extract_vertex_radii, Morphing_extract_offsets
 export  Morphing_monotone_leash
+export  morphing_profile;
 
 export  frechet_refinement;
 export  frechet_mono_via_refinement_delta

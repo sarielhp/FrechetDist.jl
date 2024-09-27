@@ -649,6 +649,14 @@ function  at_time(
 end
 
 
+function  reverse( P::Polygon{D,T} ) where {D,T}
+    Q = Polygon{D,T}();
+    for  i ∈ length( P ):-1:1
+        push!( Q, P[ i ] );
+    end
+    return  Q;
+end
+
 """
     at( P, t)
 
@@ -704,6 +712,7 @@ export  Polygon2I, Polygon2F;
 export  cardin
 export  Polygon_simplify_ext
 export  slice
+export  reverse
 
 export  VecPnts_as_matrix
 

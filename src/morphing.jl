@@ -990,6 +990,19 @@ function  Morphing_SweepDist_price( m::Morphing{N,T} ) where  {N,T}
     return  price;
 end
 
+function  morphing_profile( m::Morphing{D,T}, n::Int64 ) where  {D,T}
+    PB,QB,times = Morphing_as_function_w_times( m );
+    lP = total_length( PB );
+    X = range(0, lP, length=n)
+    
+    Y = Vector{Float64}();    
+    for x ∈ X
+        p, q = polygons_get_loc_at_time( PB, QB, times, x / lP );
+        push!( Y, Dist(p,q ) );
+    end
+    return  X, Y;
+end
+
 
 Morphing2F = Morphing{2,Float64};
 

@@ -7,12 +7,14 @@ using Printf
 using CSV, DataFrames
 using FrechetDist
 using FrechetDist.cg
+using FrechetDist.cg.polygon
 using PrettyTables
 
 
 ######################################################################
 
 function  plt_convert( filename )
+#    println( "FILENAME: [",filename,"]" );
     if  ! isfile( filename )
         println( "Error: No file ", filename );
         exit( -1 );
@@ -21,9 +23,9 @@ function  plt_convert( filename )
     if   s != "Geolife trajectory"
         return
     end
-    p = Polygon_read_plt_orig_file( filename );
+    p = read_plt_orig_file( filename );
     println( "Rewriting: ", filename );
-    Polygon_write_to_file( p, filename );
+    write_to_file( p, filename );
 end
 
 function  plt_convert_in_file( filename )
@@ -42,5 +44,6 @@ if   num_args == 0
 end
 
 for  i in 1:num_args
-    plt_convert_in_file( ARGS[ i ] );
+    println( "--- ", ARGS[ i ] );
+    plt_convert( ARGS[ i ] );
 end

@@ -752,7 +752,7 @@ function    frechet_c_mono_approx_subcurve(
             if  ( new_t >= max_t )
                 max_t = new_t;
             else # new_t < max_t
-                q = at( seg, max_t )
+                q = segment.at( seg, max_t )
             end
             max_d = max( max_d, Dist( P[ j ], q ) );
             push!( pes, EventPoint( P[ j ], j, PT_VERTEX, 0.0 ) );
@@ -844,7 +844,7 @@ function   add_points_along_seg( pout::Polygon{N,T},
             continue;
         end
 
-        push_smart!( pout, at( seg, tm ) )
+        push_smart!( pout, segment.at( seg, tm ) )
     end
 end
 

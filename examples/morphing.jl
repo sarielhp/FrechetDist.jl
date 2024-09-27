@@ -19,26 +19,29 @@ function frechet_comp( P::Polygon{D,T}, Q::Polygon{D,T}
      )::Int64  where {D,T}
     ratio::Float64 = 5.0;
 
+    #P = polygon.reverse( P );
+    
     println( "|P|:", cardin( P ), "  |Q| :", cardin( Q ) );
 
-    lP = total_length( P );
+    m_e = frechet_c_compute( P, Q );
     m = frechet_mono_via_refinement( P, Q, 1.00001 )[1];
-    
-    PA, QA = Morphing_as_polygons( m );
-    output_polygons_to_file( [ PA, QA ], "matching.pdf", false, false, );
+    #m = frechet_mono_via_refinement( P, Q, 1.00001 )[1];
+    ma = frechet_c_approx( P, Q, 1.1 );
+    println( "Frechet_c_compute:" );
+    @time m_e = frechet_c_compute( P, Q );
+    println( "Frechet_move_via_refinement:" );
+    @time m = frechet_mono_via_refinement( P, Q, 1.00001 )[1];
+    println( "Frechet_c_approx:" );
+    @time ma = frechet_c_approx( P, Q, 4.0 );
 
-    PB,QB,times = Morphing_as_function_w_times( m );
-    X = range(0, lP, length=400)
-    Y = Vector{Float64}();
+    n = 400;
+    X,Y = morphing_profile( m, n );
+    XA,YA = morphing_profile( ma, n );
+    XE,YE = morphing_profile( m_e, n );
     
-    for x ∈ X
-        p, q = polygons_get_loc_at_time( PB, QB, times, x / lP );
-        push!( Y, Dist(p,q ) );
-    end
-
-    plt = plot(X, [Y],  dpi=400)
+    plt = plot(X, [Y, YA, YE],  dpi=400)
     savefig( plt, "P.png" );
-
+    
     output_frechet_movie_mp4( m, "matching.mp4" );
     
     return  0;
