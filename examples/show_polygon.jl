@@ -155,7 +155,7 @@ function  cairo_setup( filename::String, list::VecPolygon2F,
     cr = CairoContext(c);
 
     T = set_transform( cr, iwidth, iheight, bbo );
-    
+
     if  ( ! f_pdf )
         set_source_rgb(cr, 1, 1, 1);
         paint(cr);
@@ -171,43 +171,32 @@ function  output_polygons_to_file(  list::VecPolygon2F, filename,
                                     f_matching::Bool = false
                                     )
     c,cr,bb, T = cairo_setup( filename, list, f_pdf );
+    colors =[ 1.0 0.0 0.0;
+              0.0 0.0 1.0;
+              0.0 0.5 0.0;
+              1.0 1.0 0.0;
+              1.0 0.0 1.0;
+              0.0 1.0 1.0;
+              0.5 0.5 1.0;
+              0.5 1.0 0.5;
+              0.3 0.5 0.7;
+              0.7 0.2 0.4;
+              0.5 0.1 0.5 ];
+
 
     u_width::Float64 = 1024.0 * (BBox_width( bb) / 100.0);
-
-    #BBox_print( bb );
-    set_source_rgb(cr,0.9,0.9,0.9);    # light gray
-#    set_line_width(cr, 10.0);
-    set_source_rgba(cr, 1, 0.2, 0.2, 0.6);
 
     len = length( list );
     count::Int64 = 0;
     for  poly in  list
         count = count + 1;
+        ind = 1 + ( ( count - 1 ) % size(colors,1));
         println( count, "/", len, "   |P|:", cardin( poly ) );
-        set_line_width(cr, 3.0 );
-        if  count == 1
-            set_source_rgb( cr, 1.0, 0.0, 0.0 );
-        elseif  count == 2
-            set_source_rgb(cr, 0.0, 0.0, 1.0 );
-        elseif  count == 3 
-            set_source_rgb(cr, 0.0, 1.0, 0.0 );
-        elseif  count == 4 
-            set_source_rgb(cr, 1.0, 1.0, 0.0 );
-        elseif  count == 5 
-            set_source_rgb(cr, 1.0, 0.0, 1.0 );
-        elseif  count == 6
-            set_source_rgb(cr, 0.0, 1.0, 1.0 );
-        elseif  count == 7
-            set_source_rgb(cr, 0.5, 0.5, 1.0 );
-        elseif  count == 8
-            set_source_rgb(cr, 0.5, 1.0, 0.5 );
-        elseif  count == 9
-            set_source_rgb(cr, 0.3, 0.5, 0.7 );
-        elseif  count == 10
-            set_source_rgb(cr, 0.7, 0.2, 0.4 );
-        else
-            set_source_rgb(cr, 0.5, 0.1, 0.5 );
-        end
+        
+        set_line_width(cr, 2.0 + 3.0 / count );
+        println( "IND = ", ind );
+        color = colors[ ind, : ];
+        set_source_rgb( cr, color... );
 
         draw_polygon( cr, poly, T );
     end
@@ -266,6 +255,8 @@ function  plt_show( ARGS )
 
     output_polygons_to_file( list, "curves.pdf", true );
     println( "Generated curves.pdf" );
+    output_polygons_to_file( list, "curves.png", false );
+    println( "Generated curves.png" );
 end
 
 ####################################################################

@@ -212,43 +212,6 @@ end
 
 
 
-
-
-
-
-#function  vert( p::Polygon{D,T}, i::Int64 ) where {D,T}
-#    return  p.pnts[ i ];
-#end
-
-
-
-# Returns a polygon where the points are sampled uniformly along the polygon
-#=
-function  Polygon_sample_uniformly_old( poly::Polygon{D,T}, n::Int64 ) where {D,T}
-    prefix_lens = Polygon_prefix_lengths( poly );
-    len = last( prefix_lens );
-
-    delta = len / (n-1);
-
-    new_poly::Polygon{D,T} = Polygon{D,T}( Point{D,T}[] );
-    push!( new_poly.pnts, first( poly.pnts ) );
-
-    for  i  in  2:n-1
-        t = delta * (i-1);
-        p = Polygon_get_point_on( poly, prefix_lens, t );
-        push!( new_poly.pnts, p );
-    end
-    push!( new_poly.pnts, last( poly.pnts ) );
-
-    return  new_poly;
-end
-=#
-
-
-
-
-
-
 distance(p1::Point{D,T}, p2::Point{D,T}) where {D,T} = norm( sub( p1, p2) )
 
 function distance(y::Point{D,T}, l::Line{D,T}) where {D,T}

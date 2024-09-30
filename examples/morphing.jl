@@ -9,7 +9,7 @@ using FrechetDist.cg.polygon
 using FrechetDist.cg.segment
 using Profile
 using InteractiveUtils
-using Plots; 
+using Plots;
 
 include( "graphics.jl" )
 
@@ -20,30 +20,35 @@ function frechet_comp( P::Polygon{D,T}, Q::Polygon{D,T}
     ratio::Float64 = 5.0;
 
     #P = polygon.reverse( P );
-    
+
     println( "|P|:", cardin( P ), "  |Q| :", cardin( Q ) );
 
-    m_e = frechet_c_compute( P, Q );
-    m = frechet_mono_via_refinement( P, Q, 1.00001 )[1];
+    m_c = frechet_c_compute( P, Q );
+    m_a = frechet_c_approx( P, Q, 1.1 );
     #m = frechet_mono_via_refinement( P, Q, 1.00001 )[1];
-    ma = frechet_c_approx( P, Q, 1.1 );
-    println( "Frechet_c_compute:" );
-    @time m_e = frechet_c_compute( P, Q );
-    println( "Frechet_move_via_refinement:" );
-    @time m = frechet_mono_via_refinement( P, Q, 1.00001 )[1];
-    println( "Frechet_c_approx:" );
-    @time ma = frechet_c_approx( P, Q, 4.0 );
 
+    cardi = length( P ) + length( Q ) 
+    P_d, Q_d = P, Q;
+    if  ( cardi < 100 )
+        P_d = Polygon_sample_uniformly( P, 60*length( P ) );
+        Q_d = Polygon_sample_uniformly( Q, 60*length( Q ) );
+    end
+    m_d = frechet_d_compute( P_d, Q_d );
+
+
+    
     n = 400;
-    X,Y = morphing_profile( m, n );
-    XA,YA = morphing_profile( ma, n );
-    XE,YE = morphing_profile( m_e, n );
-    
-    plt = plot(X, [Y, YA, YE],  dpi=400)
+    X_C,Y_C = morphing_profile( m_c, n );
+    X_A,Y_A = morphing_profile( m_a, n );
+#    XE,YE = morphing_profile( m_e, n );
+    X_D,Y_D = morphing_profile( m_d, n );
+
+    plt = plot(X_C, [ Y_C, Y_D],  dpi=400, lw=4,
+              labels=["Retractable" "Fréchet"] );
     savefig( plt, "P.png" );
-    
-    output_frechet_movie_mp4( m, "matching.mp4" );
-    
+
+    #output_frechet_movie_mp4( m, "matching.mp4" );
+
     return  0;
 end
 
