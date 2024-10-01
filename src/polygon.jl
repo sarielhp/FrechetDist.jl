@@ -676,6 +676,46 @@ function  (Base.:|>)( P::Polygon{D,T}, t::Tuple{Vararg{T,D}} )  where {D,T}
 end
 
 
+function  wiggle_seg( O::Polygon{D,T}, p, q, n, rate ) where {D,T}
+    dir = q - p;
+    vec = rate * dir;
+
+    # Rotate by 90 degrees...
+    vec[ 2 ], vec[ 1 ] = vec[ 1 ],vec[ 2 ];
+
+    delta = dir / ( n + 1 );
+    curr = p;
+    push_smart!( O, p );
+    for  i  in 1:n
+        curr = curr + delta;
+        u = curr + vec;
+        vec = -1.0 * vec;
+        push_smart!( O, u );
+    end
+    push_smart!( O, q );
+end
+
+
+"""
+    wiggle
+
+Generates a version of the original polygon, where each segment is
+replaced by a "wiggle" with n vertices, and displacement of
+wave_size. Intended for 2d, but might work in higher dimensions.
+
+"""
+
+function  wiggle( P::Polygon{D,T}, n::Int64, wave_size::Float64 ) where {D,T}
+    O = Polygon{D,T}();
+    ( total_length( P ) == 0.0 )  &&  return  O;
+
+    for i ∈ 1:length(P) - 1
+        wiggle_seg( O, P[i], P[i + 1], n, wave_size );
+    end
+
+    return  O;
+end
+
 ###########################################################################
 ###########################################################################
 ###########################################################################

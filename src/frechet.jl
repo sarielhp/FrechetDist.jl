@@ -1198,7 +1198,8 @@ function  frechet_c_approx( poly_a::Polygon{N,T},
                 f_debug  &&  println( "VVV Calling frechet_mono_via_refinement" );
                 m = frechet_mono_via_refinement( poly_a, poly_b )[ 1 ];
                 m.ratio = 1.0;
-#                exit( -1 ); # DDDD
+                m.lower_bound = m.leash;
+                #                exit( -1 ); # DDDD
                 return  m;
             end
 
@@ -1273,8 +1274,10 @@ function  frechet_c_approx( poly_a::Polygon{N,T},
                     polygon.total_length( poly_b ) );
             end
             mm_out.ratio = ratio;
+            mm_out.lower_bound = m.leash / ratio;
             return  mm_out;
-#            break;
+
+            #            break;
         end
         f_do_one_round = true;
         if  f_debug
@@ -1371,6 +1374,28 @@ function    offsets_copy_map( map_PS, offsets )
         offs[ i ] = offsets[ map_PS[ i ] ];
     end
     return  offs;
+end
+
+
+function  simplify_morphing_sensitive( m::Morphing{D,T},
+                                       factor::Float64 ) where {D,T}
+    pl, ql = Morphing_extract_vertex_radii( m );
+
+    lower_bound = m.lower_bound;
+
+    println( "LLLlower_bound: ", lower_bound );
+    pz = ( ( lower_bound * ones( length( pl ) ) ) - pl ) / factor
+    qz = ( ( lower_bound * ones( length( ql ) ) ) - ql ) / factor
+
+    propogate_mins( pz, 1 );
+    propogate_mins( qz, 1 );
+
+    #println( pz );
+    
+    PS, p_indices, f_PS_exact = Polygon_simplify_radii_ext( m.P, pz );
+    QS, q_indices, f_QS_exact = Polygon_simplify_radii_ext( m.Q, qz );
+
+    return PS, QS;
 end
 
 

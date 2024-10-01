@@ -165,23 +165,13 @@ function  cairo_setup( filename::String, list::VecPolygon2F,
 end
 
 
+
 function  output_polygons_to_file(  list::VecPolygon2F, filename,
                                     f_pdf::Bool,
                                     f_draw_vertices::Bool = false,
                                     f_matching::Bool = false
                                     )
     c,cr,bb, T = cairo_setup( filename, list, f_pdf );
-    colors =[ 1.0 0.0 0.0;
-              0.0 0.0 1.0;
-              0.0 0.5 0.0;
-              1.0 1.0 0.0;
-              1.0 0.0 1.0;
-              0.0 1.0 1.0;
-              0.5 0.5 1.0;
-              0.5 1.0 0.5;
-              0.3 0.5 0.7;
-              0.7 0.2 0.4;
-              0.5 0.1 0.5 ];
 
 
     u_width::Float64 = 1024.0 * (BBox_width( bb) / 100.0);
@@ -190,13 +180,11 @@ function  output_polygons_to_file(  list::VecPolygon2F, filename,
     count::Int64 = 0;
     for  poly in  list
         count = count + 1;
-        ind = 1 + ( ( count - 1 ) % size(colors,1));
         println( count, "/", len, "   |P|:", cardin( poly ) );
         
         set_line_width(cr, 2.0 + 3.0 / count );
         println( "IND = ", ind );
-        color = colors[ ind, : ];
-        set_source_rgb( cr, color... );
+        set_source_rgb( cr, get_color( count - 1 )... );
 
         draw_polygon( cr, poly, T );
     end

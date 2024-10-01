@@ -350,9 +350,14 @@ function  Morphing_as_polygons( m::Morphing{N,T} ) where  {N,T}
     P = Polygon{N,T}();
     Q = Polygon{N,T}();
 
+    #leash::Float64 = 0.0;
     for  i  in eachindex( m.pes )
         push!( P, m.pes[ i ].p );
         push!( Q, m.qes[ i ].p );
+        d = Dist( m.pes[ i ].p, m.qes[ i ].p )
+        #=if  ( d > leash )
+            leash = max( leash, d );
+        end=#
     end
 
     return  P, Q
@@ -372,11 +377,29 @@ function  Morphing_as_polygons_w_times( m::Morphing{N,T} ) where  {N,T}
     if  len == 0.0
         return  P, Q, zeros( length( P ) );
     end
+    c_z::Int64 = 0;
+    min_delta::Float64 = len;
+    for  i  in  1:length(P) - 1
+        delta = ( Dist( P[ i ], P[ i + 1] )
+                  + Dist( Q[ i ], Q[ i + 1] ) );
+        if  ( delta == 0.0 )
+            c_z = c_z + 1;
+            continue;
+        end
+        min_delta = min( min_delta, delta );
+    end
+    fake_delta = min_delta/8.0;
+    len = len + fake_delta * c_z;
+
     push!( t, 0.0 );
     for  i  in  1:length(P) - 1
         delta = ( Dist( P[ i ], P[ i + 1] )
-                  + Dist( Q[ i ], Q[ i + 1] ) ) / len;
-        push!( t, last(t) + delta );
+                  + Dist( Q[ i ], Q[ i + 1] ) );
+        if  ( delta == 0.0 )
+            delta = fake_delta;
+        end
+        next_t = min( last(t) + ( delta / len ), 1.0 );
+        push!( t, next_t );
     end
     if last( t ) != 1.0
         pop!( t )
@@ -395,9 +418,23 @@ function  Morphing_as_function_w_times( m::Morphing{N,T} ) where  {N,T}
         return  P, Q, zeros( length( P ) );
     end
     push!( t, 0.0 );
+    c_z = 0;
+    fake_delta = len / (4 + length( P ) );
     for  i  in  1:length(P) - 1
         delta = Dist( P[ i ], P[ i + 1] ) / len;
-        push!( t, last(t) + delta );
+        if  ( delta == 0.0 )
+            c_z = c_z + 1;
+            len = len + fake_delta;
+        end
+    end
+    for  i  in  1:length(P) - 1
+        if  ( Dist( P[ i ], P[ i + 1] ) == 0.0 )
+            delta = fake_delta / len;
+        else
+            delta = Dist( P[ i ], P[ i + 1] ) / len;
+        end
+                
+        push!( t, min( last(t) + delta, 1.0 ) );
     end
     if last( t ) != 1.0
         pop!( t )
@@ -416,18 +453,47 @@ function  polygons_get_loc_at_time( P::Polygon{D,T},
     ( t >= 1.0 ) &&  return last( P ), last( Q );
 
     pos = searchsortedfirst( times, t );
-    @assert( 1 < pos <= length( P ) );
-
+    if  (! ( 1 < pos <= length( P ) ))
+        println( pos );
+        println( times[ pos ] );
+        println( t ) ;
+        @assert( 1 < pos <= length( P )  );
+    end
+    
+    #= 
+    println( "POS : ", pos );
+    (pos > 1 )  &&  println( "t[pos-1]: ", times[ pos - 1 ] )
+    println( "t[pos]: ", times[ pos ] )
+    println( "qeury: ", t );
+    =#
     prev = pos - 1;
 
-    delta = ( t - times[ prev ] ) / (times[ pos ] - times[ prev ] );
-    p = convex_comb( P[ prev ], P[ pos ], delta )
-    q = convex_comb( Q[ prev ], Q[ pos ], delta )
+    while  ( prev > 1 )  &&  (times[ prev - 1 ] == times[ prev ] )
+        println( "GOING BACK!" );
+        prev = prev - 1;
+    end
+    while  ( pos < length( times ) )  &&  (times[ pos ] == times[ pos + 1 ] )
+        pos = pos + 1;
+    end
+    @assert( times[ prev ] <= t <= times[ pos ] );
+    
+    if  ( ( prev + 1 ) == pos )  
+        delta = ( t - times[ prev ] ) / (times[ pos ] - times[ prev ] );
+        p = convex_comb( P[ prev ], P[ pos ], delta )
+        q = convex_comb( Q[ prev ], Q[ pos ], delta )
+        #println( "DDD: ", Dist( P[prev], Q[prev ] ), " PREV ", prev,
+        #         "times: ", times[prev ] );
+        return  p, q;
+    end
+    
+    # The morphing had stopped at this point, and we should return the
+    # maximum in this duration...
+    @assert( false );
 
+    
     return  p, q;
 end
 
-# XXX
 function   Morphing_sample_uniformly( m::Morphing{N,T}, n::Int64 ) where {N,T}
     P, Q, times = Morphing_as_polygons_w_times( m );
 
@@ -991,15 +1057,35 @@ function  Morphing_SweepDist_price( m::Morphing{N,T} ) where  {N,T}
 end
 
 function  morphing_profile( m::Morphing{D,T}, n::Int64 ) where  {D,T}
-    PB,QB,times = Morphing_as_function_w_times( m );
+    f_debug::Bool = false;
+
+    if  ( f_debug )
+        Morphing_recompute_leash( m );
+        println( "LEASH recomputed: ", m.leash );
+    end
+    PB,QB,times = Morphing_as_polygons_w_times( m );
+    #println( times );
+    if  ( f_debug )
+        for  i  in 1:length( times ) - 1
+            if  ( ! ( times[ i ] <= times[ i + 1 ] ) )
+                println( i );
+                println( times[ i ], ", ", times[ i + 1 ] );
+                @assert( ( times[ i ] <= times[ i + 1 ] ) );
+            end
+        end;
+    end;
+    #println( length( times ) );
     lP = total_length( PB );
     X = range(0, lP, length=n)
     
     Y = Vector{Float64}();    
     for x ∈ X
-        p, q = polygons_get_loc_at_time( PB, QB, times, x / lP );
+        pos = x / lP;
+        #println( " pos : ", pos );
+        p, q = polygons_get_loc_at_time( PB, QB, times, pos );
         push!( Y, Dist(p,q ) );
     end
+    f_debug  &&  println( maximum( Y ) );
     return  X, Y;
 end
 

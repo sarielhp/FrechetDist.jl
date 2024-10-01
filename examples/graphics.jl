@@ -150,6 +150,23 @@ function  draw_bbox( cr, bb, scale )
 end
 
 
+function  get_color_rgb( i::Int64 )
+    colors =[ 1.0 0.0 0.0;
+              0.0 0.0 1.0;
+              0.0 0.5 0.0;
+              1.0 0.0 1.0;
+              0.0 1.0 1.0;
+              1.0 1.0 0.0;
+              0.5 0.5 1.0;
+              0.5 1.0 0.5;
+              0.3 0.5 0.7;
+              0.7 0.2 0.4;
+              0.5 0.1 0.5 ];
+    ind = 1 + ( ( i - 1 ) % size(colors,1));
+    return  colors[ ind, : ];
+end
+
+
 function  compute_bounding_boxes( list::VecPolygon2F )
     bb::BBox2F = BBox2F();
 
@@ -245,11 +262,10 @@ function  output_polygons_to_file(  list::VecPolygon2F, filename,
         count = count + 1;
         #println( count, " ", len );
         set_line_width(cr, u_width );
-        if  len == 2  &&  count == 2
-            set_source_rgb(cr, 0.0, 0.0, 1.0 );
-        else
-            set_source_rgb( cr, 1.0, 0.0, 0.0 );
-        end
+        #if  len == 2  &&  count == 2
+        #    set_source_rgb(cr, 0.0, 0.0, 1.0 );
+        #else
+        set_source_rgb( cr, get_color_rgb( count )... );
 
         draw_polygon( cr, poly );
     end

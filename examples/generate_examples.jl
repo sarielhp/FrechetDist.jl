@@ -214,7 +214,8 @@ function  plot_curves_diagram(
     title::String = "",
     f_draw_graph_only::Bool = false;
     f_draw_grid::Bool = false,
-    f_draw_monotone = false
+    f_draw_monotone = false,
+    f_3d = false
 )
 ###----------------------------------------------------------------------
 ### sub-function draw_graph start
@@ -321,7 +322,7 @@ function  plot_curves_diagram(
         if  ( f_draw_ve )
             m_ve = frechet_ve_r_compute( P, Q );
             p_ve_diag = Morphing_extract_prm( m_ve );
-            m_ve_diag = Polygon_as_matrix( p_ve_diag );            
+            m_ve_diag = Polygon_as_matrix( p_ve_diag );
 
             plot!(plt, m_ve_diag[1,:], m_ve_diag[2,:],
                 linewidth=4,
@@ -330,7 +331,7 @@ function  plot_curves_diagram(
             if  ( f_draw_monotone )
                 mrp_ve_m = Morphing_monotonize( m_ve );
                 p_ve_m = Morphing_extract_prm( mrp_ve_m );
-                m_ve_m = Polygon_as_matrix( p_ve_m );            
+                m_ve_m = Polygon_as_matrix( p_ve_m );
                 plot!(plt, m_ve_m[1,:], m_ve_m[2,:],
                     linewidth=4,
                     label=:none, ticks=false, showaxis=false,
@@ -394,14 +395,27 @@ function  plot_curves_diagram(
                     ticks = false, showaxis = false, framestyle=:none,
                     dpi = 200 );
     else
-        plt = heatmap( x_range, y_range, fz,
+        if   f_3d
+            plt = plot( x_range, y_range, fz,
                        color = :haline,
                        left_margin = 0 * Plots.mm,
                        bottom_margin=0*Plots.mm,
                        right_margin = 10.02 * Plots.mm,
-                       ticks = false, showaxis = false, framestyle=:none,
-                       dpi = 200 );
+                        ticks = true, showaxis = true,
+                        framestyle=:box,
+#                        framestyle=:zerolines,
+                       dpi = 300, st=:surface, camera=(30,50) );
+        else
+            plt = heatmap( x_range, y_range, fz,
+                           color = :haline,
+                           left_margin = 0 * Plots.mm,
+                           bottom_margin=0*Plots.mm,
+                           right_margin = 10.02 * Plots.mm,
+                           ticks = false, showaxis = false, framestyle=:none,
+                           dpi = 200 );
+        end
     end
+
     if  ( length( title ) > 0 )
         title!( plt, title );
     end
@@ -715,6 +729,9 @@ function  create_demo( title::String,
     );
     plot_curves_diagram( poly_a, poly_b, prefix*"diagram.png",
         false, false, false
+    );
+    plot_curves_diagram( poly_a, poly_b, prefix*"diagram_3d.png",
+        false, false, false; f_3d=true
     );
 
     f_grid_only_drawn::Bool = false;
@@ -1206,19 +1223,21 @@ gurl::String = gurl_base * gurl_suffix;
 gemb::String = "<a href=\"" * gurl * "\">GeoLife GPS Trajectories</a>";
 
 function  gen_example_12()
-    if  ( isfile( "data/geolife/5314.txt" ) )
-        create_demo_files( "Example of close curves (GPS tracks)",
-            "output/12/",
-            "data/geolife/5314.txt",
-            "data/geolife/5428.txt",
-            true, false,
-            "An example of two GPS tracks from " *
-                gemb * " that are close together. \n" *
-                 "This is an example where the retractable Fréchet\n" *
-                 " algorithm axplores only tiny fraction of the diagam, \n" *
-                 "yielding a near linear running time in this case.\n"
-        );
-    end
+    ( ! isfile( "data/geolife/5314.txt" ) )  &&  return;
+    ( ! is_rebuild( "output/12" ) )  &&  return;
+
+    create_demo_files( "Example of close curves (GPS tracks)",
+                       "output/12/",
+                       "data/geolife/5314.txt",
+                       "data/geolife/5428.txt",
+                       true, false,
+                       "An example of two GPS tracks from " *
+                           gemb * " that are close together. \n" *
+                       "This is an example where the retractable Fréchet\n" *
+                       " algorithm axplores only tiny fraction of the " *
+                       " diagram, \n" *
+                       "yielding a near linear running time in this case.\n"
+                       );
 end
 
 
@@ -1240,6 +1259,8 @@ function  gen_example_31()
 end
 
 function  gen_example_30()
+    ( ! is_rebuild( "output/30" ) )  &&  return;
+
     poly_a,poly_b = example_30();
     create_demo( "Example 30: ZigZag does not math a Zag",
                  "output/30/",
@@ -1320,6 +1341,8 @@ function  gen_example_18()
 end
 
 function  gen_example_1()
+    ( ! is_rebuild( "output/01" ) )  &&  return;
+
     poly_a,poly_b = example_1();
     create_demo( "Example 1", "output/01/",
                  poly_a,
@@ -1356,40 +1379,79 @@ function  is_rebuild( s::String )
     return  true
 end
 
-function  generate_examples()
-    if  is_rebuild( "output/01" )
-        println( "Example 1" );
-        gen_example_1()
-    end
-    if  is_rebuild( "output/02" )
-        println( "Example 2" );
-        poly_a,poly_b = example_2();
-        create_demo( "Example 2", "output/02/", poly_a,poly_b );
-    end
 
-    if  is_rebuild( "output/03" )
-        println( "Example 3" );
-        poly_a,poly_b = example_3();
-        create_demo( "Example 3", "output/03/", poly_a,poly_b );
-    end
-
-    if  is_rebuild( "output/04" )
-        println( "Example 4" );
-        poly_a,poly_b = example_4();
-        create_demo( "Example 4", "output/04/", poly_a,poly_b );
-    end
-
-    if  is_rebuild( "output/05" )
-        println( "Example 5" );
-        poly_a,poly_b = example_5();
-        create_demo( "Example 5", "output/05/", poly_a,poly_b,
+function  rebuild_10()
+    if  is_rebuild( "output/10" )
+        println( "Example 10" );
+        poly_a,poly_b = example_10( 3, 7);
+        create_demo( "Example 10", "output/10/", poly_a,poly_b,
                      false, true, "", true );
     end
+end
 
-    if  is_rebuild( "output/06" )
-        println( "Example 6" );
-        gen_example_6()
-    end
+function  gen_example_2()
+    ( ! is_rebuild( "output/02" ) )  &&  return;
+    println( "Example 2" );
+    poly_a,poly_b = example_2();
+    create_demo( "Example 2", "output/02/", poly_a,poly_b );
+end
+
+function  gen_example_3()
+    ( ! is_rebuild( "output/03" ) )  &&  return;
+    println( "Example 3" );
+    poly_a,poly_b = example_3();
+    create_demo( "Example 3", "output/03/", poly_a,poly_b );
+end
+
+function  gen_example_4()
+    ( ! is_rebuild( "output/04" ) )  &&  return;
+    println( "Example 4" );
+    poly_a,poly_b = example_4();
+    create_demo( "Example 4", "output/04/", poly_a,poly_b );
+end
+
+function  gen_example_5()
+    ( !is_rebuild( "output/05" ) )  &&  return;
+    println( "Example 5" );
+    poly_a,poly_b = example_5();
+    create_demo( "Example 5", "output/05/", poly_a,poly_b,
+                 false, true, "", true );
+end
+
+function  gen_example_6()
+    ! is_rebuild( "output/06" )  &&  return;
+    println( "Example 6" );
+    gen_example_6()
+end
+
+function  gen_example_33()
+    ! is_rebuild( "output/33" )  &&  return;
+    println( "Example 33" );
+    poly_a,poly_b = example_10( 0, 7);
+    create_demo( "Example 33", "output/33/", poly_a, poly_b,
+                 false, true, "", true );
+end
+
+
+function  gen_example_34()
+    ( ! is_rebuild( "output/34" ) )  &&  return;
+
+    P, Q = example_34();
+
+    create_demo( "Example 34", "output/34/",  P, Q,
+                 false, true,
+                 "Simplification removes unnecessary noise..."
+                 );
+end
+
+
+function  generate_examples()
+    gen_example_1()
+    gen_example_2();
+    gen_example_3();
+    gen_example_4();
+    gen_example_5();
+    gen_example_6();
 
     if  is_rebuild( "output/07" )
         println( "Example 7" );
@@ -1410,12 +1472,7 @@ function  generate_examples()
                      poly_a,poly_b );
     end
 
-    if  is_rebuild( "output/10" )
-        println( "Example 10" );
-        poly_a,poly_b = example_10( 3, 7);
-        create_demo( "Example 10", "output/10/", poly_a,poly_b,
-                     false, true, "", true );
-    end
+    rebuild_10();
 
     if   is_rebuild( "output/11" )
         println( "Example 11" );
@@ -1428,10 +1485,7 @@ function  generate_examples()
                            true, false );
     end
 
-    if  is_rebuild( "output/12" )
-        println( "Example 12" );
-        gen_example_12();
-    end
+    gen_example_12();
 
     if  is_rebuild( "output/13" )
         println( "Example 13" );
@@ -1520,6 +1574,8 @@ function  generate_examples()
                            "data/birds/1793_4.plt",
                            true, false );
     end
+
+
     if   is_rebuild( "output/25" )
         println( "Example 25" );
         # data/010/trajectory/20080928160000.plt
@@ -1570,6 +1626,7 @@ function  generate_examples()
             true, true );
     end
 
+
     if   is_rebuild( "output/30" )
         println( "Example 30" );
         gen_example_30()
@@ -1585,12 +1642,9 @@ function  generate_examples()
         gen_example_32()
     end
 
-    if  is_rebuild( "output/33" )
-        println( "Example 33" );
-        poly_a,poly_b = example_10( 0, 7);
-        create_demo( "Example 33", "output/33/", poly_a, poly_b,
-                     false, true, "", true );
-    end
+    gen_example_33();
+    gen_example_34();
+
 
 end
 

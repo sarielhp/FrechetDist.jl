@@ -130,6 +130,6 @@ export  ph_compute_hierarchy
 export  ph_init
 
 
-
+export  simplify_morphing_sensitive;
 
 end

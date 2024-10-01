@@ -475,3 +475,11 @@ function  example_18()
            );
     return  polya, polyb;
 end
+
+
+function  example_34()
+    poly_a,poly_b = example_1();
+    P = wiggle( poly_a, 40, 0.01 );
+    Q = wiggle( poly_b, 40, 0.01 );
+    return  P, Q;
+end
