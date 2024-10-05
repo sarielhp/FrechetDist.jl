@@ -844,10 +844,10 @@ function   add_points_along_seg( pout::Polygon{N,T},
     prev::Float64 = -1.0;
     dlt = 0.1;
     for  tm in out_times
-        if  ( tm <= 0.0 ) || (tm => 1.0 )
+        if  ( ( tm <= 0.0 )  ||  ( tm >= 1.0 ) )
             continue;
         end
-        if  ( tm  < ( prev + dlt ) )
+        if  ( tm < ( prev + dlt ) )
             continue;
         end
         prev = tm;
