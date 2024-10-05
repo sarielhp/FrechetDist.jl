@@ -797,7 +797,7 @@ function   add_points_along_seg( pout::Polygon{N,T},
     out_times = Vector{Float64}();
 
     function  push_time( tm::Float64 )
-        if  ( tm == 0 )  ||  ( tm == 1 )
+        if  ( tm <= 0.0 )  ||  ( tm >= 1.0 )
             return
         end
 
@@ -821,6 +821,8 @@ function   add_points_along_seg( pout::Polygon{N,T},
         push_time( t );
         if   ( i < times_length )  &&  ( n_mid_points > 0 )
             K = n_mid_points + 1
+            #println( "K : ", K );
+            #if  ( times[ i + 1 ] > times[ i ] )  continue  end;                
             for  pos in 1:(K-1)
                 coef::Float64 = pos / K;
                 tm = times[ i ] * (1.0 - coef) + times[ i + 1 ] * coef
@@ -839,11 +841,16 @@ function   add_points_along_seg( pout::Polygon{N,T},
     sort!( out_times )
     unique!( out_times )
 
+    prev::Float64 = -1.0;
+    dlt = 0.1;
     for  tm in out_times
-        if  ( tm == 0 ) || (tm == 1 )
+        if  ( tm <= 0.0 ) || (tm => 1.0 )
             continue;
         end
-
+        if  ( tm  < ( prev + dlt ) )
+            continue;
+        end
+        prev = tm;
         push_smart!( pout, segment.at( seg, tm ) )
     end
 end
@@ -866,7 +873,7 @@ end
 
 ################################################################
 """
-    extract_refined_polygon( P, pes, num_points_to_add )
+    extract_refined_polygon( P, pes, num_points_to_add, delta )
 
     Refine edges along which pes (the sequence of matching points
     along P is not monotone, so that the returned polygon has
@@ -912,11 +919,13 @@ function  extract_refined_polygon( poly::Polygon{N,T},
 
         # s[i:j]: The sequence of points on the same edge
         times = Vector{Float64}();
-        for  k in i:j
-            push!( times, s[ k ].t );
+        push!( times, s[ i ].t );
+        for  k in (i+1):j
+            if  s[ k ].t != last( times )
+                push!( times, s[ k ].t );
+            end
         end
 
-        seg = Segment( poly[ loc ], poly[ loc + 1 ] );
         lnx = Dist( poly[ loc ], poly[ loc + 1 ] );
 
         if  (  is_monotone_inc( times )
@@ -928,11 +937,29 @@ function  extract_refined_polygon( poly::Polygon{N,T},
             continue
         end
 
+        #=
+        diff = 0.0;
+        min_t = max_t = times[ 1 ];
+
+        for  i in 2:length(times)
+            max_t = max( times[ i ], max_t );
+            if  ( times[ i ] < max_t )  &&  ( ( max_t - times[ i ] ) > diff ) 
+                min_t = times[ i ];
+                diff = max_t - times[ i ];
+            end
+        end
+        =#
+        #println( "diff: ", diff );
+        #println( "min_t: ", min_t );
+        
+        #println( times );
+        #exit( -1 );
         n_times::Int64 = points_to_add;
         if  ( delta > 0.0 )
             n_times = round( Int64, lnx / delta );
             n_times = max( min( n_times, 3 ), 1 );
         end
+        seg = Segment( poly[ loc ], poly[ loc + 1 ] );
         add_points_along_seg( pout, seg, times, n_times );
 
         i = j + 1
@@ -1032,17 +1059,34 @@ function  frechet_mono_via_refinement_delta( Pa::Polygon{N,T},
     local  m, mm;
     count::Int64 = 0;
     for  count  in 0:64
+        #println( count, "  ", length( P ), "  ", length( Q ) );
         #( count > 0 )  &&  println( "FVER round: ", count );
 
         m = frechet_ve_r_compute( P, Q )
         mm = Morphing_monotonize( m );
 
+        res = 3;
+        if  ( delta > 0.0 )
+            gap = ( mm.leash - m.leash ) / delta;
+            if  ( gap > 0.0 )
+                res = 1 + (max( 1, round(Int64, (log(gap)/log(2) ) ) ))^2
+            end
+        else
+            gap = delta;
+        end
+
         ( ( mm.leash - m.leash ) <= delta )  &&  break;
-        
+        #println( count, ": X GAP: ", gap, "   res: ", res );
+        #println( count, ":   res: ", res );
+
         #times::Int64 = 4;# min( round(Int64,
         #   (mm.leash - m.leash) / delta ), 7 );;
-        poly_a_2 = extract_refined_polygon( P, m.pes, 3, delta );
-        poly_b_2 = extract_refined_polygon( Q, m.qes, 3, delta );
+        # res was 3
+        poly_a_2 = extract_refined_polygon( P, m.pes, res, delta/11 );
+        poly_b_2 = extract_refined_polygon( Q, m.qes, res, delta/11 );
+
+        #        println( "P len: ", length( P ) );
+        #println( "P_a_2 len: ", length( poly_a_2 ) );
 
         P = poly_a_2;
         Q = poly_b_2;
@@ -1391,7 +1435,7 @@ function  simplify_morphing_sensitive( m::Morphing{D,T},
     propogate_mins( qz, 1 );
 
     #println( pz );
-    
+
     PS, p_indices, f_PS_exact = Polygon_simplify_radii_ext( m.P, pz );
     QS, q_indices, f_QS_exact = Polygon_simplify_radii_ext( m.Q, qz );
 

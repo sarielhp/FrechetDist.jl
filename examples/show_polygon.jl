@@ -183,7 +183,7 @@ function  output_polygons_to_file(  list::VecPolygon2F, filename,
     for  poly in  list
         count = count + 1;
         println( count, "/", len, "   |P|:", cardin( poly ) );
-        
+
         set_line_width(cr, 2.0 + 3.0 / count );
         #println( "IND = ", ind );
         clr = get_color_rgb( count );

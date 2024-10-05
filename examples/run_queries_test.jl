@@ -240,11 +240,12 @@ function frechet_decider_PID_slow( PID, i, j, r )::Int64
     return  0;
 end
 
+
+const f_debug_PID = false
 function frechet_decider_PID( PID::PolygonsInDir, i::Int64,
                               j::Int64, r::Float64 )::Int64
-    f_debug::Bool = false;
-    #f_verify::Bool = false;
 
+    @static f_debug_PID && println( "\n\n\n---------------------------------------" );
     PA = P_orig = PID.polys[ i ];
     QA = Q_orig = PID.polys[ j ];
 
@@ -260,15 +261,15 @@ function frechet_decider_PID( PID::PolygonsInDir, i::Int64,
     wP = P_ph.widths[ 1 ];
     wQ = Q_ph.widths[ 1 ];
 
-    f_debug && print( "wP      : ", wP );
-    f_debug && print( "    wQ  : ", wQ );
+    f_debug_PID  &&  print( "wP      : ", wP );
+    f_debug_PID  &&  print( "    wQ  : ", wQ );
 
     ub = lb + wP + wQ;
     ( ub < r )   &&   return  -1;
 
     delta = min( abs( r - lb ), abs( r - ub ), (wP + wQ)/4.0 );# / 0.9;
-    f_debug  &&  println( "Lower bound: ", lb, "\nUpper bound: ", ub,
-                          "\nr: ", r );
+    f_debug_PID  &&  println( "\n"*"Lower bound: ", lb, "\nUpper bound: ", ub,
+                          "\n"*"r          : ", r );
 
     P_limit::Int64 = round( Int64, 0.82 * cardin( P_orig ) );
     Q_limit::Int64 = round( Int64, 0.82 * cardin( Q_orig ) );
@@ -276,11 +277,12 @@ function frechet_decider_PID( PID::PolygonsInDir, i::Int64,
     f_monotone::Bool = false;
     f_orig::Bool = false;
     for  iters::Int64 in 1:20
-        if  f_debug
+        if  f_debug_PID
             println( "Iter: ", iters );
             println( lb, "..", ub, "   r: ", r );
         end
         w_trg = delta / 2.0
+        f_debug_PID  &&  println( "w_trg    : ", w_trg );
         if  f_orig
             PA = P_orig;
             QA = Q_orig;
@@ -302,7 +304,8 @@ function frechet_decider_PID( PID::PolygonsInDir, i::Int64,
         end
 
         if  f_monotone
-            f_debug  &&  println( "mono_via_refinement( ", cardin( PA), ", ",
+            f_debug_PID  &&  println( "mono_via_refinement( ",
+                                      cardin( PA), ", ",
                 cardin( QA ) );
             m, PA_A, QA_A = frechet_mono_via_refinement_delta( PA, QA,
                                                                delta,
@@ -312,10 +315,13 @@ function frechet_decider_PID( PID::PolygonsInDir, i::Int64,
         else
             l_min, l_max = FEVER_compute_range( PA, QA, ub )
 
+           
+            f_debug_PID &&  println( "l_min..l_max: ", l_min, "...", l_max,
+                                 "\n" * "GAP  : ", ( l_max - l_min ) / delta ); 
             if  ( ( iters > 0 )  &&  ( l_min < r < l_max )
-                  &&  ( ( l_max - l_min ) > 4.0*delta ) )
+                  &&  ( ( l_max - l_min ) > 2.0*delta ) )
                 f_monotone = true;
-                delta = delta / 2.0;
+                delta = delta / 32.0;
                 continue;
             end
         end
@@ -775,7 +781,7 @@ function  main( ARGS )
     f_verify_run::Bool = false;
 
     num_args = length( ARGS );
-    
+
     if   num_args == 2  &&  ( ARGS[ 1 ] == "test_file" )
         test_single_file( ARGS[2], f_verify_run );
         exit( 0 );
@@ -784,7 +790,7 @@ function  main( ARGS )
         test_files_from_file( ARGS[3], ARGS[2], f_verify_run );
         exit( 0 );
     end
-    
+
     if   num_args == 3  &&  ( ARGS[ 1 ] == "sfile" )
         test_files_from_file( ARGS[3], ARGS[2], f_verify_run, true );
         exit( 0 );
