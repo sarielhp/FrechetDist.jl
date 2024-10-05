@@ -1273,19 +1273,6 @@ function  gen_example_30()
                  );
 end
 
-function  gen_example_6()
-    poly_a,poly_b = example_6();
-    create_demo( "Example 6: Refinement in action",
-                 "output/06/",
-                 poly_a,poly_b,
-                 true, true,
-                 "Zig-zag heavy example that shows the algorithm computing\n"
-                 * " the exact continuous monotone " * FrechetStr
-                 * " morphing, using refinement.\n",
-                 true
-                 );
-end
-
 
 function  gen_example_14()
     poly_a,poly_b = example_14();
@@ -1421,7 +1408,16 @@ end
 function  gen_example_6()
     ! is_rebuild( "output/06" )  &&  return;
     println( "Example 6" );
-    gen_example_6()
+    poly_a,poly_b = example_6();
+    create_demo( "Example 6: Refinement in action",
+                 "output/06/",
+                 poly_a,poly_b,
+                 true, true,
+                 "Zig-zag heavy example that shows the algorithm computing\n"
+                 * " the exact continuous monotone " * FrechetStr
+                 * " morphing, using refinement.\n",
+                 true
+                 );
 end
 
 function  gen_example_33()
