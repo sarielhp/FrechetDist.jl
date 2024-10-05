@@ -113,10 +113,39 @@ function  zig_zag_x( poly::Polygon2F, delta_x, delta_y, n::Int64,
     for  i in 1:n
         p::Point2F = last( poly );
         q::Point2F = npoint( p[1] + delta_x, p[ 2 ] + delta_y );
-        push!( poly, deepcopy( q ) );
+        push!( poly, q  );
         delta_x = - shrink * delta_x;
     end
 end
+
+
+function  example_35()
+    ( ! is_rebuild( "output/35" ) )  &&  return;
+
+    delta = 0.01
+    rho = 0.1
+    h = 0.01;
+
+    b = 2.0;
+    
+    P = Polygon2F() |> (-b, 0.0 ) |> (0.0, 0.0) |> (1.0, 0.0) |> (rho, h);
+
+    zig_zag_x( P, 1.0 - 2.0*rho, h, 10, 1.0 );
+    y = last( P )[ 2 ];
+    P |> ( b, y + h );
+
+    y = y + 2.0*h;
+    
+
+    Q = Polygon2F() |> (-b, y )  |> (0.0, y) |> (rho, y);
+    zig_zag_x( Q, 1.0 - 2.0*rho, h, 10, 1.0 );
+    y = last( Q )[ 2 ];
+    Q |> (0.0, y ) |> (1.0, y + h );
+    Q |> ( b, y + h );
+    return  P, Q;
+end
+
+
 
 function  example_5()
     polya = Polygon2F(  );
@@ -295,7 +324,7 @@ function  example_10( zigs_a::Int64, zigs_b::Int64 )
     end
     push!( Q, npoint( 0.0, pref/3.0 ) );
 
-    if  (zigs_a > 0 )  &&  ( zigs_a % 2 == 0 ) 
+    if  (zigs_a > 0 )  &&  ( zigs_a % 2 == 0 )
         zigs_a = zigs_a + 1
     end
     if  zigs_b % 2 == 0
@@ -316,7 +345,7 @@ function  example_10( zigs_a::Int64, zigs_b::Int64 )
         push!( P, npoint( pref + d_a * i, y ) )
     end
     push!( P, npoint(1.0 - pref/3.0, 1.0 ) )
-    
+
     f_left = false;
     x::Float64 = 0.0;
     for  i in 1:zigs_b
@@ -441,7 +470,7 @@ function  example_17_dtw()
     polyb = Polygon2F(  );
 
     k = 200;
-    
+
     push!( polya, npoint(-1.0, -0.1 ), npoint( 6.0, -0.1 ) );
 
     spiral_ext( polya, npoint(2.0,0.3), 1.0, k, 1.0, Float64(pi),

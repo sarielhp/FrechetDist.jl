@@ -1445,6 +1445,20 @@ function  gen_example_34()
 end
 
 
+
+function  gen_example_35()
+    ( ! is_rebuild( "output/35" ) )  &&  return;
+
+    P, Q = example_35();
+
+    create_demo( "Example 35", "output/35/",  P, Q,
+                 false, true,
+                 "Zig zag zog..."
+                 );
+end
+
+
+
 function  generate_examples()
     gen_example_1()
     gen_example_2();
@@ -1644,6 +1658,7 @@ function  generate_examples()
 
     gen_example_33();
     gen_example_34();
+    gen_example_35();
 
 
 end
