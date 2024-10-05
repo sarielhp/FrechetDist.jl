@@ -127,7 +127,7 @@ function  example_35()
     h = 0.01;
 
     b = 2.0;
-    
+
     P = Polygon2F() |> (-b, 0.0 ) |> (0.0, 0.0) |> (1.0, 0.0) |> (rho, h);
 
     zig_zag_x( P, 1.0 - 2.0*rho, h, 10, 1.0 );
@@ -135,7 +135,7 @@ function  example_35()
     P |> ( b, y + h );
 
     y = y + 2.0*h;
-    
+
 
     Q = Polygon2F() |> (-b, y )  |> (0.0, y) |> (rho, y);
     zig_zag_x( Q, 1.0 - 2.0*rho, h, 10, 1.0 );
