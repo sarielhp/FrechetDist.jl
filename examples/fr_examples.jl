@@ -508,7 +508,7 @@ end
 
 function  example_34()
     poly_a,poly_b = example_1();
-    P = wiggle( poly_a, 40, 0.01 );
-    Q = wiggle( poly_b, 40, 0.01 );
+    P = polygon.wiggle( poly_a, 40, 0.01 );
+    Q = polygon.wiggle( poly_b, 40, 0.01 );
     return  P, Q;
 end
