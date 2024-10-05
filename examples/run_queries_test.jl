@@ -14,7 +14,7 @@ using PrettyTables
 #using InteractiveUtils
 #using ProfileView
 
-const  TIME_RESULTS = false
+const  TIME_RESULTS = true
 
 AtomicInt = Threads.Atomic{Int}
 
@@ -771,21 +771,24 @@ end
 #P = Polygon2F();
 #println( fieldnames(Polygon2F) );
 #exit( -1 );
+function  main( ARGS )
+    f_verify_run::Bool = false;
 
-f_verify_run::Bool = false;
-
-num_args = length( ARGS );
-
-if   num_args == 2  &&  ( ARGS[ 1 ] == "test_file" )
-    test_single_file( ARGS[2], f_verify_run );
-    exit( 0 );
+    num_args = length( ARGS );
+    
+    if   num_args == 2  &&  ( ARGS[ 1 ] == "test_file" )
+        test_single_file( ARGS[2], f_verify_run );
+        exit( 0 );
+    end
+    if   num_args == 3  &&  ( ARGS[ 1 ] == "file" )
+        test_files_from_file( ARGS[3], ARGS[2], f_verify_run );
+        exit( 0 );
+    end
+    
+    if   num_args == 3  &&  ( ARGS[ 1 ] == "sfile" )
+        test_files_from_file( ARGS[3], ARGS[2], f_verify_run, true );
+        exit( 0 );
+    end
 end
-if   num_args == 3  &&  ( ARGS[ 1 ] == "file" )
-    test_files_from_file( ARGS[3], ARGS[2], f_verify_run );
-    exit( 0 );
-end
 
-if   num_args == 3  &&  ( ARGS[ 1 ] == "sfile" )
-    test_files_from_file( ARGS[3], ARGS[2], f_verify_run, true );
-    exit( 0 );
-end
+main( ARGS );

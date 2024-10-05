@@ -9,6 +9,8 @@ using FrechetDist.cg.point
 using FrechetDist.cg.polygon
 using Parameters
 
+include( "graphics.jl" )
+
 VecFloat = Vector{Float64};
 VecVecFloat = Vector{VecFloat};
 
@@ -183,8 +185,9 @@ function  output_polygons_to_file(  list::VecPolygon2F, filename,
         println( count, "/", len, "   |P|:", cardin( poly ) );
         
         set_line_width(cr, 2.0 + 3.0 / count );
-        println( "IND = ", ind );
-        set_source_rgb( cr, get_color( count - 1 )... );
+        #println( "IND = ", ind );
+        clr = get_color_rgb( count );
+        set_source_rgb( cr, clr... );
 
         draw_polygon( cr, poly, T );
     end

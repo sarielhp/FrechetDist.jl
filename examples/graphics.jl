@@ -151,6 +151,7 @@ end
 
 
 function  get_color_rgb( i::Int64 )
+    @assert( i > 0 );
     colors =[ 1.0 0.0 0.0;
               0.0 0.0 1.0;
               0.0 0.5 0.0;
@@ -163,6 +164,7 @@ function  get_color_rgb( i::Int64 )
               0.7 0.2 0.4;
               0.5 0.1 0.5 ];
     ind = 1 + ( ( i - 1 ) % size(colors,1));
+    println( ind, " ::: ", size(colors,1) );
     return  colors[ ind, : ];
 end
 
