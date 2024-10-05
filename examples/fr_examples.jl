@@ -146,6 +146,25 @@ function  example_35()
 end
 
 
+function  example_36()
+    ( ! is_rebuild( "output/36" ) )  &&  return;
+
+    h = 0.01;
+
+    P = Polygon2F() |> (0.0, 0.0);
+    zig_zag_x( P, 1.0, h, 11, 1.0 );
+
+    y = last( P )[ 2 ];
+
+    y = y + 2.0*h;
+
+    Q = Polygon2F() |> (0.0, y );
+    zig_zag_x( Q, 1.0, h, 21, 1.0 );
+
+    return  P, Q;
+end
+
+
 
 function  example_5()
     polya = Polygon2F(  );

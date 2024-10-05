@@ -1452,6 +1452,16 @@ function  gen_example_35()
                  );
 end
 
+function  gen_example_36()
+    ( ! is_rebuild( "output/36" ) )  &&  return;
+
+    P, Q = example_36();
+    create_demo( "Example 36", "output/36/",  P, Q,
+                 false, true,
+                 "Zig zag II", true
+                 );
+end
+
 
 
 function  generate_examples()
@@ -1654,8 +1664,7 @@ function  generate_examples()
     gen_example_33();
     gen_example_34();
     gen_example_35();
-
-
+    gen_example_36();
 end
 
 function  reportIt( m )
