@@ -29,7 +29,9 @@ function frechet_comp( P::Polygon{D,T}, Q::Polygon{D,T}
     m = frechet_mono_via_refinement( P, Q, 1.00001 )[1];
     m_d = frechet_c_compute( P, Q );
     =#
-    m_d_x = frechet_c_compute( P, Q );
+    @time m_d_x = frechet_c_compute( P, Q );
+    println( "\n" * "Frechet c compute: " );
+    @time m_d_x = frechet_c_compute( P, Q );
     println( "frechet_c_compute: ", m_d_x.leash );
     l_min_d, l_max_d =  FEVER_compute_range( deepcopy(P), deepcopy(Q), 10000000.0 );
     println( "FEVER d: ", l_min_d, "...", l_max_d );
@@ -103,8 +105,8 @@ function  test_files( fl_a, fl_b )
     println( fl_a );
     println( fl_b );
     println( "---------------------------------------------" );
-    P = Polygon_read_file( fl_a );
-    Q = Polygon_read_file( fl_b );
+    P = polygon.read_file( fl_a );
+    Q = polygon.read_file( fl_b );
 
     #@profile
     #@code_warntype

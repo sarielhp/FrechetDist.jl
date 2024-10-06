@@ -265,9 +265,21 @@ function frechet_decider_PID( PID::PolygonsInDir, i::Int64,
     f_debug_PID  &&  print( "    wQ  : ", wQ );
 
     ub = lb + wP + wQ;
+
+    #=
+    if  ( length( PA ) < 50 ) &&( length( QA ) < 0 )
+        l_min_b, l_max_b = FEVER_compute_range( PA, QA, 10000000.0 );
+        lb = min( lb, l_min_b );
+        ub = max( ub, l_max_b );
+    end
+    =#
+    
+    #( lb > r )   &&   return  1;
     ( ub < r )   &&   return  -1;
 
-    delta = min( abs( r - lb ), abs( r - ub ), (wP + wQ)/4.0 );# / 0.9;
+    delta = min( abs( r - lb ), abs( r - ub ), (wP + wQ)/4.0,
+                 (ub - lb) / 2.0 );# / 0.9;
+
     f_debug_PID  &&  println( "\n"*"Lower bound: ", lb, "\nUpper bound: ", ub,
                           "\n"*"r          : ", r );
 
@@ -314,14 +326,13 @@ function frechet_decider_PID( PID::PolygonsInDir, i::Int64,
             l_max = m.leash;
         else
             l_min, l_max = FEVER_compute_range( PA, QA, ub )
-
            
             f_debug_PID &&  println( "l_min..l_max: ", l_min, "...", l_max,
                                  "\n" * "GAP  : ", ( l_max - l_min ) / delta ); 
             if  ( ( iters > 0 )  &&  ( l_min < r < l_max )
                   &&  ( ( l_max - l_min ) > 2.0*delta ) )
                 f_monotone = true;
-                delta = delta / 32.0;
+                delta = delta / 5.0;
                 continue;
             end
         end
