@@ -332,7 +332,8 @@ function frechet_decider_PID( PID::PolygonsInDir, i::Int64,
             if  ( ( iters > 0 )  &&  ( l_min < r < l_max )
                   &&  ( ( l_max - l_min ) > 2.0*delta ) )
                 f_monotone = true;
-                delta = delta / 5.0;
+                # 5.0: Characters 154
+                delta = delta / 1.1;
                 continue;
             end
         end
