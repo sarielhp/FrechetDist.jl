@@ -14,7 +14,7 @@ using PrettyTables
 #using InteractiveUtils
 #using ProfileView
 
-const  TIME_RESULTS = true
+const  TIME_RESULTS = false
 
 AtomicInt = Threads.Atomic{Int}
 
