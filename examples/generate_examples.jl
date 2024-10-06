@@ -1462,6 +1462,18 @@ function  gen_example_36()
                  );
 end
 
+function  gen_example_37()
+    ( ! is_rebuild( "output/37" ) )  &&  return;
+
+    P = polygon.read_file( "data/characters/2335.txt" );
+    Q = polygon.read_file( "data/characters/535.txt" )
+    
+    create_demo( "Example 37", "output/37/",  P, Q,
+                 false, true,
+                 "Character data set", true
+                 );
+end
+
 
 
 function  generate_examples()
@@ -1665,6 +1677,7 @@ function  generate_examples()
     gen_example_34();
     gen_example_35();
     gen_example_36();
+    gen_example_37();
 end
 
 function  reportIt( m )
