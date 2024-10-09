@@ -187,21 +187,28 @@ function  output_polygons_to_file(  list::VecPolygon2F, filename,
         set_line_width(cr, 2.0 + 3.0 / count );
         #println( "IND = ", ind );
         clr = get_color_rgb( count );
-        set_source_rgb( cr, clr... );
 
+        if  ( count == 3 ) 
+            set_line_width(cr, 1.0 );
+            clr = get_color_rgb( 2 );
+            set_dash( cr,  [4.0,4.0, 4.0]);
+        end
+        set_source_rgb( cr, clr... );
         draw_polygon( cr, poly, T );
     end
 
     if  ( f_matching )  &&  ( cardin( list[ 1 ] ) ==  cardin( list[ 2 ] ) )
+        println( "BOGI\n\n\n\n" );
         P = list[ 1 ];
         Q = list[ 2 ];
-        set_line_width(cr, 1.5*u_width);
-        set_source_rgb( cr, 1.0, 0.0, 1.0 );
+        set_line_width(cr, 0.3*u_width);
+        set_source_rgb( cr, 0.0, 0.5, 0.0 );
         for  i  in 1:cardin( P )
-            p = P[ i ];
-            q = Q[ i ];
+            p = T*P[ i ];
+            q = T*Q[ i ];
 
             move_to( cr, p[1], p[2] )
+            set_dash( cr,  [4.0, 21.0, 2.0]);
             line_to( cr, q[1], q[2] );
             Cairo.stroke( cr );
         end
@@ -247,6 +254,11 @@ function  plt_show( ARGS )
     output_polygons_to_file( list, "curves.pdf", true );
     println( "Generated curves.pdf" );
     output_polygons_to_file( list, "curves.png", false );
+    println( "Generated curves.png" );
+
+    output_polygons_to_file( list, "curves_m.pdf", true, true, true );
+    println( "Generated curves.pdf" );
+    output_polygons_to_file( list, "curves_m.png", false, true, true );
     println( "Generated curves.png" );
 end
 
