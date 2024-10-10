@@ -1,5 +1,6 @@
 # Originally contributed by S. Har-Peled
 # under MIT License
+using  GilbertCurves
 
 
 ############################################################
@@ -530,4 +531,55 @@ function  example_34()
     P = polygon.wiggle( poly_a, 40, 0.01 );
     Q = polygon.wiggle( poly_b, 40, 0.01 );
     return  P, Q;
+end
+
+
+function peano_i( P, x::Float64, y::Float64, lg::Float64,
+                      i1::Float64, i2::Float64, d::Int64)
+    if d == 0
+        P |> (x, y);
+        #P |> (x - 250 , y - 250);
+        return;
+    end
+
+    d = d - 1;
+    lg = lg / 3.0;
+    peano_i(P, x + (2 * i1 * lg), y + (2 * i1 * lg), lg, i1, i2, d )
+    peano_i(P, x + ((i1 - i2 + 1) * lg), y + ((i1 + i2) * lg), lg, i1, 1 - i2, d)
+    peano_i(P, x + lg, y + lg, lg, i1, 1 - i2, d)
+    peano_i(P, x + ((i1 + i2) * lg), y + ((i1 - i2 + 1) * lg), lg, 1 - i1, 1 - i2,d)
+    peano_i(P, x + (2 * i2 * lg), y + ( 2 * (1-i2) * lg), lg, i1, i2, d)
+    peano_i(P, x + ((1 + i2 - i1) * lg), y + ((2 - i1 - i2) * lg), lg, i1, i2,d)
+    peano_i(P, x + (2 * (1 - i1) * lg), y + (2 * (1 - i1) * lg), lg, i1, i2,d)
+    peano_i(P, x + ((2 - i1 - i2) * lg), y + ((1 + i2 - i1) * lg), lg, 1 - i1, i2,d)
+    peano_i(P, x + (2 * (1 - i2) * lg), y + (2 * i2 * lg), lg, 1 - i1, i2,d)
+end
+
+function peano_curve( d::Int64 )
+    P = Polygon2F();
+    peano_i( P, 0.0, 0.0, 1.0, 0.0, 0.0, d );
+    P |> (1.0, 0.0);
+end
+
+function peano_curve( d::Int64 )
+    P = Polygon2F();
+     list = gilbertindices((13,13));
+    peano_i( P, 0.0, 0.0, 1.0, 0.0, 0.0, d );
+    P |> (1.0, 0.0);
+end
+
+function  hilbert_curve( n::Int64 )
+    nn = round(Int64, sqrt( n ) )
+    P = Polygon2F();
+    S = 2*div(nn,2) + 1;
+    list = gilbertindices( (S, S) );
+
+    P |> ( 0.0, 0.0 );
+    c = 1.0 / S;
+    for  p in list
+        P |> (c*Float64(p[1]), c*Float64(p[2]) );
+    end
+    P |> ( 1.0, 0.0 );
+    #println( P );
+    return  P;
 end

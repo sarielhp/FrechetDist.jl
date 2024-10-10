@@ -188,17 +188,19 @@ function  output_polygons_to_file(  list::VecPolygon2F, filename,
         #println( "IND = ", ind );
         clr = get_color_rgb( count );
 
+        #=
         if  ( count == 3 ) 
             set_line_width(cr, 1.0 );
             clr = get_color_rgb( 2 );
             set_dash( cr,  [4.0,4.0, 4.0]);
         end
+        =#
         set_source_rgb( cr, clr... );
         draw_polygon( cr, poly, T );
     end
 
     if  ( f_matching )  &&  ( cardin( list[ 1 ] ) ==  cardin( list[ 2 ] ) )
-        println( "BOGI\n\n\n\n" );
+        #println( "BOGI\n\n\n\n" );
         P = list[ 1 ];
         Q = list[ 2 ];
         set_line_width(cr, 0.3*u_width);
@@ -256,10 +258,12 @@ function  plt_show( ARGS )
     output_polygons_to_file( list, "curves.png", false );
     println( "Generated curves.png" );
 
+    #=
     output_polygons_to_file( list, "curves_m.pdf", true, true, true );
     println( "Generated curves.pdf" );
     output_polygons_to_file( list, "curves_m.png", false, true, true );
     println( "Generated curves.png" );
+    =#
 end
 
 ####################################################################

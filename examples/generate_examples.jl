@@ -1475,7 +1475,20 @@ function  gen_example_37()
 end
 
 
+function  gen_example_38()
+    ( ! is_rebuild( "output/38" ) )  &&  return;
+    P = peano_curve( 3 );
+    d = 1.0 / length( P ); 
+    Q = hilbert_curve( length( P ) )
+    polygon.shift!( P, npoint( d, 2.0*d ) ); 
+    
+    create_demo( "Example 38", "output/38/",  P, Q,
+                 false, true,
+                 "Peano vs Hilbert curves", true
+                 );
 
+end
+    
 function  generate_examples()
     gen_example_1()
     gen_example_2();
@@ -1678,6 +1691,7 @@ function  generate_examples()
     gen_example_35();
     gen_example_36();
     gen_example_37();
+    gen_example_38();
 end
 
 function  reportIt( m )
