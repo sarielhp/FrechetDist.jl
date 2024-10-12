@@ -1488,6 +1488,23 @@ function  gen_example_38()
                  );
 
 end
+
+function  gen_example_39()
+    ( ! is_rebuild( "output/39" ) )  &&  return;
+    P = peano_curve( 3 );
+    d = 1.0 / length( P ); 
+    Q = koch_curve( 3 );
+    #polygon.shift!( P, npoint( d, 2.0*d ) ); 
+
+    println( typeof( Q ) );
+    exit( -1 );
+    
+    create_demo( "Example 39", "output/39/",  P, Q,
+                 false, true,
+                 "Peano vs koch curves", true
+                 );
+
+end
     
 function  generate_examples()
     gen_example_1()
@@ -1692,6 +1709,7 @@ function  generate_examples()
     gen_example_36();
     gen_example_37();
     gen_example_38();
+    gen_example_39();
 end
 
 function  reportIt( m )
