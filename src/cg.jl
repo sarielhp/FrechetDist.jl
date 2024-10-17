@@ -26,9 +26,13 @@ using .segment
 include( "polygon.jl" );
 using .polygon
 
+include( "polygon_hausdorff.jl" );
+using .polygon_hausdorff
+
+
 using LinearAlgebra
 using DelimitedFiles
-using .point
+#using .point
 
 #using .Point;
 #using .Polygon;

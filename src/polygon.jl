@@ -301,6 +301,14 @@ function  cardin( P::Polygon{D,T} )::Int64 where {D,T}
     return  length( Points( P ) );
 end
 
+"""
+    Polygon_simplify_ext
+
+Simplify the input curve P, where every vertex in distance larger than
+r is added to the simplification. Maybe the cheapest and simplest
+simplification algorithm. Works for all measures. 
+
+"""
 function  Polygon_simplify_ext( P::Polygon{D,T}, r::T ) where {D,T}
 #::Tuple{Polygon{D,T},Vector{Int64}}
     pout = Polygon{D,T}();
@@ -723,7 +731,7 @@ function  wiggle( P::Polygon{D,T}, n::Int64, wave_size::Float64 ) where {D,T}
     return  O;
 end
 
-###########################################################################
+####################n#######################################################
 ###########################################################################
 ###########################################################################
 

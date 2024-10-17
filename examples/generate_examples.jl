@@ -1497,6 +1497,7 @@ function  gen_example_39()
     #polygon.shift!( P, npoint( d, 2.0*d ) ); 
 
     println( typeof( Q ) );
+
     exit( -1 );
     
     create_demo( "Example 39", "output/39/",  P, Q,

@@ -610,5 +610,7 @@ function  koch_curve( level )
     points = [[0.0; 0.0], [1.0; 0.0]]
     new_points = points_koch(points, level)
 
+    P = Polygon2F();
+    println( 
     return  new_points;
 end
