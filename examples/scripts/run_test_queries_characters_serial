@@ -16,12 +16,22 @@ start=`date +%s`
 # file: Run the test using multi-threading
 # sfile: Run the test using a single thread...
 
+VER=+1.10.5
+VER=
+#echo julia "$VER" --min-optlevel=3 -O3 \
+#     --gcthreads 8 \
+#             examples/run_queries_test.jl sfile \
+#                             data/characters/ \
+#                             $TFL
 
-julia --min-optlevel=3 -O3 \
-     --gcthreads 15 \
-             examples/run_queries_test.jl sfile \
+julia examples/run_queries_test.jl sfile \
                              data/characters/ \
                              $TFL
+#julia --min-optlevel=3 -O3 \
+#     --gcthreads 8 \
+#             examples/run_queries_test.jl sfile \
+#                             data/characters/ \
+#                             $TFL
 end=`date +%s`
 
 runtime=$((end-start))

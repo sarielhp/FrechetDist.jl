@@ -6,6 +6,7 @@ using point;
 using segment;
 using ..polygon
 
+
 """
     hausdorff_dist_subseg
 
@@ -76,17 +77,12 @@ end
     HD(P[start:t+1]) > w. The algorithm uses binary search.
 """
 function  h_bin_search_inner( P::Polygon{D,T}, start::Int64,
-                              i::Int64, j::Int64, w::T,
-                              old_r::Float64 = -1.0 ) where {D,T}
+                              i::Int64, j::Int64, w::T ) where {D,T}
 
     if ( i >= j )  ||  ( ( start + 1) == j )
         return  j; # the distance is zero, nothing to do.
     end
-    if  old_r > 0.0
-        r = old_r
-    else
-        r = hausdorff_dist_subseg( P, start:j )
-    end
+    r = hausdorff_dist_subseg( P, start:j )
     if  ( r <= w )
         return  j;
     end
@@ -97,10 +93,11 @@ function  h_bin_search_inner( P::Polygon{D,T}, start::Int64,
     mid = ( i + j ) >> 1;
     r_m = hausdorff_dist_subseg( P, start:mid )
     if  ( r_m > w )
-        return   h_bin_search_inner( P, start,   i, mid - 1, w, -1.0 );
+        return   h_bin_search_inner( P, start,   i, mid - 1, w );
     end
-    return       h_bin_search_inner( P, start, mid, j, w, r );
+    return       h_bin_search_inner( P, start, mid, j, w );
 end
+
 
 function  h_find_prefix( P::Polygon{D,T}, i::Int64,
     j::Int64, w::T )  where {D,T}
@@ -141,6 +138,5 @@ end
 
 export  hausdorff_simplify;
 export  hausdorff_dist_subseg;
-
 
 end

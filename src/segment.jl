@@ -83,6 +83,35 @@ function  Segment_get_convex_coef( s::Segment{D,T}, qr::Point{D,T} ) where{D,T}
     return  d/len;
 end
 
+
+# seg_len_sq = DistSq( s_p, s_q ) : Squared distance between s_p and s_q
+# s_vec =  sub(s_q, s_p)
+function  iseg_nn_point_ext_ext( s_p::Point{D,T}, s_q::Point{D,T},
+    qr::Point{D,T}, seg_len_sq::T, s_vec::Point{D,T} ) where {D,T}
+    # v(t) = p*(1-t) + q * t
+    #      = p + t*(q-p)
+    # v( [0,1] ) = segment.
+    # u(t) = v(t) - qr = (p-qr) + t * (q-p)
+    # D(t) = ||u(t)||^2 = ||p-qr||^2 + 2t <p-qr,q-p> + t^2 ||q-p||^2
+    # Settig: a =  ||q-p||^2  and  b =  2 <p-qr,q-p>
+    #        So D(t) = a*t^2 + b t + c
+    # The minimum distance is achived at
+    #    t^* = -b/(2a).
+    #
+    # s_vec = sub(s_q, s_p)
+    a = seg_len_sq #DistSq( s_p, s_q );
+    b = 2.0 * point.dot( sub(s_p, qr), s_vec );
+    t::T = -b / (2.0 * a);
+
+    if  ( t <= 0.0 )
+        return  s_p, zero(T);
+    elseif  ( t >= 1.0 )
+        return  s_q, one(T);
+    end
+
+    return  convex_comb( s_p, s_q, t ), t;
+end
+
 # Get nearest point on segment...
 """
     iseg_nn_point_ext
@@ -104,29 +133,18 @@ function  iseg_nn_point_ext( s_p::Point{D,T}, s_q::Point{D,T},
     # The minimum distance is achived at
     #    t^* = -b/(2a).
     a = DistSq( s_p, s_q );
-    b = 2.0* point.dot( sub(s_p, qr), sub(s_q, s_p) );
+    b = 2.0 * point.dot( sub(s_p, qr), sub(s_q, s_p) );
     t::T = -b /(2.0 * a);
 
-    if  ( t < 0 )
-        t = 0;
-    end
-    if  ( t > 1 )
+    if  ( t <= 0.0 )
+        return  s_p, zero(T);
+    elseif  ( t >= 1.0 )
         t = 1;
+        return  s_q, one(T);
     end
     pon = convex_comb( s_p, s_q, t );
 
-    lon = DistSq(qr, pon);
-    lp = DistSq(qr, s_p);
-    lq = DistSq(qr, s_q);
-
-    if  (( lon < lp )  &&  ( lon < lq ) )
-        return  pon, t;
-    end
-    if  ( lp < lq )
-        return  s_p, zero(T);
-    else
-        return  s_q, one(T);
-    end
+    return  pon, t;
 end
 
 
@@ -145,26 +163,15 @@ function  iseg_nn_point( s_p::Point{D,T}, s_q::Point{D,T},
     b = 2.0* point.dot( sub(s_p, qr), sub(s_q, s_p) );
     t::T = -b /(2.0 * a);
 
-    if  ( t < 0 )
-        t = 0;
+    if  ( t <= 0.0 )
+        return  s_p;
     end
-    if  ( t > 1 )
-        t = 1;
+    if  ( t >= 1.0 )
+        return  s_q;
     end
     pon = convex_comb( s_p, s_q, t );
 
-    lon = DistSq(qr, pon);
-    lp = DistSq(qr, s_p);
-    lq = DistSq(qr, s_q);
-
-    if  (( lon < lp )  &&  ( lon < lq ) )
-        return  pon;
-    end
-    if  ( lp < lq )
-        return  s_p;
-    else
-        return  s_q;
-    end
+    return  pon;
 end
 
 
@@ -407,7 +414,7 @@ export  at, Segment_get_convex_coef
 export  Segment_length
 export  Segment_get_bisection_point
 export  dist_iseg_nn_point
-export  iseg_nn_point, iseg_nn_point_ext
+export  iseg_nn_point, iseg_nn_point_ext, iseg_nn_point_ext_ext
 export  iseg_iseg_dist
 
 end # module segment

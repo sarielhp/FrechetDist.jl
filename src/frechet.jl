@@ -622,20 +622,23 @@ function  frechet_width_approx( P::Polygon{N,T},
     s_p = P[ first( rng ) ];
     s_q = P[ last( rng ) ];
 
+    seg_len_sq = DistSq( s_p, s_q ) 
+    s_vec =  sub(s_q, s_p)
+
     t::Float64 = 0;
     curr::Point{N,T} = s_p;
     leash::Float64 = 0;
     for  i  in  first(rng)+1:last(rng)-1
-        q,new_t = iseg_nn_point_ext( s_p, s_q, P[ i ] );
+        q,new_t = iseg_nn_point_ext_ext( s_p, s_q, P[ i ], seg_len_sq, s_vec );
         #q = nn_point( seg, P[ i ] );
         #new_t = Segment_get_convex_coef( seg, q );
         if  ( new_t > t )
             t = new_t;
             curr = q;
         end
-        leash = max( leash, Dist( curr, P[ i ] ) );
+        leash = max( leash, DistSq( curr, P[ i ] ) );
     end
-    return  leash;
+    return  sqrt( leash );
 end
 
 eachindexButLast(x) =  firstindex(x):lastindex(x)-1
@@ -824,7 +827,7 @@ function   add_points_along_seg( pout::Polygon{N,T},
         if   ( i < times_length )  &&  ( n_mid_points > 0 )
             K = n_mid_points + 1
             #println( "K : ", K );
-            #if  ( times[ i + 1 ] > times[ i ] )  continue  end;                
+            #if  ( times[ i + 1 ] > times[ i ] )  continue  end;
             for  pos in 1:(K-1)
                 coef::Float64 = pos / K;
                 tm = times[ i ] * (1.0 - coef) + times[ i + 1 ] * coef
@@ -945,7 +948,7 @@ function  extract_refined_polygon( poly::Polygon{N,T},
 
         for  i in 2:length(times)
             max_t = max( times[ i ], max_t );
-            if  ( times[ i ] < max_t )  &&  ( ( max_t - times[ i ] ) > diff ) 
+            if  ( times[ i ] < max_t )  &&  ( ( max_t - times[ i ] ) > diff )
                 min_t = times[ i ];
                 diff = max_t - times[ i ];
             end
@@ -953,7 +956,7 @@ function  extract_refined_polygon( poly::Polygon{N,T},
         =#
         #println( "diff: ", diff );
         #println( "min_t: ", min_t );
-        
+
         #println( times );
         #exit( -1 );
         n_times::Int64 = points_to_add;
@@ -1203,8 +1206,6 @@ approximation.
 The quality of approximation is available at ret.ratio. Thus,
 ret.leash/ret.ratio is a lower bound on the Frechet distance, while
 ret.leash is an upper bound.
-
-
 
 """
 function  frechet_c_approx( poly_a::Polygon{N,T},
@@ -1727,17 +1728,17 @@ function  frechet_c_compute( P::Polygon{N,T},
 end
 
 ###########################################################################
+###########################################################################
+###########################################################################
+# Greedy simplification
+
 
 function  find_frechet_prefix_inner( P::Polygon{D,T},
-    strt::Int64, i::Int64, j::Int64, w::T, r_old::T = -1.0 ) where {D,T}
-    if  ( i >= j )  ||  ( (strt + 1) == j ) 
+    strt::Int64, i::Int64, j::Int64, w::T ) where {D,T}
+    if  ( i >= j )  ||  ( (strt + 1) == j )
         return  j; # the width is zero, nothing to do.
     end
-    if  r_old > 0.0
-        r = r_old
-    else
-        r = frechet_width_approx( P, strt:j )
-    end
+    r = frechet_width_approx( P, strt:j )
     if  ( r <= w )
         return  j;
     end
@@ -1750,7 +1751,14 @@ function  find_frechet_prefix_inner( P::Polygon{D,T},
     if  ( r_m > w )
         return   find_frechet_prefix_inner( P, strt, i, mid - 1, w );
     end
-    return  find_frechet_prefix_inner( P, strt, mid, j, w, r );
+
+    # No reason to waste time?
+    if  (j - mid) <= ((j - strt) ÷ 10)
+        #println( "FLOGI" );
+        return  mid;
+    end
+
+    return  find_frechet_prefix_inner( P, strt, mid, j, w );
 end
 
 function  find_frechet_prefix( P::Polygon{D,T}, i::Int64,
@@ -1860,9 +1868,9 @@ function  frechet_simplify_w_exp( P::Polygon{D,T}, w::T ) where {D,T}
     pout = Polygon{D,T}();
     pindices = Vector{Int64}();
 
-    len = cardin( P );
-    if  ( len == 0 )
-        return pout;
+    card = cardin( P );
+    if  ( card == 0 )
+        return pout, pindices;
     end
     if  ( push_smart!( pout, P[1] ) )
         push!( pindices, 1 );
@@ -1870,7 +1878,6 @@ function  frechet_simplify_w_exp( P::Polygon{D,T}, w::T ) where {D,T}
 
     curr_ind = 1;
     next_ind::Int64 = 1;
-    card = cardin( P );
     while  true
         hi = exp_search_width_prefix( P, curr_ind, w );
         next_ind = find_frechet_prefix( P, curr_ind, hi, w )
