@@ -85,12 +85,51 @@ end
 
 # Get nearest point on segment...
 """
-    iseg_nn_point
+    iseg_nn_point_ext
 
 Returns the closest point to the segment induced by the first two
 points, to the query point. By avoiding creating the segment iself, it
-is hopeflly more efficient.
+is hopeflly more efficient. Returns the convex_combination param of the nn
+point.
 """
+function  iseg_nn_point_ext( s_p::Point{D,T}, s_q::Point{D,T},
+                                qr::Point{D,T} ) where {D,T}
+    # v(t) = p*(1-t) + q * t
+    #      = p + t*(q-p)
+    # v( [0,1] ) = segment.
+    # u(t) = v(t) - qr = (p-qr) + t * (q-p)
+    # D(t) = ||u(t)||^2 = ||p-qr||^2 + 2t <p-qr,q-p> + t^2 ||q-p||^2
+    # Settig: a =  ||q-p||^2  and  b =  2 <p-qr,q-p>
+    #        So D(t) = a*t^2 + b t + c
+    # The minimum distance is achived at
+    #    t^* = -b/(2a).
+    a = DistSq( s_p, s_q );
+    b = 2.0* point.dot( sub(s_p, qr), sub(s_q, s_p) );
+    t::T = -b /(2.0 * a);
+
+    if  ( t < 0 )
+        t = 0;
+    end
+    if  ( t > 1 )
+        t = 1;
+    end
+    pon = convex_comb( s_p, s_q, t );
+
+    lon = DistSq(qr, pon);
+    lp = DistSq(qr, s_p);
+    lq = DistSq(qr, s_q);
+
+    if  (( lon < lp )  &&  ( lon < lq ) )
+        return  pon, t;
+    end
+    if  ( lp < lq )
+        return  s_p, zero(T);
+    else
+        return  s_q, one(T);
+    end
+end
+
+
 function  iseg_nn_point( s_p::Point{D,T}, s_q::Point{D,T},
                                 qr::Point{D,T} ) where {D,T}
     # v(t) = p*(1-t) + q * t
@@ -368,7 +407,7 @@ export  at, Segment_get_convex_coef
 export  Segment_length
 export  Segment_get_bisection_point
 export  dist_iseg_nn_point
-export  iseg_nn_point
+export  iseg_nn_point, iseg_nn_point_ext
 export  iseg_iseg_dist
 
 end # module segment

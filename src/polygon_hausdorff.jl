@@ -6,43 +6,53 @@ using point;
 using segment;
 using ..polygon
 
-
 """
     hausdorff_dist_subseg
 
-Computes the Hausdorff distance between the subpolygon specified by
-P[rng], and they segment they define.
+    In the following, for a polygon P, and a range i:j, let
+
+    HD(P, i:j) denote the Hausdorff distance between the
+    subpolygon specified by P[i:j] = P[i]P[i+1] … P[j], and the segment
+    P[i]P[j].
+
+    The parameter rng is a range - that is a pair of integer i:j.
+
+    Computes HD( P, rng ).
 """
 function  hausdorff_dist_subseg( P::Polygon{D,T},
                                 rng::UnitRange{Int64} = 0:0
                                 )::T where {D,T}
-    card = cardin( P );
-    if  ( card <= 2 )
-        return  0;
-    end
-
     if  ( rng == 0:0 )
-        rng = 1:card
+        rng = 1:length( P )
     end
-    if  ( length( rng ) <= 2 )
+    if  ( length( rng ) <= 2 )  ||  ( length( P ) <= 2 )
         return  0;
     end
 
-    seg = Segment{D,T}( P[ first( rng ) ], P[ last( rng ) ] );
-
+    s,t = P[ first( rng ) ], P[ last( rng ) ];
     leash::Float64 = 0;
     for  i  in  first(rng)+1:last(rng)-1
-        q = nn_point( seg, P[ i ] );
-        leash = max( leash, Dist( q, P[ i ] ) );
+        leash = max( leash, dist_iseg_nn_point( s, t, P[ i ] ) )
     end
 
     return  leash;
 end
 
 
-function  hausdorff_exp_search_prefix( P::Polygon{D,T},
-                                       start::Int64,
-                                       w::Float64 ) where {D,T}
+"""
+    exp_search_prefix
+
+    Using exponential search, starting at vertex start of P, computes
+    the first prefix ending at hi, (approximately) that has Hausdorff
+    distance > w. Thus, the returned value is an index hi, such that
+
+    HD( P, start:hi ) > w.
+
+    If no such index found, hi is the index of the last vertex in P.
+"""
+function  exp_search_prefix( P::Polygon{D,T},
+                             start::Int64,
+                             w::Float64 ) where {D,T}
     len = cardin( P );
     hi::Int64 = min( start + 2, len );
 
@@ -58,19 +68,25 @@ function  hausdorff_exp_search_prefix( P::Polygon{D,T},
 end
 
 
+"""
+    h_bin_search_inner
 
+    Given range i:j, and a *start* vertex of P, performs a binary search
+    for the first index t ∈ i:j, such that HD(P[start:t]) ≤ w and
+    HD(P[start:t+1]) > w. The algorithm uses binary search.
+"""
+function  h_bin_search_inner( P::Polygon{D,T}, start::Int64,
+                              i::Int64, j::Int64, w::T,
+                              old_r::Float64 = -1.0 ) where {D,T}
 
-function  hausdorff_prefix_inner(
-    P::Polygon{D,T},
-    ind_start::Int64, i::Int64, j::Int64, w::T ) where {D,T}
-
-    if i >= j
-        return  j;
-    end
-    if  (ind_start + 1) == j
+    if ( i >= j )  ||  ( ( start + 1) == j )
         return  j; # the distance is zero, nothing to do.
     end
-    r = hausdorff_dist_subseg( P, ind_start:j )
+    if  old_r > 0.0
+        r = old_r
+    else
+        r = hausdorff_dist_subseg( P, start:j )
+    end
     if  ( r <= w )
         return  j;
     end
@@ -79,21 +95,21 @@ function  hausdorff_prefix_inner(
     end
     j = j - 1;
     mid = ( i + j ) >> 1;
-    r_m = hausdorff_dist_subseg( P, ind_start:mid )
+    r_m = hausdorff_dist_subseg( P, start:mid )
     if  ( r_m > w )
-        return   hausdorff_prefix_inner( P, ind_start, i, mid - 1, w );
+        return   h_bin_search_inner( P, start,   i, mid - 1, w, -1.0 );
     end
-    return  hausdorff_prefix_inner( P, ind_start, mid, j, w );
+    return       h_bin_search_inner( P, start, mid, j, w, r );
 end
 
-function  hausdorff_find_prefix( P::Polygon{D,T}, i::Int64,
+function  h_find_prefix( P::Polygon{D,T}, i::Int64,
     j::Int64, w::T )  where {D,T}
 
     r = hausdorff_dist_subseg( P, i:j )
     if  ( r <= w )
         return  j;
     end
-    return  hausdorff_prefix_inner( P, i, i, j, w );
+    return  h_bin_search_inner( P, i, i, j, w );
 end
 
 
@@ -111,8 +127,8 @@ function  hausdorff_simplify( P::Polygon{D,T}, w::T ) where {D,T}
     curr_ind = 1;
     next_ind::Int64 = 1;
     while  true
-        hi = hausdorff_exp_search_prefix( P, curr_ind, w );
-        next_ind = hausdorff_find_prefix( P, curr_ind, hi, w )
+        hi = exp_search_prefix( P, curr_ind, w );
+        next_ind = h_find_prefix( P, curr_ind, hi, w )
         @assert( next_ind > curr_ind );
         push!( pindices, next_ind );
         push!( pout,  P[ next_ind ] );

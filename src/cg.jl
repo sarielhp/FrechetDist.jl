@@ -359,7 +359,8 @@ export  BBox_min, BBox_max, BBox_middle;
 export  BBox_diam;
 export  BBox_dist, BBox_max_dist
 
-export  iseg_nn_point
+#export  iseg_nn_point
+#export  iseg_nn_point_ext 
 
 export  iseg_iseg_dist
 

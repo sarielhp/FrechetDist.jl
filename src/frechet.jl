@@ -619,14 +619,16 @@ function  frechet_width_approx( P::Polygon{N,T},
         return  0;
     end
 
-    seg = Segment{N,T}( P[ first( rng ) ], P[ last( rng ) ] );
+    s_p = P[ first( rng ) ];
+    s_q = P[ last( rng ) ];
 
     t::Float64 = 0;
-    curr::Point{N,T} = P[ first( rng ) ] ;
+    curr::Point{N,T} = s_p;
     leash::Float64 = 0;
     for  i  in  first(rng)+1:last(rng)-1
-        q = nn_point( seg, P[ i ] );
-        new_t = Segment_get_convex_coef( seg, q );
+        q,new_t = iseg_nn_point_ext( s_p, s_q, P[ i ] );
+        #q = nn_point( seg, P[ i ] );
+        #new_t = Segment_get_convex_coef( seg, q );
         if  ( new_t > t )
             t = new_t;
             curr = q;
@@ -1727,15 +1729,15 @@ end
 ###########################################################################
 
 function  find_frechet_prefix_inner( P::Polygon{D,T},
-    ind_start::Int64, i::Int64, j::Int64, w::T ) where {D,T}
-#    println( i, " : ", j );
-    if i >= j
-        return  j;
-    end
-    if  (ind_start + 1) == j
+    strt::Int64, i::Int64, j::Int64, w::T, r_old::T = -1.0 ) where {D,T}
+    if  ( i >= j )  ||  ( (strt + 1) == j ) 
         return  j; # the width is zero, nothing to do.
     end
-    r = frechet_width_approx( P, ind_start:j )
+    if  r_old > 0.0
+        r = r_old
+    else
+        r = frechet_width_approx( P, strt:j )
+    end
     if  ( r <= w )
         return  j;
     end
@@ -1744,11 +1746,11 @@ function  find_frechet_prefix_inner( P::Polygon{D,T},
     end
     j = j - 1;
     mid = ( i + j ) >> 1;
-    r_m = frechet_width_approx( P, ind_start:mid )
+    r_m = frechet_width_approx( P, strt:mid )
     if  ( r_m > w )
-        return   find_frechet_prefix_inner( P, ind_start, i, mid - 1, w );
+        return   find_frechet_prefix_inner( P, strt, i, mid - 1, w );
     end
-    return  find_frechet_prefix_inner( P, ind_start, mid, j, w );
+    return  find_frechet_prefix_inner( P, strt, mid, j, w, r );
 end
 
 function  find_frechet_prefix( P::Polygon{D,T}, i::Int64,
@@ -1872,7 +1874,6 @@ function  frechet_simplify_w_exp( P::Polygon{D,T}, w::T ) where {D,T}
     while  true
         hi = exp_search_width_prefix( P, curr_ind, w );
         next_ind = find_frechet_prefix( P, curr_ind, hi, w )
-        #println( "next_ind: ", next_ind );
         @assert( next_ind > curr_ind );
         push!( pindices, next_ind );
         push!( pout,  P[ next_ind ] );
