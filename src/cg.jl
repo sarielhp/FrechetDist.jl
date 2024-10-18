@@ -26,6 +26,9 @@ using .segment
 include( "polygon.jl" );
 using .polygon
 
+include( "trans2d.jl" );
+using .trans2d
+
 include( "polygon_hausdorff.jl" );
 using .polygon_hausdorff
 
