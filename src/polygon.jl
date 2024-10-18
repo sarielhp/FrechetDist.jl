@@ -690,7 +690,15 @@ function  shift!( P::Polygon{D,T}, v::Point{D,T} ) where {D,T}
     end
     return  P;
 end
-    
+
+
+function  mult!( P::Polygon{D,T}, scale::T ) where {D,T}
+     for  i ∈ eachindex( P )
+         P[i] = P[i] * scale;
+     end
+     return  P;
+end
+
 function  wiggle_seg( O::Polygon{D,T}, p, q, n, rate ) where {D,T}
     dir = q - p;
     vec = rate * dir;
@@ -772,6 +780,6 @@ export  reverse
 export  VecPnts_as_matrix
 
 export  times, at_time, at;
-export  shift!
+export  shift!, mult!
 
 end # // End module polygon
