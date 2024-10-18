@@ -29,8 +29,10 @@ using .polygon
 include( "trans2d.jl" );
 using .trans2d
 
+
 include( "polygon_hausdorff.jl" );
 using .polygon_hausdorff
+
 
 
 using LinearAlgebra
@@ -272,6 +274,15 @@ function  BBox_init( P::Polygon{D,T},
     bb = BBox{D,T}()
     for  i in range
         BBox_bound( bb, P[ i ] );
+    end
+
+    return  bb;
+end
+
+function  BBox_init( P::Polygon{D,T} ) where  {D,T}
+    bb = BBox{D,T}()
+    for  p ∈ P
+        BBox_bound( bb, p );
     end
 
     return  bb;

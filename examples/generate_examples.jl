@@ -1491,18 +1491,23 @@ end
 
 function  gen_example_39()
     ( ! is_rebuild( "output/39" ) )  &&  return;
-    P = peano_curve( 3 );
-    d = 1.0 / length( P ); 
-    Q = koch_curve( 3 );
-    #polygon.shift!( P, npoint( d, 2.0*d ) ); 
+    P = peano_curve( 2 );
+    #println( "PPP: ", length( P ) );
+    #d = 1.0 / length( P ); 
+    Q = dragon_curve( 8 );
 
-    println( typeof( Q ) );
+    bb = BBox_init( Q );
+    shift!( Q, -BBox_bottom_left( bb ) );
+    t = 1.0 / max( BBox_width( bb, 1 ), BBox_width( bb, 2 ) );
+    mult!( Q, t );
 
-    exit( -1 );
+    #println( typeof( Q ) );
+
+    #exit( -1 );
     
     create_demo( "Example 39", "output/39/",  P, Q,
                  false, true,
-                 "Peano vs koch curves", true
+                 "Peano vs dragon (curves)", true
                  );
 
 end

@@ -1,7 +1,7 @@
 # Originally contributed by S. Har-Peled
 # under MIT License
 using  GilbertCurves
-
+using  cg.trans2d
 
 ############################################################
 # Various examples of curves for computing Frechet distance
@@ -585,24 +585,23 @@ function  hilbert_curve( n::Int64 )
 end
 
 
-function   points_koch( points, maxk, α = sqrt(3)/2 )
-    Q = [0 -1; 1 0]
-    for k = 1:maxk
-        n = length(points)
-        new_points = Vector{Float64}[]
-        for i = 1:n-1
-            p1, p2 = points[i], points[i+1]
-            v = (p2 - p1) / 3
-            q1 = p1 + v
-            q2 = p1 + 1.5v + α * Q * v
-            q3 = q1 + v
-            append!(new_points, [p1, q1, q2, q3])
+function   dragon_curve( k )
+    P = Polygon2F();
+    P |> (0.0, 0.0)  |>  (0.8, 0.0)  |>  ( 1.0, 0.2 )  |>  ( 1.0, 1.0 );
+
+    for  i in 1:k
+        Q = deepcopy( P );
+        t_a = translation( -last( Q ) );
+        t_b = rotation( pi/2.0 )
+        t_c = translation( last( Q ) );
+        u = t_c * t_b * t_a
+        len = length(Q)
+        for  i ∈ len:-1:1
+            push!( P, trans2d.mult( u, Q[ i ] ) );
         end
-        push!(new_points, points[end])
-        points = new_points
     end
 
-    return points
+    return P
 end
 
 
@@ -610,7 +609,5 @@ function  koch_curve( level )
     points = [[0.0; 0.0], [1.0; 0.0]]
     new_points = points_koch(points, level)
 
-    P = Polygon2F();
-    println( 
     return  new_points;
 end
