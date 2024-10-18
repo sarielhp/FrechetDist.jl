@@ -14,7 +14,7 @@ using PrettyTables
 #using InteractiveUtils
 #using ProfileView
 
-const  TIME_RESULTS = true
+const  TIME_RESULTS = false
 
 AtomicInt = Threads.Atomic{Int}
 
@@ -273,7 +273,7 @@ function frechet_decider_PID( PID::PolygonsInDir, i::Int64,
         ub = max( ub, l_max_b );
     end
     =#
-    
+
     #( lb > r )   &&   return  1;
     ( ub < r )   &&   return  -1;
 
@@ -326,9 +326,9 @@ function frechet_decider_PID( PID::PolygonsInDir, i::Int64,
             l_max = m.leash;
         else
             l_min, l_max = FEVER_compute_range( PA, QA, ub )
-           
+
             f_debug_PID &&  println( "l_min..l_max: ", l_min, "...", l_max,
-                                 "\n" * "GAP  : ", ( l_max - l_min ) / delta ); 
+                                 "\n" * "GAP  : ", ( l_max - l_min ) / delta );
             if  ( ( iters > 0 )  &&  ( l_min < r < l_max )
                   &&  ( ( l_max - l_min ) > 2.0*delta ) )
                 f_monotone = true;
