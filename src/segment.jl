@@ -46,7 +46,7 @@ function  Segment{D,T}() where{D,T}
     return   Segment{D,T}(Point{D,T}(), Point{D,T}() );
 end
 
-function  at( seg::Segment{D,T}, t::Float64 ) where{D,T}
+@inline function  at( seg::Segment{D,T}, t::Float64 ) where{D,T}
     return convex_comb( seg.p, seg.q, t );
 end
 
@@ -61,20 +61,20 @@ function Base.show(io::IO, s::Segment{D,T}) where {D,T}
 end
 
 
-function  Segment_length( seg::Segment{D,T} ) where {D,T}
+@inline function  Segment_length( seg::Segment{D,T} ) where {D,T}
     return point.Dist( seg.p, seg.q );
 end
 
-function  Dist( s::Segment{D,T}, qr::Point{D,T} ) where {D,T}
+@inline function  Dist( s::Segment{D,T}, qr::Point{D,T} ) where {D,T}
     nn = nn_point( s, qr );
     return  point.Dist( nn, qr );
 end
 
-function  Dist( a::Segment{D,T}, b::Segment{D,T} ) where {D,T}
+@inline function  Dist( a::Segment{D,T}, b::Segment{D,T} ) where {D,T}
     return  iseg_iseg_dist( a.p, a.q, b.p, b.q );
 end
 
-function  Segment_get_convex_coef( s::Segment{D,T}, qr::Point{D,T} ) where{D,T}
+@inline function  Segment_get_convex_coef( s::Segment{D,T}, qr::Point{D,T} ) where{D,T}
     d = point.Dist( s.p, qr );
     len = Segment_length( s );
     if  len == 0.0
@@ -100,6 +100,9 @@ function  iseg_nn_point_ext_ext( s_p::Point{D,T}, s_q::Point{D,T},
     #
     # s_vec = sub(s_q, s_p)
     a = seg_len_sq #DistSq( s_p, s_q );
+    if   ( a == 0.0 )
+        return  s_p;
+    end
     b = 2.0 * point.dot( sub(s_p, qr), s_vec );
     t::T = -b / (2.0 * a);
 
@@ -133,6 +136,9 @@ function  iseg_nn_point_ext( s_p::Point{D,T}, s_q::Point{D,T},
     # The minimum distance is achived at
     #    t^* = -b/(2a).
     a = DistSq( s_p, s_q );
+    if   ( a == 0.0 )
+        return  s_p;
+    end
     b = 2.0 * point.dot( sub(s_p, qr), sub(s_q, s_p) );
     t::T = -b /(2.0 * a);
 
@@ -160,6 +166,9 @@ function  iseg_nn_point( s_p::Point{D,T}, s_q::Point{D,T},
     # The minimum distance is achived at
     #    t^* = -b/(2a).
     a = DistSq( s_p, s_q );
+    if   ( a == 0.0 )
+        return  s_p;
+    end
     b = 2.0* point.dot( sub(s_p, qr), sub(s_q, s_p) );
     t::T = -b /(2.0 * a);
 

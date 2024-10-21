@@ -242,6 +242,8 @@ function   SweepDist_compute( P::Polygon{N,T}, Q::Polygon{N,T} ) where {N,T}
     morph::Morphing{N,T} = Morphing_init( P, Q, pes, qes );
     morph.iters = iters;
 
+    Morphing_verify_valid( morph );
+    
     return  morph
 end
 
@@ -253,8 +255,8 @@ function   SweepDist_compute_refine_mono( poly_a::Polygon{N,T},
     P = poly_a;
     Q = poly_b;
 
-    println( "*** P :", cardin( P ) );
-    println( "*** Q :", cardin( Q ) );
+    #println( "*** P :", cardin( P ) );
+    #println( "*** Q :", cardin( Q ) );
     
     local  m_new;
     while  true
@@ -277,7 +279,7 @@ function   SweepDist_compute_refine_mono( poly_a::Polygon{N,T},
         Q = poly_b_2;
     end
 
-    println( "Returning from SweepDist_compute_refine_mono" );
+    #println( "Returning from SweepDist_compute_refine_mono" );
     return  m_new;
 end
 
@@ -289,15 +291,17 @@ function   SweepDist_compute_split(
     max_vertices::Int64 = 1000000 ) where {N,T}
 
     m = SweepDist_compute_refine_mono( poly_a, poly_b );
-    push!( out, m );
+    Morphing_verify_valid( m );
+
+    push!( out, deepcopy(m) );
     P = m.P;
     Q = m.Q;
     for  i in 1:iters
         P = Polygon_split_edges( P );
         Q = Polygon_split_edges( Q );
         mi = SweepDist_compute( P, Q );
-        #println( "i : ", i );
-        push!( out, mi );
+        Morphing_verify_valid( mi );
+        push!( out, deepcopy( mi ) );
         if  ( ( cardin( P ) + cardin( Q ) ) > max_vertices )
             break;
         end
@@ -337,28 +341,18 @@ function   SweepDist_lb_compute( P::Polygon{D,T}, Q::Polygon{D,T}
          dist( PA[i, i+1], PB[ j, j+1 ] ),
     """
     function edge_lb( PA::Polygon{D,T}, i, PB::Polygon{D,T}, j ) where {D,T}
-        #println( "i: ", i, "  [", cardin( PA ), "]" );
-        #println( "j: ", j, "  [", cardin( PB ), "]" );
-        #Dist( PA[ i ], PB[ j ] );
         lb::Float64 = typemax(Float64);
         if  i == cardin( PA )
             return  0.0;
         end
-        #println( "PA[i,i+1]:", PA[i], PA[ i + 1 ]);
         if  j > 1
             d = iseg_iseg_dist( PA[i ], PA[i + 1], PB[ j - 1 ], PB[ j ] );
             lb = min( lb, d );
-            #println( "PB[j-1,j]:", PB[j-1], PB[ j ] );
-            #println( "d: ", d );
         end
         if  j < cardin( PB )
             d = iseg_iseg_dist( PA[ i ], PA[i + 1], PB[ j ], PB[ j + 1 ] )
             lb = min( lb, d );
-            #println( "PB[j-1,j]:", PB[j], PB[ j + 1 ] );
-            #println( "d: ", d );
         end
-        #println( "LB: ", lb );
-        #println( "\n\n\n" );
         return  lb;
     end
 
@@ -367,10 +361,8 @@ function   SweepDist_lb_compute( P::Polygon{D,T}, Q::Polygon{D,T}
         if  ( i == cardin( PA ) )
             return 0.0;
         end
-        #println( "edge_lb( ?, ", i, ", ?, ", j, ")" );
         lb = edge_lb( PA, i, PB, j );
         len = Dist( PA[ i ], PA[ i + 1 ] );
-        #println( "Len: ", len );
         return   len * lb;
     end
 
@@ -383,8 +375,6 @@ function   SweepDist_lb_compute( P::Polygon{D,T}, Q::Polygon{D,T}
               &&  ( dp[ ia, ja ] <= new_val ) )
             return;
         end
-        #println( "(", i, ", ", j, ") -> (", ia, ", ", ja, "): ",
-        #    new_val );
         dp[ ia, ja ] = new_val;
         pq[ ia, ja ] = new_val;  # Push to queue
         dp_dec_i[ ia, ja ] = ( i < ia );
@@ -426,8 +416,6 @@ function   SweepDist_lb_compute( P::Polygon{D,T}, Q::Polygon{D,T}
 
     m.sol_value = dp[ n_p, n_q ];
 
-    #println( "sol_value: ", m.sol_value );
-    #exit( -1 );
     return  m;
 end
 

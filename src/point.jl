@@ -46,7 +46,7 @@ function  Base.setindex!(p::Point{D,T}, v, i::Int) where {D,T}
 end
 =#
 
-function  norm(p::MVector{D,T} ) where {D,T}
+@inline function  norm(p::MVector{D,T} ) where {D,T}
     sum = 0;
     @inbounds for i in 1:D
         @fastmath sum +=  p[i]^2;
@@ -60,22 +60,22 @@ function  norm(p::Point{D,T} ) where {D,T}
 end
 =#
 
-function  mult(z::T, p::Point{D,T}) where  {D,T}
+@inline function  mult(z::T, p::Point{D,T}) where  {D,T}
     return  z * p;
     ### POINT    return  Point( z * p.x );
 end
-function  mult(p::Point{D,T}, z::T) where  {D,T}
+@inline function  mult(p::Point{D,T}, z::T) where  {D,T}
     return  p * z;
     # POINT    return  Point( z * p.x );
 end
 
 #function  Base.:/( p::Point{D,T}, z ) where  {D,T}
-function  pnt_div( p::Point{D,T}, z::T ) where  {D,T}
+@inline function  pnt_div( p::Point{D,T}, z::T ) where  {D,T}
     return  p / z;
     # POINT    return  Point( (one(T) / z) * p.x );
 end
 
-function  normalize(p::Point{D,T} ) where {D,T}
+@inline function  normalize(p::Point{D,T} ) where {D,T}
     x = norm( p );
     if  x == 0
         return  p;
@@ -88,7 +88,7 @@ end
 
 
 #function  Base.:-(p::Point{D,T}, q::Point{D,T}) where  {D,T}
-function  sub(p::Point{D,T}, q::Point{D,T}) where  {D,T}
+@inline function  sub(p::Point{D,T}, q::Point{D,T}) where  {D,T}
     #= POINT u = p.x - q.x;
     u = p - q;
     return  Point( u ); =#
@@ -97,7 +97,7 @@ end
 
 
 #function  Base.:+(p::Point{D,T}, q::Point{D,T}) where  {D,T}
-function  add(p::Point{D,T}, q::Point{D,T}) where  {D,T}
+@inline function  add(p::Point{D,T}, q::Point{D,T}) where  {D,T}
     #= POINT u = p.x + q.x;
     return  Point( u );
     =#
@@ -116,7 +116,7 @@ end
 #function  dot( p::Point{D,T}, q::Point{D,T}) where  {D,T}
 #    return  LinearAlgebra.dot( p, q );
 #end
-function  dot( p::Point{D,T}, q::Point{D,T}) where  {D,T}
+@inline function  dot( p::Point{D,T}, q::Point{D,T}) where  {D,T}
 #    return  sum( p .* q );
     s = zero( T );
     @inbounds for i in 1:D
@@ -143,7 +143,7 @@ function Base.isless( p::Point{D,T}, q::Point{D,T} ) where {D,T}
 end
 =#
 
-function  DistSq(p::Point{D,T}, q::Point{D,T})::T where {D,T}
+@inline function  DistSq(p::Point{D,T}, q::Point{D,T})::T where {D,T}
     sum = zero(T);
     @inbounds for  i in 1:D
         @fastmath sum += ( p[i] - q[i] )^2
@@ -152,17 +152,18 @@ function  DistSq(p::Point{D,T}, q::Point{D,T})::T where {D,T}
     return  sum  #norm( p1.x - p2.x );
 end
 
-function  Dist(p::Point{D,T}, q::Point{D,T}) where {D,T}
+@inline function  Dist(p::Point{D,T}, q::Point{D,T}) where {D,T}
     sum = 0.0;
     @inbounds for  i in 1:D
-        @fastmath sum +=  ( p[i] - q[i] )^2
+        @fastmath sum +=  (p[i]-q[i])^2 #( p[i] - q[i] )^2
     end
 
     return  sqrt( sum ) #norm( p1.x - p2.x );
 end
 
 
-function  convex_comb( p::Point{D,T}, q::Point{D,T}, t::Float64 ) where{D,T}
+@inline function  convex_comb( p::Point{D,T}, q::Point{D,T}, t::Float64
+) where{D,T}
     if  ( 0 <= t <= 0.000001 )
         return  p;
     end
@@ -170,14 +171,15 @@ function  convex_comb( p::Point{D,T}, q::Point{D,T}, t::Float64 ) where{D,T}
         return  q;
     end
 
-    s = 1.0 - t;
+#    s = 1.0 - t;
     o = Point{D,T}(undef )
 
     #@inbounds
     @inbounds for  i in 1:D
         #o[ i ] = p[ i ] * (1.0 - t)  + q[ i] * t;
         @fastmath o[ i ] = p[ i ]  + ( q[ i] - p[ i ] ) * t;
-#        o[ i ] = p[ i ] * s + q[ i] * t;
+        @assert( ! isnan( o[ i ] ) );
+        #        o[ i ] = p[ i ] * s + q[ i] * t;
     end
 
     return  o;
@@ -185,7 +187,7 @@ function  convex_comb( p::Point{D,T}, q::Point{D,T}, t::Float64 ) where{D,T}
 end
 
 
-function  is_left_turn( p::Point2F, q::Point2F, r::Point2F )
+@inline function  is_left_turn( p::Point2F, q::Point2F, r::Point2F )
     q_x = q[1] - p[1];
     q_y = q[2] - p[2];
     r_x = r[1] - p[1];
@@ -210,6 +212,7 @@ npoint( 2.0, 3.0, 4.0 ) defined the 3d point (2.0, 3.0, 4.0). Or
 similarly, point( 2.0, 1.0 ) would create a 2d point.
 
 """
+#@inline
 function npoint( args...)
     D=length(args);
     T=typeof( first( args ) )
@@ -238,15 +241,24 @@ function  Point_random( D,T )
 end
 
 
+function  isNaN( p::Point{D,T} ) where {D,T}
+    for i in 1:D
+        if  isnan( p[ i ] )
+            return  true;
+        end
+    end
+    return  false;
+end
+
 
 export Point
 export Point2F
 
 export DistSq
-export Dist
+export Dist, Dist_new
 export Point_random, sub, convex_comb, dot
 
-export  add, sub, mult, norm
+export  add, sub, mult, norm, isNaN
 
 export npoint
 

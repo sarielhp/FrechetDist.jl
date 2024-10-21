@@ -38,15 +38,15 @@ end
 
 
 @static if  POLYGON_AS_DIRECT_ARRAY
-    function Points( P::Polygon{D,T} ) where {D,T}
+    @inline function Points( P::Polygon{D,T} ) where {D,T}
         return  P;
     end
 else
 
-    function Points( P::Polygon{D,T} ) where {D,T}
+    @inline function Points( P::Polygon{D,T} ) where {D,T}
         return  P.pnts;
     end
-    function Polygon{D,T}()  where {D,T}
+    @inline function Polygon{D,T}()  where {D,T}
         vec = Vector{Point{D,T}}();
         return  Polygon{D,T}( vec );
     end
@@ -171,40 +171,40 @@ function  VecPnts_as_matrix( v::Vector{Point{D,T}} ) where {D,T}
 end
 
 @static if  ! POLYGON_AS_DIRECT_ARRAY
-    function Base.last( poly::Polygon{D,T} ) where {D,T}
+    @inline function Base.last( poly::Polygon{D,T} ) where {D,T}
         #    println( "last??? " );
         return  last( Points( poly ) );
     end
 
-    function Base.first( poly::Polygon{D,T} ) where {D,T}
+    @inline function Base.first( poly::Polygon{D,T} ) where {D,T}
         #    println( "last??? " );
         return  first( Points( poly ) );
     end
 
-    function  Base.getindex(a::Polygon{D,T}, i::Int) where {D,T}
+    @inline function  Base.getindex(a::Polygon{D,T}, i::Int) where {D,T}
         return   a.pnts[ i ];
     end
 
-    function  Base.setindex!(a::Polygon{D,T}, v, i::Int) where {D,T}
+    @inline function  Base.setindex!(a::Polygon{D,T}, v, i::Int) where {D,T}
         a.pnts[ i ] = v;
     end
 end
 
 @static if  ! POLYGON_AS_DIRECT_ARRAY
-    function  Base.length( P::Polygon{D,T} ) where {D,T}
+    @inline function  Base.length( P::Polygon{D,T} ) where {D,T}
         return  length( Points(P) );
     end
 
-    function Base.eachindex( P::Polygon{D,T} ) where {D,T}
+    @inline function Base.eachindex( P::Polygon{D,T} ) where {D,T}
         return  eachindex( P.pnts );
     end
 
-    function  Base.iterate( P::Polygon{D,T} ) where {D,T}
+    @inline function  Base.iterate( P::Polygon{D,T} ) where {D,T}
         ( cardin(P) == 0 )  &&  return  nothing;
         return  (P[1], 1)
     end
 
-    function  Base.iterate( P::Polygon{D,T}, state ) where {D,T}
+    @inline function  Base.iterate( P::Polygon{D,T}, state ) where {D,T}
         ( state >= cardin( P) )  &&  return  nothing;
 
         return  (P[state+1], state+1)
@@ -213,17 +213,17 @@ end
 
 
 @static if  ! POLYGON_AS_DIRECT_ARRAY
-    function Base.push!( c::Polygon{D,T}, P::Polygon{D,T}) where {D,T}
+    @inline function Base.push!( c::Polygon{D,T}, P::Polygon{D,T}) where {D,T}
         for p in P
             push!(c.pnts, p);
         end
     end
 
-    function Base.push!( c::Polygon{D,T}, p::Point{D,T}) where {D,T}
-        push!(c.pnts, p);
+    @inline function Base.push!( c::Polygon{D,T}, p::Point{D,T}) where {D,T}
+        push!(c.pnts, p );
     end
 
-    function Base.pop!( c::Polygon{D,T}) where {D,T}
+    @inline function Base.pop!( c::Polygon{D,T}) where {D,T}
         pop!(c.pnts);
     end
 end
@@ -254,7 +254,7 @@ function  Polygon_prefix_lengths( poly::Polygon{D,T}
 end
 
 
-function  Polygon_edge_length( P::Polygon{D,T}, i::Int64 )  where {D,T}
+@inline function  Polygon_edge_length( P::Polygon{D,T}, i::Int64 )  where {D,T}
     if  i < 0  ||  ( i >= cardin( P ) )
         return  0.0;
     end
@@ -297,7 +297,7 @@ end
 Polygon2I = Polygon{2,Int64};
 Polygon2F = Polygon{2,Float64};
 
-function  cardin( P::Polygon{D,T} )::Int64 where {D,T}
+@inline function  cardin( P::Polygon{D,T} )::Int64 where {D,T}
     return  length( Points( P ) );
 end
 
@@ -345,13 +345,13 @@ function  Polygon_simplify( P::Polygon{D,T}, r ) where {D,T}
     return   Polygon_simplify_ext( P, r )[ 1 ];
 end
 
-function  push_smart!( pout::Polygon{D,T}, p::Point{D,T} ) where  {D,T}
+@inline function  push_smart!( pout::Polygon{D,T}, p::Point{D,T} ) where  {D,T}
     if  ( cardin( pout ) == 0 )
-        push!( pout, deepcopy( p ) );
+        push!( pout, p );
         return  true;
     end
-    if  ( Dist( last( pout ), deepcopy( p ) ) > 0.0 )
-        push!( pout, deepcopy( p ) );
+    if  ( Dist( last( pout ), p ) > 0.0 )
+        push!( pout, p );
         return  true;
     end
     return  false
@@ -382,8 +382,8 @@ function  Polygon_split_edges( P::Polygon{D,T} ) where {D,T}
 end
 
 
-function  Polygon_push( pout::Polygon{D,T}, p::Point{D,T} ) where  {D,T}
-    push!( pout, deepcopy( p ) );
+@inline function  Polygon_push( pout::Polygon{D,T}, p::Point{D,T} ) where  {D,T}
+    push!( pout, p );
 end
 
 
@@ -474,7 +474,7 @@ function  Polygon_sample_uniformly( P::Polygon{D,T}, n::Int64 ) where {D,T}
 end
 
 
-function  spine( P::Polygon{D,T} )  where {D,T}
+@inline function  spine( P::Polygon{D,T} )  where {D,T}
     pout = Polygon{D,T}();
     if  ( cardin( P ) <= 0 )
         return  pout;

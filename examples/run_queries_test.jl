@@ -1,6 +1,6 @@
 #! /usr/bin/julia
 #using StatProfilerHTML
-using Profile
+#using Profile
 push!(LOAD_PATH, pwd()*"/src/")
 
 using TimerOutputs
@@ -732,9 +732,9 @@ function  do_array( PID, lines, base_dir, nr,
 
     ### Do the tests...
     println( "\nRunning tests..." );
-    @profile     errors = run_tests( PID, tests, count, f_verify )
+    errors = run_tests( PID, tests, count, f_verify )
 
-    Profile.print();
+#    Profile.print();
     
     ( errors > 0 )  &&  println( "ERRORS TOTAL: ", errors );
 

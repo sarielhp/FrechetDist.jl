@@ -350,6 +350,8 @@ function  Morphing_as_polygons( m::Morphing{N,T} ) where  {N,T}
     P = Polygon{N,T}();
     Q = Polygon{N,T}();
 
+    Morphing_verify_valid( m );
+
     #leash::Float64 = 0.0;
     for  i  in eachindex( m.pes )
         push!( P, m.pes[ i ].p );
@@ -433,7 +435,7 @@ function  Morphing_as_function_w_times( m::Morphing{N,T} ) where  {N,T}
         else
             delta = Dist( P[ i ], P[ i + 1] ) / len;
         end
-                
+
         push!( t, min( last(t) + delta, 1.0 ) );
     end
     if last( t ) != 1.0
@@ -459,8 +461,8 @@ function  polygons_get_loc_at_time( P::Polygon{D,T},
         println( t ) ;
         @assert( 1 < pos <= length( P )  );
     end
-    
-    #= 
+
+    #=
     println( "POS : ", pos );
     (pos > 1 )  &&  println( "t[pos-1]: ", times[ pos - 1 ] )
     println( "t[pos]: ", times[ pos ] )
@@ -476,8 +478,8 @@ function  polygons_get_loc_at_time( P::Polygon{D,T},
         pos = pos + 1;
     end
     @assert( times[ prev ] <= t <= times[ pos ] );
-    
-    if  ( ( prev + 1 ) == pos )  
+
+    if  ( ( prev + 1 ) == pos )
         delta = ( t - times[ prev ] ) / (times[ pos ] - times[ prev ] );
         p = convex_comb( P[ prev ], P[ pos ], delta )
         q = convex_comb( Q[ prev ], Q[ pos ], delta )
@@ -485,12 +487,12 @@ function  polygons_get_loc_at_time( P::Polygon{D,T},
         #         "times: ", times[prev ] );
         return  p, q;
     end
-    
+
     # The morphing had stopped at this point, and we should return the
     # maximum in this duration...
     @assert( false );
 
-    
+
     return  p, q;
 end
 
@@ -573,6 +575,13 @@ function  check_times( V::Vector{EventPoint{N,T}} ) where {N,T}
     end
 end
 
+function  check_no_nan( V::Vector{EventPoint{N,T}} ) where {N,T}
+    for  ev in V
+        @assert( ! isnan( ev.p[1] ) )
+        @assert( ! isnan( ev.p[2] ) )
+    end
+end
+
 
 """
     Morphing_verify_valid
@@ -583,6 +592,9 @@ check the times stemps of the events are valid.
 function  Morphing_verify_valid( m::Morphing{N,T} ) where {N,T}
     check_times( m.pes );
     check_times( m.qes );
+
+    check_no_nan( m.pes );
+    check_no_nan( m.qes );
 end
 
 
@@ -894,14 +906,15 @@ function  event_sequences_extract( prm::Polygon2F, P::Polygon{N,T},
             i_q = i_q + 1;
         end
 
-        #        println( "get_point P..." );
         #t_p::Float64;
         pcurr,t_p = get_point( P, lp, i_p, p_loc );
         @assert( 0 <= t_p  &&  t_p <= 1.0 )
+        #@assert( ! isNaN(pcurr) );
         #        println( "get_point Q ..." );
-        get_point( Q, lq, i_q, curr[ 2 ] );
-#        println( "get_point Q!!!!!!!!!! ..." );
+        #get_point( Q, lq, i_q, curr[ 2 ] );
+        #        println( "get_point Q!!!!!!!!!! ..." );
         qcurr,t_q = get_point( Q, lq, i_q, curr[ 2 ] );
+        #@assert( ! isNaN( qcurr ) );
 
         if  ( ! ( 0.0 <= t_q <= 1.0 ) )
             println( "t_q: ", t_q );
@@ -910,22 +923,33 @@ function  event_sequences_extract( prm::Polygon2F, P::Polygon{N,T},
         #        println( "here? " );
 
         if  ( t_p == 0.0 ) ||  ( ( t_p == 1.0 )  &&  ( i_p == len_p ) )
-            push!( pes, EventPoint( pcurr, i_p, PT_VERTEX, 0.0 ) );
+            push!( pes, EventPoint( deepcopy( pcurr), i_p, PT_VERTEX, 0.0 ) );
         else
-            push!( pes, EventPoint( pcurr, i_p, PT_ON_EDGE, T(t_p) ) );
+            push!( pes, EventPoint( deepcopy(pcurr), i_p, PT_ON_EDGE, T(t_p) ) );
         end
 
+        #println( pcurr );
+        #println( qcurr );
         if  ( t_q == 0.0 ) ||  ( ( t_q == 1 )  &&  ( i_q == len_q ) )
-            push!( qes, EventPoint( qcurr, i_q, PT_VERTEX, 0.0 ) );
+            push!( qes, EventPoint( deepcopy(qcurr), i_q, PT_VERTEX, 0.0 ) );
         else
-            push!( qes, EventPoint( qcurr, i_q, PT_ON_EDGE, T(t_q) ) );
+            push!( qes, EventPoint( deepcopy(qcurr), i_q, PT_ON_EDGE, T(t_q) ) );
         end
         #       println( "here? B" );
     end
 
-    push!( pes, EventPoint( last(P), cardin( P ), PT_VERTEX, 0.0 ) );
-    push!( qes, EventPoint( last(Q), cardin( Q ), PT_VERTEX, 0.0 ) );
+    @assert( !point.isNaN( last( P ) ) );
+    @assert( !point.isNaN( last( Q ) ) );
+    
+    push!( pes, EventPoint( deepcopy(last(P)), cardin( P ), PT_VERTEX, 0.0 ) );
+    push!( qes, EventPoint( deepcopy(last(Q)), cardin( Q ), PT_VERTEX, 0.0 ) );
 
+    #=
+    println( "@@@@@@@@@@@@@@@@@@@@222" );
+    println( pes );
+    println( "@@@@@@@@@@@@@@@@@@@@222" );
+    println( qes );
+    =#
     #=
     for  i in 1:length( qes )
         if ( ( pes[ i ].type == PT_ON_EDGE ) &&
@@ -1029,9 +1053,10 @@ end
 function  Morphing_SweepDist_approx_price( m::Morphing{N,T} ) where  {N,T}
     P,Q = Morphing_as_polygons( m );
 
+    @assert( length( P ) == length( Q ) );
     len = cardin( P );
     price::Float64 = 0;
-    for  i in 1: len-1
+    for  i in 1:(len-1)
         price = price + segs_match_price( P[ i ], P[ i + 1 ],
                                           Q[ i ], Q[ i + 1 ] );
     end
@@ -1041,13 +1066,24 @@ end
 
 
 function  Morphing_SweepDist_price( m::Morphing{N,T} ) where  {N,T}
+    Morphing_verify_valid( m );
+
     P,Q = Morphing_as_polygons( m );
 
+    #=
+    println( "==================================" );
+    println( P );
+    println( Q );
+    println( "<<<==================================" );
+    println( "len: P: ", length( P ) );
+    =#
+    @assert( length( P ) == length( Q ) );
     len = cardin( P );
     price::Float64 = 0.0;
-    for  i in 1: len-1
+    for  i in 1:(len-1)
+        #println( i, " / ", len - 1 );
         delta::Float64 = SweepDist_segs( P[ i ], P[ i + 1 ],
-                                         Q[ i ], Q[ i + 1 ] )
+            Q[ i ], Q[ i + 1 ] )
         price = price + delta;
         #println( "DELTA: ", delta );
     end
@@ -1077,8 +1113,8 @@ function  morphing_profile( m::Morphing{D,T}, n::Int64 ) where  {D,T}
     #println( length( times ) );
     lP = total_length( PB );
     X = range(0, lP, length=n)
-    
-    Y = Vector{Float64}();    
+
+    Y = Vector{Float64}();
     for x ∈ X
         pos = x / lP;
         #println( " pos : ", pos );

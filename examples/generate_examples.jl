@@ -643,9 +643,10 @@ function  create_demo( title::String,
     f_debug && println( "A0: frechet_c_compute done..." );
     if  f_draw_ve
         f_debug && println( "A0: frechet_ve_r_compute about to be called..." );
-        println( "Before m_ve_r..." );
-        @time m_ve_r = frechet_ve_r_compute( poly_a, poly_b );
-        println( "Iterations: ", m_ve_r.iters );
+        #println( "Before m_ve_r..." );
+        #@time
+        m_ve_r = frechet_ve_r_compute( poly_a, poly_b );
+        #println( "Iterations: ", m_ve_r.iters );
     end
 
     f_debug && println( "A1..." );
@@ -674,14 +675,19 @@ function  create_demo( title::String,
     if  f_SweepDist
         f_debug && println( "A6..." );
         m_SweepDist = SweepDist_compute( poly_a, poly_b );
+        Morphing_verify_valid( m_SweepDist );
+
         f_debug && println( "A7..." );
         m_SweepDist_r_m = SweepDist_compute_refine_mono( poly_a, poly_b );
+        Morphing_verify_valid( m_SweepDist_r_m );
+
         f_debug && println( "A8..." );
 
         SweepDist_compute_split( poly_a, poly_b, m_SweepDist_vec, 7, 2000 );
 
         for  i in eachindex( m_SweepDist_vec )
             mr = m_SweepDist_vec[ i ];
+            Morphing_verify_valid( mr );
             mlb = SweepDist_lb_compute( mr.P, mr.Q )
             push!( SweepDist_lb_vec, mlb.sol_value );
 #           exit( -1 );
@@ -785,7 +791,6 @@ function  create_demo( title::String,
             write( fl_s, "<img src=\"" * base_out * ".png" * "\" />\n" )
         end
         html_close( fl_s );
-
         println( "Generating gif..." );
 
         options = [ "-delay", "50", "-loop", "0", dir * "*.png",

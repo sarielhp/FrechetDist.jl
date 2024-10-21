@@ -157,6 +157,11 @@ function f_r_create_event( R::Polygon{N,T}, i::Int64,
     end
     seg = Segment( R[ i ], R[ i + 1 ] );
     p = nn_point( seg, qr );
+    if  ( isNaN( p ) )
+        println( seg );
+        println( qr );
+        @assert( false );
+    end
 
     t::Float64 = Segment_get_convex_coef( seg, p );
 
@@ -177,6 +182,7 @@ function f_r_create_event( R::Polygon{N,T}, i::Int64,
     end
     #        println( "TTT= ", t );
 
+    @assert( ! isNaN( p ) );
     return  EventPoint( deepcopy( p ), i, PT_ON_EDGE, t );
 end
 

@@ -16,18 +16,18 @@ struct EIDCalc
     nQ::Int64
 end
 
-function   ID_init( nP::Int64, nQ::Int64 )
+@inline function   ID_init( nP::Int64, nQ::Int64 )
     e = EIDCalc( nP, nQ );
 
     return  e;
 end
 
-function   ID_val_inner( i::Int64, j::Int64, r::Int64, nP::Int64 )
+@inline function   ID_val_inner( i::Int64, j::Int64, r::Int64, nP::Int64 )
     @assert( ( r == 0 )  ||  (r == 1 ) )
     return (( j * nP + i ) << 1)  |  r;
 end
 
-function   ID_get( e::EIDCalc, i::Int64 = 0, i_is_vert::Bool = false,
+@inline function   ID_get( e::EIDCalc, i::Int64 = 0, i_is_vert::Bool = false,
     j::Int64 = 0, j_is_vert::Bool = false )
     if  ( i_is_vert  &&  j_is_vert )
         ( ( i == 1 )  &&  ( j == 1 ) )  &&  return ID_START;
@@ -49,7 +49,7 @@ mutable  struct FeverCoords
     j_is_vert::Bool;
 end
 
-function   ID_get_fields( e::EIDCalc, id::Int64, fc::FeverCoords )::Int64
+@inline function   ID_get_fields( e::EIDCalc, id::Int64, fc::FeverCoords )::Int64
     if  ( id == ID_START)
         fc.i = 1;
         fc.j = 1;
@@ -71,7 +71,7 @@ function   ID_get_fields( e::EIDCalc, id::Int64, fc::FeverCoords )::Int64
     return  0;
 end
 
-function  ID_get_max( e::EIDCalc )
+@inline function  ID_get_max( e::EIDCalc )
     #println( e.nP, e.nQ );
     return   ID_get( e, e.nP - 1, false, e.nQ - 1, true ) + 4;
 end
@@ -102,7 +102,7 @@ function  ID_tester( nP::Int64, nQ::Int64)
             @assert( j == fc.j );
             @assert( fc.i_is_vert == false );
             @assert( fc.j_is_vert == true );
-            
+
             push!( v, ID_get( e, i, true, j, false ) );
             if  ( ID_status( last( v  ) ) == 1 )
                 println( "i: ", i ) ;
@@ -228,7 +228,7 @@ function  fever_event_value( c::FEVERContext{N,T}, i::Int64,
 ) where {N,T}
 
     ( c.vals[ id ] >= 0 ) &&  return  c.vals[ id ];
-        
+
     P = c.P
     Q = c.Q
     if  i_is_vert
@@ -273,7 +273,7 @@ function  fever_schedule_event( c::FEVERContext{N,T},
 end
 
 
-function  fever_is_final_cell( id::Int64, n_p::Int64, n_q::Int64 )
+@inline function  fever_is_final_cell( id::Int64, n_p::Int64, n_q::Int64 )
     return   ( ( EID_i( id ) == ( n_p - 1 ) )
                &&  ( EID_j( id ) == ( n_q - 1 ) ) )
 end
@@ -296,7 +296,7 @@ function  fever_extract_sol_ids( P::Polygon{N,T}, Q::Polygon{N,T},
     return  out_arr;
 end
 
-function   ID_status( id::Int64 )::Int64
+@inline function   ID_status( id::Int64 )::Int64
     return   id & 0x1;
 end
 
@@ -348,7 +348,7 @@ function   fever_comp_leash( c::FEVERContext{N,T},
             curr = curr + 1;
             continue;
         end
-        
+
         low = curr;
         hi = fever_same_status( arr, curr, len )
         if ( low == hi )

@@ -164,7 +164,7 @@ function  get_color_rgb( i::Int64 )
               0.7 0.2 0.4;
               0.5 0.1 0.5 ];
     ind = 1 + ( ( i - 1 ) % size(colors,1));
-    println( ind, " ::: ", size(colors,1) );
+    #println( ind, " ::: ", size(colors,1) );
     return  colors[ ind, : ];
 end
 
@@ -248,7 +248,7 @@ function  output_polygons_to_file(  list::VecPolygon2F, filename,
                                     )
     c,cr,bb = cairo_setup( filename, list, f_pdf );
 
-    println( BBox_width( bb) );
+    #println( BBox_width( bb) );
      #1024.0 * (BBox_width( bb) / 200.0);
 #    u_width = 3;
 #    exit( -1 );
