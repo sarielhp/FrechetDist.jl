@@ -101,7 +101,7 @@ function  iseg_nn_point_ext_ext( s_p::Point{D,T}, s_q::Point{D,T},
     # s_vec = sub(s_q, s_p)
     a = seg_len_sq #DistSq( s_p, s_q );
     if   ( a == 0.0 )
-        return  s_p;
+        return  s_p, zero(T);
     end
     b = 2.0 * point.dot( sub(s_p, qr), s_vec );
     t::T = -b / (2.0 * a);
@@ -137,7 +137,7 @@ function  iseg_nn_point_ext( s_p::Point{D,T}, s_q::Point{D,T},
     #    t^* = -b/(2a).
     a = DistSq( s_p, s_q );
     if   ( a == 0.0 )
-        return  s_p;
+        return  s_p, zero(T);
     end
     b = 2.0 * point.dot( sub(s_p, qr), sub(s_q, s_p) );
     t::T = -b /(2.0 * a);
