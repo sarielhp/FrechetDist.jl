@@ -607,6 +607,9 @@ function  create_demo( title::String,
     f_debug  &&  println( "Cardinality of both polygons: ", cardi );
     total_frames = min( 50 * (cardin( poly_a ) + cardin( poly_b )), 800 );
 
+    write_to_file( poly_a, prefix * "poly_a.txt" );
+    write_to_file( poly_b, prefix * "poly_b.txt" );
+
     filename_curves = prefix*"curves.pdf";
     f_debug && println( "Outputing the curves..." );
     output_polygons_to_file(  [poly_a, poly_b], filename_curves, true );
@@ -749,6 +752,7 @@ function  create_demo( title::String,
         f_grid_only_drawn = true;
     end
 
+
     f_debug && println( "A12..." );
 
     if   f_refinements
@@ -837,8 +841,6 @@ function  create_demo( title::String,
 
 
 
-    write_to_file( poly_a, prefix * "poly_a.txt" );
-    write_to_file( poly_b, prefix * "poly_b.txt" );
 
     if  f_computed_d
         output_polygons_to_file(  [P, Q],
