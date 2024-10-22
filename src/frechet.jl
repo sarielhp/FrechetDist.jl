@@ -1264,7 +1264,7 @@ function  frechet_c_approx( poly_a::Polygon{N,T},
             m = frechet_mono_via_refinement( P, Q, t_approx )[1];
             d = m.leash;  #        frechet_ve_r_compute_dist( P, Q )
             f_debug  &&  println( "d : ", d );
-            if  ( floating_equal( d,0 ) )
+            if  ( fp_equal( d, 0 ) )
                 break;
             end;
             f_debug  &&  println( "ddd = ", d );
@@ -1664,7 +1664,7 @@ function  frechet_c_compute( P::Polygon{N,T},
             lower_bound = max( lower_bound, lb );
             if  f_debug
                 println( "!!! Ratio        : ",
-                    floating_ratio( m_mid.leash, mw.leash ) );
+                    fp_ratio( m_mid.leash, mw.leash ) );
                 println( "!!! m_mid.leash  : ", m_mid.leash );
                 println( "!!! mw.leash     : ", mw.leash );
                 println( "!!! Diff         : ", m_mid.leash - mw.leash );

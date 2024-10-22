@@ -703,25 +703,6 @@ function  check_monotone_top( out::Polygon2F )
 end
 
 
-function  floating_ratio( a::Float64, b::Float64 )::Float64
-    if   a == b
-        return  1.0;
-    end
-    return  abs( a - b ) / (abs( a)  + abs(b) );
-end
-
-function  floating_equal( a::Float64, b::Float64 )::Bool
-    if   a == b
-        return  true;
-    end
-    return  abs( a - b ) <= (0.000001* (abs( a)  + abs(b) ))
-end
-
-
-function  floating_equal( a, b )::Bool
-    return  a == b;
-end
-
 
 ##############################################################3
 # parameterization_combine
@@ -729,9 +710,9 @@ end
 ###############################################################
 function   parameterization_combine( f::Polygon2F,
                                      g::Polygon2F )::Polygon2F
-    if  ( ! floating_equal( last( g )[2], last( f )[ 1 ] ) )
+    if  ( ! fp_equal( last( g )[2], last( f )[ 1 ] ) )
         println( last( g )[2], " != ",  last( f )[ 1 ] );
-        @assert( floating_equal( last( g )[2], last( f )[ 1 ] ) )
+        @assert( fp_equal( last( g )[2], last( f )[ 1 ] ) )
     end
     idf::Int64 = 1;
     idg::Int64 = 1;
@@ -753,7 +734,7 @@ function   parameterization_combine( f::Polygon2F,
         # The two points under consideration, on the y axis
         yf = f[ idf ][1];
         yg = g[ idg ][2];
-        f_equal_yf_yg::Bool = floating_equal( yf, yg )
+        f_equal_yf_yg::Bool = fp_equal( yf, yg )
         if  ( f_equal_yf_yg )  &&  ( idf == l_f )  &&  ( idg == l_g )
             push!( out, npoint( g[ idg ][1], f[ idf ][2] ) )
             break;
@@ -765,7 +746,7 @@ function   parameterization_combine( f::Polygon2F,
             continue;
         end
         if  ( f_equal_yf_yg   &&  ( idg < l_g )
-              &&  ( floating_equal( g[ idg + 1 ][2], yg ) ) )
+              &&  ( fp_equal( g[ idg + 1 ][2], yg ) ) )
             push!( out, npoint( g[ idg ][1], f[ idf ][2] ) )
             idg = idg + 1
             continue;
@@ -1070,25 +1051,15 @@ function  Morphing_SweepDist_price( m::Morphing{N,T} ) where  {N,T}
 
     P,Q = Morphing_as_polygons( m );
 
-    #=
-    println( "==================================" );
-    println( P );
-    println( Q );
-    println( "<<<==================================" );
-    println( "len: P: ", length( P ) );
-    =#
     @assert( length( P ) == length( Q ) );
     len = cardin( P );
     price::Float64 = 0.0;
     for  i in 1:(len-1)
-        #println( i, " / ", len - 1 );
         delta::Float64 = SweepDist_segs( P[ i ], P[ i + 1 ],
             Q[ i ], Q[ i + 1 ] )
         price = price + delta;
-        #println( "DELTA: ", delta );
     end
 
-    #println( "PRICE: ", price );
     return  price;
 end
 

@@ -94,7 +94,7 @@ was computed by sage math.
 
 """
 function  integral( f::DistFunction{T}, x::T ) where {T}
-    f_debug::Bool = true;
+    f_debug::Bool = false;
     v = eval( f, x );
 
     f_debug && begin
@@ -216,8 +216,7 @@ function  SweepDist_segs_p( p_a::Point{D,T},
 
     f_debug::Bool = false;
     len_edge_p = Dist( p_a, p_b );
-
-    if  ( len_edge_p == 0.0 )
+    if  fp_equal( p_a, p_b )  ||  ( len_edge_p == 0.0 )
         return  0.0;
     end
 

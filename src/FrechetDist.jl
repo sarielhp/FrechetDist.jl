@@ -56,19 +56,15 @@ export  Morphing_as_polygons
 export  Morphing_extract_vertex_radii, Morphing_extract_offsets
 export  Morphing_monotone_leash
 export  morphing_profile;
+export  Morphing_as_function_w_times;
+export  Morphing_SweepDist_price
+export  Morphing_SweepDist_approx_price
+export  Morphing_get_max_edges_err;
+export  Morphing_sample_uniformly
 
 export  frechet_refinement;
 export  frechet_mono_via_refinement_delta
 
-export  Morphing_as_function_w_times;
-
-
-export  Morphing_SweepDist_price
-export  Morphing_SweepDist_approx_price
-
-export  Morphing_get_max_edges_err;
-
-export  Morphing_sample_uniformly
 
 export  polygons_get_loc_at_time
 

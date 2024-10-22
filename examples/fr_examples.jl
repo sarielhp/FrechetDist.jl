@@ -148,8 +148,6 @@ end
 
 
 function  example_36()
-    ( ! is_rebuild( "output/36" ) )  &&  return;
-
     h = 0.01;
 
     P = Polygon2F() |> (0.0, 0.0);
@@ -165,6 +163,30 @@ function  example_36()
     return  P, Q;
 end
 
+function  example_40()
+    delta = 0.01
+    rho = 0.1
+    h = 0.002;
+    zigs = 4
+    
+    b = 0.5;
+
+    P = Polygon2F() |> (-b, 0.0 ) |> (0.0, 0.0) |> (1.0, 0.0) |> (rho, h);
+
+    zig_zag_x( P, 1.0 - 2.0*rho, h, zigs, 1.0 );
+    y = last( P )[ 2 ];
+    P |> ( 1.0 + b, y + h );
+
+    y = y + 2.0*h;
+
+
+    Q = Polygon2F() |> (-b, y )  |> (0.0, y) |> (rho, y);
+    zig_zag_x( Q, 1.0 - 2.0*rho, h, zigs + 1 , 1.0 );
+    y = last( Q )[ 2 ];
+    Q |> (0.0, y ) |> (1.0, y + h );
+    Q |> ( 1.0+b, y + h );
+    return  P, Q;
+end
 
 
 function  example_5()

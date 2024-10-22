@@ -1518,6 +1518,17 @@ function  gen_example_39()
                  );
 
 end
+
+function  gen_example_40()
+    ( ! is_rebuild( "output/40" ) )  &&  return;
+
+    P, Q = example_40();
+    create_demo( "Example 40", "output/40/",  P, Q,
+                 false, true,
+                 "Zig zag zog with small distance...", true
+                 );
+end
+
     
 function  generate_examples()
     gen_example_1()
@@ -1723,6 +1734,7 @@ function  generate_examples()
     gen_example_37();
     gen_example_38();
     gen_example_39();
+    gen_example_40();
 end
 
 function  reportIt( m )
