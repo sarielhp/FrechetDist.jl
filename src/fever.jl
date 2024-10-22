@@ -49,7 +49,7 @@ mutable  struct FeverCoords
     j_is_vert::Bool;
 end
 
-@inline function   ID_get_fields( e::EIDCalc, id::Int64, fc::FeverCoords )::Int64
+function   ID_get_fields( e::EIDCalc, id::Int64, fc::FeverCoords )::Int64
     if  ( id == ID_START)
         fc.i = 1;
         fc.j = 1;

@@ -94,12 +94,15 @@ was computed by sage math.
 
 """
 function  integral( f::DistFunction{T}, x::T ) where {T}
-    f_debug::Bool = false;
+    f_debug::Bool = true;
     v = eval( f, x );
 
-    f_debug && println( "FFF f_a: ", f.a );
-    f_debug && println( "FFF f_b: ", f.b );
-    f_debug && println( "FFF f_c: ", f.c );
+    f_debug && begin
+        println( "FFF f_a: ", f.a );
+        println( "FFF f_b: ", f.b );
+        println( "FFF f_c: ", f.c );
+        println( "      x: ", x );
+    end
     tmp_a = 4.0 * f.a * f.c;
     tmp_b = f.b*f.b;
 
