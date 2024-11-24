@@ -1,4 +1,4 @@
-#! /usr/bin/julia
+#! julia
 #using StatProfilerHTML
 #using Profile
 push!(LOAD_PATH, pwd()*"/src/")
