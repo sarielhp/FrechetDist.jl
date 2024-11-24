@@ -222,7 +222,7 @@ function   get_birds( dir_raw, dir_birds )
     birds_name = dir_raw_birds * birds_base;
     birds_url = "https://datarepository.movebank.org/bitstreams"*
                 "/ed3529e6-ce20-4237-8875-9d35fdbf9a0f/download";
-    birds_alt_url = "http://sarielhp.org/misc/blog/24/06/18/";
+    birds_alt_url = "https://frechet.xyz/download/";
     if  ! isfile( birds_name )
         println( "Downloading birds data... Might take a while..." );
         run( `wget "$birds_url"` )
@@ -250,7 +250,7 @@ end
 function  get_pigeons_data( dir_raw, dir_pigeons )
     dir_raw_pigeons = dir_raw * "/pigeons/";
     mkpath_no_err( dir_raw_pigeons );
-    url_base = "http://sarielhp.org/misc/blog/24/06/18/";
+    url_base = "https://frechet.xyz/download/";
     base_name = "right_hemisphere_advantage_in_route_fidelity_in"*
                 "_homing_pigeons__data_from_pollonara_et_al__2017__csv.zip"
     zip_name = dir_raw_pigeons*base_name;
