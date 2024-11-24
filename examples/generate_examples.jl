@@ -1,4 +1,4 @@
-#! /bin/julia
+#! julia
 
 # Originally contributed by S. Har-Peled
 # under MIT License

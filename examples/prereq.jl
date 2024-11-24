@@ -1,3 +1,5 @@
+#! julia
+
 import Pkg;
 
 Pkg.add("TimerOutputs");
