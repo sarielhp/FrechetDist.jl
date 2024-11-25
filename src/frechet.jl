@@ -30,23 +30,23 @@ function  EID(
     return  val;
 end
 
-function  EID_i( id::Int64 )::Int64
+@inline function  EID_i( id::Int64 )::Int64
     return  ( id >> 32 );
 end
 
-function  EID_j( id::Int64 )::Int64
+@inline function  EID_j( id::Int64 )::Int64
     return   ( id & 0xfffffffc ) >> 2;
 end
 
-function   EID_ij_status( id::Int64 )::Int64
+@inline function   EID_ij_status( id::Int64 )::Int64
     return   id & 0x3;
 end
 
-function   EID_i_is_vert( id::Int64 )::Bool
+@inline function   EID_i_is_vert( id::Int64 )::Bool
     return   ( (id & 0x2) != 0 );
 end
 
-function  EID_j_is_vert( id::Int64 )::Bool
+@inline function  EID_j_is_vert( id::Int64 )::Bool
     return  ( (id & 0x1) != 0 );
 end
 
@@ -72,7 +72,7 @@ mutable struct FRContext{N,T}
     upper_bound::T
 end
 
-function  FR_Context(P::Polygon{N,T}, Q::Polygon{N,T}) where {N,T}
+@inline function  FR_Context(P::Polygon{N,T}, Q::Polygon{N,T}) where {N,T}
 #    d_h = DictHandledType();
     d_ver = DictVERType();
     h = HeapVerticesType();
@@ -137,14 +137,14 @@ function  f_r_new_event( _id::Int64, c::FRContext{N,T} ) where {N,T}
 end
 =#
 
-function   is_start_event( id::Int64 )
+@inline function   is_start_event( id::Int64 )
     return ( ( EID_i( id ) == 1 )
              && ( EID_j( id ) == 1 )
              && EID_i_is_vert( id )
              &&  EID_j_is_vert( id ) )
 end
 
-function  is_final_cell( id::Int64, n_p::Int64, n_q::Int64 )
+@inline function  is_final_cell( id::Int64, n_p::Int64, n_q::Int64 )
     return   ( ( EID_i( id ) == ( n_p - 1 ) )
                &&  ( EID_j( id ) == ( n_q - 1 ) ) )
 end
@@ -187,7 +187,7 @@ function f_r_create_event( R::Polygon{N,T}, i::Int64,
 end
 
 
-function  is_schedule_event( dict::DictVERType, id::Int64, n_p::Int64,
+@inline function  is_schedule_event( dict::DictVERType, id::Int64, n_p::Int64,
                              n_q::Int64 )::Bool
     if  haskey( dict, id )
         return  false
@@ -204,7 +204,7 @@ function  is_schedule_event( dict::DictVERType, id::Int64, n_p::Int64,
     return  true
 end
 
-function  f_r_schedule_event( id::Int64, prev_id::Int64,
+@inline function  f_r_schedule_event( id::Int64, prev_id::Int64,
                               c::FRContext{N,T} ) where  {N,T}
     if  ! is_schedule_event( c.dict, id, c.n_p, c.n_q )
         return
@@ -217,10 +217,6 @@ function  f_r_schedule_event( id::Int64, prev_id::Int64,
     c.dict[ id ] = prev_id;
     push!( c.heapAlt, (new_val, id ) );
 end
-
-
-
-
 
 
 function  f_r_extract_solution( P::Polygon{N,T}, Q,

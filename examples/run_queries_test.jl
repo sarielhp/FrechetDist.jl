@@ -11,11 +11,14 @@ using FrechetDist.cg
 using FrechetDist.cg.polygon
 using FrechetDist.cg.point
 using PrettyTables
+using Base.Threads
+
+using Profile
 #using Profile
 #using InteractiveUtils
 #using ProfileView
 
-const  TIME_RESULTS = true
+const  TIME_RESULTS = false
 
 AtomicInt = Threads.Atomic{Int}
 
@@ -580,6 +583,7 @@ function  run_tests( PID::PolygonsInDir, tests::Vector{test_info_t},
     end
 
     f_verify  &&  println( "Verification is on, test would run much slower..." );
+    println( "Threads: ", nthreads() );
     for  i in  rng
         #=if  i > 10000000
             return 0;
@@ -792,13 +796,15 @@ end
 #P = Polygon2F();
 #println( fieldnames(Polygon2F) );
 #exit( -1 );
-function  main( ARGS )
+function (@main)(ARGS)
     f_verify_run::Bool = false;
 
     num_args = length( ARGS );
 
     if   num_args == 2  &&  ( ARGS[ 1 ] == "test_file" )
-        test_single_file( ARGS[2], f_verify_run );
+        @profile test_single_file( ARGS[2], f_verify_run );
+        Profile.print(format=:flat)
+        #Profile.print()
         exit( 0 );
     end
     if   num_args == 3  &&  ( ARGS[ 1 ] == "file" )
@@ -813,4 +819,4 @@ function  main( ARGS )
 end
 
 
-main( ARGS );
+#main( ARGS );
