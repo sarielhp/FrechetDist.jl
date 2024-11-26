@@ -198,6 +198,9 @@ end
     if  haskey( dict, id )
         return  false
     end
+    if  ( EID_i( id )  < n_p )  &&  ( EID_j( id ) < n_q )
+        return  true;
+    end
     if  ( EID_i( id )  > n_p )  ||  ( EID_j( id ) > n_q )
         return  false;
     end
@@ -560,7 +563,7 @@ function   frechet_ve_r_compute_ext( P::Polygon{N,T},
         i = EID_i( id );
         j = EID_j( id );
 
-        if  is_start_event( id )
+        if  id == start_id #is_start_event( id )
             f_r_schedule_event( EID( 1, false, 1, true ), id, c );
             f_r_schedule_event( EID( 1, true, 1, false ), id, c );
             continue;
@@ -1839,17 +1842,6 @@ function  frechet_simplify_to_cardin( P::Polygon{D,T}, sz::Int64 ) where {D,T}
 end
 
 
-
-
-
-
-
-
-
-
-
-
-
 ###########################################################################
 
 
@@ -1861,7 +1853,6 @@ function  exp_search_width_prefix( P::Polygon{N,T},
     hi::Int64 = min( start + 2, len );
 
     ( hi >= len )  &&  return  hi;
-
     while  hi < len
         r = frechet_width_approx( P, start:hi )
         ( r > w )  &&  return  min( hi + 5, len );
