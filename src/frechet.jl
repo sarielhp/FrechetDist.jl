@@ -72,7 +72,7 @@ mutable struct FRContext{N,T}
     upper_bound::T
 end
 
-@inline function  FR_Context(P::Polygon{N,T}, Q::Polygon{N,T}) where {N,T}
+function  FR_Context(P::Polygon{N,T}, Q::Polygon{N,T}) where {N,T}
 #    d_h = DictHandledType();
     d_ver = DictVERType();
     h = HeapVerticesType();
@@ -155,15 +155,21 @@ function f_r_create_event( R::Polygon{N,T}, i::Int64,
         ev = EventPoint( R[ i ], i, PT_VERTEX, 0.0 );
         return  ev;
     end
-    seg = Segment( R[ i ], R[ i + 1 ] );
-    p = nn_point( seg, qr );
+
+    p::Point{N,T},t::T =  iseg_nn_point_ext( R[ i ], R[ i + 1 ], qr );
+
+    
+    #seg = Segment( R[ i ], R[ i + 1 ] );
+    #p = nn_point( seg, qr );
+    #=
     if  ( isNaN( p ) )
         println( seg );
         println( qr );
         @assert( false );
     end
-
-    t::Float64 = Segment_get_convex_coef( seg, p );
+    =#
+    
+    #t::Float64 = Segment_get_convex_coef( seg, p );
 
     if  ( ! ( 0.0 <= t  &&  t <= 1.0 ) )
         println( R[ i ] );

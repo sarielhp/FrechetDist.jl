@@ -121,7 +121,7 @@ end
 
 Returns the closest point to the segment induced by the first two
 points, to the query point. By avoiding creating the segment iself, it
-is hopeflly more efficient. Returns the convex_combination param of the nn
+is hopefully more efficient. Returns the convex_combination param of the nn
 point.
 """
 function  iseg_nn_point_ext( s_p::Point{D,T}, s_q::Point{D,T},
