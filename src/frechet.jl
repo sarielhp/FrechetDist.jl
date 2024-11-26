@@ -156,7 +156,7 @@ function f_r_create_event( R::Polygon{N,T}, i::Int64,
         return  ev;
     end
 
-    p::Point{N,T},t::T =  iseg_nn_point_ext( R[ i ], R[ i + 1 ], qr );
+    p::Point{N,T},t::T = iseg_nn_point_ext( R[ i ], R[ i + 1 ], qr );
 
     
     #seg = Segment( R[ i ], R[ i + 1 ] );
@@ -189,7 +189,7 @@ function f_r_create_event( R::Polygon{N,T}, i::Int64,
     #        println( "TTT= ", t );
 
     @assert( ! isNaN( p ) );
-    return  EventPoint( deepcopy( p ), i, PT_ON_EDGE, t );
+    return  EventPoint( p, i, PT_ON_EDGE, t );
 end
 
 
