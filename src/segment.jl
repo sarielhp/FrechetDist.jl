@@ -347,7 +347,7 @@ segment iself, it is hopeflly more efficient.
         val = c ;
     elseif  ( t > 1 )
         #t = 1;
-        val::Float64 = a + b + c;
+        val = a + b + c;
     else
         val = a*t^2 + b*t + c;
     end
