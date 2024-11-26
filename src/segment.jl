@@ -314,7 +314,8 @@ Returns the *distance* to the closest point lying on the segment induced by
 the first two points, to the query point. By avoiding creating the
 segment iself, it is hopeflly more efficient.
 """
-function dist_iseg_nn_point( s_p::Point{D,T}, s_q::Point{D,T}, qr::Point{D,T}
+@inline function dist_iseg_nn_point( s_p::Point{D,T},
+                                     s_q::Point{D,T}, qr::Point{D,T}
 )  where {D,T}
     # v(t) = p*(1-t) + q * t
     #      = p + t*(q-p)
@@ -340,13 +341,16 @@ function dist_iseg_nn_point( s_p::Point{D,T}, s_q::Point{D,T}, qr::Point{D,T}
 
     t = -b /(2.0 * a);
 
+    local val::Float64;
     if  ( t < 0 )
-        t = 0;
+        #t = 0;
+        val = c ;
+    elseif  ( t > 1 )
+        #t = 1;
+        val::Float64 = a + b + c;
+    else
+        val = a*t^2 + b*t + c;
     end
-    if  ( t > 1 )
-        t = 1;
-    end
-    val::Float64 = a*t^2 + b*t + c;
     if  ( val <= 1e-20 )
         return 0;
     end
@@ -360,7 +364,7 @@ end
 Returns the closest point on the segment `s` to the query point `qr`.
 
 """
-function  nn_point( s::Segment{D,T}, qr::Point{D,T} ) where {D,T}
+@inline function  nn_point( s::Segment{D,T}, qr::Point{D,T} ) where {D,T}
     return   iseg_nn_point( s.p, s.q, qr );
 end
 
