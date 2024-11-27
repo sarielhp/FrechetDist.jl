@@ -739,7 +739,7 @@ function  do_array( PID, lines, base_dir, nr,
     errors = run_tests( PID, tests, count, f_verify )
 
 #    Profile.print();
-    
+
     ( errors > 0 )  &&  println( "ERRORS TOTAL: ", errors );
 
 end
@@ -767,7 +767,7 @@ function  test_files_from_file( filename, base_dir,
     if  ( f_verify )
         println( "\n\n"*"VERIFICATION RUN - will be much slower.\n" );
     end
-    
+
     println( "\nReading polygons..." );
     PID = read_polygons_in_dir( base_dir, ! f_serial );
 

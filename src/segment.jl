@@ -83,9 +83,16 @@ end
     return  d/len;
 end
 
+"""
+    iseg_nn_point_ext_ext
 
-# seg_len_sq = DistSq( s_p, s_q ) : Squared distance between s_p and s_q
-# s_vec =  sub(s_q, s_p)
+    Two parameters should be precomputed before calling this function:
+
+   seg_len_sq = DistSq( s_p, s_q ) 
+   s_vec =  sub(s_q, s_p)
+
+   return  nearest point, and its convex combination coefficient;
+"""
 @inline function  iseg_nn_point_ext_ext( s_p::Point{D,T}, s_q::Point{D,T},
     qr::Point{D,T}, seg_len_sq::T, s_vec::Point{D,T} ) where {D,T}
     # v(t) = p*(1-t) + q * t

@@ -158,7 +158,7 @@ function f_r_create_event( R::Polygon{N,T}, i::Int64,
 
     p::Point{N,T},t::T = iseg_nn_point_ext( R[ i ], R[ i + 1 ], qr );
 
-    
+
     #seg = Segment( R[ i ], R[ i + 1 ] );
     #p = nn_point( seg, qr );
     #=
@@ -168,7 +168,7 @@ function f_r_create_event( R::Polygon{N,T}, i::Int64,
         @assert( false );
     end
     =#
-    
+
     #t::Float64 = Segment_get_convex_coef( seg, p );
 
     if  ( ! ( 0.0 <= t  &&  t <= 1.0 ) )
@@ -323,9 +323,9 @@ end
 """
     max_leash
 
-    Gets a segment on one polygon s_a s_b, and a chain P[low:hi]. Updates the 
-    min/max estimates from the leash length. Lower bound is simply the distance 
-    to nearest point on th esegment. The max is the result of brute force 
+    Gets a segment on one polygon s_a s_b, and a chain P[low:hi]. Updates the
+    min/max estimates from the leash length. Lower bound is simply the distance
+    to nearest point on th esegment. The max is the result of brute force
     monotonization.
 """
 @inline function    max_leash( l_min::T, l_max::T,
@@ -343,20 +343,22 @@ end
 
     max_t = 0.0;
     max_s = s_a;
+
+    seg_len_sq = DistSq( s_a, s_b )  # Squared distance between s_p and s_q
+    s_vec =  sub(s_q, s_p)
+
     for  j in low:hi
         p = P[ j ];
-        #q = nn_point( seg, p );
-        sq = iseg_nn_point( s_a, s_b, p );
 
-        new_t = Dist( sq, s_a );  # distance of sq from s_a
+        sq, new_t = iseg_nn_point_ext_ext( s_a, s_b, p, seg_len_sq, s_vec );
 
         dst = Dist( sq, p );
         l_min = max( l_min, dst );
         if  ( new_t >= max_t )
             max_t = new_t;
             max_s = sq; #convex_comb( p_a, p_b, max_t );
-        end 
-        
+        end
+
         l_max = max( l_max, Dist( max_s, p ) );
     end
 
@@ -640,7 +642,7 @@ function  frechet_width_approx( P::Polygon{N,T},
     s_p = P[ first( rng ) ];
     s_q = P[ last( rng ) ];
 
-    seg_len_sq = DistSq( s_p, s_q ) 
+    seg_len_sq = DistSq( s_p, s_q )
     s_vec =  sub(s_q, s_p)
 
     t::Float64 = 0;
