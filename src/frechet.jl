@@ -320,39 +320,44 @@ function  f_r_extract_solution_ids( P::Polygon{N,T}, Q::Polygon{N,T},
     return  out_arr;
 end
 
+"""
+    max_leash
 
+    Gets a segment on one polygon s_a s_b, and a chain P[low:hi]. Updates the 
+    min/max estimates from the leash length. Lower bound is simply the distance 
+    to nearest point on th esegment. The max is the result of brute force 
+    monotonization.
+"""
 @inline function    max_leash( l_min::T, l_max::T,
-                               p_a::Point{N,T}, p_b::Point{N,T},
+                               s_a::Point{N,T}, s_b::Point{N,T},
                                P::Polygon{N,T}, low::Int64,
                                hi::Int64 ) where {N,T}
-    #seg = Segment( p_a, p_b );
-    len_seg::Float64 = Dist( p_a, p_b );
-    if  ( len_seg == 0.0 )
+    #seg = Segment( s_a, s_b );
+    len_seg_sq::Float64 = DistSq( s_a, s_b );
+    if  ( len_seg_sq == 0.0 )
         for  j in low:hi
-            l_min = max( l_min, Dist( p_a, P[ j ] ) );
+            l_min = max( l_min, Dist( s_a, P[ j ] ) );
         end
         return  l_min, max( l_min, l_max );
     end
 
     max_t = 0.0;
-    max_q = p_a;
+    max_s = s_a;
     for  j in low:hi
         p = P[ j ];
         #q = nn_point( seg, p );
-        q = iseg_nn_point( p_a, p_b, p );
+        sq = iseg_nn_point( s_a, s_b, p );
 
-        len_from_p_a = Dist( q, p_a );
+        new_t = Dist( sq, s_a );  # distance of sq from s_a
 
-        dst = Dist( p, q );
+        dst = Dist( sq, p );
         l_min = max( l_min, dst );
-        new_t = len_from_p_a; #Segment_get_convex_coef( seg, q );
         if  ( new_t >= max_t )
             max_t = new_t;
-            max_q = q; #convex_comb( p_a, p_b, max_t );
-        else # new_t < max_t
-            dst = Dist( p, max_q );
-            l_max = max( l_max, dst );
-        end
+            max_s = sq; #convex_comb( p_a, p_b, max_t );
+        end 
+        
+        l_max = max( l_max, Dist( max_s, p ) );
     end
 
     return  l_min, l_max;
