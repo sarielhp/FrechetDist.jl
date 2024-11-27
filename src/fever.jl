@@ -210,7 +210,7 @@ end
     n_p = c.n_p;
     n_q = c.n_q;
 
-    if  ( ( i  < n_p )  &&  ( j > <_q ) )
+    if  ( ( i  < n_p )  &&  ( j > n_q ) )
         return  true;
     end
     if  ( ( i  > n_p )  ||  ( j > n_q ) )
