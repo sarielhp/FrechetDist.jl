@@ -47,8 +47,16 @@ function frechet_comp( P::Polygon{D,T}, Q::Polygon{D,T}
 
     println( "frechet_compute..." );
 
+    m_reg = frechet_ve_r_compute( P, Q )
+    m_reg_2 = FEVER_compute( P, Q )
+
+    println( "\n" * "frechet_ve_r_compute: " );
     @time m_reg = frechet_ve_r_compute( P, Q )
 
+    println( "\n" * "FEVER_compute: " );
+    @time m_reg_2 = FEVER_compute( P, Q )
+
+    println( "\n" );
     println( l_min_r, "...", l_max_r );
     #
     println( "\nFEVER_compute range..." );
@@ -56,8 +64,10 @@ function frechet_comp( P::Polygon{D,T}, Q::Polygon{D,T}
 
     println( "FEVER A: ", l_min_a, "...", l_max_a );
     println( "FEVER B: ", l_min_b, "...", l_max_b );
-    println( m_reg.leash );
+    println( "m_reg  : ", m_reg.leash );
+    println( "m_reg_2: ", m_reg_2.leash );
     println( "Real distnace :" ,m_d.leash );
+
     #=
     println( "FEVER_compute range..." );
     @time FEVER_compute_range( P, Q, 10000000.0 );

@@ -1087,7 +1087,16 @@ function  frechet_mono_via_refinement_delta( Pa::Polygon{N,T},
         #println( count, "  ", length( P ), "  ", length( Q ) );
         #( count > 0 )  &&  println( "FVER round: ", count );
 
-        m = frechet_ve_r_compute( P, Q )
+        #@time m_old = frechet_ve_r_compute( P, Q )
+        m = FEVER_compute( P, Q );
+        #=
+        println( "---" );
+        
+        if  ( ! fp_equal( m_old.leash, m.leash ) )
+            @assert( m_old.leash == m.leash );
+        end
+        =#
+        
         mm = Morphing_monotonize( m );
 
         res = 3;

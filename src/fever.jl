@@ -384,6 +384,45 @@ function   fever_comp_leash( c::FEVERContext{N,T},
 end
 
 
+function   fever_extract_morphing( c::FEVERContext{N,T},
+                                   P::Polygon{N,T},
+                                   Q::Polygon{N,T},
+                                   arr::Vector{Int64}
+                                   ) where {N,T}
+    pes = Vector{EventPoint{N,T}}();
+    qes = Vector{EventPoint{N,T}}();
+    curr::Int64 = 1;
+    len::Int64 = length( arr );
+    l_max::T = 0.0;
+    l_min::T = 0.0;
+    eid::EIDCalc = c.eid;
+
+    fc = FeverCoords( 0, false, 0, false );
+    fe = FeverCoords( 0, false, 0, false );
+
+    while  curr <= len
+        id_curr::Int64 = arr[ curr ];
+
+        ID_get_fields( eid, id_curr, fc );
+        leash = c.vals[ id_curr ]
+
+        pe::EventPoint = f_r_create_event( P, fc.i, fc.i_is_vert, Q[ fc.j ] );
+        qe::EventPoint = f_r_create_event( Q, fc.j, fc.j_is_vert, P[ fc.i ] );
+        push!( pes, pe );
+        push!( qes, qe );
+
+        curr = curr + 1;
+    end
+
+    morph::Morphing{N,T} = Morphing_init( P, Q, pes, qes );
+    morph.iters = len;
+
+    return  morph;
+end
+
+
+
+
 function   FEVER_compute_range( P::Polygon{N,T},
                                 Q::Polygon{N,T},
                                 upper_bound::T
@@ -450,6 +489,68 @@ function   FEVER_compute_range( P::Polygon{N,T},
     #println( "\n\n\n\n" );
     return  l_min,l_max
 end
+
+
+"""
+    FEVER_compute
+
+Computes the VE-Frechet distance between P and Q. Unlike the other
+implementation, this one does not use hashing, instead allocating
+quadratic space to perform lookups. Seems wasteful, but works
+reasonably well for small curves (say of size at most 200). 
+
+"""
+function   FEVER_compute( P::Polygon{N,T},
+                          Q::Polygon{N,T}
+                          ) where {N,T}
+    f_debug::Bool = false;
+    c::FEVERContext{N,T} = FEVER_Context( P, Q )
+    fc = FeverCoords( 0, false, 0, false );
+
+    c.f_upper_bound = false;
+
+    n_pm::Int64 = c.n_p - 1;
+    n_qm::Int64 = c.n_q - 1;
+    heap = c.heap;
+    vals = c.vals;
+    eid = c.eid;
+    iters = 0;
+    id::Int64 = 0;
+    while  ! isempty( heap )
+        iters = iters + 1;
+        id = pop!( heap );
+        val = vals[ id ];
+
+        if  id == ID_START
+            fever_schedule_event( c, 1, false, 1, true, id );
+            fever_schedule_event( c, 1, true , 1, false, id );
+            continue;
+        end
+
+        ID_get_fields( eid, id, fc );
+
+        if  ( fc.i >= n_pm )  &&  ( fc.j >= n_qm )
+            # Is it the *final* event?
+            if  ( fc.i == c.n_p )  &&  ( fc.j == c.n_q )
+                break;
+            end
+            if  ( ( fc.i == n_pm )  &&  ( fc.j == n_qm ) )
+                c.prev[ ID_END ] = id;
+                push!( c.heap, ID_END );
+                continue;
+            end
+        end
+        fever_schedule_event( c, fc.i+1, true,   fc.j, false, id );
+        fever_schedule_event( c, fc.i  , false, fc.j+1, true, id );
+    end
+    out_arr = fever_extract_sol_ids( P, Q, c.prev );
+
+    # Now, we need to convert this into a morphing...
+    m = fever_extract_morphing( c, P, Q, out_arr );
+
+    return  m                                          ;
+end
+
 
 
 ##########################################################

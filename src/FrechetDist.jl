@@ -80,7 +80,7 @@ export  frechet_offsets
 
 export  frechet_ve_r_compute_range
 
-export  FEVER_compute_range
+export  FEVER_compute_range, FEVER_compute
 
 
 export  frechet_mono_via_refinement, frechet_mono_via_refinement_ext
