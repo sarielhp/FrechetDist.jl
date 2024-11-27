@@ -321,8 +321,10 @@ function  f_r_extract_solution_ids( P::Polygon{N,T}, Q::Polygon{N,T},
 end
 
 
-function    max_leash( l_min::T, l_max::T, p_a::Point{N,T}, p_b::Point{N,T},
-                       P::Polygon{N,T}, low::Int64, hi::Int64 ) where {N,T}
+@inline function    max_leash( l_min::T, l_max::T,
+                               p_a::Point{N,T}, p_b::Point{N,T},
+                               P::Polygon{N,T}, low::Int64,
+                               hi::Int64 ) where {N,T}
     #seg = Segment( p_a, p_b );
     len_seg::Float64 = Dist( p_a, p_b );
     if  ( len_seg == 0.0 )
