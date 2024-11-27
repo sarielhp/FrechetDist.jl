@@ -346,11 +346,7 @@ function  Polygon_simplify( P::Polygon{D,T}, r ) where {D,T}
 end
 
 @inline function  push_smart!( pout::Polygon{D,T}, p::Point{D,T} ) where  {D,T}
-    if  ( cardin( pout ) == 0 )
-        push!( pout, p );
-        return  true;
-    end
-    if  ( Dist( last( pout ), p ) > 0.0 )
+    if  ( cardin( pout ) == 0 )  ||  ( DistSq( last( pout ), p ) > 0.0 )
         push!( pout, p );
         return  true;
     end

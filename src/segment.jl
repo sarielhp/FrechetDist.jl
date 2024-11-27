@@ -124,7 +124,7 @@ points, to the query point. By avoiding creating the segment iself, it
 is hopefully more efficient. Returns the convex_combination param of the nn
 point.
 """
-function  iseg_nn_point_ext( s_p::Point{D,T}, s_q::Point{D,T},
+@inline function  iseg_nn_point_ext( s_p::Point{D,T}, s_q::Point{D,T},
                                 qr::Point{D,T} ) where {D,T}
     # v(t) = p*(1-t) + q * t
     #      = p + t*(q-p)

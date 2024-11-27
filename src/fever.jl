@@ -49,7 +49,8 @@ mutable  struct FeverCoords
     j_is_vert::Bool;
 end
 
-function   ID_get_fields( e::EIDCalc, id::Int64, fc::FeverCoords )::Int64
+@inline function   ID_get_fields( e::EIDCalc, id::Int64,
+                                  fc::FeverCoords )::Int64
     if  ( id == ID_START)
         fc.i = 1;
         fc.j = 1;
@@ -200,7 +201,7 @@ function   FEVER_Context(  P::Polygon{N,T},
 end
 
 
-function  fever_is_schedule_event( c::FEVERContext{N,T}, id::Int64,
+@inline function  fever_is_schedule_event( c::FEVERContext{N,T}, id::Int64,
                                    i::Int64, i_is_vert::Bool,
                                    j::Int64, j_is_vert::Bool
                                    )::Bool where {N,T}
@@ -209,6 +210,9 @@ function  fever_is_schedule_event( c::FEVERContext{N,T}, id::Int64,
     n_p = c.n_p;
     n_q = c.n_q;
 
+    if  ( ( i  < n_p )  &&  ( j > <_q ) )
+        return  true;
+    end
     if  ( ( i  > n_p )  ||  ( j > n_q ) )
         return  false;
     end
@@ -222,7 +226,7 @@ function  fever_is_schedule_event( c::FEVERContext{N,T}, id::Int64,
 end
 
 
-function  fever_event_value( c::FEVERContext{N,T}, i::Int64,
+@inline function  fever_event_value( c::FEVERContext{N,T}, i::Int64,
     i_is_vert::Bool, j::Int64, j_is_vert::Bool,
     id::Int64
 ) where {N,T}
@@ -253,7 +257,7 @@ function  fever_event_value( c::FEVERContext{N,T}, i::Int64,
 end
 
 
-function  fever_schedule_event( c::FEVERContext{N,T},
+@inline function  fever_schedule_event( c::FEVERContext{N,T},
                                 i::Int64, i_is_vert::Bool,
                                 j::Int64, j_is_vert::Bool,
                                  prev_id::Int64,
