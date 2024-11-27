@@ -344,8 +344,8 @@ end
     max_t = 0.0;
     max_s = s_a;
 
-    seg_len_sq = DistSq( s_a, s_b )  # Squared distance between s_p and s_q
-    s_vec =  sub(s_q, s_p)
+    seg_len_sq = DistSq( s_a, s_b )  # Squared distance between s_a and s_b
+    s_vec =  sub(s_b, s_a)
 
     for  j in low:hi
         p = P[ j ];
