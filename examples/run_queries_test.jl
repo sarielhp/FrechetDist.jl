@@ -764,6 +764,10 @@ function  test_files_from_file( filename, base_dir,
 )
     rlines = readlines( filename );
 
+    if  ( f_verify )
+        println( "\n\n"*"VERIFICATION RUN - will be much slower.\n" );
+    end
+    
     println( "\nReading polygons..." );
     PID = read_polygons_in_dir( base_dir, ! f_serial );
 
