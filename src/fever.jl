@@ -179,7 +179,6 @@ function   FEVER_Context(  P::Polygon{N,T},
     vals = fill( T( -1.0 ), mx );
     prev = zeros( Int64, mx );
 
-
     vals[ ID_START ] = Dist( first( P ), first( Q ) );
     vals[ ID_END ] = Dist( last( P ), last( Q ) );
 
@@ -210,7 +209,7 @@ end
     n_p = c.n_p;
     n_q = c.n_q;
 
-    if  ( ( i  < n_p )  &&  ( j > n_q ) )
+    if  ( ( i  < n_p )  &&  ( j < n_q ) )
         return  true;
     end
     if  ( ( i  > n_p )  ||  ( j > n_q ) )
