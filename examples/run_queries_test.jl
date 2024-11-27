@@ -801,7 +801,7 @@ end
 #println( fieldnames(Polygon2F) );
 #exit( -1 );
 function (@main)(ARGS)
-    f_verify_run::Bool = true;
+    f_verify_run::Bool = false;
 
     num_args = length( ARGS );
 
