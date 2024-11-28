@@ -171,31 +171,24 @@ function   FEVER_Context(  P::Polygon{N,T},
 
     @assert( ( cardin( P ) > 1 )  &&  ( cardin( Q ) > 1 ) );
 
-    #println( "FEVER_context start..." );
     eid = ID_init( cardin( P ), cardin( Q ) );
     mx = ID_get_max( eid );
-    #@time println( "Zeros..." );
-    #vals = zeros( T, mx );
+
     vals = fill( T( -1.0 ), mx );
     prev = zeros( Int64, mx );
 
     vals[ ID_START ] = Dist( first( P ), first( Q ) );
     vals[ ID_END ] = Dist( last( P ), last( Q ) );
 
-    #println( "\nWWW" );
     comparator = EventsOrder{T}( vals );
 
     events_queue = Vector{Int64}();
-    #println( "Heap init..." );
     heap = BinaryHeap( comparator, events_queue );
-    #println( typeof( heap ) );
     push!( heap, ID_START );
 
-    #println( "INIT" );
     fr = FEVERContext( P, Q, eid, vals, events_queue, comparator, heap,
                          prev,
                          cardin( P ), cardin( Q ), false, zero( T )  )
-    #println( "INIT" );
     return  fr;
 end
 
@@ -275,11 +268,6 @@ end
     push!( c.heap, id );
 end
 
-
-@inline function  fever_is_final_cell( id::Int64, n_p::Int64, n_q::Int64 )
-    return   ( ( EID_i( id ) == ( n_p - 1 ) )
-               &&  ( EID_j( id ) == ( n_q - 1 ) ) )
-end
 
 
 function  fever_extract_sol_ids( P::Polygon{N,T}, Q::Polygon{N,T},
@@ -447,9 +435,7 @@ function   FEVER_compute_range( P::Polygon{N,T},
     id::Int64 = 0;
     while  ! isempty( heap )
         iters = iters + 1;
-        #println( "pop..." );
         id = pop!( heap );
-        val = vals[ id ];
 
         if  id == ID_START
             fever_schedule_event( c, 1, false, 1, true, id );
@@ -458,10 +444,6 @@ function   FEVER_compute_range( P::Polygon{N,T},
         end
 
         ID_get_fields( eid, id, fc );
-
-        #println( "K", Int64( fc.i_is_vert ),
-        #    Int64(fc.j_is_vert ),
-        #    " (", fc.i, ", ", fc.j, ") ", val );
 
         if  ( fc.i >= n_pm )  &&  ( fc.j >= n_qm )
             # Is it the *final* event?
@@ -475,7 +457,6 @@ function   FEVER_compute_range( P::Polygon{N,T},
             end
         end
         fever_schedule_event( c, fc.i+1, true,   fc.j, false, id );
-
         fever_schedule_event( c, fc.i  , false, fc.j+1, true, id );
     end
     #println( "ITERS: ", iters );
@@ -512,14 +493,12 @@ function   FEVER_compute( P::Polygon{N,T},
     n_pm::Int64 = c.n_p - 1;
     n_qm::Int64 = c.n_q - 1;
     heap = c.heap;
-    vals = c.vals;
     eid = c.eid;
     iters = 0;
     id::Int64 = 0;
     while  ! isempty( heap )
         iters = iters + 1;
         id = pop!( heap );
-        val = vals[ id ];
 
         if  id == ID_START
             fever_schedule_event( c, 1, false, 1, true, id );
