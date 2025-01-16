@@ -1,13 +1,14 @@
 using FrechetDist
-using FrechetDist.cg
+using FrechetDist.cg: Polygon2F, Point2F
+using FrechetDist.cg.polygon
 using Test
 
 function  example_01()
     P = Polygon2F( );
     Q = Polygon2F( );
 
-    push!( P, point( 0.0, 0 ), point( 1.0, 0.0 ) );
-    push!( Q, point( 0.0, 1.0 ), point( 1.0, 1.0 ) );
+    push!( P, Point2F( 0.0, 0 ), Point2F( 1.0, 0.0 ) );
+    push!( Q, Point2F( 0.0, 1.0 ), Point2F( 1.0, 1.0 ) );
     return  P, Q;
 end
 
