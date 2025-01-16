@@ -6,9 +6,10 @@ using StaticArrays
 using LinearAlgebra
 using DelimitedFiles
 
-#include( "point.jl" );
-using point;
-using segment;
+include( "point.jl" );
+using .point;
+include("segment.jl")
+using .segment;
 
 #import Point{D,T} = point.Point{D,T}
 

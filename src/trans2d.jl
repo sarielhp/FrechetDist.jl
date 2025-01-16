@@ -5,7 +5,8 @@ using StaticArrays
 using LinearAlgebra
 using DelimitedFiles
 
-using point;
+include("point.jl")
+using .point;
 
 #import Base:
 

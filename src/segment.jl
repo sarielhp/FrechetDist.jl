@@ -5,7 +5,8 @@ using Parameters
 using LinearAlgebra
 using DelimitedFiles
 
-using point;
+include("point.jl")
+using .point
 
 
 ###############################################33

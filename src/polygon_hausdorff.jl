@@ -2,9 +2,12 @@
 
 module polygon_hausdorff
 
-using point;
-using segment;
-using ..polygon
+include("point.jl")
+include("segment.jl")
+include("polygon.jl")
+using .point;
+using .segment;
+using .polygon
 
 
 """
