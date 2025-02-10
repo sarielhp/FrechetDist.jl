@@ -50,7 +50,7 @@ end
 
 
 
-function  eval( f::DistFunction{T}, x::T ) where {T}
+function  evaluate( f::DistFunction{T}, x::T ) where {T}
     v = f.a*x*x + f.b*x + f.c;
     if  ( abs( v ) < 1e-16 )
         return  0;
@@ -68,10 +68,10 @@ was computed by woflram alpha. It seems to be wrong(?).
 
 function  integral_alpha( f::DistFunction{T}, x::T ) where {T}
     f_debug::Bool = false;
-    f_x = eval( f, x );
+    f_x = evaluate( f, x );
     sqrt_f_x = sqrt( f_x );
     sqrt_a = sqrt( f.a );
-    
+
     bax = f.b + 2.0 * f.a * x;
     b_sq = f.b*f.b;
 
@@ -95,7 +95,7 @@ was computed by sage math.
 """
 function  integral( f::DistFunction{T}, x::T ) where {T}
     f_debug::Bool = false;
-    v = eval( f, x );
+    v = evaluate( f, x );
 
     f_debug && begin
         println( "FFF f_a: ", f.a );
@@ -148,7 +148,7 @@ too lazy to verify it by hand, I did a numerical verification.
         l = x - delta;
         h = x + delta;
         diff = ( integral( f, h ) - integral( f, l )  ) / (2.0*delta);
-        v = eval( f, x )
+        v = evaluate( f, x )
         delta = delta / 2.0;
     end
     print( "f (", x,"): ", v, "        " );
@@ -187,12 +187,12 @@ function  integral_interval( f::DistFunction{T}, low, high ) where {T}
     end
     if  ( f.f_linear )
         if  ( ( f.root <= low )  ||  ( f.root >= high ) )
-            val = (high - low) * ( eval( f, low )
-                                   + eval( f, high ) ) / 2.0;
+            val = (high - low) * ( evaluate( f, low )
+                                   + evaluate( f, high ) ) / 2.0;
             return  val;
         end
-        v_l = ( f.root - low ) * eval( f, low ) / 2.0;
-        v_r = ( high - f.root ) * eval( f, high ) / 2.0;
+        v_l = ( f.root - low ) * evaluate( f, low ) / 2.0;
+        v_r = ( high - f.root ) * evaluate( f, high ) / 2.0;
         return  v_l + v_r;
     end
     return  integral( f, high ) - integral( f, low );
