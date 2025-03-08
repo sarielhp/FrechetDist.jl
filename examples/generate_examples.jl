@@ -1474,7 +1474,7 @@ function  gen_example_37()
 
     P = polygon.read_file( "data/characters/2335.txt" );
     Q = polygon.read_file( "data/characters/535.txt" )
-    
+
     create_demo( "Example 37", "output/37/",  P, Q,
                  false, true,
                  "Character data set", true
@@ -1485,10 +1485,10 @@ end
 function  gen_example_38()
     ( ! is_rebuild( "output/38" ) )  &&  return;
     P = peano_curve( 3 );
-    d = 1.0 / length( P ); 
+    d = 1.0 / length( P );
     Q = hilbert_curve( length( P ) )
-    polygon.shift!( P, npoint( d, 2.0*d ) ); 
-    
+    polygon.shift!( P, npoint( d, 2.0*d ) );
+
     create_demo( "Example 38", "output/38/",  P, Q,
                  false, true,
                  "Peano vs Hilbert curves", true
@@ -1500,7 +1500,7 @@ function  gen_example_39()
     ( ! is_rebuild( "output/39" ) )  &&  return;
     P = peano_curve( 2 );
     #println( "PPP: ", length( P ) );
-    #d = 1.0 / length( P ); 
+    #d = 1.0 / length( P );
     Q = dragon_curve( 8 );
 
     bb = BBox_init( Q );
@@ -1511,7 +1511,7 @@ function  gen_example_39()
     #println( typeof( Q ) );
 
     #exit( -1 );
-    
+
     create_demo( "Example 39", "output/39/",  P, Q,
                  false, true,
                  "Peano vs dragon (curves)", true
@@ -1529,7 +1529,19 @@ function  gen_example_40()
                  );
 end
 
-    
+
+function  gen_example_41()
+    ( ! is_rebuild( "output/41" ) )  &&  return;
+
+    P, Q = example_41();
+    create_demo( "Example 41", "output/41/",  P, Q,
+                 false, true,
+                 "A bad example for algorithm: Almost matching zig-zags...",
+                 true
+                 );
+end
+
+
 function  generate_examples()
     gen_example_1()
     gen_example_2();
@@ -1735,6 +1747,7 @@ function  generate_examples()
     gen_example_38();
     gen_example_39();
     gen_example_40();
+    gen_example_41();
 end
 
 function  reportIt( m )

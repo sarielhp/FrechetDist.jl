@@ -189,6 +189,33 @@ function  example_40()
 end
 
 
+function  example_41()
+    ( ! is_rebuild( "output/41" ) )  &&  return;
+
+#    delta = 0.01
+    rho = 0.1
+    h = 0.008;
+
+    b = 0.5;
+
+    P = Polygon2F() |> (-b, 0.0 ) |> (0.0, 0.0) |> (1.0, 0.0) |> (rho, h);
+
+    zig_zag_x( P, 1.0 - 2.0*rho, h, 10, 1.0 );
+    y = last( P )[ 2 ];
+    P |> ( 1.0 + b, y + h );
+
+    y = y + 2.0*h;
+
+
+    Q = Polygon2F() |> (-b, y )  |> (0.0, y) |> (rho, y);
+    zig_zag_x( Q, 1.0 - 2.0*rho, h, 12, 1.0 );
+    y = last( Q )[ 2 ];
+    Q |> (0.0, y ) |> (1.0, y + h );
+    Q |> ( 1.0+b, y + h );
+    return  P, Q;
+end
+
+
 function  example_5()
     polya = Polygon2F(  );
     polyb = Polygon2F(  );
