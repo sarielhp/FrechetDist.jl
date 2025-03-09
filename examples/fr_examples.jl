@@ -194,7 +194,7 @@ function  example_41()
 
 #    delta = 0.01
     rho = 0.1
-    h = 0.008;
+    h = 0.002;
 
     b = 0.5;
 
