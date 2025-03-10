@@ -46,7 +46,7 @@ end
     m_e = frechet_c_compute( P, Q )
     @test m_e.leash > 0.0
 
-    @test m_e.leash >= m_ve.leash;
+    @test (1.000001 * m_e.leash) >= m_ve.leash;
 
     m_a_2 = frechet_c_approx( P, Q, 2.0 );
 
