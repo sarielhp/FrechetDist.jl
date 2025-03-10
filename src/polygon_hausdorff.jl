@@ -2,8 +2,8 @@
 
 module polygon_hausdorff
 
-using point;
-using segment;
+using ..point;
+using ..segment;
 using ..polygon
 
 

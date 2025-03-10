@@ -7,8 +7,9 @@ using LinearAlgebra
 using DelimitedFiles
 
 #include( "point.jl" );
-using point;
-using segment;
+using ..cg.point
+#using point;
+using ..cg.segment;
 
 #import Point{D,T} = point.Point{D,T}
 
