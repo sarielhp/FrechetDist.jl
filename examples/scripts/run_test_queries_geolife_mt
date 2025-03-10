@@ -1,0 +1,28 @@
+#! /bin/bash
+
+export JULIA_NUM_THREADS=auto
+#export JULIA_NUM_THREADS=32
+
+TDIR=/tmp/frechet_dist
+mkdir -p $TDIR >& /dev/null
+TFL=$TDIR/geolife.txt
+
+find data/queries/geolife -type f > $TFL
+
+start=`date +%s`
+
+
+# file: Run the test using multi-threading
+# sfile: Run the test using a single thread...
+
+julia examples/run_queries_test.jl file \
+                             data/geolife/ \
+                             $TFL
+end=`date +%s`
+
+
+runtime=$((end-start))
+
+echo  "Running time: " $runtime
+
+exit  -1;

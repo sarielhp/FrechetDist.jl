@@ -1,0 +1,30 @@
+#! /bin/bash
+
+export JULIA_NUM_THREADS=auto
+
+rm *.txt >& /dev/null
+
+find data/queries/geolife -type f > geolife.txt
+
+
+start=`date +%s`
+
+
+# file: Run the test using multi-threading
+# sfile: Run the test using a single thread...
+
+julia examples/run_queries_test.jl sfile \
+                             data/geolife/ \
+                             geolife.txt
+end=`date +%s`
+
+
+runtime=$((end-start))
+echo  "Running time: " $runtime
+rm *.txt >& /dev/null
+exit  -1;
+
+# examples/run_queries_test.jl data/characters/
+# data/tests/characters/characters_query_decider_10_0_plus.txt | gi
+# undeci
+

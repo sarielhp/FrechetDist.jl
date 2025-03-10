@@ -1,0 +1,48 @@
+#! /bin/bash
+
+export JULIA_NUM_THREADS=auto
+#export JULIA_NUM_THREADS=1
+
+TDIR=/tmp/frechet_dist
+mkdir -p $TDIR >& /dev/null
+TFL=$TDIR/characters_list.txt
+
+rm *.txt >& /dev/null
+
+find data/queries/characters -type f > $TFL
+
+
+start=`date +%s`
+
+# file: Run the test using multi-threading
+# sfile: Run the test using a single thread...
+
+VER=+1.10.5
+VER=
+#echo julia "$VER" --min-optlevel=3 -O3 \
+#     --gcthreads 8 \
+#             examples/run_queries_test.jl sfile \
+#                             data/characters/ \
+#                             $TFL
+
+julia examples/run_queries_test.jl sfile \
+                             data/characters/ \
+                             $TFL
+#julia --min-optlevel=3 -O3 \
+#     --gcthreads 8 \
+#             examples/run_queries_test.jl sfile \
+#                             data/characters/ \
+#                             $TFL
+end=`date +%s`
+
+runtime=$((end-start))
+
+echo  "Running time: " $runtime
+
+exit  -1;
+
+rm *.txt >& /dev/null
+# examples/run_queries_test.jl data/characters/
+# data/tests/characters/characters_query_decider_10_0_plus.txt | gi
+# undeci
+

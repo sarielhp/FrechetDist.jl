@@ -8,16 +8,22 @@
 # which uses hashing to avoid this).
 #---------------------------------------------------------------
 
+"""
+    d_frechet_extract_solution
 
-function   d_frechet_extract_solution( P::Polygon{N,T}, Q,
-    dp_dec_i, n_p, n_q )::Morphing{N,T} where {N,T}
+Extracting the morphing computd realizing the discrete Frechet
+distnace.
+
+"""
+function   d_frechet_extract_solution( P::Polygon{D,T}, Q,
+    dp_dec_i, n_p, n_q )::Morphing{D,T} where {D,T}
     i = n_p;
     j = n_q;
 
     #println( "Extract solution?" );
     up::Int64 = n_p + n_q + 1;
-    peout = Vector{EventPoint{N,T}}( undef, up );
-    qeout = Vector{EventPoint{N,T}}( undef, up );
+    peout = Vector{EventPoint{D,T}}( undef, up );
+    qeout = Vector{EventPoint{D,T}}( undef, up );
 
     pos::Int64 = 0;
     while  ( ( i != 1 )  ||  ( j != 1 )  )
@@ -47,9 +53,9 @@ end
 
 
 
-function   frechet_d_compute_inner( P::Polygon{N,T}, Q::Polygon{N,T},
+function   frechet_d_compute_inner( P::Polygon{D,T}, Q::Polygon{D,T},
                                     dp::Array{Float64, 2}, dp_dec_i
-                                        ) where {N,T}
+                                        ) where {D,T}
     d::Float64 = 0;
     jp::Int64 = 0;
     ip::Int64 = 0;
@@ -103,8 +109,8 @@ points. It interpresents the vertices of the polygons and the desired
 sequence of points.
 
 """
-function   frechet_d_compute( P::Polygon{N,T},
-                              Q::Polygon{N,T} ) where {N,T}
+function   frechet_d_compute( P::Polygon{D,T},
+                              Q::Polygon{D,T} ) where {D,T}
     n_p::Int64 = cardin( P );
     n_q::Int64 = cardin( Q );
 
@@ -120,8 +126,8 @@ function   frechet_d_compute( P::Polygon{N,T},
 end
 
 
-function   frechet_d_compute_dist( P::Polygon{N,T},
-                                   Q::Polygon{N,T} ) where {N,T}
+function   frechet_d_compute_dist( P::Polygon{D,T},
+                                   Q::Polygon{D,T} ) where {D,T}
     n_p::Int64 = cardin( P );
     n_q::Int64 = cardin( Q );
 
@@ -139,15 +145,20 @@ end
 ##########################################################################
 # _lopt_frechet
 """
-    frechet_dr__compute
+    frechet_d_r_compute
 
 Compute discrete frechet distance that is locally optimal
 Frechet. Essentially discrete frechet + Prim/Dijkstra algorithm For
 the discrete case, that is modified to be retractable -- that is
 minimize the maximum bottleneck edge being computed.
+
+Note, the function still allocates quadratic space for the lookup
+tables. Doesn't seem to matter, but this might be worth fixing in
+future versions.
+
 """
-function   frechet_d_r_compute( P::Polygon{N,T}, Q::Polygon{N,T}
-                                            ) where {N,T}
+function   frechet_d_r_compute( P::Polygon{D,T}, Q::Polygon{D,T}
+                                            ) where {D,T}
     n_p = cardin( P );
     n_q = cardin( Q );
 
@@ -235,6 +246,87 @@ function   frechet_d_r_compute( P::Polygon{N,T}, Q::Polygon{N,T}
 end
 
 """
+    DTW_d_compute
+
+    Compute the Dynamic Time Wrapping distance between two
+    polygons. Here the price is the of lengths of leashes throughtout
+    the discrete morphing.
+
+"""
+function   DTW_d_compute( P::Polygon{D,T}, Q::Polygon{D,T}
+                          ) where {D,T}
+
+    pq = PriorityQueue{Tuple{Int64, Int64},Float64}();
+
+    n_p = cardin( P );
+    n_q = cardin( Q );
+
+    dp = zeros( n_p, n_q );
+    dp_dec_i = falses( n_p, n_q );
+    handled = falses( n_p, n_q );
+
+    function  push_value( ia, ja, val, i )
+        new_val = val + Dist( P[ ia ], Q[ ja ] )
+
+        if  ( ( dp[ ia, ja ] > 0.0 )
+              &&  ( dp[ ia, ja ] <= new_val ) )
+            return;
+        end
+        dp[ ia, ja ] = new_val;
+        pq[ ia, ja ] = new_val;  # Push to queue
+        dp_dec_i[ ia, ja ] = ( i < ia );
+    end
+
+    dp[ 1, 1 ] = Dist( P[ 1 ] , Q[ 1 ] );
+    #handled[ 1, 1 ] = true;
+
+    enqueue!( pq, (1,1), dp[ 1, 1 ] );
+
+    iters::Int64 = 0;
+    while  ! isempty( pq )
+        iters = iters + 1;
+
+        ele = peek( pq );
+        i, j = ele[ 1 ];
+        value = ele[ 2 ];
+
+        #println( "  VALUE   : ", value );
+        #println( "  dp[", i, ", ", j, "] : ", dp[ i, j ] );
+        #println( pq );
+
+        dequeue!( pq );
+        if  handled[ i, j ]
+            continue;
+        end
+
+        handled[ i, j ] = true;
+        if  ( ( i == n_p )  &&  ( j == n_q ) )
+            break;
+        end
+
+        # Now we need to schedule the next two adjacent entries..
+        if  ( i < n_p )
+            push_value( i + 1, j, value, i );
+        end
+        if  ( j < n_q )
+            push_value( i, j+1, value, i );
+        end
+    end
+
+    m = d_frechet_extract_solution( P, Q, dp_dec_i, n_p, n_q );
+    m.iters = iters;
+
+    #exit( -1 );
+    return  m;
+end
+
+
+
+
+
+
+
+"""
     frechet_d_compute_sample
 
 Computes the discrete Frechet distance between the two curves.by
@@ -255,14 +347,14 @@ picked.
      true: Use the rectractable Frechet distance version
      false: Use the standard discrete Frechet version.
 """
-function   frechet_d_r_compute_sample( polya::Polygon{N,T},
-                                       polyb::Polygon{N,T},
+function   frechet_d_r_compute_sample( polya::Polygon{D,T},
+                                       polyb::Polygon{D,T},
                                        n::Int64,
                                        f_lopt::Bool = true
-                                     )    where {N,T}
+                                     )    where {D,T}
 #    polya,polyb = example_4()
-    lena = Polygon_length( polya );
-    lenb = Polygon_length( polyb );
+    lena = polygon.total_length( polya );
+    lenb = polygon.total_length( polyb );
 
 #    n::Int64 = 100;
     delta = (lena+ lenb)/ n;

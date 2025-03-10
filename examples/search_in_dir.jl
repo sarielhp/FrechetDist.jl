@@ -1,3 +1,5 @@
+#! julia
+
 # Originally contributed by S. Har-Peled
 # under MIT License
 
@@ -36,7 +38,7 @@ function find_closest_in_directory( path::String, threshold,
     for  x in files
         filename = path * x;
         print( "Reading: ", filename );
-        poly_a =  Polygon_read_plt_file( filename );
+        poly_a =  Polygon_read_file( filename );
         push!( polygons,  poly_a );
         println( " #: ", cardin( poly_a ) );
     end
@@ -105,6 +107,13 @@ function find_closest_in_directory( path::String, threshold,
                 loc_i = i;
                 loc_j = j;
                 min_dist = dist;
+                println( "= Close pair ============================" );
+                println( dist );
+                println( "#: ", cardin( polygons[ i ] )
+                    + cardin( polygons[ j ] ) );
+                println( files[ i ] );
+                println( files[ j ] );
+                println( "=========================================" );
             end
 #            println( "Curr   ", loc_i, ", ", loc_j, "  d: ",  min_dist );
         end

@@ -1,0 +1,29 @@
+#! /bin/bash
+
+export JULIA_NUM_THREADS=auto
+
+TDIR=/tmp/frechet_dist
+mkdir -p $TDIR >& /dev/null
+TFL=$TDIR/characters_list.txt
+
+
+find data/queries/characters -type f > $TFL
+
+
+start=`date +%s`
+
+# file: Run the test using multi-threading
+# sfile: Run the test using a single thread...
+
+
+julia \
+             examples/run_queries_test.jl sfile \
+                             data/characters/ \
+                             $TFL
+end=`date +%s`
+
+runtime=$((end-start))
+echo  "Running time: " $runtime
+exit  -1;
+
+rm *.txt >& /dev/null

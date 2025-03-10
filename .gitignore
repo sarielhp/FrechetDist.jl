@@ -3,9 +3,15 @@
 *.jl.mem
 /Manifest.toml
 distributions
-scripts
+scripts/
 .ignore/
 data/
 data
 docs/build/
-# DEL_THIS_LINE 10288
+output
+various/
+alt_version/
+webpage
+data_old
+
+# DEL_THIS_LINE 30569

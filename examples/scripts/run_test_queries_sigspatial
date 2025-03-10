@@ -1,0 +1,30 @@
+#! /bin/bash
+
+export JULIA_NUM_THREADS=auto
+
+TDIR=/tmp/frechet_dist
+mkdir -p $TDIR >& /dev/null
+TFL=$TDIR/sigspatial_list.txt
+
+find data/queries/sigspatial -type f > $TFL
+
+
+start=`date +%s`
+#e --track-allocation=user
+julia \
+    -O3 --min-optlevel=3 \
+    examples/run_queries_test.jl file \
+                             data/sigspatial/ \
+                             $TFL
+end=`date +%s`
+
+runtime=$((end-start))
+
+echo  "Running time: " $runtime
+
+exit  -1;
+
+# examples/run_queries_test.jl data/characters/
+# data/tests/characters/characters_query_decider_10_0_plus.txt | gi
+# undeci
+

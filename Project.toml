@@ -1,7 +1,7 @@
 name = "FrechetDist"
 uuid = "04d82aa0-596e-49d4-9e15-129fccfbf66a"
 authors = ["Sariel Har-Peled <sariel@gmail.com> and contributors"]
-version = "1.0.0"
+version = "2.0.0"
 
 [deps]
 DataStructures = "864edb3b-99cc-5e75-8d2d-829cb0a9cfe8"
@@ -16,7 +16,7 @@ StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
 julia = "1.6"
 StaticArrays = "~1.9"
 DataStructures = "~0.18"
-Documenter = "~1.2"
+Documenter = "1"
 Parameters = "~0.12"
 
 [extras]
