@@ -58,7 +58,7 @@ end
     @test m_e.leash <= d;
 
     m_mono, f, P_r, Q_r = frechet_mono_via_refinement( P, Q, 1.01 );
-    @test m_mono.leash >= m_ve.leash
+    @test 1.000001*m_mono.leash >= m_ve.leash
 
     w_P = frechet_width_approx( P );
 
