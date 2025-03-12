@@ -5,7 +5,7 @@ using Parameters
 using LinearAlgebra
 using DelimitedFiles
 
-using point;
+using ..cg.point
 
 
 ###############################################33

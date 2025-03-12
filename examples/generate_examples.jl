@@ -1543,9 +1543,12 @@ end
 
 
 function  generate_examples()
+    gen_example_35();
     gen_example_1()
     gen_example_2();
     gen_example_3();
+    gen_example_41();
+
     gen_example_4();
     gen_example_5();
     gen_example_6();

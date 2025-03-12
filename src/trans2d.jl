@@ -5,7 +5,9 @@ using StaticArrays
 using LinearAlgebra
 using DelimitedFiles
 
-using point;
+#using ..cg.point;
+using ..point;
+#using point;
 
 #import Base:
 
