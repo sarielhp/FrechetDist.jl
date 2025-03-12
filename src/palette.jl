@@ -1,4 +1,12 @@
-
+# Palette
+#
+# Implements the pallete approximation to a polygon. The basic idea is
+# that for a polygon P[1..n], we fill an array A[1..n], where A[i] is
+# the Frechet error introduced by the ith vertex. The array is filled
+# in a binary search hierarchical way, so that all the vertices with
+# error above a certain threshold can be extracted in linear time in
+# their number, instead of linear time in the number of vertices of
+# the curves.
 
 function   fill_plt( plt::Vector{T}, P::Polygon{N,T},
                      i::Int64, j::Int64 ) where {N,T}
@@ -102,7 +110,7 @@ function  p_extract_level( pout::Polygon{N,T},
     if ( ( i > j )  ||  ( level <= 0 ))
         return;
     end
-    
+
     mid::Int64 = (i + j) >> 1;
     if  ( mid == i )  ||  ( mid == j )
         return;
@@ -118,7 +126,7 @@ end
     frechet_palette_level
 
 Extract the approximate polygon by specifying a level of the
-approximation. 
+approximation.
 
 """
 function frechet_palette_level( P::Polygon{N,T},
@@ -129,7 +137,7 @@ function frechet_palette_level( P::Polygon{N,T},
 
     pout = Polygon{N,T}();
     pout_is = Vector{Int64}();
-    
+
     push!( pout, P[ 1 ] );
     push!( pout_is, 1 );
 

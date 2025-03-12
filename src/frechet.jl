@@ -1401,7 +1401,7 @@ end
 function  propogate_mins( qz, rounds::Int64 = 1 )
     a = deepcopy( qz );
     for  r  in 1:rounds
-        for  i  in  1:length( a )
+        for  i  in  eachindex( a )
             if  ( i == 1 )  ||  ( i == length( qz ) )
                 continue;
             end
@@ -1409,7 +1409,7 @@ function  propogate_mins( qz, rounds::Int64 = 1 )
             a[ i ] = min( qz[ i - 1 ], qz[ i ], qz[ i + 1 ] );
         end
 
-        for  i  in  1:length( a )
+        for  i  in  eachindex( a )
             qz[ i ] = a[ i ];
         end
     end
