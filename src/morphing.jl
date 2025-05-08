@@ -798,10 +798,12 @@ function   parameterization_combine( f::Polygon2F,
     # Should really just get rid of tiny flatting point jitters.
     curr::Point2F = deepcopy( out[ 1 ] );
     for  i in 2:cardin( out )
-        for  j in 1:2
+        curr = Point_max( out[ i ], curr );
+        out[ i ] = curr;
+        #=for  j in 1:2
             curr[ j ] = max( curr[ j ], out[ i ][ j ] )
             out[ i ][ j ] = curr[ j ];
-        end
+        end=#
     end
 
     return  out;

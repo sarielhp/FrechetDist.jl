@@ -223,7 +223,7 @@ function npoint( args...)
         x[ i ] = args[ i ];
     end
     =#
-    
+
     p::Point{D,T} = Point{D,T}( args... );
 
     return  p;
@@ -240,6 +240,16 @@ function  Point_random( D,T )
     p::Point{D,T} = Point{D,T}( x );
 
     return  p;
+end
+
+function  Point_max( p::Point{D,T}, q::Point{D,T}  ) where {D,T}
+    x = MVector{D,T}( undef );
+
+    @inbounds for i in 1:D
+        x[ i ] = max( p[i], q[i] );
+    end
+
+    return  Point{D,T}( x );
 end
 
 
@@ -260,6 +270,7 @@ export DistSq
 export Dist, Dist_new
 export Point_random, sub, convex_comb, dot
 
+export  Point_max
 export  add, sub, mult, norm, isNaN
 
 export npoint

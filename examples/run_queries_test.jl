@@ -820,6 +820,11 @@ function (@main)(ARGS)
         test_files_from_file( ARGS[3], ARGS[2], f_verify_run, true );
         exit( 0 );
     end
+    if   num_args == 3  &&  ( ARGS[ 1 ] == "sfile_verify" )
+        f_verify_run = true;
+        test_files_from_file( ARGS[3], ARGS[2], f_verify_run, true );
+        exit( 0 );
+    end
 end
 
 
