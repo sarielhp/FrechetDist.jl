@@ -1002,13 +1002,14 @@ function  frechet_refinement( P::Polygon{N,T}, Q::Polygon{N,T},
     return  poly_a_2, poly_b_2;
 end
 
+
 function  frechet_mono_via_refinement_ext( Pa::Polygon{N,T}, Qa::Polygon{N,T},
                                            out::Vector{Morphing{N,T}},
                                            f_snapshots::Bool,
                                            approx::Float64 = 1.00001
                                      )  where {N,T}
     @assert( approx > 1.0 );
-    f_debug::Bool = false;
+    f_debug::Bool = true;
 
     mm::Morphing{N,T} = Morphing_empty( Pa, Qa );
     m::Morphing{N,T} = Morphing_empty( Pa, Qa );
@@ -1023,7 +1024,7 @@ function  frechet_mono_via_refinement_ext( Pa::Polygon{N,T}, Qa::Polygon{N,T},
         f_debug && println( "Before ve_r_compute( ", cardin(P), ", ",
                             cardin( Q ) );
         m = frechet_ve_r_compute( P, Q )
-#        f_debug  && println( "After... m.leash : ", m.leash );
+        f_debug  && println( ">>> After... m.leash : ", m.leash );
         mm = Morphing_monotonize( m );
 
         if  ( f_snapshots )
@@ -1066,7 +1067,7 @@ function  frechet_mono_via_refinement_ext( Pa::Polygon{N,T}, Qa::Polygon{N,T},
 
     mm.lower_bound = m.leash;
 
-    #println( "RETURNING!" );
+    f_debug  &&  println( "RETURNING!", @__FILE__, ":", @__LINE__ );
     return  mm, f_exact, P, Q
 end
 
@@ -1091,12 +1092,12 @@ function  frechet_mono_via_refinement_delta( Pa::Polygon{N,T},
         m = FEVER_compute( P, Q );
         #=
         println( "---" );
-        
+
         if  ( ! fp_equal( m_old.leash, m.leash ) )
             @assert( m_old.leash == m.leash );
         end
         =#
-        
+
         mm = Morphing_monotonize( m );
 
         res = 3;
@@ -1240,8 +1241,9 @@ ret.leash is an upper bound.
 function  frechet_c_approx( poly_a::Polygon{N,T},
     poly_b::Polygon{N,T}, approx::Float64 )::Morphing{N,T} where {N,T}
 
-    f_debug::Bool = false;
+    f_debug::Bool = true;
 
+    println( "\n\n\n============================XXX" );
     t_approx::Float64 = approx;
     @assert( ( cardin( poly_a ) > 1 )  &&  ( cardin( poly_b ) > 1 ) )
     @assert( approx > 1.0 )
@@ -1262,15 +1264,17 @@ function  frechet_c_approx( poly_a::Polygon{N,T},
 
     m = Morphing_empty( poly_a, poly_b );
     while  ( true )
+        println( "AAAAAAAAAAAAAa" );
         while  ( (r >= ( d / (approx + 4.0) ) )
                  ||  f_do_one_round )
             r = r / 2.0;
+            println( "BBBBBB r=",r );
             P, p_indices = Polygon_simplify_ext( poly_a, r )
             Q, q_indices = Polygon_simplify_ext( poly_b, r )
 
             if  ( (2 * cardin( P ) > cardin( poly_a ) )
                   &&  (2 * cardin( Q ) > cardin( poly_b ) ) )
-                #println( "DDDD" );
+                f_debug  && println( "DDDD" );
                 f_debug  &&  println( "VVV Calling frechet_mono_via_refinement" );
                 m = frechet_mono_via_refinement( poly_a, poly_b )[ 1 ];
                 m.ratio = 1.0;
@@ -1284,10 +1288,12 @@ function  frechet_c_approx( poly_a::Polygon{N,T},
             f_debug &&  println( "cardins: ", cardin( P ), " , ",
                                  cardin( Q )  );
             t_approx = 3.0/4.0 + t_approx / 4.0
+
             m = frechet_mono_via_refinement( P, Q, t_approx )[1];
             d = m.leash;  #        frechet_ve_r_compute_dist( P, Q )
             f_debug  &&  println( "d : ", d );
-            if  ( fp_equal( d, 0 ) )
+            if  ( fp_equal( d, 0.0 ) )
+                f_debug  &&  println( "Breaking..." )
                 break;
             end;
             f_debug  &&  println( "ddd = ", d );
@@ -1332,10 +1338,16 @@ function  frechet_c_approx( poly_a::Polygon{N,T},
 
         total_err = m_p.leash + m_q.leash;
         lbx = (m.leash / t_approx) - total_err;
-        if  ( d == 0.0 )
-            ratio = 1.0;
+        println( "total_error : ", total_err );
+        println( "lbx         : ", lbx );
+        if  ( total_err == 0.0 )   && ( m.leash == 0.0 )
+            ratio = 1.0
         else
-            ratio = mm_out.leash / lbx;
+            if  ( lbx <= 0.0 )
+                ratio = 2.0 + approx; # Very bad.
+            else
+                ratio = mm_out.leash / lbx;
+            end
         end
         f_debug &&  println( "Ratio :", ratio );
         if  ratio <=  approx
@@ -1510,9 +1522,10 @@ simplification is computed using refinement, so tha the ve_r distance
 """
 function  frechet_c_compute( P::Polygon{N,T},
                              Q::Polygon{N,T},
-                             f_accept_approx::Bool = true
+                             f_accept_approx::Bool = true,
+                             tolerance::Float64  = 0.00001
                              )  where {N,T}
-    f_debug::Bool = false;
+    f_debug::Bool = true;
 
     # The parameters that can be finetunes
     # 2.0, 8.0, 4.0, 10.0 =>  8.74 seconds
@@ -1526,7 +1539,7 @@ function  frechet_c_compute( P::Polygon{N,T},
     # numbers to be equal. In a perfect world tolerance would be zero.
     # But floating point issues require us to pick some value.
     ##################################################################
-    tolerance::Float64  = 0.00001;
+    #tolerance::Float64  = 0.00001;
     min_approx::Float64 = 1.00000000001;
 
     f_debug  &&  println( "\n\n\n\n\n\n" );
@@ -1537,6 +1550,9 @@ function  frechet_c_compute( P::Polygon{N,T},
     #println( "=#= P :", cardin( mf.P ) );
     #println( "=#= Q :", cardin( mf.Q ) );
     ratio_2 = mf.ratio;
+    println( "RATIO 2: ", ratio_2 );
+    println( "leash: ", mf.leash );
+    println( "+++++++++++++++++++++++++++++++++++++++++++++++++++" );
 
     len_a = polygon.total_length( P );
     len_b = polygon.total_length( Q );
@@ -1566,7 +1582,7 @@ function  frechet_c_compute( P::Polygon{N,T},
         #println( "___ #P: ", cardin( m.P ) );
         ratio = ratio_2;
     else
-        f_debug  &&  println( "freceht_c_approx( ", approx, ") " );
+        f_debug  &&  println( "Calling: freceht_c_approx( ", approx, ") " );
         m = frechet_c_approx( P, Q, approx );
         #println( "_=_ #P: ", cardin( m.P ) );
         ratio = m.ratio
@@ -1650,9 +1666,13 @@ function  frechet_c_compute( P::Polygon{N,T},
         end
 
         #    m_mid = frechet_ve_r_mono_compute( PS, QS  );
-        f_debug  &&  println(  "frechet_mono_via_refinement( PS, QS )" );
+        t_aprx = max( tolerance + 1.0, aprx_refinement ) ;
+        f_debug  &&  begin
+            println(  "frechet_mono_via_refinement( PS, QS )" );
+            println( "t_aprx : ", t_aprx );
+        end
         m_mid, _f_exact, PSR, QSR = frechet_mono_via_refinement( PS, QS,
-            max( tolerance + 1.0, aprx_refinement ) );
+                 t_aprx );
 
         f_debug  &&  println( "frechet mono via refinement computed" );
 

@@ -308,7 +308,7 @@ end
 
 Simplify the input curve P, where every vertex in distance larger than
 r is added to the simplification. Maybe the cheapest and simplest
-simplification algorithm. Works for all measures. 
+simplification algorithm. Works for all measures.
 
 """
 function  Polygon_simplify_ext( P::Polygon{D,T}, r::T ) where {D,T}
@@ -702,7 +702,12 @@ function  wiggle_seg( O::Polygon{D,T}, p, q, n, rate ) where {D,T}
     vec = rate * dir;
 
     # Rotate by 90 degrees...
-    vec[ 2 ], vec[ 1 ] = vec[ 1 ],vec[ 2 ];
+    #vec[ 2 ], vec[ 1 ] = vec[ 1 ], vec[ 2 ];
+    if  D == 2
+        vec = Point{D,T}( vec[ 2 ], vec[ 1 ] )
+    else
+        vec = Point{D,T}( vec[ 2 ], vec[ 1 ], vec[3:end]... )
+    end
 
     delta = dir / ( n + 1 );
     curr = p;

@@ -1,4 +1,4 @@
-#! julia
+#! /usr/bin/env julia
 #using StatProfilerHTML
 #using Profile
 push!(LOAD_PATH, pwd()*"/src/")
@@ -588,14 +588,14 @@ function  run_tests( PID::PolygonsInDir, tests::Vector{test_info_t},
         #=if  i > 10000000
             return 0;
         end=#
-        if  ( ( count[]  & mask ) == mask )
+#        if  ( ( count[]  & mask ) == mask )
             println( count[], " T",
                 Threads.threadid(),"D : ", i, "/", length( tests ) );
             flush( stdout );
-        end
+#        end
         t = tests[ i ];
-        #println( "Before frechet_decider..." );
-        #println( i,":   fl_a: ", t.f_l_a, "   fl_b: ", t.f_l_b );
+        println( "Before frechet_decider..." );
+        println( i,":   fl_a: ", t.f_l_a, "   fl_b: ", t.f_l_b );
         @static if  TIME_RESULTS
             ms = @timed sgn = frechet_decider_PID( PID, t.i_P, t.i_Q, t.rad );
             t.runtime = ms.time;
@@ -604,21 +604,30 @@ function  run_tests( PID::PolygonsInDir, tests::Vector{test_info_t},
             t.runtime = 0
         end
         if  ( f_verify )
-            #println( "verifying!" );
+            println( "verifying!" );
             sgn_slow = frechet_decider_PID_slow( PID, t.i_P, t.i_Q, t.rad )
-            if  ( sgn != sgn_slow )
+
+            m = frechet_c_compute( P, Q, false, 0.000000001 );
+            sgn_real::Int64 = round(Int64, sign( m.leash - t.rad ) );
+
+            if  ( ( sgn != sgn_slow ) ||  ( sgn != sgn_real ) )
+                println( "Mistake?" );
                 P = PID.polys[ t.i_P ];
                 Q = PID.polys[ t.i_Q ];
-                m = frechet_c_compute( P, Q );
+                m = frechet_c_compute( P, Q, false, 0.000000001 );
 
+                println( @__FILE__, " : ", @__LINE__ );
                 sgn_real::Int64 = round(Int64, sign( m.leash - t.rad ) );
                 if  ( sgn != sgn_real )
                     errors = errors + 1;
-                    println( "sgn      : ", sgn );
-                    println( "sgn_slow : ", sgn_slow );
-                    println( "sgn_real : ", sgn_real );
-                    println( "r        : ", t.rad );
-                    println( "m.leash  : ", m.leash );
+                    println( "ERR========================================" );
+                    println( "ERR f_l_a     : ", t.f_l_a );
+                    println( "ERR f_l_b     : ", t.f_l_b );
+                    println( "ERR sgn       : ", sgn );
+                    println( "ERR sgn_slow  : ", sgn_slow );
+                    println( "ERR sgn_real  : ", sgn_real );
+                    println( "ERR r (input) : ", t.rad );
+                    println( "ERR m.leash   : ", m.leash );
                     #@assert( sgn == sgn_slow );
                     open( "errors_log.txt", "a" ) do file
                         println( file, t.f_l_a, " ", t.f_l_b, " ", t.rad );
@@ -626,7 +635,6 @@ function  run_tests( PID::PolygonsInDir, tests::Vector{test_info_t},
                 end
             end
         end
-
         Threads.atomic_add!( count, 1 )
         #if ( count[] > 1000 )
         #    return;
@@ -715,7 +723,7 @@ function  test_single_file( filename, f_verify::Bool )
 
     count = AtomicInt( 0 );
 
-    return  run_tests( PID, tests, count, false );
+    return  run_tests( PID, tests, count, f_verify );
 end
 
 
@@ -764,6 +772,7 @@ function  test_files_from_file( filename, base_dir,
 )
     rlines = readlines( filename );
 
+    println( "bogi\n" );
     if  ( f_verify )
         println( "\n\n"*"VERIFICATION RUN - will be much slower.\n" );
     end
@@ -806,12 +815,14 @@ function (@main)(ARGS)
     num_args = length( ARGS );
 
     if   num_args == 2  &&  ( ARGS[ 1 ] == "test_file" )
-        @profile test_single_file( ARGS[2], f_verify_run );
-        Profile.print(format=:flat)
+        test_single_file( ARGS[2], true );
+        #Profile.print(format=:flat)
         #Profile.print()
         exit( 0 );
     end
     if   num_args == 3  &&  ( ARGS[ 1 ] == "file" )
+#        f_verify_run = true;
+ #       println( "shogi"  )
         test_files_from_file( ARGS[3], ARGS[2], f_verify_run );
         exit( 0 );
     end
