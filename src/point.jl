@@ -22,7 +22,7 @@ using DelimitedFiles
 #    x::MVector{D,T}
 # end
 
-Point{D,T} = MVector{D,T};
+Point{D,T} = SVector{D,T};
 Point2I = Point{2,Int64};
 Point2F = Point{2,Float64};
 
@@ -46,7 +46,7 @@ function  Base.setindex!(p::Point{D,T}, v, i::Int) where {D,T}
 end
 =#
 
-@inline function  norm(p::MVector{D,T} ) where {D,T}
+@inline function  norm(p::SVector{D,T} ) where {D,T}
     sum = 0;
     @inbounds for i in 1:D
         @fastmath sum +=  p[i]^2;
@@ -172,7 +172,7 @@ end
     end
 
 #    s = 1.0 - t;
-    o = Point{D,T}(undef )
+    o = MVector{D,T}(undef )
 
     #@inbounds
     @inbounds for  i in 1:D
@@ -182,7 +182,7 @@ end
         #        o[ i ] = p[ i ] * s + q[ i] * t;
     end
 
-    return  o;
+    return  Point{D,T}( o );
 #    return  add( mult( p, 1.0-t), mult( q, t ) );
 end
 
@@ -216,13 +216,15 @@ similarly, point( 2.0, 1.0 ) would create a 2d point.
 function npoint( args...)
     D=length(args);
     T=typeof( first( args ) )
-    x::MVector{D,T} = MVector{D,T}(undef);
+    #x::SVector{D,T} = SVector{D,T}(undef);
 
+    #=
     for i in eachindex( x )
         x[ i ] = args[ i ];
     end
-
-    p::Point{D,T} = Point{D,T}( x );
+    =#
+    
+    p::Point{D,T} = Point{D,T}( args... );
 
     return  p;
 end
