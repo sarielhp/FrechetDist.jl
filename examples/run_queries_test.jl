@@ -286,7 +286,7 @@ function frechet_decider_PID( PID::PolygonsInDir, i::Int64,
     # distance. The problem with previous version was that Δ was too
     # small, because somehow r was very close to the lower/upper
     # bounds. The new version backoff if Δ is too small...
-    delta_naive = (ub - lb) / 3.0;
+    delta_naive = (ub - lb) / 5.0;
     delta = min( abs( r - lb ), abs( r - ub ), (wP + wQ)/4.0,
                  delta_naive );# / 0.9;
     if  ( delta < delta_naive / 6.0 )
