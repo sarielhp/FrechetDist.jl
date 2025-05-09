@@ -284,8 +284,8 @@ function frechet_decider_PID( PID::PolygonsInDir, i::Int64,
     delta = min( abs( r - lb ), abs( r - ub ), (wP + wQ)/4.0,
                  delta_naive );# / 0.9;
     f_debug_PID &&  println( "Δ  ", delta, "  naive [", delta_naive, "]" );
-    if  ( delta < delta_naive / 10.0 )
-        delta = delta_naive / 10.0;
+    if  ( delta < delta_naive / 12.0 )
+        delta = delta_naive / 12.0;
     end
     
     f_debug_PID  &&  println( "\n"*"Lower bound: ", lb, "\nUpper bound: ", ub,
