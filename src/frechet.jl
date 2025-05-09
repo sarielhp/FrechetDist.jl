@@ -1007,7 +1007,10 @@ function  frechet_mono_via_refinement_ext( Pa::Polygon{N,T}, Qa::Polygon{N,T},
                                            f_snapshots::Bool,
                                            approx::Float64 = 1.00001
                                      )  where {N,T}
-    @assert( approx > 1.0 );
+    if  ( approx <= 1.0 )
+        approx = 1.0000001;
+        @assert( approx > 1.0 );
+    end
     f_debug::Bool = false;
 
     mm::Morphing{N,T} = Morphing_empty( Pa, Qa );
