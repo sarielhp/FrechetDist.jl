@@ -575,7 +575,7 @@ function  run_tests( PID::PolygonsInDir, tests::Vector{test_info_t},
 )
     errors::Int64 = 0;
 
-    mask::Int64 = 0x1f; #0x1; #0x1f
+    mask::Int64 = 0x1ff; #0x1; #0x1f
     #println( "run_tests..." );
 
     if  ( rng == 0:0 )
