@@ -605,7 +605,7 @@ function  run_tests( PID::PolygonsInDir, tests::Vector{test_info_t},
         end
         Threads.atomic_add!( count, 1 )
         if  ( f_verify )
-            println( "verifying!" );
+            #println( "verifying!" );
             sgn_slow = frechet_decider_PID_slow( PID, t.i_P, t.i_Q, t.rad )
             if  ( sgn == sgn_slow )
                 continue;
