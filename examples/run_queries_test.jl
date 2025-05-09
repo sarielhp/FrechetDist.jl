@@ -245,7 +245,7 @@ function frechet_decider_PID_slow( PID, i, j, r )::Int64
 end
 
 
-#const f_debug_PID = true
+const f_debug_PID = false
 function frechet_decider_PID( PID::PolygonsInDir, i::Int64,
                               j::Int64, r::Float64 )::Int64
 
@@ -603,8 +603,7 @@ function  run_tests( PID::PolygonsInDir, tests::Vector{test_info_t},
             flush( stdout );
         end
         t = tests[ i ];
-        #println( "Before frechet_decider..." );
-        println( i,":   fl_a: ", t.f_l_a, "   fl_b: ", t.f_l_b );
+        #println( i,":   fl_a: ", t.f_l_a, "   fl_b: ", t.f_l_b );
         @static if  TIME_RESULTS
             ms = @timed sgn = frechet_decider_PID( PID, t.i_P, t.i_Q, t.rad );
             t.runtime = ms.time;
