@@ -629,8 +629,8 @@ function  run_tests( PID::PolygonsInDir, tests::Vector{test_info_t},
             P = PID.polys[ t.i_P ];
             Q = PID.polys[ t.i_Q ];
 
-            m = frechet_c_compute( P, Q, false, 0.000000001 );
-            m_aprx = frechet_c_approx( P, Q, 1.000000001 );
+            m = frechet_c_compute( P, Q, false, 0.0000001 );
+            m_aprx = frechet_c_approx( P, Q, 1.0000001 );
             sgn_real::Int64 = round(Int64, sign( m.leash - t.rad ) );
             sgn_aprx::Int64 = round(Int64, sign( m_aprx.leash - t.rad ) );
 
