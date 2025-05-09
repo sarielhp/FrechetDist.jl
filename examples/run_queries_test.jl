@@ -575,7 +575,7 @@ function  run_tests( PID::PolygonsInDir, tests::Vector{test_info_t},
 )
     errors::Int64 = 0;
 
-    mask::Int64 = 0x1fff; #0x1; #0x1fff
+    mask::Int64 = 0x1f; #0x1; #0x1f
     #println( "run_tests..." );
 
     if  ( rng == 0:0 )
@@ -588,14 +588,14 @@ function  run_tests( PID::PolygonsInDir, tests::Vector{test_info_t},
         #=if  i > 10000000
             return 0;
         end=#
-#        if  ( ( count[]  & mask ) == mask )
+        if  ( ( count[]  & mask ) == mask )
             println( count[], " T",
                 Threads.threadid(),"D : ", i, "/", length( tests ) );
             flush( stdout );
-#        end
+        end
         t = tests[ i ];
-        println( "Before frechet_decider..." );
-        println( i,":   fl_a: ", t.f_l_a, "   fl_b: ", t.f_l_b );
+        #println( "Before frechet_decider..." );
+        # println( i,":   fl_a: ", t.f_l_a, "   fl_b: ", t.f_l_b );
         @static if  TIME_RESULTS
             ms = @timed sgn = frechet_decider_PID( PID, t.i_P, t.i_Q, t.rad );
             t.runtime = ms.time;
@@ -604,20 +604,23 @@ function  run_tests( PID::PolygonsInDir, tests::Vector{test_info_t},
             t.runtime = 0
         end
         if  ( f_verify )
-            println( "verifying!" );
+            #println( "verifying!" );
             sgn_slow = frechet_decider_PID_slow( PID, t.i_P, t.i_Q, t.rad )
 
-            m = frechet_c_compute( P, Q, false, 0.000000001 );
+            P = PID.polys[ t.i_P ];
+            Q = PID.polys[ t.i_Q ];
+
+            m = frechet_c_compute( P, Q, false, 0.00001 );
             sgn_real::Int64 = round(Int64, sign( m.leash - t.rad ) );
 
             if  ( ( sgn != sgn_slow ) ||  ( sgn != sgn_real ) )
-                println( "Mistake?" );
-                P = PID.polys[ t.i_P ];
-                Q = PID.polys[ t.i_Q ];
+                #println( "Mistake?" );
+                #P = PID.polys[ t.i_P ];
+                #Q = PID.polys[ t.i_Q ];
                 m = frechet_c_compute( P, Q, false, 0.000000001 );
 
-                println( @__FILE__, " : ", @__LINE__ );
-                sgn_real::Int64 = round(Int64, sign( m.leash - t.rad ) );
+                #println( @__FILE__, " : ", @__LINE__ );
+                sgn_real = round(Int64, sign( m.leash - t.rad ) );
                 if  ( sgn != sgn_real )
                     errors = errors + 1;
                     println( "ERR========================================" );
