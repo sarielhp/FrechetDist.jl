@@ -245,7 +245,7 @@ function frechet_decider_PID_slow( PID, i, j, r )::Int64
 end
 
 
-const f_debug_PID = true
+const f_debug_PID = false
 function frechet_decider_PID( PID::PolygonsInDir, i::Int64,
                               j::Int64, r::Float64 )::Int64
 
