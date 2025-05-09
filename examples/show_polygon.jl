@@ -1,4 +1,4 @@
-#! julia
+#! /usr/bin/env julia
 
 push!(LOAD_PATH, pwd()*"/src/")
 

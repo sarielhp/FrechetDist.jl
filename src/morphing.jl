@@ -36,6 +36,7 @@ mutable struct EventPoint{N,T}
     i::Int64;
     type::FPointType;
     t::Float64;
+    penalty::Float64;
 end
 
 # leash = maximum length of an edge in the encoded matching.
@@ -325,7 +326,8 @@ function  Morphing_recompute_leash( m::Morphing{N,T} ) where  {N,T}
     @assert( length( m.pes ) == length( m.qes ) );
     r = 0;
     for  i  in eachindex( m.pes )
-        ell = Dist( m.pes[ i ].p, m.qes[ i ].p )
+        ell = (Dist( m.pes[ i ].p, m.qes[ i ].p )
+                        - m.pes[ i ].penalty - m.pes[ i ].penalty );
         if   ell > r
             r = ell;
         end
@@ -906,17 +908,18 @@ function  event_sequences_extract( prm::Polygon2F, P::Polygon{N,T},
         #        println( "here? " );
 
         if  ( t_p == 0.0 ) ||  ( ( t_p == 1.0 )  &&  ( i_p == len_p ) )
-            push!( pes, EventPoint( deepcopy( pcurr), i_p, PT_VERTEX, 0.0 ) );
+            push!( pes, EventPoint( deepcopy( pcurr), i_p, PT_VERTEX, 0.0, 0.0 ) );
         else
-            push!( pes, EventPoint( deepcopy(pcurr), i_p, PT_ON_EDGE, T(t_p) ) );
+            push!( pes, EventPoint( deepcopy(pcurr), i_p, PT_ON_EDGE, T(t_p),
+                                    0.0 ) );
         end
 
         #println( pcurr );
         #println( qcurr );
         if  ( t_q == 0.0 ) ||  ( ( t_q == 1 )  &&  ( i_q == len_q ) )
-            push!( qes, EventPoint( deepcopy(qcurr), i_q, PT_VERTEX, 0.0 ) );
+            push!( qes, EventPoint( deepcopy(qcurr), i_q, PT_VERTEX, 0.0, 0.0 ) );
         else
-            push!( qes, EventPoint( deepcopy(qcurr), i_q, PT_ON_EDGE, T(t_q) ) );
+            push!( qes, EventPoint( deepcopy(qcurr), i_q, PT_ON_EDGE, T(t_q), 0.0 ) );
         end
         #       println( "here? B" );
     end
@@ -924,8 +927,10 @@ function  event_sequences_extract( prm::Polygon2F, P::Polygon{N,T},
     @assert( !point.isNaN( last( P ) ) );
     @assert( !point.isNaN( last( Q ) ) );
     
-    push!( pes, EventPoint( deepcopy(last(P)), cardin( P ), PT_VERTEX, 0.0 ) );
-    push!( qes, EventPoint( deepcopy(last(Q)), cardin( Q ), PT_VERTEX, 0.0 ) );
+    push!( pes, EventPoint( deepcopy(last(P)), cardin( P ), PT_VERTEX, 0.0,
+                            0.0 ) );
+    push!( qes, EventPoint( deepcopy(last(Q)), cardin( Q ), PT_VERTEX, 0.0,
+                            0.0 ) );
 
     #=
     println( "@@@@@@@@@@@@@@@@@@@@222" );

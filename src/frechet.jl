@@ -84,19 +84,23 @@ function  FR_Context(P::Polygon{N,T}, Q::Polygon{N,T}) where {N,T}
                       );
 end
 
+
 function  ve_event_value( c::FRContext{N,T}, id::Int64 ) where {N,T}
     P = c.P
     Q = c.Q
     i = EID_i( id );
     j = EID_j( id );
+    penalty::T = 0;
+
     if  EID_i_is_vert( id )
         if  EID_j_is_vert( id )
             d = Dist( P[ i ], Q[ j ] );
             # Old code: Bug? Missing if check
             if  c.f_offsets
-                return  d -  c.p_offs[ i ] - c.q_offs[ j ];
+                penalty = c.p_offs[ i ] - c.q_offs[ j ];
+                return  d - penalty, penalty;
             else
-                return  Dist( P[ i ], Q[ j ] );
+                return  Dist( P[ i ], Q[ j ] ), 0.0;
             end
         end
         d = dist_iseg_nn_point( Q[ j ], Q[ j + 1 ], c.P[ i ] );
@@ -106,36 +110,29 @@ function  ve_event_value( c::FRContext{N,T}, id::Int64 ) where {N,T}
 #            end
             #--------------------------------------------------------------
 # Old code: Bug?
-#            return  d - c.q_offs[ j ];
-            return  d - max(c.q_offs[ j ], c.q_offs[ j + 1 ] ) - c.p_offs[ i ];
+            #            return  d - c.q_offs[ j ];
+            penalty = max(c.q_offs[ j ], c.q_offs[ j + 1 ] ) + c.p_offs[ i ];
+            return  d - penalty, penalty;
         else
-            return  d;
+            return  d, 0.0;
         end
     end
 
     if  EID_j_is_vert( id )
         d = dist_iseg_nn_point( P[ i ], P[ i + 1 ], Q[ j ] );
         if  c.f_offsets
-# Old code: Bug?
-#            return  d - c.p_offs[ i ];
-            return  d - max(c.p_offs[ i ], c.p_offs[ i + 1 ] ) - c.q_offs[ j ];
+            penalty = max(c.p_offs[ i ], c.p_offs[ i + 1 ] ) + c.q_offs[ j ];
+            return  d - penalty, penalty;
         else
-            return  d;
+            return  d, 0.0;
         end
     end
 
     println( "Error: This kind of event is not handled yet..." );
     exit( -1 )
-    return  0.0;
+    return  0.0, 0.0;
 end
 
-#=
-function  f_r_new_event( _id::Int64, c::FRContext{N,T} ) where {N,T}
-    ev = TreeVertex( _id );
-    ev.val = ve_event_value( c, ev.id );
-    return  ev;
-end
-=#
 
 @inline function   is_start_event( id::Int64 )
     return ( ( EID_i( id ) == 1 )
@@ -152,7 +149,7 @@ end
 function f_r_create_event( R::Polygon{N,T}, i::Int64,
                         is_vert::Bool, qr::Point{N,T} ) where {N,T}
     if  ( is_vert )
-        ev = EventPoint( R[ i ], i, PT_VERTEX, 0.0 );
+        ev = EventPoint( R[ i ], i, PT_VERTEX, 0.0, 0.0 );
         return  ev;
     end
 
@@ -189,7 +186,7 @@ function f_r_create_event( R::Polygon{N,T}, i::Int64,
     #        println( "TTT= ", t );
 
     @assert( ! isNaN( p ) );
-    return  EventPoint( p, i, PT_ON_EDGE, t );
+    return  EventPoint( p, i, PT_ON_EDGE, t, 0.0 );
 end
 
 
@@ -218,7 +215,7 @@ end
     if  ! is_schedule_event( c.dict, id, c.n_p, c.n_q )
         return
     end
-    new_val = ve_event_value( c, id )
+    new_val, penalty = ve_event_value( c, id )
     if  ( c.f_upper_bound  &&  ( c.upper_bound < new_val ) )
         return;
     end
@@ -230,8 +227,8 @@ end
 
 function  f_r_extract_solution( P::Polygon{N,T}, Q,
                                 end_event_id::Int64,
-                                start_id::Int64,
-                                dict::DictVERType
+                                dict::DictVERType,
+                                c::FRContext{N,T}
                                 ) where {N,T}
     #############################################################3
     # Extracting the solution
@@ -249,6 +246,10 @@ function  f_r_extract_solution( P::Polygon{N,T}, Q,
                                         EID_j_is_vert( idx ),
                                         P[ EID_i( idx ) ] );
 
+    if  ( c.f_offsets  )
+        val, penalty = ve_event_value( c, idx );
+        pex.penalty = penalty;
+    end
     push!( pes, pex );
     push!( qes, qex );
 
@@ -260,10 +261,15 @@ function  f_r_extract_solution( P::Polygon{N,T}, Q,
 #        id = curr.id;
         id_i = EID_i( curr );
         id_j = EID_j( curr );
+
         pe::EventPoint = f_r_create_event( P, id_i, EID_i_is_vert( curr ),
                                                  Q[ id_j ] );
         qe::EventPoint = f_r_create_event( Q, id_j, EID_j_is_vert( curr ),
                                               P[ id_i ] );
+        if  ( c.f_offsets  )
+            val, penalty = ve_event_value( c, curr );
+            pe.penalty = penalty;
+        end
         push!( pes, pe );
         push!( qes, qe );
     end
@@ -593,7 +599,8 @@ function   frechet_ve_r_compute_ext( P::Polygon{N,T},
     end
 
     #@time
-    pes, qes = f_r_extract_solution( P, Q, end_id, start_id, c.dict );
+    #XXX
+    pes, qes = f_r_extract_solution( P, Q, end_id, c.dict, c );
 
     morph::Morphing{N,T} = Morphing_init( P, Q, pes, qes );
     morph.iters = iters;
@@ -764,8 +771,8 @@ function    frechet_c_mono_approx_subcurve(
     for  i  in  eachindexButLast( p_indices )
         pind = p_indices[ i ];
         pind_next = p_indices[ i + 1 ];
-        push!( pes, EventPoint( P[ pind ], pind, PT_VERTEX, 0.0 ) );
-        push!( qes, EventPoint( Q[ i ], i, PT_VERTEX, 0.0 ) );
+        push!( pes, EventPoint( P[ pind ], pind, PT_VERTEX, 0.0, 0.0 ) );
+        push!( qes, EventPoint( Q[ i ],    i,    PT_VERTEX, 0.0, 0.0 ) );
 
         max_d::Float64 = 0;
         max_t::Float64 = 0;
@@ -780,15 +787,15 @@ function    frechet_c_mono_approx_subcurve(
                 q = segment.at( seg, max_t )
             end
             max_d = max( max_d, Dist( P[ j ], q ) );
-            push!( pes, EventPoint( P[ j ], j, PT_VERTEX, 0.0 ) );
-            push!( qes, EventPoint( q, i, PT_ON_EDGE, max_t ) );
+            push!( pes, EventPoint( P[ j ], j, PT_VERTEX, 0.0, 0.0 ) );
+            push!( qes, EventPoint( q, i, PT_ON_EDGE, max_t, 0.0 ) );
         end
         offsets[ i ] = max( offsets[ i ], max_d );
         offsets[ i + 1 ] = max( offsets[ i + 1 ], max_d );
     end
 
-    push!( pes, EventPoint( last( P ), cardin( P ), PT_VERTEX, 0.0 ) );
-    push!( qes, EventPoint( last( Q ), cardin(Q), PT_VERTEX, 0.0 ) );
+    push!( pes, EventPoint( last( P ), cardin( P ), PT_VERTEX, 0.0, 0.0 ) );
+    push!( qes, EventPoint( last( Q ), cardin(Q), PT_VERTEX, 0.0, 0.0 ) );
 
     return  Morphing_init( P, Q, pes, qes ), offsets;
 end
@@ -1243,7 +1250,7 @@ function  frechet_c_approx( poly_a::Polygon{N,T},
 
     f_debug::Bool = false;
 
-    if  f_debug 
+    if  f_debug
         println( "\n\n\n============================XXX" );
     end
     t_approx::Float64 = approx;
@@ -1340,7 +1347,7 @@ function  frechet_c_approx( poly_a::Polygon{N,T},
 
         total_err = m_p.leash + m_q.leash;
         lbx = (m.leash / t_approx) - total_err;
-        if  f_debug 
+        if  f_debug
             println( "total_error : ", total_err );
             println( "lbx         : ", lbx );
         end
@@ -1523,143 +1530,109 @@ Frechet distance.
 To really ensure converges, the monotone distance computed between the
 simplification is computed using refinement, so tha the ve_r distance
 
+# Arguments
+- f_accept_approx: accept a good enough approximation as good enough...
+
+- Tolerance: If |a-b| <= tolerance*( |a| + |b| ) then we consider
+  numbers to be equal. In a perfect world tolerance would be zero.
+  But floating point issues require us to pick some value.
+
 """
 function  frechet_c_compute( P::Polygon{N,T},
                              Q::Polygon{N,T},
                              f_accept_approx::Bool = true,
                              tolerance::Float64  = 0.00001
                              )  where {N,T}
-    f_debug::Bool = false;
+    f_debug = false;
 
-    # The parameters that can be finetunes
-    # 2.0, 8.0, 4.0, 10.0 =>  8.74 seconds
+    # The parameters that can be fine-tuned....
     aprx_refinement::Float64 = 2.0;
     factor::Float64          = 4.0
     factor_scale::Float64    = 1.3;
     approx_scale::Float64    = 10.0;
 
-    ##################################################################
-    # Tolerance: If |a-b| <= tolerance*( |a| + |b| ) then we consider
-    # numbers to be equal. In a perfect world tolerance would be zero.
-    # But floating point issues require us to pick some value.
-    ##################################################################
-    #tolerance::Float64  = 0.00001;
     min_approx::Float64 = 1.00000000001;
 
-    f_debug  &&  println( "\n\n\n\n\n\n" );
     f_debug  &&  println( "P#", cardin( P ) )
     f_debug  &&  println( "Q#", cardin( Q ) )
 
-    mf = frechet_c_approx( P, Q, aprx_refinement );
-    #println( "=#= P :", cardin( mf.P ) );
-    #println( "=#= Q :", cardin( mf.Q ) );
-    ratio_2 = mf.ratio;
+    m_rough = frechet_c_approx( P, Q, aprx_refinement );
+    if  ( m_rough.leash == 0.0 )  return  m_rough  end
+
+    ratio_2 = m_rough.ratio;
     if  f_debug
-        println( "RATIO 2: ", ratio_2 );
-        println( "leash: ", mf.leash );
-        println( "+++++++++++++++++++++++++++++++++++++++++++++++++++" );
+        println( "RATIO 2: ", m_rough.ratio, "\nleash: ", m_rough.leash );
     end
-    
-    len_a = polygon.total_length( P );
-    len_b = polygon.total_length( Q );
+
+    len_a = total_length( P );
+    len_b = total_length( Q );
     f_debug  &&  println( "#", cardin( P ) )
-    if  ( mf.leash == 0 )
-        return  mf
-    end
-    approx = min( 1.0 + (len_a + len_b ) / (100.0 * mf.leash ), 1.1 );
+    
+    approx = min( 1.0 + (len_a + len_b ) / (100.0 * m_rough.leash ), 1.1 );
     if   f_debug
-        println( "" );
-        println( "" );
-        println( "Ratio         : ", ratio_2 );
-        println( "len_a         : ", len_a );
-        println( "len_b         : ", len_b );
-        println( "2approx_leash : ", mf.leash );
-        println( "" );
-        println( "" );
-        println( "approx rec :", approx );
-        println( "" );
-        println( "" );
-    end
+        println( "\n\nRatio         : ", ratio_2,
+                 "\n\nlen_a         : ", len_a,
+                 "\nlen_b         : ", len_b,
+                 "\n2approx_leash : ", m_rough.leash, "\n\n",
+                 approx, " approximation..." );
+    end 
 
-    f_debug && println( approx, " approximation..." );
-
-    if  ratio_2 <= approx
-        m = mf;
-        #println( "___ #P: ", cardin( m.P ) );
-        ratio = ratio_2;
-    else
-        f_debug  &&  println( "Calling: freceht_c_approx( ", approx, ") " );
+    m = m_rough;
+    if  m_rough.ratio > approx
         m = frechet_c_approx( P, Q, approx );
-        #println( "_=_ #P: ", cardin( m.P ) );
-        ratio = m.ratio
-        f_debug  &&  println( "freceht_c_approx( ", approx, ")...done" );
     end
-        #        frechet_ve_r_mono_approx( P, Q, eps );
+    ratio = m.ratio
 
     if  ( f_debug )
         println( "Approximation computed..." );
         println( "m.leash : ", m.leash );
-        println( "" );
     end
 
+    # Okay - we computed a good enough approximation. 
+    # We next extract the leases distances at the vertices...
     pl, ql = Morphing_extract_vertex_radii( m );
-    f_debug  &&  println( "### m.P:", cardin( m.P ) );
-    f_debug  &&  println( "### pl :", length( pl ) );
-    f_debug  &&  println( "### P :", cardin( P ) )
 
     lower_bound = m.leash / ratio;
     if  f_debug
         println( "Before while loop..." );
         println( "LOWER BOUND: ", lower_bound );
-        println( "upper BOUND: ", m.leash );
+        println( "upper BOUND: ", m.leash, "\n" );
     end
-    f_debug  &&  println( "\n\n\n\n\n\n" );
 
+    ### Now we start looping refining if we need to improve th eapproxiamtion.
     round::Int64 = 0;
     while  true
         round = round + 1;
         aprx_refinement = max( aprx_refinement, min_approx );
 
-        f_debug  &&  println( "-------------------------------------------" );
-        #f_debug  &&  println( "A#", cardin( P ) )
-        #f_debug  &&  println( "B#", length( pl ) )
-        f_debug  &&  println( "Factor: ", factor,
+        f_debug  &&  println( "---------------------------\nFactor: ", factor,
                               "  Approx : ", aprx_refinement );
+        
+        # Computes the slack at the vertices. The larger tha slack the more one can move a 
+        # vertex without changing the Frechet distance. Negatie slack means not to move the 
+        # vertices.
         pz = ( ( lower_bound * ones( length( pl ) ) ) - pl ) / factor
         qz = ( ( lower_bound * ones( length( ql ) ) ) - ql ) / factor
 
+        # Propogate the do not move by doing a local min convolution. The current code is 
+        # not efficient.
         propogate_mins( pz, 8 );
         propogate_mins( qz, 8 );
 
-
-        #propogate_negs( pz );
-        #propogate_negs( qz );
-        # f_deprintln( pz );
-
         if  f_debug
-            p_count = count_below_zero( pz );
-            q_count = count_below_zero( qz );
-
-            println( "pz count <0: ", p_count, " / ", length( pz ) );
-            println( "qz count <0: ", q_count, " / ", length( qz ) );
+            println( "pz count <0: ", count_below_zero( pz ), " / ", length( pz ) );
+            println( "qz count <0: ", count_below_zero( qz ), " / ", length( qz ) );
         end
         f_PS_exact::Bool = false;
         f_QS_exact::Bool = false;
 
+        # Simplify the polygons using the slack computed above per vertex.
         PS, p_indices, f_PS_exact = Polygon_simplify_radii_ext( P, pz );
         QS, q_indices, f_QS_exact = Polygon_simplify_radii_ext( Q, qz );
 
-        #println( "### #QS : ", cardin( QS ), "   q_ind: ",
-        #         length( q_indices ) );
-        #println( "### #PS : ", cardin( PS ), "   p_ind: ",
-        #          length( p_indices ) );
-
         if  f_debug
-            println( "p_count <0: ", p_count, " / ", length( pz ) );
-            println( "q_count <0: ", q_count, " / ", length( qz ) );
             println( "|PS| = ", cardin( PS ), "  |P| = ", cardin( P ) );
             println( "|QS| = ", cardin( QS ), "  |Q| = ", cardin( Q ) );
-            println( "Computing radii simplified Frechet distance..." );
         end
 
         # If the PS and QS are really large, this is a waste of
@@ -1671,12 +1644,9 @@ function  frechet_c_compute( P::Polygon{N,T},
             return   frechet_mono_via_refinement( P, Q )[ 1 ];
         end
 
-        #    m_mid = frechet_ve_r_mono_compute( PS, QS  );
         t_aprx = max( tolerance + 1.0, aprx_refinement ) ;
-        f_debug  &&  begin
-            println(  "frechet_mono_via_refinement( PS, QS )" );
-            println( "t_aprx : ", t_aprx );
-        end
+        f_debug  &&  println(  "f_m_via_refine( PS, QS )\nt_aprx : ", t_aprx );
+
         m_mid, _f_exact, PSR, QSR = frechet_mono_via_refinement( PS, QS,
                  t_aprx );
 
@@ -1686,24 +1656,12 @@ function  frechet_c_compute( P::Polygon{N,T},
         # which is much faster...
         #println( "_#PS: ", cardin( PS ) );
         m_a, offsets_a = frechet_c_mono_approx_subcurve( P, PS, p_indices );
-
-        # OLD CODE
-        #   m_a = frechet_ve_r_mono_compute( P, PS );
         mmu = Morphing_combine( m_a, m_mid );
-        #f_debug  &&  println( "ve_r_mono( QS -> Q )" );
-
-        # BUG FIX: Used the mono computation instead of the subcurve code,
-        # which is much faster...
-        #println( "_#QS: ", cardin( QS ) );
         m_b, offsets_b = frechet_c_mono_approx_subcurve( Q, QS, q_indices );
+
         Morphing_swap_sides!( m_b );
 
-        # OLD CODE
-        #  m_b = frechet_ve_r_mono_compute( QS, Q );
         mw = Morphing_combine( mmu, m_b );
-
-        #f_debug  &&  println( "CARDIN(P): ", cardin( mw.P ) );
-        #f_debug  &&  println( "CARDIN(Q): ", cardin( mw.Q ) );
 
         f_debug  &&  println( "eq?  ", m_mid.leash, " = ", mw.leash );
 
@@ -1735,11 +1693,6 @@ function  frechet_c_compute( P::Polygon{N,T},
         #PS_offs = offsets_a;#Morphing_extract_offsets( m_a )[2]
         #QS_offs = offsets_b;#Morphing_extract_offsets( m_b )[1]
 
-        f_debug  &&  println( "offsets_a max : ", maximum( offsets_a ) );
-        f_debug  &&  println( "offsets_a max : ", maximum( offsets_b ) );
-
-        f_debug  &&  println( "ve_r_mono( PS -> QS)" );
-
         map_PS = get_refinement_map( PSR, PS );
         map_QS = get_refinement_map( QSR, QS );
 
@@ -1748,24 +1701,20 @@ function  frechet_c_compute( P::Polygon{N,T},
         @assert( length( PS_offs ) == cardin( PSR ) );
         @assert( length( QS_offs ) == cardin( QSR ) );
 
-        # very important! We have to use the refined to monotonicity copies...
-        m_final = frechet_ve_r_compute_ext( PSR, QSR, PS_offs, QS_offs,
-                                            true );
+        # very important! We have to use the refined curves PSR/QSR to monotonicity 
+        # copies...
+        m_final = frechet_ve_r_compute_ext( PSR, QSR, PS_offs, QS_offs, true );
         f_debug && println( "*** lower_bound.leash  : ", m_final.leash );
         f_debug && println( "*** mw     .leash      : ", mw.leash );
-        #f_debug && println( "*** lower_bound       : ", lower_bound );
 
         if  ( eq( m_final.leash,  mw.leash, tolerance ) )
             f_debug && println( "Return from frechet_c_compute" );
             return  mw
         end
 
+        # WE have to try harder - making slack at vertices smaller, and approximation smaller...
         factor = factor * factor_scale;
         aprx_refinement = 1.0 + ( (aprx_refinement - 1.0) /  approx_scale );
-        f_debug  &&  println( "aprx_refinement: ", aprx_refinement,
-             "  scale :", approx_scale );
-        #lower_bound = lower_bound * 0.5; #max( lower_bound,
-        #m_final.leash ); #lower_bound * 0.99;
         if f_debug
             println( "m_a.leash      : ", m_a.leash );
             println( "m_b.leash      : ", m_b.leash );

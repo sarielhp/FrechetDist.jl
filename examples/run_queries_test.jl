@@ -604,16 +604,19 @@ function  run_tests( PID::PolygonsInDir, tests::Vector{test_info_t},
             t.runtime = 0
         end
         if  ( f_verify )
-            #println( "verifying!" );
+            println( "verifying!" );
             sgn_slow = frechet_decider_PID_slow( PID, t.i_P, t.i_Q, t.rad )
 
             P = PID.polys[ t.i_P ];
             Q = PID.polys[ t.i_Q ];
 
-            m = frechet_c_compute( P, Q, false, 0.00001 );
+            m = frechet_c_compute( P, Q, false, 0.000000001 );
+            m_aprx = frechet_c_approx( P, Q, 1.000000001 );
             sgn_real::Int64 = round(Int64, sign( m.leash - t.rad ) );
+            sgn_aprx::Int64 = round(Int64, sign( m_aprx.leash - t.rad ) );
 
-            if  ( ( sgn != sgn_slow ) ||  ( sgn != sgn_real ) )
+            if  ( ( sgn != sgn_slow ) ||  ( sgn != sgn_real )
+                  ||  ( sgn_aprx != sgn_real ) )
                 #println( "Mistake?" );
                 #P = PID.polys[ t.i_P ];
                 #Q = PID.polys[ t.i_Q ];
@@ -628,13 +631,16 @@ function  run_tests( PID::PolygonsInDir, tests::Vector{test_info_t},
                     println( "ERR f_l_b     : ", t.f_l_b );
                     println( "ERR sgn       : ", sgn );
                     println( "ERR sgn_slow  : ", sgn_slow );
+                    println( "ERR sgn_aprx  : ", sgn_aprx );
                     println( "ERR sgn_real  : ", sgn_real );
-                    println( "ERR r (input) : ", t.rad );
-                    println( "ERR m.leash   : ", m.leash );
+                    println( "ERR r (input)      : ", t.rad );
+                    println( "ERR m.leash        : ", m.leash );
+                    println( "ERR m_aprx.leash   : ", m_aprx.leash );
                     #@assert( sgn == sgn_slow );
                     open( "errors_log.txt", "a" ) do file
                         println( file, t.f_l_a, " ", t.f_l_b, " ", t.rad );
                     end
+                    exit( -1 ); # REMOVE
                 end
             end
         end
