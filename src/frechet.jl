@@ -248,7 +248,8 @@ function  f_r_extract_solution( P::Polygon{N,T}, Q,
 
     if  ( c.f_offsets  )
         val, penalty = ve_event_value( c, idx );
-        pex.penalty = penalty;
+        pex = ev_update_penalty( pex, penalty );
+        #pex.penalty = penalty;
     end
     push!( pes, pex );
     push!( qes, qex );
@@ -268,7 +269,7 @@ function  f_r_extract_solution( P::Polygon{N,T}, Q,
                                               P[ id_i ] );
         if  ( c.f_offsets  )
             val, penalty = ve_event_value( c, curr );
-            pe.penalty = penalty;
+            pe = ev_update_penalty( pe, penalty) ;
         end
         push!( pes, pe );
         push!( qes, qe );

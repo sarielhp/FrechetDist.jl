@@ -31,7 +31,7 @@ end
 #    the ith vertex, t=1 means it is on the i+1 vertex.
 ############################################################
 #@with_kw
-mutable struct EventPoint{N,T}
+struct EventPoint{N,T}
     p::Point{N,T}
     i::Int64;
     type::FPointType;
@@ -39,6 +39,14 @@ mutable struct EventPoint{N,T}
     penalty::Float64;
 end
 
+function  ev_update_p_t( ev::EventPoint{N,T}, p::Point{N,T}, t::Float64
+                         ) where {N,T}
+    return  EventPoint( p, ev.i, ev.type, t, ev.penalty );
+end
+function  ev_update_penalty( ev::EventPoint{N,T}, penalty 
+                         ) where {N,T}
+    return  EventPoint( ev.p, ev.i, ev.type, ev.t, penalty );
+end
 # leash = maximum length of an edge in the encoded matching.
 #         (That is, the Frechet distance.)
 """
@@ -248,9 +256,8 @@ function  events_seq_make_monotone( P::Polygon{N,T},
             if  ( t > nep.t )
                 ell = Dist( P[ nep.i ], P[ nep.i + 1 ] );
                 delta = max( delta, ( t - nep.t ) * ell );
-                nep.t = t;
-                nep.p = convex_comb( P[ nep.i ], P[ nep.i + 1 ],
-                                     t  );
+                p = convex_comb( P[ nep.i ], P[ nep.i + 1 ], t );
+                nep = ev_update_p_t( nep, p, t );
             end
             push!( ns, nep );
             j = j + 1
@@ -260,9 +267,9 @@ function  events_seq_make_monotone( P::Polygon{N,T},
         if  ( t > nep.t )
             ell = Dist( P[ nep.i ], P[ nep.i + 1 ] );
             delta = max( delta, ( t - nep.t ) * ell );
-            nep.t = t;
-            nep.p = convex_comb( P[ nep.i ], P[ nep.i + 1 ],
+            p = convex_comb( P[ nep.i ], P[ nep.i + 1 ],
                                  t );
+            nep = ev_update_p_t( nep, p, t );
         end
         push!( ns, nep );
 
