@@ -245,7 +245,7 @@ function frechet_decider_PID_slow( PID, i, j, r )::Int64
 end
 
 
-const f_debug_PID = false
+#const f_debug_PID = true
 function frechet_decider_PID( PID::PolygonsInDir, i::Int64,
                               j::Int64, r::Float64 )::Int64
 
@@ -265,8 +265,7 @@ function frechet_decider_PID( PID::PolygonsInDir, i::Int64,
     wP = P_ph.widths[ 1 ];
     wQ = Q_ph.widths[ 1 ];
 
-    f_debug_PID  &&  print( "wP      : ", wP );
-    f_debug_PID  &&  print( "    wQ  : ", wQ );
+    f_debug_PID  &&  println( "wP      : ", wP, "    wQ  : ", wQ );
 
     ub = lb + wP + wQ;
 
@@ -281,9 +280,14 @@ function frechet_decider_PID( PID::PolygonsInDir, i::Int64,
     #( lb > r )   &&   return  1;
     ( ub < r )   &&   return  -1;
 
+    delta_naive = (ub - lb) / 2.0;
     delta = min( abs( r - lb ), abs( r - ub ), (wP + wQ)/4.0,
-                 (ub - lb) / 2.0 );# / 0.9;
-
+                 delta_naive );# / 0.9;
+    f_debug_PID &&  println( "Δ  ", delta, "  naive [", delta_naive, "]" );
+    if  ( delta < delta_naive / 100.0 )
+        delta = delta_naive / 100.0;
+    end
+    
     f_debug_PID  &&  println( "\n"*"Lower bound: ", lb, "\nUpper bound: ", ub,
                           "\n"*"r          : ", r );
 
@@ -293,16 +297,16 @@ function frechet_decider_PID( PID::PolygonsInDir, i::Int64,
     f_monotone::Bool = false;
     f_orig::Bool = false;
     for  iters::Int64 in 1:20
+        w_trg = delta / max( 2.0, 1.0 + iters );
         if  f_debug_PID
-            println( "Iter: ", iters );
-            println( lb, "..", ub, "   r: ", r );
+            println( iters, ";  range: [", lb, "..", ub, "]: ", r );
+            println( "w_trg    : ", w_trg );
         end
-        w_trg = delta / 2.0
-        f_debug_PID  &&  println( "w_trg    : ", w_trg );
         if  f_orig
             PA = P_orig;
             QA = Q_orig;
             wQ = wP = 0.0;
+            f_debug_PID  &&  println( "Orig?" );
         else
             PA, wP = ph_approx( P_ph, w_trg );
             QA, wQ = ph_approx( Q_ph, w_trg );
@@ -347,9 +351,14 @@ function frechet_decider_PID( PID::PolygonsInDir, i::Int64,
         ub = min( ub, l_max + wP + wQ )
         ( ub < r )  &&  return  -1;
 
+        old_delta = delta;
         delta = min( abs( l_max - r ), abs( l_min - r ),
                      ub - r, r - lb,
                      delta / 2.0 );
+        f_debug_PID &&  println( "Δ ", delta, "  [", old_delta, "]" );
+        if  ( delta < old_delta/40.0 )
+            delta = old_delta / 10.0;
+        end
     end
 
     m = frechet_c_compute( P_orig, Q_orig )
@@ -595,7 +604,7 @@ function  run_tests( PID::PolygonsInDir, tests::Vector{test_info_t},
         end
         t = tests[ i ];
         #println( "Before frechet_decider..." );
-        # println( i,":   fl_a: ", t.f_l_a, "   fl_b: ", t.f_l_b );
+        println( i,":   fl_a: ", t.f_l_a, "   fl_b: ", t.f_l_b );
         @static if  TIME_RESULTS
             ms = @timed sgn = frechet_decider_PID( PID, t.i_P, t.i_Q, t.rad );
             t.runtime = ms.time;
