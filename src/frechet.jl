@@ -463,7 +463,7 @@ end
 
     Return a range of distances. The lower end is the VE-Frechet
     distance, the upper end is a constructive upper bound on the
-    Frechet distnace.
+    Frechet distance.
 
 """
 function   frechet_ve_r_compute_range( P::Polygon{N,T},
@@ -491,10 +491,6 @@ function   frechet_ve_r_compute_range( P::Polygon{N,T},
 
         i = EID_i( id );
         j = EID_j( id );
-
-        #println( "J", Int64(EID_i_is_vert( id )),
-        #     Int64(EID_j_is_vert( id )),
-        #    " (", i, ", ", j, ") ", value );
 
         if  id == start_id
             f_r_schedule_event( EID( 1, false, 1, true ), id, c );
@@ -558,10 +554,6 @@ function   frechet_ve_r_compute_ext( P::Polygon{N,T},
         tp = pop!( heapAlt );
         id = last( tp );
         value = first( tp );
-        #if  ( haskey( c.handled, id ) )
-        #  continue;
-        #end
-        #c.handled[ id ] = true;
         iters = iters + 1;
 
         if  f_debug  &&  ( (iters % 10000) == 0 )
