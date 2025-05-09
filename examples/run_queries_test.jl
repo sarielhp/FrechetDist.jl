@@ -603,10 +603,14 @@ function  run_tests( PID::PolygonsInDir, tests::Vector{test_info_t},
             sgn = frechet_decider_PID( PID, t.i_P, t.i_Q, t.rad );
             t.runtime = 0
         end
+        Threads.atomic_add!( count, 1 )
         if  ( f_verify )
             println( "verifying!" );
             sgn_slow = frechet_decider_PID_slow( PID, t.i_P, t.i_Q, t.rad )
-
+            if  ( sgn == sng_slow )
+                continue;
+            end
+                
             P = PID.polys[ t.i_P ];
             Q = PID.polys[ t.i_Q ];
 
@@ -644,7 +648,6 @@ function  run_tests( PID::PolygonsInDir, tests::Vector{test_info_t},
                 end
             end
         end
-        Threads.atomic_add!( count, 1 )
         #if ( count[] > 1000 )
         #    return;
         #end;
