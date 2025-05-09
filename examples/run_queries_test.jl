@@ -18,7 +18,7 @@ using Profile
 #using InteractiveUtils
 #using ProfileView
 
-const  TIME_RESULTS = false
+const  TIME_RESULTS = true;
 
 AtomicInt = Threads.Atomic{Int}
 
@@ -245,7 +245,7 @@ function frechet_decider_PID_slow( PID, i, j, r )::Int64
 end
 
 
-const f_debug_PID = false
+const f_debug_PID = true
 function frechet_decider_PID( PID::PolygonsInDir, i::Int64,
                               j::Int64, r::Float64 )::Int64
 
@@ -280,14 +280,20 @@ function frechet_decider_PID( PID::PolygonsInDir, i::Int64,
     #( lb > r )   &&   return  1;
     ( ub < r )   &&   return  -1;
 
-    delta_naive = (ub - lb) / 2.0;
+    # We need to compute the approximation error we should use the
+    # first time we run an approximation algorithm to start our
+    # "binary search" for the interval that contains real
+    # distance. The problem with previous version was that Δ was too
+    # small, because somehow r was very close to the lower/upper
+    # bounds. The new version backoff if Δ is too small...
+    delta_naive = (ub - lb) / 4.0;
     delta = min( abs( r - lb ), abs( r - ub ), (wP + wQ)/4.0,
                  delta_naive );# / 0.9;
-    f_debug_PID &&  println( "Δ  ", delta, "  naive [", delta_naive, "]" );
-    if  ( delta < delta_naive / 12.0 )
-        delta = delta_naive / 12.0;
+    if  ( delta < delta_naive / 6.0 )
+        delta = delta_naive / 6.0;
     end
-    
+    f_debug_PID &&  println( "Δ  ", delta, "  naive [", delta_naive, "]" );
+
     f_debug_PID  &&  println( "\n"*"Lower bound: ", lb, "\nUpper bound: ", ub,
                           "\n"*"r          : ", r );
 
@@ -296,6 +302,7 @@ function frechet_decider_PID( PID::PolygonsInDir, i::Int64,
 
     f_monotone::Bool = false;
     f_orig::Bool = false;
+
     for  iters::Int64 in 1:20
         w_trg = delta / max( 2.0, 1.0 + iters );
         if  f_debug_PID
@@ -584,7 +591,7 @@ function  run_tests( PID::PolygonsInDir, tests::Vector{test_info_t},
 )
     errors::Int64 = 0;
 
-    mask::Int64 = 0x1ff; #0x1; #0x1f
+    mask::Int64 = 0x7ff; #0x1; #0x1f
     #println( "run_tests..." );
 
     if  ( rng == 0:0 )
