@@ -253,11 +253,11 @@ function frechet_decider_PID( PID::PolygonsInDir, i::Int64,
     PA = P_orig = PID.polys[ i ];
     QA = Q_orig = PID.polys[ j ];
 
-    l_a =  Dist( first( PA ), first( QA ) );
-    ( l_a > r )  &&   return  1;
+    l_b =  Dist( first( PA ), first( QA ) );
+    ( l_b > r )  &&   return  1;
 
-    lb = max( l_a, Dist( last( PA ), last( QA ) ) );
-    ( lb > r )   &&   return  1;
+    l_b = max( l_b, Dist( last( PA ), last( QA ) ) );
+    ( l_b > r )   &&   return  1;
 
     P_ph = PID.PHA[ i ];
     Q_ph = PID.PHA[ j ];
@@ -267,19 +267,9 @@ function frechet_decider_PID( PID::PolygonsInDir, i::Int64,
 
     f_debug_PID  &&  println( "wP      : ", wP, "    wQ  : ", wQ );
 
-    ub = lb + wP + wQ;
-
-    #=
-    if  ( length( PA ) < 50 ) &&( length( QA ) < 0 )
-        l_min_b, l_max_b = FEVER_compute_range( PA, QA, 10000000.0 );
-        lb = min( lb, l_min_b );
-        ub = max( ub, l_max_b );
-    end
-    =#
-
-    #( lb > r )   &&   return  1;
+    ub = l_b + wP + wQ;
     ( ub < r )   &&   return  -1;
-
+ 
     # We need to compute the approximation error we should use the
     # first time we run an approximation algorithm to start our
     # "binary search" for the interval that contains real
@@ -289,8 +279,8 @@ function frechet_decider_PID( PID::PolygonsInDir, i::Int64,
     delta_naive = (ub - lb) / 4.0;
     delta = min( abs( r - lb ), abs( r - ub ), (wP + wQ)/4.0,
                  delta_naive );# / 0.9;
-    if  ( delta < delta_naive / 6.0 )
-        delta = delta_naive / 6.0;
+    if  ( delta < delta_naive / 20.0 )
+        delta = delta_naive / 20.0;
     end
     f_debug_PID &&  println( "Δ  ", delta, "  naive [", delta_naive, "]" );
 
