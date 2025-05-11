@@ -22,15 +22,15 @@ end
     return  e;
 end
 
-@inline function   ID_val_inner( i::Int64, j::Int64, r::Int64, nP::Int64 )
+@inline function   ID_val_inner( i, j, r::Int64, nP::Int64 )
     @assert( ( r == 0 )  ||  (r == 1 ) )
     return (( j * nP + i ) << 1)  |  r;
 end
 
-@inline function   ID_get( e::EIDCalc, i::Int64 = 0, i_is_vert::Bool = false,
-    j::Int64 = 0, j_is_vert::Bool = false )
+@inline function   ID_get( e::EIDCalc, i = 0, i_is_vert::Bool = false,
+    j = 0, j_is_vert::Bool = false )
     if  ( i_is_vert  &&  j_is_vert )
-        if ( ( i == 1 )  &&  ( j == 1 ) )        return ID_START; end 
+        if ( ( i == 1 )  &&  ( j == 1 ) )        return ID_START; end
         if ( ( i == e.nP )  &&  ( j == e.nQ ) )  return ID_END;   end
         @assert( false );
     end
@@ -44,19 +44,30 @@ end
 
 struct FeverCoords
     i::Int32;
-    j::Int32;
     i_is_vert::Bool;
+    j::Int32;
     j_is_vert::Bool;
 end
 
+function FeverCoords( _i::Int64, i_is::Bool, _j::Int64, j_is_vert::Bool )
+    return FeverCoords( Int32(_i), i_is, Int32( _j ), j_is_vert );
+end
+
+
+@inline function   ID_is_start_end( id::Int64 )::Bool
+    return  ( ( id == ID_START)  ||  ( id == ID_END) );
+end
+
 @inline function   ID_get_fields( e::EIDCalc, id::Int64 )::FeverCoords
-    if  ( id == ID_START)
-        return  FeverCoords( 1, true, 1, true ); 
-    elseif  ( id == ID_END)
-        return FeverCoords( e.nP, true, e.nQ, true );
+    if  ( id <= ID_END )
+        if  ( id == ID_START)
+            return  FeverCoords( 1, true, 1, true );
+        elseif  ( id == ID_END)
+            return FeverCoords( e.nP, true, e.nQ, true );
+        end
     end
     i_is_vert::Bool = ( ( id & 1 ) == 0 )
-    j_is_vert = ! i_is_vert;
+    j_is_vert::Bool = ! i_is_vert;
     ix = id >> 1;
     j = div( (ix - 1), e.nP );
     i = ix - j * e.nP;
@@ -67,6 +78,11 @@ end
     #println( e.nP, e.nQ );
     return   ID_get( e, e.nP - 1, false, e.nQ - 1, true ) + 4;
 end
+
+@inline function   ID_status( id::Int64 )::Int64
+    return   id & 0x1;
+end
+
 
 function  ID_tester( nP::Int64, nQ::Int64)
     e = ID_init( nP, nQ );
@@ -187,8 +203,8 @@ end
 
 
 @inline function  fever_is_schedule_event( c::FEVERContext{N,T}, id::Int64,
-                                   i::Int64, i_is_vert::Bool,
-                                   j::Int64, j_is_vert::Bool
+                                   i, i_is_vert::Bool,
+                                   j, j_is_vert::Bool
                                    )::Bool where {N,T}
     ( ( id > length( c.prev ) ) ||  ( c.prev[ id ] != 0 ) )  &&  return  false
 
@@ -211,8 +227,8 @@ end
 end
 
 
-@inline function  fever_event_value( c::FEVERContext{N,T}, i::Int64,
-    i_is_vert::Bool, j::Int64, j_is_vert::Bool,
+@inline function  fever_event_value( c::FEVERContext{N,T}, i,
+    i_is_vert::Bool, j, j_is_vert::Bool,
     id::Int64
 ) where {N,T}
 
@@ -244,8 +260,8 @@ end
 
 
 @inline function  fever_schedule_event( c::FEVERContext{N,T},
-                                i::Int64, i_is_vert::Bool,
-                                j::Int64, j_is_vert::Bool,
+                                i, i_is_vert::Bool,
+                                j, j_is_vert::Bool,
                                  prev_id::Int64,
                                ) where  {N,T}
     id = ID_get( c.eid, i, i_is_vert, j, j_is_vert );
@@ -281,11 +297,8 @@ function  fever_extract_sol_ids( P::Polygon{N,T}, Q::Polygon{N,T},
     return  out_arr;
 end
 
-@inline function   ID_status( id::Int64 )::Int64
-    return   id & 0x1;
-end
 
-function   fever_same_status( arr::Vector{Int64}, curr::Int64,
+@inline function   fever_same_status( arr::Vector{Int64}, curr::Int64,
                                   len::Int64 )
 
     ( curr == len )  &&  return len;
@@ -326,13 +339,13 @@ function   fever_comp_leash( c::FEVERContext{N,T},
     while  curr <= len
         id_curr::Int64 = arr[ curr ];
 
-        fc = ID_get_fields( eid, id_curr );
-        l_min = max( l_min, c.vals[ id_curr ] );
-
-        if  ( fc.i_is_vert  &&  fc.j_is_vert )
+        if  ( ID_is_start_end( id_curr ) )
+            #if  ( fc.i_is_vert  &&  fc.j_is_vert )
             curr = curr + 1;
             continue;
         end
+
+        l_min = max( l_min, c.vals[ id_curr ] );
 
         low = curr;
         hi = fever_same_status( arr, curr, len )
@@ -340,6 +353,7 @@ function   fever_comp_leash( c::FEVERContext{N,T},
             curr = curr + 1;
             continue;
         end
+        fc = ID_get_fields( eid, id_curr );
         fe = ID_get_fields( eid, arr[ hi ] );
         if  ( fc.i_is_vert  &&  ( ! fc.j_is_vert ) )
             q_a = Q[ fc.j ];
@@ -472,7 +486,7 @@ end
 Computes the VE-Frechet distance between P and Q. Unlike the other
 implementation, this one does not use hashing, instead allocating
 quadratic space to perform lookups. Seems wasteful, but works
-reasonably well for small curves (say of size at most 200). 
+reasonably well for small curves (say of size at most 200).
 
 """
 function   FEVER_compute( P::Polygon{N,T},

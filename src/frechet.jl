@@ -146,10 +146,10 @@ end
                &&  ( EID_j( id ) == ( n_q - 1 ) ) )
 end
 
-function f_r_create_event( R::Polygon{N,T}, i::Int64,
+function f_r_create_event( R::Polygon{N,T}, i::Integer,
                         is_vert::Bool, qr::Point{N,T} ) where {N,T}
     if  ( is_vert )
-        ev = EventPoint( R[ i ], i, PT_VERTEX, 0.0, 0.0 );
+        ev = EventPoint( R[ i ], Int64(i), PT_VERTEX, 0.0, 0.0 );
         return  ev;
     end
 
@@ -186,7 +186,7 @@ function f_r_create_event( R::Polygon{N,T}, i::Int64,
     #        println( "TTT= ", t );
 
     @assert( ! isNaN( p ) );
-    return  EventPoint( p, i, PT_ON_EDGE, t, 0.0 );
+    return  EventPoint( p, Int64(i), PT_ON_EDGE, t, 0.0 );
 end
 
 
@@ -337,8 +337,8 @@ end
 """
 @inline function    max_leash( l_min::T, l_max::T,
                                s_a::Point{N,T}, s_b::Point{N,T},
-                               P::Polygon{N,T}, low::Int64,
-                               hi::Int64 ) where {N,T}
+                               P::Polygon{N,T}, low,
+                               hi ) where {N,T}
     #seg = Segment( s_a, s_b );
     len_seg_sq::Float64 = DistSq( s_a, s_b );
     if  ( len_seg_sq == 0.0 )

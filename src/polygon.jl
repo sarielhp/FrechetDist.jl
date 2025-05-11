@@ -187,6 +187,10 @@ end
         return   a.pnts[ i ];
     end
 
+    @inline function  Base.getindex(a::Polygon{D,T}, i) where {D,T}
+        return   a.pnts[ i ];
+    end
+
     @inline function  Base.setindex!(a::Polygon{D,T}, v, i::Int) where {D,T}
         a.pnts[ i ] = v;
     end
