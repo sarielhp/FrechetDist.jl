@@ -297,6 +297,8 @@ function frechet_decider_PID( PID::PolygonsInDir, i::Int64,
     f_debug_PID  &&  println( "\n"*"Lower bound: ", lb, "\nUpper bound: ", ub,
                           "\n"*"r          : ", r );
 
+    # if the simplified curves have too many vertices, there is really
+    # no point using simplification.
     P_limit::Int64 = round( Int64, 0.82 * cardin( P_orig ) );
     Q_limit::Int64 = round( Int64, 0.82 * cardin( Q_orig ) );
 
@@ -309,6 +311,7 @@ function frechet_decider_PID( PID::PolygonsInDir, i::Int64,
             println( iters, ";  range: [", lb, "..", ub, "]: ", r );
             println( "w_trg    : ", w_trg );
         end
+        # Should we use the original polygonal curves?
         if  f_orig
             PA = P_orig;
             QA = Q_orig;
@@ -323,13 +326,18 @@ function frechet_decider_PID( PID::PolygonsInDir, i::Int64,
                 PA = P_orig;
                 wP = wQ = 0.0;
                 f_orig = true;
-                #f_monotne = false;
             end
         end
+
+        # If one the "simplified polygonal curves are too large, we
+        # might as well give up, and use our main algorithm.
         if  ( cardin( PA ) > 1000 )  ||  ( cardin( QA ) > 1000 )
             break;
         end
 
+        # We should use the slower monotone approximation algorithm if
+        # the radius of error is within the range of the lower/upper
+        # bound.
         if  f_monotone
             f_debug_PID  &&  println( "mono_via_refinement( ",
                                       cardin( PA), ", ",
@@ -340,10 +348,15 @@ function frechet_decider_PID( PID::PolygonsInDir, i::Int64,
             l_min = m.lower_bound;#leash / m.ratio;
             l_max = m.leash;
         else
+            # Most likely scenario - we compute the Frechet
+            # Vertex-Edge distance between PA and QA using the faster
+            # implementation.
             l_min, l_max = FEVER_compute_range( PA, QA, ub )
 
             f_debug_PID &&  println( "l_min..l_max: ", l_min, "...", l_max,
                                  "\n" * "GAP  : ", ( l_max - l_min ) / delta );
+
+            # should we turn on monotonicity mode?
             if  ( ( iters > 0 )  &&  ( l_min < r < l_max )
                   &&  ( ( l_max - l_min ) > 2.0*delta ) )
                 f_monotone = true;
@@ -363,6 +376,8 @@ function frechet_decider_PID( PID::PolygonsInDir, i::Int64,
                      ub - r, r - lb,
                      delta / 2.0 );
         f_debug_PID &&  println( "Δ ", delta, "  [", old_delta, "]" );
+
+        # If delta value is shrinking too quickly, backoff...
         if  ( delta < old_delta/40.0 )
             delta = old_delta / 10.0;
         end
