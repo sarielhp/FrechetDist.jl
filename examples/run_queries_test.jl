@@ -279,8 +279,8 @@ function frechet_decider_PID( PID::PolygonsInDir, i::Int64,
     delta_naive = (ub - l_b) / 4.0;
     delta = min( abs( r - l_b ), abs( r - ub ), (wP + wQ)/4.0,
                  delta_naive );# / 0.9;
-    if  ( delta < delta_naive / 20.0 )
-        delta = delta_naive / 20.0;
+    if  ( delta < delta_naive / 10.0 )
+        delta = delta_naive / 10.0;
     end
     f_debug_PID &&  println( "Δ  ", delta, "  naive [", delta_naive, "]" );
 
@@ -368,7 +368,7 @@ function frechet_decider_PID( PID::PolygonsInDir, i::Int64,
         f_debug_PID &&  println( "Δ ", delta, "  [", old_delta, "]" );
 
         # If delta value is shrinking too quickly, backoff...
-        if  ( delta < old_delta/40.0 )
+        if  ( delta < old_delta/ 10.0 )
             delta = old_delta / 10.0;
         end
     end
