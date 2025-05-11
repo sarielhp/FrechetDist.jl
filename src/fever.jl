@@ -43,9 +43,9 @@ end
 end
 
 struct FeverCoords
-    i::Int64;
+    i::Int32;
+    j::Int32;
     i_is_vert::Bool;
-    j::Int64;
     j_is_vert::Bool;
 end
 
