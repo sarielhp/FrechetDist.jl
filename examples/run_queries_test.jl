@@ -276,15 +276,15 @@ function frechet_decider_PID( PID::PolygonsInDir, i::Int64,
     # distance. The problem with previous version was that Δ was too
     # small, because somehow r was very close to the lower/upper
     # bounds. The new version backoff if Δ is too small...
-    delta_naive = (ub - lb) / 4.0;
-    delta = min( abs( r - lb ), abs( r - ub ), (wP + wQ)/4.0,
+    delta_naive = (ub - l_b) / 4.0;
+    delta = min( abs( r - l_b ), abs( r - ub ), (wP + wQ)/4.0,
                  delta_naive );# / 0.9;
     if  ( delta < delta_naive / 20.0 )
         delta = delta_naive / 20.0;
     end
     f_debug_PID &&  println( "Δ  ", delta, "  naive [", delta_naive, "]" );
 
-    f_debug_PID  &&  println( "\n"*"Lower bound: ", lb, "\nUpper bound: ", ub,
+    f_debug_PID  &&  println( "\n"*"Lower bound: ", l_b, "\nUpper bound: ", ub,
                           "\n"*"r          : ", r );
 
     # if the simplified curves have too many vertices, there is really
@@ -298,7 +298,7 @@ function frechet_decider_PID( PID::PolygonsInDir, i::Int64,
     for  iters::Int64 in 1:20
         w_trg = delta / max( 2.0, 1.0 + iters );
         if  f_debug_PID
-            println( iters, ";  range: [", lb, "..", ub, "]: ", r );
+            println( iters, ";  range: [", l_b, "..", ub, "]: ", r );
             println( "w_trg    : ", w_trg );
         end
         # Should we use the original polygonal curves?
@@ -355,15 +355,15 @@ function frechet_decider_PID( PID::PolygonsInDir, i::Int64,
                 continue;
             end
         end
-        lb = max( lb, l_min - wP - wQ )
-        ( lb > r )  &&  return  +1;
+        l_b = max( l_b, l_min - wP - wQ )
+        ( l_b > r )  &&  return  +1;
 
         ub = min( ub, l_max + wP + wQ )
         ( ub < r )  &&  return  -1;
 
         old_delta = delta;
         delta = min( abs( l_max - r ), abs( l_min - r ),
-                     ub - r, r - lb,
+                     ub - r, r - l_b,
                      delta / 2.0 );
         f_debug_PID &&  println( "Δ ", delta, "  [", old_delta, "]" );
 
