@@ -625,7 +625,8 @@ function  run_tests( PID::PolygonsInDir, tests::Vector{test_info_t},
             flush( stdout );
         end
         t = tests[ i ];
-        #println( i,":   fl_a: ", t.f_l_a, "   fl_b: ", t.f_l_b );
+        #println( i,":   fl_a: ", t.f_l_a, "   fl_b: ", t.f_l_b,
+        #          " rad : ", t.rad );
         @static if  TIME_RESULTS
             ms = @timed sgn = frechet_decider_PID( PID, t.i_P, t.i_Q, t.rad );
             t.runtime = ms.time;
@@ -714,6 +715,7 @@ function  read_query_file( base_dir, queries_file, tests, PID )
         fl_a = base_dir * df[i,1];
         fl_b = base_dir * df[i,2];
 
+        #println( df[i, : ] );
         rad = parse( Float64, df[i,3] );
         if  ! haskey( PID.d, s_a )
             if  ( !PID_read_polygon( PID, fl_a, s_a, true ) )
@@ -857,7 +859,7 @@ function (@main)(ARGS)
     num_args = length( ARGS );
 
     if   num_args == 2  &&  ( ARGS[ 1 ] == "test_file" )
-        test_single_file( ARGS[2], true );
+        test_single_file( ARGS[2], false );
         #Profile.print(format=:flat)
         #Profile.print()
         exit( 0 );

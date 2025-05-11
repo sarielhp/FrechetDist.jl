@@ -22,16 +22,16 @@ end
     return  e;
 end
 
-@inline function   ID_val_inner( i, j, r::Int64, nP::Int64 )
+@inline function   ID_val_inner( i::Int64, j::Int64, r::Int64, nP::Int64 )
     @assert( ( r == 0 )  ||  (r == 1 ) )
     return (( j * nP + i ) << 1)  |  r;
 end
 
-@inline function   ID_get( e::EIDCalc, i = 0, i_is_vert::Bool = false,
-    j = 0, j_is_vert::Bool = false )
+@inline function   ID_get( e::EIDCalc, i::Int64 = 0, i_is_vert::Bool = false,
+    j::Int64 = 0, j_is_vert::Bool = false )
     if  ( i_is_vert  &&  j_is_vert )
-        if ( ( i == 1 )  &&  ( j == 1 ) )        return ID_START; end
-        if ( ( i == e.nP )  &&  ( j == e.nQ ) )  return ID_END;   end
+        ( ( i == 1 )  &&  ( j == 1 ) )  &&  return ID_START;
+        ( ( i == e.nP )  &&  ( j == e.nQ ) )  &&  return ID_END;
         @assert( false );
     end
     @assert( i_is_vert ||  j_is_vert );
@@ -42,47 +42,40 @@ end
     return  ID_val_inner( i, j, r, e.nP );
 end
 
-struct FeverCoords
-    i::Int32;
+mutable  struct FeverCoords
+    i::Int64;
     i_is_vert::Bool;
-    j::Int32;
+    j::Int64;
     j_is_vert::Bool;
 end
 
-function FeverCoords( _i::Int64, i_is::Bool, _j::Int64, j_is_vert::Bool )
-    return FeverCoords( Int32(_i), i_is, Int32( _j ), j_is_vert );
-end
-
-
-@inline function   ID_is_start_end( id::Int64 )::Bool
-    return  ( ( id == ID_START)  ||  ( id == ID_END) );
-end
-
-@inline function   ID_get_fields( e::EIDCalc, id::Int64 )::FeverCoords
-    if  ( id <= ID_END )
-        if  ( id == ID_START)
-            return  FeverCoords( 1, true, 1, true );
-        elseif  ( id == ID_END)
-            return FeverCoords( e.nP, true, e.nQ, true );
-        end
+@inline function   ID_get_fields( e::EIDCalc, id::Int64,
+                                  fc::FeverCoords )::Int64
+    if  ( id == ID_START)
+        fc.i = 1;
+        fc.j = 1;
+        fc.i_is_vert = true;
+        fc.j_is_vert = true;
+        return 0
+    elseif  ( id == ID_END)
+        fc.i = e.nP;
+        fc.j = e.nQ;
+        fc.i_is_vert = true;
+        fc.j_is_vert = true;
+        return 0
     end
-    i_is_vert::Bool = ( ( id & 1 ) == 0 )
-    j_is_vert::Bool = ! i_is_vert;
+    fc.i_is_vert::Bool = ( ( id & 1 ) == 0 )
+    fc.j_is_vert = ! fc.i_is_vert;
     ix = id >> 1;
-    j = div( (ix - 1), e.nP );
-    i = ix - j * e.nP;
-    return   FeverCoords( i, i_is_vert, j, j_is_vert );
+    fc.j = div( (ix - 1), e.nP );
+    fc.i = ix - fc.j * e.nP;
+    return  0;
 end
 
 @inline function  ID_get_max( e::EIDCalc )
     #println( e.nP, e.nQ );
     return   ID_get( e, e.nP - 1, false, e.nQ - 1, true ) + 4;
 end
-
-@inline function   ID_status( id::Int64 )::Int64
-    return   id & 0x1;
-end
-
 
 function  ID_tester( nP::Int64, nQ::Int64)
     e = ID_init( nP, nQ );
@@ -104,14 +97,13 @@ function  ID_tester( nP::Int64, nQ::Int64)
 
                 @assert( ID_status( id ) == 1 );
             end
-            #fc = FeverCoords( 0, false, 0, false );
-
-            # Remove?
-            fc = ID_get_fields( e, last( v ) );
+            fc = FeverCoords( 0, false, 0, false );
+            ID_get_fields( e, last( v ), fc );
             @assert( i == fc.i );
             @assert( j == fc.j );
             @assert( fc.i_is_vert == false );
             @assert( fc.j_is_vert == true );
+
             push!( v, ID_get( e, i, true, j, false ) );
             if  ( ID_status( last( v  ) ) == 1 )
                 println( "i: ", i ) ;
@@ -121,8 +113,7 @@ function  ID_tester( nP::Int64, nQ::Int64)
 
                 @assert( ID_status( last(v) ) == 0 );
             end
-            # Remove?
-            fc = ID_get_fields( e, last( v ) );
+            ID_get_fields( e, last( v ), fc );
             @assert( i == fc.i );
             @assert( j == fc.j );
             @assert( fc.i_is_vert == true );
@@ -203,8 +194,8 @@ end
 
 
 @inline function  fever_is_schedule_event( c::FEVERContext{N,T}, id::Int64,
-                                   i, i_is_vert::Bool,
-                                   j, j_is_vert::Bool
+                                   i::Int64, i_is_vert::Bool,
+                                   j::Int64, j_is_vert::Bool
                                    )::Bool where {N,T}
     ( ( id > length( c.prev ) ) ||  ( c.prev[ id ] != 0 ) )  &&  return  false
 
@@ -227,12 +218,11 @@ end
 end
 
 
-@inline function  fever_event_value( c::FEVERContext{N,T}, i,
-    i_is_vert::Bool, j, j_is_vert::Bool,
+@inline function  fever_event_value( c::FEVERContext{N,T}, i::Int64,
+    i_is_vert::Bool, j::Int64, j_is_vert::Bool,
     id::Int64
 ) where {N,T}
 
-    @assert( ( i > 0 )  &&  ( j > 0 ) );
     ( c.vals[ id ] >= 0 ) &&  return  c.vals[ id ];
 
     P = c.P
@@ -260,8 +250,8 @@ end
 
 
 @inline function  fever_schedule_event( c::FEVERContext{N,T},
-                                i, i_is_vert::Bool,
-                                j, j_is_vert::Bool,
+                                i::Int64, i_is_vert::Bool,
+                                j::Int64, j_is_vert::Bool,
                                  prev_id::Int64,
                                ) where  {N,T}
     id = ID_get( c.eid, i, i_is_vert, j, j_is_vert );
@@ -279,15 +269,39 @@ end
 end
 
 
+function  try_extract_sol_ids( P::Polygon{N,T}, Q::Polygon{N,T},
+                                 prevArr::Vector{Int64}
+                                 )::Bool where {N,T}
+    curr = ID_END;
+    while  ( curr != ID_START )
+        curr = prevArr[ curr ];
+        if  ( curr <= 0 )
+            return  false;
+        end
+    end
+    return  true;
+end
 
 function  fever_extract_sol_ids( P::Polygon{N,T}, Q::Polygon{N,T},
                                  prevArr::Vector{Int64}
                                  ) where {N,T}
+    f_debug::Bool = false;
     out_arr = Vector{Int64}();
 
+    if   ( ! try_extract_sol_ids( P, Q, prevArr ) )
+        println( P );
+        println( Q );
+        println( prevArr );
+        f_debug = true;
+    end
+
     curr = ID_END;
+    f_debug  &&  println( "Curr: ", curr );
     while  ( curr != ID_START )
         push!( out_arr, curr );
+        if  ( f_debug )
+            println( "   Curr: ", curr );
+        end
         curr = prevArr[ curr ];
     end
     push!( out_arr, curr );
@@ -297,8 +311,11 @@ function  fever_extract_sol_ids( P::Polygon{N,T}, Q::Polygon{N,T},
     return  out_arr;
 end
 
+@inline function   ID_status( id::Int64 )::Int64
+    return   id & 0x1;
+end
 
-@inline function   fever_same_status( arr::Vector{Int64}, curr::Int64,
+function   fever_same_status( arr::Vector{Int64}, curr::Int64,
                                   len::Int64 )
 
     ( curr == len )  &&  return len;
@@ -339,13 +356,13 @@ function   fever_comp_leash( c::FEVERContext{N,T},
     while  curr <= len
         id_curr::Int64 = arr[ curr ];
 
-        if  ( ID_is_start_end( id_curr ) )
-            #if  ( fc.i_is_vert  &&  fc.j_is_vert )
+        ID_get_fields( eid, id_curr, fc );
+        l_min = max( l_min, c.vals[ id_curr ] );
+
+        if  ( fc.i_is_vert  &&  fc.j_is_vert )
             curr = curr + 1;
             continue;
         end
-
-        l_min = max( l_min, c.vals[ id_curr ] );
 
         low = curr;
         hi = fever_same_status( arr, curr, len )
@@ -353,8 +370,7 @@ function   fever_comp_leash( c::FEVERContext{N,T},
             curr = curr + 1;
             continue;
         end
-        fc = ID_get_fields( eid, id_curr );
-        fe = ID_get_fields( eid, arr[ hi ] );
+        ID_get_fields( eid, arr[ hi ], fe );
         if  ( fc.i_is_vert  &&  ( ! fc.j_is_vert ) )
             q_a = Q[ fc.j ];
             q_b = Q[ fc.j + 1 ];
@@ -399,8 +415,8 @@ function   fever_extract_morphing( c::FEVERContext{N,T},
     while  curr <= len
         id_curr::Int64 = arr[ curr ];
 
-        fc = ID_get_fields( eid, id_curr );
-        #leash = c.vals[ id_curr ]
+        ID_get_fields( eid, id_curr, fc );
+        leash = c.vals[ id_curr ]
 
         pe::EventPoint = f_r_create_event( P, fc.i, fc.i_is_vert, Q[ fc.j ] );
         qe::EventPoint = f_r_create_event( Q, fc.j, fc.j_is_vert, P[ fc.i ] );
@@ -418,18 +434,29 @@ end
 
 
 
+#global fever_comp_count = 0;
 
 function   FEVER_compute_range( P::Polygon{N,T},
                                 Q::Polygon{N,T},
                                 upper_bound::T
                                ) where {N,T}
-    #println( "\n\n\n\n\n" );
+    #global fever_comp_count += 1;
+    #println( fever_comp_count );
+
     f_debug::Bool = false;
+    #=
+    if  ( fever_comp_count == 41619 )
+        println( "Bug starts here..." );
+        f_debug = true;
+    end
+    =#
+    
+    #println( "\n\n\n\n\n" );
     c::FEVERContext{N,T} = FEVER_Context( P, Q )
     fc = FeverCoords( 0, false, 0, false );
 
     ## DEBUG code
-    #ID_tester( cardin( P ), cardin( Q ) );
+    f_debug  &&  ID_tester( cardin( P ), cardin( Q ) );
 
     c.f_upper_bound = true;
     c.upper_bound = upper_bound;
@@ -441,17 +468,20 @@ function   FEVER_compute_range( P::Polygon{N,T},
     eid = c.eid;
     iters = 0;
     id::Int64 = 0;
+    f_reached_end::Bool = false;
     while  ! isempty( heap )
         iters = iters + 1;
+        f_debug  &&  println( "Iters: ", iters );
         id = pop!( heap );
 
+        f_debug  &&  println( "id: ", id );
         if  id == ID_START
             fever_schedule_event( c, 1, false, 1, true, id );
             fever_schedule_event( c, 1, true , 1, false, id );
             continue;
         end
 
-        fc = ID_get_fields( eid, id );
+        ID_get_fields( eid, id, fc );
 
         if  ( fc.i >= n_pm )  &&  ( fc.j >= n_qm )
             # Is it the *final* event?
@@ -459,6 +489,8 @@ function   FEVER_compute_range( P::Polygon{N,T},
                 break;
             end
             if  ( ( fc.i == n_pm )  &&  ( fc.j == n_qm ) )
+                f_debug  &&  println( "Reached the end?" );
+                f_reached_end = true;
                 c.prev[ ID_END ] = id;
                 push!( c.heap, ID_END );
                 continue;
@@ -467,7 +499,16 @@ function   FEVER_compute_range( P::Polygon{N,T},
         fever_schedule_event( c, fc.i+1, true,   fc.j, false, id );
         fever_schedule_event( c, fc.i  , false, fc.j+1, true, id );
     end
+
+    if  ( ! f_reached_end )
+        m = FEVER_compute( P, Q );
+        m_mono = Morphing_monotonize( m );
+        return  m.leash, m_mono.leash
+    end
+
+    #println( "Upper bound: ", upper_bound );
     #println( "ITERS: ", iters );
+    @assert( f_reached_end );
 
     #println( "extract..." );
     out_arr = fever_extract_sol_ids( P, Q, c.prev );
@@ -478,6 +519,7 @@ function   FEVER_compute_range( P::Polygon{N,T},
     #println( "\n\n\n\n" );
     return  l_min,l_max
 end
+
 
 
 """
@@ -492,6 +534,7 @@ reasonably well for small curves (say of size at most 200).
 function   FEVER_compute( P::Polygon{N,T},
                           Q::Polygon{N,T}
                           ) where {N,T}
+
     f_debug::Bool = false;
     c::FEVERContext{N,T} = FEVER_Context( P, Q )
     fc = FeverCoords( 0, false, 0, false );
@@ -514,7 +557,7 @@ function   FEVER_compute( P::Polygon{N,T},
             continue;
         end
 
-        fc = ID_get_fields( eid, id );
+        ID_get_fields( eid, id, fc );
 
         if  ( fc.i >= n_pm )  &&  ( fc.j >= n_qm )
             # Is it the *final* event?
