@@ -202,7 +202,9 @@ end
                                    i::Int64, i_is_vert::Bool,
                                    j::Int64, j_is_vert::Bool
                                    )::Bool where {N,T}
-    ( ( id > length( c.prev ) ) ||  ( c.prev[ id ] != 0 ) )  &&  return  false
+    if ( ( id > length( c.prev ) ) ||  ( c.prev[ id ] != 0 ) )
+        return  false
+    end
 
     n_p = c.n_p;
     n_q = c.n_q;
@@ -228,7 +230,9 @@ end
     id::Int64
 ) where {N,T}
 
-    ( c.vals[ id ] >= 0 ) &&  return  c.vals[ id ];
+    if  ( c.vals[ id ] >= 0 )
+        return  c.vals[ id ];
+    end
 
     P = c.P
     Q = c.Q
@@ -293,12 +297,14 @@ function  fever_extract_sol_ids( P::Polygon{N,T}, Q::Polygon{N,T},
     f_debug::Bool = false;
     out_arr = Vector{Int64}();
 
+    #=
     if   ( ! try_extract_sol_ids( P, Q, prevArr ) )
         println( P );
         println( Q );
         println( prevArr );
         f_debug = true;
     end
+    =#
 
     curr = ID_END;
     f_debug  &&  println( "Curr: ", curr );
@@ -501,7 +507,7 @@ function   FEVER_compute_range( P::Polygon{N,T},
                 c.prev[ ID_END ] = id;
 
                 # We dont need anything else on the heap - so empty it!
-                FEVER_reset_heap( c );
+                #FEVER_reset_heap( c );
 
                 push!( c.heap, ID_END );
                 continue;
