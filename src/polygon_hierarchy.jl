@@ -85,6 +85,8 @@ function   ph_find_linear( Ws::Vector{Float64}, w, resolution )
     end
     return  -1;
 end
+
+
 function   ph_approx_binary_search( Ws, i, j, w, resolution )
     while  true
         #println( "[",i,"...",j, "]" );

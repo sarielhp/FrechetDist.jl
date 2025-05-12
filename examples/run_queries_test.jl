@@ -121,9 +121,8 @@ function  PID_init_simp_hierarchy( PID::PolygonsInDir, f_parallel::Bool )
         poly = PID.polys[ i ];
         ph = ph_init( poly, PID.ph_lock )
 
-        
-        ph_compute_hierarchy( ph, 5.0,
-            max( 50, round( Int64, cardin( poly ) / 4) ) );
+        ph_compute_hierarchy( ph, 10.0,
+            max( 100, round( Int64, cardin( poly ) / 4) ) );
 
         lock( PID.lock );
         PID.PHA[ i ] = ph;
@@ -270,7 +269,7 @@ function frechet_decider_PID( PID::PolygonsInDir, i::Int64,
 
     ub = l_b + wP + wQ;
     ( ub < r )   &&   return  -1;
- 
+
     # We need to compute the approximation error we should use the
     # first time we run an approximation algorithm to start our
     # "binary search" for the interval that contains real
