@@ -122,7 +122,7 @@ function  PID_init_simp_hierarchy( PID::PolygonsInDir, f_parallel::Bool )
         ph = ph_init( poly, PID.ph_lock )
 
         ph_compute_hierarchy( ph, 40.0,
-            min( 400, round( Int64, cardin( poly ) / 4) ) );
+            min( 40, round( Int64, cardin( poly ) / 4) ) );
 
         lock( PID.lock );
         PID.PHA[ i ] = ph;
