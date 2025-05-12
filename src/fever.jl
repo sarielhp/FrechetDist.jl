@@ -166,6 +166,11 @@ mutable struct FEVERContext{N,T}
     upper_bound::T
 end
 
+function   FEVER_reset_heap( c::FEVERContext )
+    c.heap = BinaryHeap( c.comparator, Vector{Int64}() );
+end
+
+
 function   FEVER_Context(  P::Polygon{N,T},
     Q::Polygon{N,T} ) where {N,T}
 
@@ -450,7 +455,7 @@ function   FEVER_compute_range( P::Polygon{N,T},
         f_debug = true;
     end
     =#
-    
+
     #println( "\n\n\n\n\n" );
     c::FEVERContext{N,T} = FEVER_Context( P, Q )
     fc = FeverCoords( 0, false, 0, false );
@@ -488,10 +493,16 @@ function   FEVER_compute_range( P::Polygon{N,T},
             if  ( fc.i == c.n_p )  &&  ( fc.j == c.n_q )
                 break;
             end
+            # ...not quite, but we arrived to final cell. Time to
+            # schedule the final event.
             if  ( ( fc.i == n_pm )  &&  ( fc.j == n_qm ) )
                 f_debug  &&  println( "Reached the end?" );
                 f_reached_end = true;
                 c.prev[ ID_END ] = id;
+
+                # We dont need anything else on the heap - so empty it!
+                FEVER_reset_heap( c );
+
                 push!( c.heap, ID_END );
                 continue;
             end
