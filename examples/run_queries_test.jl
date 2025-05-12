@@ -348,7 +348,7 @@ function frechet_decider_PID( PID::PolygonsInDir, i::Int64,
 
             # should we turn on monotonicity mode?
             if  ( ( iters > 0 )  &&  ( l_min < r < l_max )
-                  &&  ( ( l_max - l_min ) > 1.5*delta ) )
+                  &&  ( ( l_max - l_min ) > 1.1*delta ) )
                 f_monotone = true;
                 # 5.0: Characters 154
                 delta = delta / 6.0;
