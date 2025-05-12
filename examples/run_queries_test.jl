@@ -122,15 +122,15 @@ function  PID_init_simp_hierarchy( PID::PolygonsInDir, f_parallel::Bool )
         ph = ph_init( poly, PID.ph_lock )
 
         
-        ph_compute_hierarchy( ph, 2.4,
-            max( 100, round( Int64, cardin( poly ) / 4) ) );
+        ph_compute_hierarchy( ph, 5.0,
+            max( 50, round( Int64, cardin( poly ) / 4) ) );
 
         lock( PID.lock );
         PID.PHA[ i ] = ph;
         unlock( PID.lock );
 
         Threads.atomic_add!( cnt_ph, 1 )
-        if  ( cnt_ph[] & 0xff) == 0
+        if  ( cnt_ph[] & 0x1ff) == 0
             print( cnt_ph[], "        \r" );
         end
     end
