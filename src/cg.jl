@@ -135,7 +135,7 @@ function  BBox_max_dist_in_dim( b::BBox{D,T}, c::BBox{D,T}, i::Int64
     ( b.mini[ i ] >= c.maxi[ i ] )  &&  return  ( b.maxi[ i ] - c.mini[ i ] );
     ( b.maxi[ i ] <= c.mini[ i ] )  &&  return  ( c.maxi[ i ] - b.mini[ i ] );
 
-    # Boxes must intersect.... 
+    # Boxes must intersect....
     return  max( abs( b.mini[ i ] - c.mini[ i ] ),
                  abs( b.maxi[ i ] - c.maxi[ i ] ),
                  abs( b.mini[ i ] - c.maxi[ i ] ),
@@ -254,6 +254,12 @@ function  BBox_bound(  bb::BBox{D,T}, pnt::Point{D,T} )  where  {D,T}
     end
 end
 
+function  BBox_bound(  bb::BBox{D,T}, P )  where  {D,T}
+    for  p::Point{D,T}  in  P
+        BBox_bound( bb, p )
+    end
+end
+
 function  BBox_bound(  bb::BBox{D,T}, P::Polygon{D,T} )  where  {D,T}
 
     nv = cardin( P );
@@ -360,7 +366,7 @@ export  BBox_diam;
 export  BBox_dist, BBox_max_dist
 
 #export  iseg_nn_point
-#export  iseg_nn_point_ext 
+#export  iseg_nn_point_ext
 
 export  iseg_iseg_dist
 
