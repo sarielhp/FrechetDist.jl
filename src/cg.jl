@@ -174,13 +174,19 @@ function  BBox_top_right( bb::BBox{D,T} ) where  {D,T}
     return  Point{D,T}( bb.maxi );
 end
 
-function  BBox_expand( bb::BBox{D,T}, factor ) where  {D,T}
+function  BBox_expand!( bb::BBox{D,T}, factor ) where  {D,T}
     mid::MVector{D,T} = (bb.maxi + bb.mini) / 2.0;
     diff::MVector{D,T} = (bb.maxi - bb.mini) * (factor/2.0);
 
 #    margin::MVector{D,T} = (bb.maxi - bb.mini) * factor;
     bb.mini = mid - diff;
     bb.maxi = mid + diff;
+end
+
+function  BBox_expand( bb_in::BBox{D,T}, factor ) where  {D,T}
+    bb = deepcopy( bb_in );
+    BBox_expand!( bb, factor );
+    return  bb;
 end
 
 
@@ -358,12 +364,16 @@ export   is_right_turn
 
 
 #
-export  BBox_init, BBox_bound, BBox_expand, BBox_print, BBox_width
+export  BBox_expand, BBox_expand!
+export  BBox_init, BBox_bound, BBox_print, BBox_width
 export  cardin, VecPolygon2F
 export  BBox_bottom_left, BBox_top_right
 export  BBox_min, BBox_max, BBox_middle;
-export  BBox_diam;
+export  BBox_diam, BBox_dist;
 export  BBox_dist, BBox_max_dist
+
+export   BBox_width, BBox_height;
+
 
 #export  iseg_nn_point
 #export  iseg_nn_point_ext

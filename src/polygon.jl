@@ -115,6 +115,11 @@ function  Polygon_split_single_edge( P::Polygon{D,T}, i::Int64 ) where {D, T}
     return  Q;
 end
 
+
+function Base.ndims(::Type{Polygon{D, T}})::Int64 where {D,T}
+    return  1;
+end
+
 function Base.show(io::IO, poly::Polygon{D,T}) where {D,T}
     f_iter::Bool = false;
     for p in polygon.Points( poly)
@@ -234,6 +239,9 @@ end
     end
 end
 
+@inline function  Base.size( P::Polygon{D,T} ) where {D,T}
+    return  Tuple{Int}( length( Points( P ) ) );
+end
 
 function  total_length( poly::Polygon{D,T} ) where {D,T}
     len::Float64 = 0.0;
@@ -782,11 +790,11 @@ export  Polygon2I, Polygon2F;
 export  cardin
 export  Polygon_simplify_ext
 export  slice
-export  reverse
+export  reverse, Points
 
 export  VecPnts_as_matrix
 
 export  times, at_time, at;
-export  shift!, mult!
+export  shift!, mult!, ndims
 
 end # // End module polygon
