@@ -143,7 +143,8 @@ function  BBox_max_dist_in_dim( b::BBox{D,T}, c::BBox{D,T}, i::Int64
 end
 
 function  BBox_dist( b::BBox{D,T}, c::BBox{D,T} )  where  {D,T}
-    ( ! f_init )  &&  return  zero( T );
+    ( ! b.f_init )  &&  return  zero( T );
+    ( ! c.f_init )  &&  return  zero( T );
 
     sum = zero( T );
     for  i in 1:D
