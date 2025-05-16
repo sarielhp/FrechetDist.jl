@@ -516,6 +516,32 @@ function  Polygon_sample( P::Polygon{D,T}, prob::Float64 ) where  {D,T}
     return  out;
 end
 
+function  Polygon_random_gaussian( D,T,  n::Int64 )
+    #x::T = zero(T);
+    #x = x + x;
+
+    P = Polygon{D,T}();
+    for  i in 1:n
+        p::Point{D,T} = Point_random_gaussian( D, T );
+        push!( P, p  );
+    end
+
+    return P;
+end
+
+
+function  Polygon_random_sphere( D,T,  n::Int64 )
+    #x::T = zero(T);
+    #x = x + x;
+
+    P = Polygon{D,T}();
+    for  i in 1:n
+        p::Point{D,T} = Point_random_gaussian( D, T );
+        push!( P, normalize( p ) );
+    end
+
+    return P;
+end
 
 
 function  Polygon_random( D,T,  n::Int64 )
@@ -773,7 +799,11 @@ export  Polygon_simplify_radii
 export  Polygon_translate!
 export  Polygon_get_point_on
 export  Polygon_as_matrix
+
 export  Polygon_random
+export  Polygon_random_gaussian
+export  Polygon_random_sphere
+
 export  Polygon_convex_comb
 export  Polygon_split_edges
 export  Polygon_split_single_edge

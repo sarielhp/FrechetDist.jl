@@ -4,7 +4,7 @@ using StaticArrays
 using Parameters
 using LinearAlgebra
 using DelimitedFiles
-
+using Distributions
 
 ###################################################################
 ### Point type
@@ -229,6 +229,21 @@ function npoint( args...)
     return  p;
 end
 
+#d = Normal()
+
+function  Point_random_gaussian( D,T )
+    #x::MVector{D,T} = MVector{D,T}( undef );
+    gaussian = Normal()
+    x = rand( gaussian, D)
+    
+    #@inbounds for i in eachindex( x )
+    #    x[ i ] = T( rand() );
+    #end
+
+    p::Point{D,T} = Point{D,T}( x );
+
+    return  p;
+end
 
 function  Point_random( D,T )
     x::MVector{D,T} = MVector{D,T}( undef );
@@ -269,6 +284,8 @@ export Point2F
 export DistSq
 export Dist, Dist_new
 export Point_random, sub, convex_comb, dot
+
+export Point_random_gaussian # Sample a point according from a Gaussian...
 
 export  Point_max
 export  add, sub, mult, norm, isNaN
