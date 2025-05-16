@@ -156,7 +156,7 @@ end
 
 
 function  BBox_max_dist( b::BBox{D,T}, c::BBox{D,T} )  where  {D,T}
-    ( ! f_init )  &&  return  zero( T );
+    ( ! b.f_init )  &&  return  zero( T );
 
     sum = zero( T );
     for  i in 1:D
