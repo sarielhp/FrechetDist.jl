@@ -311,6 +311,8 @@ end
 Polygon2I = Polygon{2,Int64};
 Polygon2F = Polygon{2,Float64};
 
+Polygon3F = Polygon{3,Float64};
+
 @inline function  cardin( P::Polygon{D,T} )::Int64 where {D,T}
     return  length( Points( P ) );
 end
@@ -603,6 +605,33 @@ function  read_plt_orig_file( filename, dchar = "," )
     return  P
 end
 
+"""
+    read_smf_file
+
+Reads a .smf file into a polygon
+"""
+function  read_smf_file( filename )::Polygon3F
+    P = Polygon3F();
+    dchar = " "
+    
+    a = readdlm( filename );
+    d_a::Int64 = size(a,1)
+
+    for  r  in 1:size(a,1)
+        prefix = a[r,1]
+        #println( "line: [", prefix, "]" );
+        if  prefix != "v"
+            continue;
+        end
+        x,y,z = a[r, 2:4]
+#        println( x, ", ", y, ", ",z );
+        push_smart!( P, npoint( Float64(x), Float64(y), Float64(z) ) );
+    end
+
+    return  P
+end
+
+
 function get_numbers_in_line( s, ch )
     pieces = split(s, ch, keepempty=false)
     map(pieces) do piece
@@ -791,6 +820,7 @@ export  Polygon_sample_uniformly, push_smart!, spine
 export  read_file
 export  read_plt_orig_file
 export  read_txt_file
+export  read_smf_file
 export  write_to_file
 
 export  Polygon_prefix_lengths
