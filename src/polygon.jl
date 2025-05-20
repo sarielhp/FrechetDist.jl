@@ -789,6 +789,19 @@ function  wiggle_seg( O::Polygon{D,T}, p, q, n, rate ) where {D,T}
 end
 
 
+function  Polygon_shortcut( P::Polygon{D,T}, i::Int64, j::Int64 ) where{D,T}
+    Q = Polygon{D,T}();
+
+    range = i+1:j-1;
+    for  i ∈ 1:length( P )
+        if  i ∈ range  continue  end;
+        push!( Q, P[ i ] );
+    end
+
+    return  Q;
+end
+
+
 """
     wiggle
 
@@ -830,6 +843,7 @@ export  Polygon_translate!
 export  Polygon_get_point_on
 export  Polygon_as_matrix
 
+export  Polygon_shortcut
 export  Polygon_random
 export  Polygon_random_gaussian
 export  Polygon_random_sphere
