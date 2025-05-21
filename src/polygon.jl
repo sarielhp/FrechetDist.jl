@@ -789,7 +789,7 @@ function  wiggle_seg( O::Polygon{D,T}, p, q, n, rate ) where {D,T}
 end
 
 
-function  Polygon_shortcut( P::Polygon{D,T}, i::Int64, j::Int64 ) where{D,T}
+function  shortcut( P::Polygon{D,T}, i::Int64, j::Int64 ) where{D,T}
     Q = Polygon{D,T}();
 
     range = i+1:j-1;
@@ -799,6 +799,33 @@ function  Polygon_shortcut( P::Polygon{D,T}, i::Int64, j::Int64 ) where{D,T}
     end
 
     return  Q;
+end
+
+
+function  cut( P::Polygon{D,T}, r::UnitRange{Int} ) where{D,T}
+    Q = Polygon{D,T}();
+
+    for  i ∈ r
+        push!( Q, P[ i ] );
+    end
+
+    return  Q;
+end
+
+function  append!( P::Polygon{D,T}, Q::Polygon{D,T} ) where{D,T}
+    for  q ∈ Q
+        push!( P, q );
+    end
+    
+    return  P;
+end
+
+function  append_smart!( P::Polygon{D,T}, Q::Polygon{D,T} ) where{D,T}
+    for  q ∈ Q
+        push_smart!( P, q );
+    end
+    
+    return  P;
 end
 
 
@@ -869,6 +896,6 @@ export  reverse, Points
 export  VecPnts_as_matrix
 
 export  times, at_time, at;
-export  shift!, mult!, ndims
+export  shift!, mult!, ndims, cut, append!, append_smart!
 
 end # // End module polygon
