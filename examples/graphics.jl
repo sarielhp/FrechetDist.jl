@@ -240,22 +240,14 @@ function  cairo_setup( filename::String, list::VecPolygon2F,
 end
 
 
-function  output_polygons_to_file(  list::VecPolygon2F, filename,
-                                    f_pdf::Bool,
-                                    f_draw_vertices::Bool = false,
-                                    f_matching::Bool = false;
-                                    u_width::Float64 = 3.0
-                                    )
-    c,cr,bb = cairo_setup( filename, list, f_pdf );
-
-    #println( BBox_width( bb) );
-     #1024.0 * (BBox_width( bb) / 200.0);
-#    u_width = 3;
-#    exit( -1 );
-
-    #BBox_print( bb );
+function  output_polygons( cr,bb::BBox2F,
+    list::VecPolygon2F,
+    f_draw_vertices::Bool = false,
+    f_matching::Bool = false,
+    u_width::Float64 = 3.0,
+    caption = ""
+)
     set_source_rgb(cr,0.9,0.9,0.9);    # light gray
-#    set_line_width(cr, 10.0);
     set_source_rgba(cr, 1, 0.2, 0.2, 0.6);
 
     len = length( list );
@@ -295,6 +287,88 @@ function  output_polygons_to_file(  list::VecPolygon2F, filename,
         end
     end
 
+    if  length( caption ) > 0
+        # Set font
+        font_face::String = "Sans" #
+        Cairo.select_font_face( cr, font_face, Cairo.FONT_SLANT_NORMAL,
+            Cairo.FONT_WEIGHT_NORMAL)
+        w = BBox_width( bb );
+        font_size = w/40
+        Cairo.set_font_size( cr, font_size )
+
+        # Move to the position where text will be drawn
+        pc = BBox_bottom_left( bb );
+        Cairo.move_to( cr, pc[1] + font_size, pc[2] + font_size );
+        
+        # Show the text
+        Cairo.set_source_rgb( cr, 0,0.3, 0.3)
+        Cairo.show_text(cr, caption)
+    end
+end
+
+
+function  output_polygons_to_file(  list::VecPolygon2F, filename,
+                                    f_pdf::Bool,
+                                    f_draw_vertices::Bool = false,
+                                    f_matching::Bool = false;
+    u_width::Float64 = 3.0,
+    caption = ""
+)
+    c,cr,bb = cairo_setup( filename, list, f_pdf );
+
+
+    set_source_rgb(cr,0.9,0.9,0.9);    # light gray
+    set_source_rgba(cr, 1, 0.2, 0.2, 0.6);
+
+    len = length( list );
+    count::Int64 = 0;
+    for  poly in  list
+        count = count + 1;
+        #println( count, " ", len );
+        set_line_width(cr, u_width );
+        #if  len == 2  &&  count == 2
+        #    set_source_rgb(cr, 0.0, 0.0, 1.0 );
+        #else
+        set_source_rgb( cr, get_color_rgb( count )... );
+
+        draw_polygon( cr, poly );
+    end
+
+    if  ( f_matching )  &&  ( cardin( list[ 1 ] ) ==  cardin( list[ 2 ] ) )
+        P = list[ 1 ];
+        Q = list[ 2 ];
+        set_line_width(cr, 0.5*u_width);
+        set_source_rgb( cr, 1.0, 0.0, 1.0 );
+        for  i  in 1:cardin( P )
+            p = P[ i ];
+            q = Q[ i ];
+
+            move_to( cr, p[1], p[2] )
+            line_to( cr, q[1], q[2] );
+            Cairo.stroke( cr );
+        end
+    end
+
+    if  ( f_draw_vertices )
+        set_line_width(cr, 0.9*u_width);
+        set_source_rgb( cr, 1.0, 0.0, 0.0 );
+        for  poly in  list
+            draw_polygon_vertices( cr, poly, BBox_width( bb) / 200  );
+        end
+    end
+
+    if  length( caption ) > 0
+        # Set font
+        Cairo.select_font_face(ctx, font_face, Cairo.FONT_SLANT_NORMAL,
+            Cairo.FONT_WEIGHT_NORMAL)
+        Cairo.set_font_size(ctx, 16 )
+
+        # Move to the position where text will be drawn
+        Cairo.move_to( cr, 0, 20)
+        
+        # Show the text
+        Cairo.show_text(cr, caption)
+    end
 
     if  ( ! f_pdf )
         Cairo.write_to_png( c, filename );
