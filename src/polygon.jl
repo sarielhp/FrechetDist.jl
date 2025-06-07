@@ -55,7 +55,8 @@ end
 
 
 
-
+#function  Polygon{D,T}( pnts::Vector{Point{D,T}} ) where{D,T}
+    #end
 
 
 function  Polygon_fill( P::Polygon{D,T}, f, range ) where {D,T}
@@ -547,17 +548,10 @@ end
 
 
 function  Polygon_random( D,T,  n::Int64 )
-    #x::T = zero(T);
-    #x = x + x;
-
-    P = Polygon{D,T}();
-    for  i in 1:n
-        p::Point{D,T} = Point_random( D, T );
-        push!( P, p  );
-    end
-
-    return P;
+    pnts = rand( Point{D,T}, n );
+    return  Polygon{D,T}( pnts );
 end
+
 
 function  Polygon2F_random( n::Int64 )
     P = Polygon2F();

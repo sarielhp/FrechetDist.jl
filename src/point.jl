@@ -5,6 +5,7 @@ using Parameters
 using LinearAlgebra
 using DelimitedFiles
 using Distributions
+using Random
 
 ###################################################################
 ### Point type
@@ -232,10 +233,11 @@ end
 #d = Normal()
 
 function  Point_random_gaussian( D,T )
+
     #x::MVector{D,T} = MVector{D,T}( undef );
     gaussian = Normal()
     x = rand( gaussian, D)
-    
+
     #@inbounds for i in eachindex( x )
     #    x[ i ] = T( rand() );
     #end
@@ -245,16 +247,28 @@ function  Point_random_gaussian( D,T )
     return  p;
 end
 
-function  Point_random( D,T )
-    x::MVector{D,T} = MVector{D,T}( undef );
-
-    @inbounds for i in eachindex( x )
-        x[ i ] = T( rand() );
+@inline function  Point_random( D,T )
+    x = MVector{D,T}( undef );
+    @inbounds for i in 1:D#eachindex( x )
+        @inbounds x[ i ] =  rand(T);
     end
 
-    p::Point{D,T} = Point{D,T}( x );
+    return  Point{D,T}( x )
+#    return  rand( Point{D,T} )
+end
 
-    return  p;
+@inline function  Point_random( x::MVector{D,T} )::Point{D,T} where{D,T}
+    @inbounds for i in 1:D#eachindex( x )
+        @inbounds x[ i ] =  rand(T);
+    end
+
+    return  Point{D,T}( x )
+end
+
+@inline function  Point_random_o( x::MVector{D,T} ) where{D,T}
+    @inbounds for i in 1:D
+        @inbounds x[ i ] =  rand(T);
+    end
 end
 
 function  Point_max( p::Point{D,T}, q::Point{D,T}  ) where {D,T}
@@ -283,7 +297,9 @@ export Point2F
 
 export DistSq
 export Dist, Dist_new
-export Point_random, sub, convex_comb, dot
+export Point_random,  sub, convex_comb, dot
+
+export Point_random_o
 
 export Point_random_gaussian # Sample a point according from a Gaussian...
 
