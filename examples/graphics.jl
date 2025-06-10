@@ -99,7 +99,7 @@ end
 
 function  draw_points( cr, P::Vector{Point2F}, rad::Float64 = 0.005 )
     nv::Int64 = length( P );
-    rad::Float64 = 0.005
+    #rad::Float64 = 0.005
     #println( "nv:", nv );
     for  i in 1:nv
         p = P[ i ];
