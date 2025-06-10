@@ -292,7 +292,7 @@ function  isNaN( p::Point{D,T} ) where {D,T}
 end
 
 
-export Point
+#export Point{D,T}
 export Point2F
 
 export DistSq
@@ -308,4 +308,8 @@ export  add, sub, mult, norm, isNaN
 
 export npoint
 
-end # end to module Point
+export Point
+
+end
+# end to module Point
+
