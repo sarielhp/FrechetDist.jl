@@ -296,7 +296,7 @@ end
 export Point2F
 
 export DistSq
-export Dist, Dist_new
+export Dist #, Dist_new
 export Point_random,  sub, convex_comb, dot
 
 export Point_random_o
