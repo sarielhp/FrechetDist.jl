@@ -1,0 +1,35 @@
+#! /bin/bash
+
+kill_grep java   >& /dev/null
+kill_grep okular   >& /dev/null
+kill_grep emacs   >& /dev/null
+kill_grep firefox >& /dev/null
+killm >& /dev/null
+kill_browser >& /dev/null
+kill_grep julia >& /dev/null
+
+DRES=various/results/
+mkdir -p $DRES >& /dev/null
+
+#exit
+
+rm $DRES/*.txt
+
+examples/scripts/run_test_queries_characters_serial >& $DRES/chars_ser.txt
+examples/scripts/run_test_queries_characters_mt     >& $DRES/chars_mt.txt
+
+examples/scripts/run_test_queries_sigspatial_serial >& $DRES/sig_ser.txt
+examples/scripts/run_test_queries_sigspatial_mt     >& $DRES/sig_mt.txt
+
+examples/scripts/run_test_queries_geolife_serial >& $DRES/geolife_ser.txt
+examples/scripts/run_test_queries_geolife_mt     >& $DRES/geolife_mt.txt
+
+
+echo "sigspatial    : " `grep "Running time" $DRES/sig_ser.txt`
+echo "sigspatial MT : " `grep "Running time" $DRES/sig_mt.txt`
+
+echo "Characters    : " `grep "Running time" $DRES/chars_ser.txt`
+echo "Characters MT : " `grep "Running time" $DRES/chars_mt.txt`
+
+echo "GeoLife       : " `grep "Running time" $DRES/geolife_ser.txt`
+echo "GeoLife MT    : " `grep "Running time" $DRES/geolife_mt.txt`

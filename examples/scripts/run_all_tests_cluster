@@ -1,0 +1,79 @@
+#! /bin/bash
+
+kill_grep julia >& /dev/null
+
+NHOME=/scratch.local/sariel/
+OHOME=~/prog/24/FrechetDist
+
+echo "OHOME: $OHOME"
+echo "NHOME: $NHOME"
+rm -r -f $NHOME >& /dev/null
+mkdir -p $NHOME
+
+DRES=various/results/
+
+rm -r -f $OHOME/$DRES/ >& /dev/null
+mkdir -p $OHOME/$DRES/
+mkdir -p $NHOME/$DRES/
+
+echo $NHOME/$DRES/rsync.txt
+ 
+echo "RSYNC... would take a while..."
+rsync -auvr  ~/prog/24/FrechetDist/  $NHOME >> $OHOME/$DRES/rsync.txt
+echo "RSYNC done"
+
+
+
+cd $NHOME
+
+
+#mkdir -p $DRES >& /dev/null
+
+#exit
+
+#rm $DRES/*.txt 
+
+echo examples/scripts/run_test_queries_characters_serial 
+
+examples/scripts/run_test_queries_characters_serial >& $DRES/chars_ser.txt
+
+
+echo examples/scripts/run_test_queries_characters_mt    
+examples/scripts/run_test_queries_characters_mt     >& $DRES/chars_mt.txt
+
+echo examples/scripts/run_test_queries_sigspatial_serial
+examples/scripts/run_test_queries_sigspatial_serial >& $DRES/sig_ser.txt
+
+
+echo examples/scripts/run_test_queries_sigspatial_mt   
+examples/scripts/run_test_queries_sigspatial_mt     >& $DRES/sig_mt.txt
+
+
+echo examples/scripts/run_test_queries_geolife_serial 
+examples/scripts/run_test_queries_geolife_serial >& $DRES/geolife_ser.txt
+
+echo examples/scripts/run_test_queries_geolife_mt   
+examples/scripts/run_test_queries_geolife_mt     >& $DRES/geolife_mt.txt
+
+rsync -auvr $NHOME/$DRES $OHOME/$DRES
+FIN=$NHOME/$DRES/running_times.txt
+
+
+
+date > $FIN
+echo "sigspatial    : " `grep "Running time" $DRES/sig_ser.txt` >> $FIN
+echo "sigspatial MT : " `grep "Running time" $DRES/sig_mt.txt`  >> $FIN
+
+echo "Characters    : " `grep "Running time" $DRES/chars_ser.txt` >> $FIN
+echo "Characters MT : " `grep "Running time" $DRES/chars_mt.txt`  >> $FIN
+
+echo "GeoLife       : " `grep "Running time" $DRES/geolife_ser.txt` >> $FIN
+echo "GeoLife MT    : " `grep "Running time" $DRES/geolife_mt.txt` >> $FIN
+
+cat $FIN
+
+echo  "See $FIN"
+
+
+rm -r -f $NHOME
+

@@ -1,0 +1,18 @@
+#! /bin/bash
+
+kill_grep emacs
+kill_grep firefox
+killm
+kill_browser
+kill_grep julia
+
+DRES=various/results/
+mkdir -p $DRES
+rm $DRES/*.txt
+
+examples/scripts/run_test_queries_characters_serial >& $DRES/chars_ser.txt
+
+examples/scripts/run_test_queries_sigspatial_serial >& $DRES/sig_ser.txt
+
+examples/scripts/run_test_queries_geolife_serial >& $DRES/geolife_ser.txt
+

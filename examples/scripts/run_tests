@@ -1,0 +1,7 @@
+#! /bin/bash
+
+FL=results/results_`datestrext`.txt
+examples/scripts/run_all_tests >& $FL
+
+cat $FL
+ 
