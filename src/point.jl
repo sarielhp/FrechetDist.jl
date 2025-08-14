@@ -26,6 +26,7 @@ using Random
 Point{D,T} = SVector{D,T};
 Point2I = Point{2,Int64};
 Point2F = Point{2,Float64};
+Point3F = Point{3,Float64};
 
 #    x::MVector{D,T} = zeros( T, D );
 #    return  Point{D,T}( x );

@@ -14,6 +14,27 @@ VecFloat = Vector{Float64};
 VecVecFloat = Vector{VecFloat};
 
 
+function  draw_disks( cr, disks )
+    for  d in disks
+        cen = Point2F( d[ 1 ], d[ 2 ] );
+        r = d[ 3 ];
+        arc( cr, cen[1], cen[2], r, 0.0, 2.0 * pi );
+        stroke_preserve(cr);
+        Cairo.fill(cr);
+    end
+end
+
+function  draw_circles( cr, disks )
+    for  d in disks
+        cen = Point2F( d[ 1 ], d[ 2 ] );
+        r = d[ 3 ];
+        arc( cr, cen[1], cen[2], r, 0.0, 2.0 * pi );
+        
+        # Apply the stroke to the path (the circle drawn with arc)
+        Cairo.stroke(cr)
+    end
+end
+
 function  draw_hippodrome( cr, p::Point2F, q::Point2F, r::Float64 )
     r = r * 4.0;
 
@@ -51,7 +72,7 @@ function  draw_polygon_w_offs( cr, P::Polygon2F, offs::VecFloat )
         r = max( offs[ i - 1 ], offs[ i ] );
         #println( " r: ", r );
 
-        set_source_rgb(cr, 1.0, 0.0, 0.8);
+        get_color_rgbsource_rgb(cr, 1.0, 0.0, 0.8);
         #arc( cr, p[1], p[2], r, 0.0, 2.0 * pi );
         #fill_preserve( cr );
 
@@ -152,7 +173,9 @@ end
 
 function  get_color_rgb( i::Int64 )
     @assert( i > 0 );
-    colors =[ 1.0 0.0 0.0;
+    colors =[ 0.0 0.0 0.0;
+              1.0 0.0 0.0;
+              0.0 1.0 0.0;
               0.0 0.0 1.0;
               0.0 0.5 0.0;
               1.0 0.0 1.0;
