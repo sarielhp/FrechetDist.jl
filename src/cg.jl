@@ -62,10 +62,10 @@ Axis parallel bounding box.
     maxi::MVector{D,T} = zeros( T, D );
 end
 
-function  BBox_width( bb::BBox{D,T}, dim::Int64 = 1 ) where {D,T}
+function  width( bb::BBox{D,T}, dim::Int64 = 1 ) where {D,T}
     return  bb.maxi[ dim ] - bb.mini[ dim ];
 end
-function  BBox_height( bb::BBox{D,T}, dim::Int64 = 2 ) where {D,T}
+function  height( bb::BBox{D,T}, dim::Int64 = 2 ) where {D,T}
     return  bb.maxi[ dim ] - bb.mini[ dim ];
 end
 
@@ -95,13 +95,18 @@ function  BBox_max( bb::BBox{D,T}, d ) where  {D,T}
 end
 
 function  BBox_init( bb::BBox{D,T}, p, q ) where  {D,T}
-    f_init = true;
+    bb.f_init = true;
     for  i in 1:D
         bb.mini[ i ] = min( p[i ], q[ i ] );
         bb.maxi[ i ] = max( p[i ], q[ i ] );
     end
 end
 
+function  BBox2F_init( p::Point2F, q::Point2F )
+    bb = BBox{2, Float64}()
+    BBox_init( bb, p, q );
+    return  bb
+end
 
 function  BBox_diam( bb::BBox{D,T} )  where  {D,T}
     ( ! bb.f_init )  &&  return  zero( T );
@@ -190,7 +195,34 @@ function  BBox_expand( bb_in::BBox{D,T}, factor ) where  {D,T}
     return  bb;
 end
 
+function  BBox_expand_add!( bb::BBox{D,T}, _add ) where  {D,T}
+    add::MVector{D,T} = fill( _add, D )
+    mini::MVector{D,T} = bb.mini - add;
+    maxi::MVector{D,T} = bb.maxi + add;
 
+    bb.mini = mini;
+    bb.maxi = maxi;
+end
+
+function  BBox_expand_add( _bb::BBox{D,T}, _add ) where  {D,T}
+    bb = deepcopy( _bb );
+    BBox_expand_add!( bb, _add );
+    return  bb;
+end
+
+function Base.:+(b::BBox{D,T}, v::T ) where {D,T}
+    return  BBox_expand_add( b, v );
+end
+
+function Base.in( p::Point{D,T}, bb::BBox{D,T} ) where {D,T}
+    for  i ∈ 1:D
+        if  ( ( bb.mini[ i ] > p[ i ] )  ||  ( bb.maxi[ i ] < p[ i ] ) )
+            return  false
+        end
+    end
+
+    return  true;
+end
 
 
 
@@ -322,6 +354,14 @@ BBox2F = BBox{2,Float64};
 
 #####################################################################
 
+function  BBox_top_left( bb::BBox2F )
+    return  Point2F( bb.mini[ 1 ], bb.maxi[ 2 ] );
+end
+function  BBox_bottom_right( bb::BBox2F )
+    return  Point2F( bb.maxi[ 1 ], bb.mini[ 2 ] );
+end
+
+
 
 Centroid( P ) = sum( P ) / length( P );
 
@@ -366,14 +406,15 @@ export   is_right_turn
 
 #
 export  BBox_expand, BBox_expand!
-export  BBox_init, BBox_bound, BBox_print, BBox_width
+export  BBox_init, BBox2F_init,  BBox_bound, BBox_print, BBox_width
 export  cardin, VecPolygon2F
 export  BBox_bottom_left, BBox_top_right
+export  BBox_top_left, BBox_bottom_right
 export  BBox_min, BBox_max, BBox_middle;
 export  BBox_diam, BBox_dist;
 export  BBox_dist, BBox_max_dist
 
-export   BBox_width, BBox_height;
+export   width, height;
 
 
 #export  iseg_nn_point

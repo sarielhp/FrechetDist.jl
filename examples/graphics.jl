@@ -170,6 +170,47 @@ function  draw_bbox( cr, bb, scale )
     Cairo.stroke( cr );
 end
 
+function  fill_bbox( cr, bb, scale )
+    pa = BBox_bottom_left( bb );
+    pc = BBox_top_right( bb );
+
+    pb = npoint( pc[1], pa[2] );
+    pd = npoint( pa[1], pc[2] )
+
+    pa = pa * scale;
+    pb = pb * scale;
+    pc = pc * scale;
+    pd = pd * scale;
+
+    move_to( cr, pa[1], pa[2] )
+    line_to( cr, pb[1], pb[2] );
+    line_to( cr, pc[1], pc[2] );
+    line_to( cr, pd[1], pd[2] );
+    line_to( cr, pa[1], pa[2] );
+    close_path(cr);
+
+    Cairo.fill( cr );
+end
+
+function  draw_bboxes( cr, boxes, scale = 1.0 )
+    for  bb ∈ boxes
+        draw_bbox( cr, bb, scale );
+    end
+end
+function  fill_bboxes( cr, boxes, scale = 1.0 )
+    for  bb ∈ boxes
+        fill_bbox( cr, bb, scale );
+    end
+end
+function  fill_bboxes_cycle_colors( cr, boxes, α = 1.0, scale = 1.0 )
+    count = 0;
+    for  bb ∈ boxes
+        count += 1
+        set_source_rgba( cr, get_color_rgb( count )..., α );
+
+        fill_bbox( cr, bb, scale );
+    end
+end
 
 function  get_color_rgb( i::Int64 )
     @assert( i > 0 );
@@ -209,7 +250,7 @@ function  get_image_dims( bbo )
     theight::Float64 = 0.0;
 
     while ( true )
-        theight = width * BBox_width( bbo, 2 ) / BBox_width( bbo, 1 );
+        theight = width * cg.width( bbo, 2 ) / cg.width( bbo, 1 );
         if  theight < 2048.0
             break;
         end
@@ -225,9 +266,9 @@ end
 
 function  set_transform( cr, iwidth::Int64, iheight::Int64,
                          bbo::BBox2F )
-    xcal = convert( Float64, iwidth) / BBox_width( bbo, 1 );
+    xcal = convert( Float64, iwidth) / cg.width( bbo, 1 );
 
-#        ycal = convert( Float64, iheight) / BBox_width( bbo, 2 );
+#        ycal = convert( Float64, iheight) / cg.width( bbo, 2 );
 #    if  ( ( (xcal / 5.0 ) < ycal ) && ( ycal <= (xcal * 5.0 ) ) )
 #        ycal = xcal;
 #    end
@@ -262,6 +303,15 @@ function  cairo_setup( filename::String, list::VecPolygon2F,
     return  c,cr,bb;
 end
 
+function  cairo_setup( filename::String, top_right::Point2F,
+                       f_pdf::Bool = true )
+    P = Polygon2F();
+    push!( P, Point2F( 0.0, 0.0 ) );
+    push!( P, top_right );
+
+    return cairo_setup( filename, [P], f_pdf );
+    
+end
 
 function  output_polygons( cr,bb::BBox2F,
     list::VecPolygon2F,
@@ -306,7 +356,7 @@ function  output_polygons( cr,bb::BBox2F,
         set_line_width(cr, 0.9*u_width);
         set_source_rgb( cr, 1.0, 0.0, 0.0 );
         for  poly in  list
-            draw_polygon_vertices( cr, poly, BBox_width( bb) / 200  );
+            draw_polygon_vertices( cr, poly, cg.width( bb) / 200  );
         end
     end
 
@@ -315,7 +365,7 @@ function  output_polygons( cr,bb::BBox2F,
         font_face::String = "Sans" #
         Cairo.select_font_face( cr, font_face, Cairo.FONT_SLANT_NORMAL,
             Cairo.FONT_WEIGHT_NORMAL)
-        w = BBox_width( bb );
+        w = cg.width( bb );
         font_size = w/40
         Cairo.set_font_size( cr, font_size )
 
@@ -376,7 +426,7 @@ function  output_polygons_to_file(  list::VecPolygon2F, filename,
         set_line_width(cr, 0.9*u_width);
         set_source_rgb( cr, 1.0, 0.0, 0.0 );
         for  poly in  list
-            draw_polygon_vertices( cr, poly, BBox_width( bb) / 200  );
+            draw_polygon_vertices( cr, poly, cg.width( bb) / 200  );
         end
     end
 
@@ -411,7 +461,7 @@ function  output_polygons_to_file_with_offsets(
 
     c,cr,bb = cairo_setup( filename, list, f_pdf );
 
-    u_width::Float64 = 1024.0 * (BBox_width( bb) / 4500.0);
+    u_width::Float64 = 1024.0 * (cg.width( bb) / 4500.0);
 
     BBox_print( bb );
     set_source_rgb(cr,0.9,0.9,0.9);    # light gray
@@ -463,7 +513,7 @@ function  output_polygons_to_file_with_offsets(
         set_line_width(cr, 2.0*u_width);
         set_source_rgb( cr, 1.0, 0.0, 0.0 );
         for  poly in  list
-            draw_polygon_vertices( cr, poly, BBox_width( bb) / 200  );
+            draw_polygon_vertices( cr, poly, cg.width( bb) / 200  );
         end
     end
 
@@ -708,13 +758,13 @@ function   draw_image_frame( cm::ContextMovie, P, Q, rf::RecFrame )
     draw_polygon( cr, P );
     if   ( cm.f_show_vertices )
         set_source_rgb(cr, 0.0, 1.0, 0.0 );
-        draw_polygon_vertices( cr, P, BBox_width( cm.bb ) / 200 );
+        draw_polygon_vertices( cr, P, cg.width( cm.bb ) / 200 );
     end
     set_source_rgb(cr, 0.0, 0.0, 0.8 );
     draw_polygon( cr, Q );
     if   ( cm.f_show_vertices )
         set_source_rgb(cr, 0.0, 0.0, 1.0 );
-        draw_polygon_vertices( cr, Q, BBox_width( cm.bb ) / 200 );
+        draw_polygon_vertices( cr, Q, cg.width( cm.bb ) / 200 );
     end
 
     set_line_width(cr, 10.5);
@@ -946,7 +996,7 @@ function   draw_image_frame_o( cm::ContextMovie, P, Q, rf::ORecFrame )
     draw_polygon( cr, rf.R );
     if   ( cm.f_show_vertices )
         set_source_rgb(cr, 0.0, 1.0, 0.0 );
-        draw_polygon_vertices( cr, rf.R, BBox_width( cm.bb ) / 200 );
+        draw_polygon_vertices( cr, rf.R, cg.width( cm.bb ) / 200 );
     end
     Cairo.stroke( cr );
 
@@ -1086,6 +1136,15 @@ function  output_frechet_diagram( m::Morphing{N,T}, filename )  where {N,T}
 end
 
 
+function flip_y_axis(ctx::CairoContext, height::Real)
+    # Scale the y-axis by -1.
+    # This flips the y-axis, but also mirrors the content.
+    Cairo.scale(ctx, 1.0, -1.0)
+    
+    # Translate the context back.
+    # The negative height is needed to move the drawing back into view.
+    Cairo.translate(ctx, -0.0, -height + 0.01)
+end
 
 
 
