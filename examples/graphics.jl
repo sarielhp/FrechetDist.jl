@@ -9,6 +9,7 @@ using Plots
 using PrettyTables
 using Dates
 
+using FrechetDist.cg.bbox
 
 VecFloat = Vector{Float64};
 VecVecFloat = Vector{VecFloat};
@@ -150,8 +151,8 @@ function  draw_polygon_vertices( cr, P, r::Float64 )
 end
 
 function  draw_bbox( cr, bb, scale )
-    pa = BBox_bottom_left( bb );
-    pc = BBox_top_right( bb );
+    pa = cg.bbox.bottom_left( bb );
+    pc = cg.bbox.top_right( bb );
 
     pb = npoint( pc[1], pa[2] );
     pd = npoint( pa[1], pc[2] )
@@ -171,8 +172,8 @@ function  draw_bbox( cr, bb, scale )
 end
 
 function  fill_bbox( cr, bb, scale )
-    pa = BBox_bottom_left( bb );
-    pc = BBox_top_right( bb );
+    pa = bottom_left( bb );
+    pc = top_right( bb );
 
     pb = npoint( pc[1], pa[2] );
     pd = npoint( pa[1], pc[2] )
@@ -236,10 +237,10 @@ end
 function  compute_bounding_boxes( list::VecPolygon2F )
     bb::BBox2F = BBox2F();
 
-    BBox_bound( bb, list );
-    BBox_expand( bb, 1.05 );
+    bound( bb, list );
+    expand( bb, 1.05 );
     bbo::BBox2F = deepcopy( bb );
-    BBox_expand( bbo, 1.05 );
+    expand( bbo, 1.05 );
 
     return  bb, bbo
 end
@@ -250,7 +251,7 @@ function  get_image_dims( bbo )
     theight::Float64 = 0.0;
 
     while ( true )
-        theight = width * cg.width( bbo, 2 ) / cg.width( bbo, 1 );
+        theight = width * cg.bbox.width( bbo, 2 ) / cg.bbox.width( bbo, 1 );
         if  theight < 2048.0
             break;
         end
@@ -274,7 +275,7 @@ function  set_transform( cr, iwidth::Int64, iheight::Int64,
 #    end
 
     Cairo.scale( cr, xcal, xcal );
-    bl = BBox_bottom_left( bbo );
+    bl = cg.bbox.bottom_left( bbo );
     Cairo.translate( cr, -bl[ 1 ], -bl[ 2 ]);
 end
 
@@ -370,7 +371,7 @@ function  output_polygons( cr,bb::BBox2F,
         Cairo.set_font_size( cr, font_size )
 
         # Move to the position where text will be drawn
-        pc = BBox_bottom_left( bb );
+        pc = cg.bbox.bottom_left( bb );
         Cairo.move_to( cr, pc[1] + font_size, pc[2] + font_size );
         
         # Show the text
@@ -463,7 +464,7 @@ function  output_polygons_to_file_with_offsets(
 
     u_width::Float64 = 1024.0 * (cg.width( bb) / 4500.0);
 
-    BBox_print( bb );
+    cg.bbox.print( bb );
     set_source_rgb(cr,0.9,0.9,0.9);    # light gray
 #    set_line_width(cr, 10.0);
     set_source_rgba(cr, 1, 0.2, 0.2, 0.6);

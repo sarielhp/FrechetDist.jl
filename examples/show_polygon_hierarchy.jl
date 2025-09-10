@@ -7,6 +7,7 @@ using FrechetDist
 using FrechetDist.cg
 using FrechetDist.cg.point
 using FrechetDist.cg.polygon
+using FrechetDist.cg.bbox
 using Parameters
 
 VecFloat = Vector{Float64};
@@ -62,8 +63,8 @@ function  draw_polygon_vertices( cr, P, r::Float64 )
 end
 
 function  draw_bbox( cr, bb, scale )
-    pa = BBox_bottom_left( bb );
-    pc = BBox_top_right( bb );
+    pa = bottom_left( bb );
+    pc = top_right( bb );
 
     pb = npoint( pc[1], pa[2] );
     pd = npoint( pa[1], pc[2] )
@@ -86,15 +87,16 @@ end
 function  compute_bounding_boxes( list::VecPolygon2F )
     bb::BBox2F = BBox2F();
 
-    BBox_bound( bb, list );
-    BBox_expand( bb, 1.05 );
-    bbo::BBox2F = deepcopy( bb );
-    BBox_expand( bbo, 1.05 );
+    bound( bb, list );
+    expand!( bb, 1.05 );
+    bbo = deepcopy( bb );
+    println( typeof( bbo ) );
+    expand!( bbo, 1.05 );
 
     println( "--------------------" );
-    BBox_print( bbo );
+    bbox.print( bbo );
     println( "--------------------" );
-    BBox_print( bb );
+    bbox.print( bb );
     println( "--------------------" );
 
     return  bb, bbo
@@ -106,7 +108,7 @@ function  get_image_dims( bbo )
     theight::Float64 = 0.0;
 
     while ( true )
-        theight = width * BBox_width( bbo, 2 ) / BBox_width( bbo, 1 );
+        theight = width * bbox.width( bbo, 2 ) / bbox.width( bbo, 1 );
         if  theight < 2048.0
             break;
         end
@@ -126,11 +128,11 @@ end
 
 function  set_transform( cr, iwidth::Int64, iheight::Int64,
                          bbo::BBox2F )
-    xcal = convert( Float64, iwidth) / BBox_width( bbo, 1 );
+    xcal = convert( Float64, iwidth) / bbox.width( bbo, 1 );
 
     println( "Scaling: ", xcal );
     #Cairo.scale( cr, xcal, xcal );
-    bl = BBox_bottom_left( bbo );
+    bl = bottom_left( bbo );
     println( "bl :", bl );
     #Cairo.translate( cr, -bl[ 1 ], -bl[ 2 ]);
 
@@ -172,11 +174,9 @@ function  output_polygons_hierarchy_to_file(  list::VecPolygon2F, filename,
                                     )
     c,cr,bb, T = cairo_setup( filename, list, f_pdf );
 
-    u_width::Float64 = 1024.0 * (BBox_width( bb) / 100.0);
+    u_width::Float64 = 1024.0 * (bbox.width( bb) / 100.0);
 
-    #BBox_print( bb );
     set_source_rgb(cr,0.9,0.9,0.9);    # light gray
-#    set_line_width(cr, 10.0);
     set_source_rgba(cr, 1, 0.2, 0.2, 0.6);
 
     len = length( list );
@@ -230,7 +230,7 @@ function  output_polygons_hierarchy_to_file(  list::VecPolygon2F, filename,
         set_line_width(cr, 2.0);
         set_source_rgb( cr, 1.0, 0.0, 0.0 );
         for  poly in  list
-            draw_polygon_vertices( cr, poly, BBox_width( bb) / 200  );
+            draw_polygon_vertices( cr, poly, bbox.width( bb) / 200  );
         end
     end
 
@@ -252,9 +252,9 @@ function  plt_show_ph( ARGS )
         println( "Reading: ", ARGS[ i ] );
         poly_a = polygon.read_file( ARGS[ i ] );
         push!( list, poly_a );
-        BBox_bound( bb, poly_a );
+        bound( bb, poly_a );
     end
-    p = BBox_bottom_left( bb );
+    p = bottom_left( bb );
     for  poly  in list
         Polygon_translate!( poly, p );
     end

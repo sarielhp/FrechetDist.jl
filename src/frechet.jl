@@ -225,7 +225,53 @@ end
 end
 
 
-function  f_r_extract_solution( P::Polygon{N,T}, Q,
+function  f_r_extract_solution_basic( P::Polygon{N,T}, Q::Polygon{N,T},
+                                end_event_id::Int64,
+                                dict::DictVERType
+                                ) where {N,T}
+    #############################################################3
+    # Extracting the solution
+    #
+    # The final event is always the same - final vertex of P versus
+    # final vertex of Q.
+    pes = Vector{EventPoint{N,T}}();
+    qes = Vector{EventPoint{N,T}}();
+
+    idx = end_event_id;
+    pex::EventPoint = f_r_create_event( P, EID_i( idx ),
+                                        EID_i_is_vert( idx ),
+                                        Q[ EID_j( idx) ] );
+    qex::EventPoint = f_r_create_event( Q, EID_j( idx),
+                                        EID_j_is_vert( idx ),
+                                        P[ EID_i( idx ) ] );
+
+    push!( pes, pex );
+    push!( qes, qex );
+
+    curr = end_event_id;
+    while  ! is_start_event( curr )
+        prev = curr;
+        curr = dict[ prev ];
+
+#        id = curr.id;
+        id_i = EID_i( curr );
+        id_j = EID_j( curr );
+
+        pe::EventPoint = f_r_create_event( P, id_i, EID_i_is_vert( curr ),
+                                                 Q[ id_j ] );
+        qe::EventPoint = f_r_create_event( Q, id_j, EID_j_is_vert( curr ),
+                                              P[ id_i ] );
+        push!( pes, pe );
+        push!( qes, qe );
+    end
+
+    reverse!( pes );
+    reverse!( qes );
+
+    return  pes, qes;
+end
+
+function  f_r_extract_solution( P::Polygon{N,T}, Q::Polygon{N,T},
                                 end_event_id::Int64,
                                 dict::DictVERType,
                                 c::FRContext{N,T}
@@ -280,6 +326,8 @@ function  f_r_extract_solution( P::Polygon{N,T}, Q,
 
     return  pes, qes;
 end
+
+
 
 function   eid_same_status( arr::Vector{Int64}, curr::Int64, len::Int64 )
     eid = arr[ curr ];

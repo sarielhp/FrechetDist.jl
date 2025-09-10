@@ -7,6 +7,7 @@ using FrechetDist
 using FrechetDist.cg
 using FrechetDist.cg.point
 using FrechetDist.cg.polygon
+using FrechetDist.cg.bbox
 using Parameters
 
 include( "graphics.jl" )
@@ -20,9 +21,9 @@ function  plt_show( ARGS )
         println( "Reading: ", ARGS[ i ] );
         poly_a = read_file( ARGS[ i ] );
         push!( list, poly_a );
-        BBox_bound( bb, poly_a );
+        bbox.bound( bb, poly_a );
     end
-    p = BBox_bottom_left( bb );
+    p = bbox.bottom_left( bb );
     for  poly  in list
         Polygon_translate!( poly, p );
     end

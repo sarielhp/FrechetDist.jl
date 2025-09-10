@@ -39,6 +39,11 @@ struct EventPoint{N,T}
     penalty::Float64;
 end
 
+function  EventPoint( _p::Point{N,T}, _i::Int64, _type::FPointType, 
+    _t::Float64 ) where {N,T}
+    return  EventPoint( _p, _i, _type, _t, 0.0 );
+end
+
 function  ev_update_p_t( ev::EventPoint{N,T}, p::Point{N,T}, t::Float64
                          ) where {N,T}
     return  EventPoint( p, ev.i, ev.type, t, ev.penalty );

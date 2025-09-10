@@ -22,6 +22,7 @@ using FrechetDist.cg
 using FrechetDist.cg.point
 using FrechetDist.cg.segment
 using FrechetDist.cg.polygon
+using FrechetDist.cg.bbox
 #using cg
 
 include( "fr_examples.jl" )
@@ -574,10 +575,10 @@ function  draw_m_polygon( m::Morphing2F, curves_out )
     push!( list, deepcopy( m.Q ) );
 
     bb = BBox2F();
-    BBox_bound( bb, m.P );
-    BBox_bound( bb, m.Q );
+    bbox.bound( bb, m.P );
+    bbox.bound( bb, m.Q );
 
-    p = BBox_bottom_left( bb );
+    p = bbox.bottom_left( bb );
     for  poly  in list
         Polygon_translate!( poly, p );
     end
@@ -1503,9 +1504,9 @@ function  gen_example_39()
     #d = 1.0 / length( P );
     Q = dragon_curve( 8 );
 
-    bb = BBox_init( Q );
-    shift!( Q, -BBox_bottom_left( bb ) );
-    t = 1.0 / max( BBox_width( bb, 1 ), BBox_width( bb, 2 ) );
+    bb = bbox.init( Q );
+    shift!( Q, -bbox.bottom_left( bb ) );
+    t = 1.0 / max( bbox.width( bb, 1 ), bbox.width( bb, 2 ) );
     mult!( Q, t );
 
     #println( typeof( Q ) );
