@@ -30,7 +30,7 @@ jobs:
         arch:
           - x64
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: julia-actions/setup-julia@v2
         with:
           version: ${{ matrix.version }}
@@ -46,7 +46,7 @@ jobs:
 #    name: Documentation
 #    runs-on: ubuntu-latest
 #    steps:
-#      - uses: actions/checkout@v4
+#      - uses: actions/checkout@v5
 #      - uses: julia-actions/setup-julia@v2
 #      - uses: julia-actions/julia-buildpkg@latest
 #      - uses: julia-actions/cache@v1
@@ -58,7 +58,7 @@ jobs:
 #    name: Setup env
 #    runs-on: ubuntu-latest
 #    steps:
-#      - uses: actions/checkout@v4
+#      - uses: actions/checkout@v5
 #      - uses: julia-actions/setup-julia@v2
 #        with:
 #          version: '1'
@@ -75,7 +75,7 @@ jobs:
 #      permissions: write-all
 #    needs: docs_setup
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: julia-actions/setup-julia@v2
         with:
           version: '1'
