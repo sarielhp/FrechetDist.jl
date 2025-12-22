@@ -1,5 +1,46 @@
 #! /bin/bash
 
+
+function  julia_check() {
+    if  [[ -e examples/julial ]]; then
+        JULIAL=examples/julial
+    else
+        JULIAL=julial
+    fi
+    
+    # Check if 'julial' is in the system PATH
+    if ! command -v $JULIAL &> /dev/null; then
+        echo "Error: program 'julial' is not available."
+        echo "It is available from the examples/ subdirectory. You should either:"
+        echo ""
+        echo "- cp examples/julial ~/bin (any directory on your path would work)"
+        echo ""
+        echo "- or run the program from the root directory of the project. That is:"
+        echo "   examples/scripts/run_test_<fill relevant name>"
+        echo ""
+        echo " Also, don't forget to run julial src/deps.jl before running this script"
+        echo -n " to install needed packages."
+        echo ""
+        echo "Anyway, bye for now!"
+        exit 1
+    fi
+    
+    REQUIRED_VER="1.12"
+    CURRENT_VER=$(julia -e 'print(VERSION)')
+    # sort -V handles multi-digit version components correctly
+    if [ "$(printf '%s\n%s' "$REQUIRED_VER" "$CURRENT_VER" | sort -V | head -n1)" != "$REQUIRED_VER" ]; then
+        echo "Error: Julia version $CURRENT_VER is below the required $REQUIRED_VER."
+        echo "Please update Julia at https://julialang.org/downloads/"
+        echo ""
+        echo "Important: Use juliaup to install julia, not the default package provided."
+        exit 1
+    fi
+    echo "Julia check completed!"
+}
+
+
+julia_check
+
 export JULIA_NUM_THREADS=auto
 
 rm *.txt >& /dev/null
@@ -16,7 +57,7 @@ start=`date +%s`
 # file: Run the test using multi-threading
 # sfile: Run the test using a single thread...
 
-julial examples/run_queries_test.jl sfile \
+$JULIAL examples/run_queries_test.jl sfile \
                              data/geolife/ \
                              geolife.txt
 end=`date +%s`
