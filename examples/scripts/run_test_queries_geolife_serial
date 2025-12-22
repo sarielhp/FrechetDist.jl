@@ -17,7 +17,7 @@ start=`date +%s`
 # file: Run the test using multi-threading
 # sfile: Run the test using a single thread...
 
-julia examples/run_queries_test.jl sfile \
+julial examples/run_queries_test.jl sfile \
                              data/geolife/ \
                              $TFL
 end=`date +%s`
