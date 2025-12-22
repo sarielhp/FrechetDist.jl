@@ -1,6 +1,5 @@
 #! /bin/bash
 
-
 function  julia_check() {
     if  [[ -e examples/julial ]]; then
         JULIAL=examples/julial
@@ -38,18 +37,16 @@ function  julia_check() {
     echo "Julia check completed!"
 }
 
-
 julia_check
 
 export JULIA_NUM_THREADS=auto
+#export JULIA_NUM_THREADS=32
 
-rm *.txt >& /dev/null
+TDIR=/tmp/frechet_dist
+mkdir -p $TDIR >& /dev/null
+TFL=$TDIR/geolife.txt
 
-find data_geolife/queries/geolife -type f > geolife.txt
-
-
-lscpu
-free
+find data/queries/geolife -type f > $TFL
 
 start=`date +%s`
 
@@ -57,18 +54,14 @@ start=`date +%s`
 # file: Run the test using multi-threading
 # sfile: Run the test using a single thread...
 
-$JULIAL examples/run_queries_test.jl sfile \
-                             data_geolife/geolife/ \
-                             geolife.txt
+julia examples/run_queries_test.jl file \
+                             data/geolife/ \
+                             $TFL
 end=`date +%s`
 
 
 runtime=$((end-start))
+
 echo  "Running time: " $runtime
-#rm *.txt >& /dev/null
+
 exit  -1;
-
-# examples/run_queries_test.jl data/characters/
-# data/tests/characters/characters_query_decider_10_0_plus.txt | gi
-# undeci
-

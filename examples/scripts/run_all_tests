@@ -71,8 +71,11 @@ examples/scripts/run_test_queries_characters_mt     >& $DRES/chars_mt.txt
 examples/scripts/run_test_queries_sigspatial_serial >& $DRES/sig_ser.txt
 examples/scripts/run_test_queries_sigspatial_mt     >& $DRES/sig_mt.txt
 
-examples/scripts/run_test_queries_geolife_serial >& $DRES/geolife_ser.txt
-examples/scripts/run_test_queries_geolife_mt     >& $DRES/geolife_mt.txt
+examples/scripts/run_test_queries_gbad_serial       >& $DRES/gbad_ser.txt
+examples/scripts/run_test_queries_gbad_mt           >& $DRES/gbad_mt.txt
+
+examples/scripts/run_test_queries_geolife_serial    >& $DRES/geolife_ser.txt
+examples/scripts/run_test_queries_geolife_mt        >& $DRES/geolife_mt.txt
 
 
 echo "sigspatial    : " `grep "Running time" $DRES/sig_ser.txt`
