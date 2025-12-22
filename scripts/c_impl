@@ -1,0 +1,19 @@
+#! /bin/bash
+
+BASE=/home/sariel/prog/24/FrechetDist
+cd $BASE
+rm -r -f $BASE/c_impl
+mkdir $BASE/c_impl
+cd $BASE/c_impl
+
+echo $PWD
+if  [[ "$PWD" != "$BASE/c_impl" ]]; then
+    echo "Error something is wrong with the base dir"
+    exit -1
+fi
+
+git clone https://gitlab.com/anusser/frechet_distance.git .
+
+git checkout decider_experiments
+
+./build.sh

@@ -5,6 +5,7 @@
 distributions
 scripts/
 .ignore/
+c_impl/
 data/
 data
 docs/build/
