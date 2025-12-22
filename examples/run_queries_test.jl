@@ -1,6 +1,5 @@
 #! /bin/env julial
-#using StatProfilerHTML
-#using Profile
+
 push!(LOAD_PATH, pwd()*"/src/")
 
 using TimerOutputs
@@ -12,14 +11,10 @@ using FrechetDist.cg.polygon
 using FrechetDist.cg.point
 using PrettyTables
 using Base.Threads
-#using CPUSummary
 using Profile
-#using Hwloc
-#using Profile
-#using InteractiveUtils
-#using
 
-const  TIME_RESULTS = false
+
+const  TIME_RESULTS = true
 
 AtomicInt = Threads.Atomic{Int}
 
