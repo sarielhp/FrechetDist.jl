@@ -1,4 +1,4 @@
-#! /usr/bin/env julia
+#! /bin/env julial
 #using StatProfilerHTML
 #using Profile
 push!(LOAD_PATH, pwd()*"/src/")
@@ -12,8 +12,9 @@ using FrechetDist.cg.polygon
 using FrechetDist.cg.point
 using PrettyTables
 using Base.Threads
-
+#using CPUSummary
 using Profile
+#using Hwloc
 #using Profile
 #using InteractiveUtils
 #using ProfileView
@@ -806,7 +807,7 @@ function  test_files_from_file( filename, base_dir,
 )
     rlines = readlines( filename );
 
-    println( "bogi\n" );
+    #println( "bogi\n" );
     if  ( f_verify )
         println( "\n\n"*"VERIFICATION RUN - will be much slower.\n" );
     end
@@ -837,6 +838,7 @@ function  test_files_from_file( filename, base_dir,
     flush( stdout );
 end
 
+
 ########################################################################
 ########### Main
 
@@ -846,17 +848,15 @@ end
 function (@main)(ARGS)
     f_verify_run::Bool = false;
 
+    println( "Julia version : ", VERSION )
+
     num_args = length( ARGS );
 
     if   num_args == 2  &&  ( ARGS[ 1 ] == "test_file" )
         test_single_file( ARGS[2], false );
-        #Profile.print(format=:flat)
-        #Profile.print()
         exit( 0 );
     end
     if   num_args == 3  &&  ( ARGS[ 1 ] == "file" )
-#        f_verify_run = true;
- #       println( "shogi"  )
         test_files_from_file( ARGS[3], ARGS[2], f_verify_run );
         exit( 0 );
     end

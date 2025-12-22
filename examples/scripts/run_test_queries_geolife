@@ -7,6 +7,9 @@ rm *.txt >& /dev/null
 find data/queries/geolife -type f > geolife.txt
 
 
+lscpu
+free
+
 start=`date +%s`
 
 
