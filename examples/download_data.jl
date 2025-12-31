@@ -1,4 +1,4 @@
-#! julia
+#! /bin/env julial
 
 push!(LOAD_PATH, pwd()*"/src/")
 push!(LOAD_PATH, pwd()*"../src/")
@@ -270,6 +270,11 @@ function  get_pigeons_data( dir_raw, dir_pigeons )
 end
 
 ##############################################33
+
+println( "This script contains a bug - it smashes together files in the geolife data-set when" *
+         "downloading the data. Don't use it unless you fix this bug." );
+exit( -1 )
+         
 
 test_command( "bash", "python3", "wget", "octave", "unzip", "tar" );
 
