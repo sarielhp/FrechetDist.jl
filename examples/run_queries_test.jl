@@ -840,7 +840,7 @@ function  test_files_from_file( filename, base_dir,
         do_array( PID, lines, base_dir, nr, count, f_verify )
     else
         nt = Threads.nthreads()
-        chunks = Iterators.partition(lines, length(lines) ÷ nt )
+        chunks = Iterators.partition(lines, max( 1, length(lines) ÷ nt ) )
         tasks = map(chunks) do chunk
             #println( parentindices( chunk ) )
             Threads.@spawn do_chunk( PID, chunk, base_dir, nr, count )
