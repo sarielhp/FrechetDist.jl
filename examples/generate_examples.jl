@@ -104,14 +104,6 @@ function search_dir(path,key)
     return  filter(x->occursin(key,x), readdir(path))
 end
 
-
-
-
-function  frechet_ve_r_mono_approx_dist( poly_a, poly_b, approx::Float64 )
-    m = frechet_ve_r_mono_approx( poly_a, poly_b, approx )
-    return  m.leash;
-end
-
 function  count_below_zero( arr )
     count = 0;
     for  x in arr
@@ -165,13 +157,6 @@ function  run_on_curves_files( filename_a, filename_b )
     poly_b = read_file( filename_b );
 
     return  run_on_curves( poly_a, poly_b );
-end
-
-
-function  do_example_1()
-    poly_a,poly_b = example_1();
-    output_polygons_to_flle( [poly_a, poly_b], "pdfs/curr_example.pdf", true );
-    r_frechet_with_refinement( poly_a, poly_b, 40, true, false );
 end
 
 function  collect_arrows( xs, ys, vx, vy,
@@ -482,16 +467,6 @@ function  plot_curves_diagram(
 #    println( "   ", filename_curves );
     f_debug && println( "   ", filename_diagram );
 end
-
-function  do_example( polys )
-    poly_a = polys[ 1 ];
-    poly_b = polys[ 2 ];
-
-    pdf_output_polygons( [poly_a, poly_b], "pdfs/curr_example.pdf" );
-    r_frechet_with_refinement( poly_a, poly_b, 40, false, false );
-end
-
-
 
 ########################################################################
 # Main....
@@ -919,14 +894,13 @@ function  create_demo( title::String,
 
     data = vcat( row_a_x, row_b_x  );
 
-    style_tbl = Dict{String, String}();
-    style_tbl[ "border" ] = "4px solid green";
-    style_tbl[ "bordercolor" ] = "blue";
+    style_tbl = HtmlTableStyle( table = [ "border" => "4px solid green",
+                                          "border-color" => "blue" ] );
     pretty_table(fl, data;
-                 header = (["Curves", "# Vertices", "Length"]),
-                 table_style = style_tbl,
+                 column_labels = ["Curves", "# Vertices", "Length"],
+                 style = style_tbl,
                  allow_html_in_cells = true,
-        backend = Val(:html)
+        backend = :html
 #        standalone=true
     )
     write( fl, "\n<hr>\n" )
@@ -940,10 +914,10 @@ function  create_demo( title::String,
         B[2,2] = string( m_ve_r.leash ) ;
         B[2,3] = string( m_ve_r.iters );
         pretty_table(fl, B;
-                     header = (["Distance",  "Value", "Iters"]),
+                     column_labels = ["Distance",  "Value", "Iters"],
                      allow_html_in_cells = true,
-                     table_style = style_tbl,
-                     backend = Val(:html) )
+                     style = style_tbl,
+                     backend = :html )
     else
         println( fl, "Fréchet distance: ", m_c.leash, "\n\n" );
     end
@@ -1128,9 +1102,8 @@ function  create_demo( title::String,
 
 
 
-        pretty_table(fl_SweepDist, A; header = (["Iteration", "Lower
-                 bound", "Upper bound", "Better UB", "#P", "#Q" ]),
-                 allow_html_in_cells = true, backend = Val(:html) );
+        pretty_table(fl_SweepDist, A; column_labels = ["Iteration", "Lower bound", "Upper bound", "Better UB", "#P", "#Q" ],
+                 allow_html_in_cells = true, backend = :html );
 
         println( fl_SweepDist, "\n\n<hr>\n" );
 

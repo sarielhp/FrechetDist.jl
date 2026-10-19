@@ -156,8 +156,8 @@ CL_EXACT = "Exact";
     select!(dfn, Not( CL_DESC ) )
     
     iox = open("output/julia_results.tex", "w");
-    pretty_table( iox,dfn, header = names( dfn ), backend = Val(:latex),
-                  highlighters = (ha, hb));
+    pretty_table( iox,dfn, column_labels = names( dfn ), backend = :latex,
+                  highlighters = [ha, hb]);
 
     #show( iox, "text/latex", df );
     close( iox );
@@ -168,8 +168,8 @@ CL_EXACT = "Exact";
     iox = open("output/julia_results_2.tex", "w");
     select!(dfn, Cols( CL_INDEX, CL_DESC ) )
 
-    pretty_table( iox,dfn, header = names( dfn ), backend = Val(:latex),
-                  highlighters = (ha, hb));
+    pretty_table( iox,dfn, column_labels = names( dfn ), backend = :latex,
+                  highlighters = [ha, hb]);
 
     #show( iox, "text/latex", df );
     close( iox );

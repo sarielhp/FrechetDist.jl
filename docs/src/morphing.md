@@ -2,7 +2,7 @@
 
 A *morphing* is an encoding of a "matching" between two curves. It is
 the output of the various Frechet distance computation functions.  The
-package provides some basic geometric types in the cg submodule.
+package uses the geometric types of BasicCompGeometry (`Point`, `Segment`, `PntSeq`).
 
 ## Types
 ```@docs

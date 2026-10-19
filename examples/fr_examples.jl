@@ -690,11 +690,3 @@ function   dragon_curve( k )
 
     return P
 end
-
-
-function  koch_curve( level )
-    points = [[0.0; 0.0], [1.0; 0.0]]
-    new_points = points_koch(points, level)
-
-    return  new_points;
-end

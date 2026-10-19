@@ -18,8 +18,8 @@ function  do_it( ARGS )
                           ["texttt"])
 
     iox = open(ARGS[2], "w");
-    pretty_table( iox,df, header = names( df ),
-                  backend = Val(:latex), highlighters = (ha, hb));
+    pretty_table( iox,df, column_labels = names( df ),
+                  backend = :latex, highlighters = [ha, hb]);
 
     #show( iox, "text/latex", df );
     close( iox );

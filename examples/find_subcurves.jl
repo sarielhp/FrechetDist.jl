@@ -116,9 +116,9 @@ function  get_vert( M::SubFrechetMatcher{N,T}, i::Int64 ) where {N,T}
     x::Int64 = 0;
     y::Int64 = 0;
     
-    if  ( i <= M.nY * M.n )
-        y = 1 + floor(Int64, (i-1)/ M.n)
-        x = i - (y-1) * M.n;
+    if  ( i <= M.nY * M.nX )
+        y = 1 + floor(Int64, (i-1)/ M.nX)
+        x = i - (y-1) * M.nX;
         return  (x, y, 1 );
     end
 
