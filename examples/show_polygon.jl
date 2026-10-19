@@ -4,10 +4,9 @@ push!(LOAD_PATH, pwd()*"/src/")
 
 using Cairo
 using FrechetDist
-using FrechetDist.cg
-using FrechetDist.cg.point
-using FrechetDist.cg.polygon
-using FrechetDist.cg.bbox
+using BasicCompGeometry
+import BasicCompGeometry: translate!, bound!
+import FrechetDist: read_file
 using Parameters
 
 include( "graphics.jl" )
@@ -15,17 +14,17 @@ include( "graphics.jl" )
 function  plt_show( ARGS )
     num_args = length( ARGS );
 
-    list = VecPolygon2F();
+    list = Vector{PntSeq2F}();
     bb = BBox2F();
     for  i in 1:num_args
         println( "Reading: ", ARGS[ i ] );
         poly_a = read_file( ARGS[ i ] );
         push!( list, poly_a );
-        bbox.bound( bb, poly_a );
+        bound!( bb, poly_a );
     end
-    p = bbox.bottom_left( bb );
+    p = bottom_left( bb );
     for  poly  in list
-        Polygon_translate!( poly, p );
+        translate!( poly, -p );
     end
 
     output_polygons_to_file( list, "curves.pdf", true );

@@ -1,22 +1,20 @@
 using FrechetDist
-using FrechetDist.cg
-using FrechetDist.cg.point
-using FrechetDist.cg.polygon
+using BasicCompGeometry
 using Test
 
 function  example_01()
-    P = Polygon2F( );
-    Q = Polygon2F( );
+    P = PntSeq2F( );
+    Q = PntSeq2F( );
 
-    push!( P, npoint( 0.0, 0 ), npoint( 1.0, 0.0 ) );
-    push!( Q, npoint( 0.0, 1.0 ), npoint( 1.0, 1.0 ) );
+    push!( P, point( 0.0, 0 ), point( 1.0, 0.0 ) );
+    push!( Q, point( 0.0, 1.0 ), point( 1.0, 1.0 ) );
     return  P, Q;
 end
 
 
 function  example_02()
-    P = Polygon_random( 3, Float64, 100 );
-    Q = Polygon_random( 3, Float64, 80 );
+    P = rand_pnt_seq( 3, Float64, 100 );
+    Q = rand_pnt_seq( 3, Float64, 80 );
 
     return  P, Q;
 end

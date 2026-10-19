@@ -48,8 +48,8 @@ DictVerticesType = Dict{Int64, TreeVertex};
 DictHandledType = Dict{Int64, Bool};
 
 @with_kw mutable struct SDContext{N,T}
-    P::Polygon{N,T};
-    Q::Polygon{N,T};
+    P::PntSeq{N,T};
+    Q::PntSeq{N,T};
     vertices::DictVerticesType
     handled::DictHandledType;
     prev_map::DictVERType;
@@ -58,21 +58,13 @@ DictHandledType = Dict{Int64, Bool};
     n_q::Int64 = 0;
 end
 
-function  SDContext(P::Polygon{N,T}, Q::Polygon{N,T}) where {N,T}
+function  SDContext(P::PntSeq{N,T}, Q::PntSeq{N,T}) where {N,T}
     return SDContext( P, Q,
                         DictVerticesType(),
                         DictHandledType(),
                         DictVERType(),
                         PriorityQueue{Int64,Float64}(),
                         cardin( P ), cardin( Q ) );
-end
-
-
-function  SW_new_event_v( _id::Int64, c::SDContext{N,T},
-                            val::Float64 ) where {N,T}
-    ev = TreeVertex( _id );
-    ev.val = 0.0;
-    return  ev;
 end
 
 
@@ -86,12 +78,12 @@ function  get_event_points( c::SDContext{N,T}, id::Int64 ) where {N,T}
             return  P[ i ], Q[ j ];
         end
 
-        q = iseg_nn_point( Q[ j ], Q[ j + 1 ], P[ i ] );
+        q = fp_nn_point( Q[ j ], Q[ j + 1 ], P[ i ] );
         return  P[ i ], q;
     end
 
     if  EID_j_is_vert( id )
-        p = iseg_nn_point( P[ i ], P[ i + 1 ], Q[ j ] );
+        p = fp_nn_point( P[ i ], P[ i + 1 ], Q[ j ] );
         return  p, Q[ j ];
     end
 
@@ -108,7 +100,7 @@ function  SW_get_event_value( _id::Int64, _prev_id::Int64, prev_val::Float64,
     o_p, o_q = get_event_points( c, _prev_id );
     n_p, n_q = get_event_points( c, _id );
 
-    return   prev_val + segs_match_price( o_p, n_p, o_q, n_q );
+    return   prev_val + fp_match_price( o_p, n_p, o_q, n_q );
 end
 
 
@@ -175,7 +167,7 @@ end
 #
 # Returns a Morphing that encodes the solution
 ##########################################################################
-function   SweepDist_compute( P::Polygon{N,T}, Q::Polygon{N,T} ) where {N,T}
+function   SweepDist_compute( P::PntSeq{N,T}, Q::PntSeq{N,T} ) where {N,T}
     f_debug::Bool = false;
     c::SDContext{N,T} = SDContext( P, Q )
 
@@ -248,9 +240,9 @@ function   SweepDist_compute( P::Polygon{N,T}, Q::Polygon{N,T} ) where {N,T}
 end
 
 
-function   SweepDist_compute_refine_mono( poly_a::Polygon{N,T},
-                                     poly_b::Polygon{N,T} ) where {N,T}
-    ell = total_length( poly_a ) + total_length( poly_b );
+function   SweepDist_compute_refine_mono( poly_a::PntSeq{N,T},
+                                     poly_b::PntSeq{N,T} ) where {N,T}
+    ell = fp_geom_length( poly_a ) + fp_geom_length( poly_b );
 
     P = poly_a;
     Q = poly_b;
@@ -284,8 +276,8 @@ function   SweepDist_compute_refine_mono( poly_a::Polygon{N,T},
 end
 
 function   SweepDist_compute_split(
-    poly_a::Polygon{N,T},
-    poly_b::Polygon{N,T},
+    poly_a::PntSeq{N,T},
+    poly_b::PntSeq{N,T},
     out::Vector{Morphing{N,T}},
     iters::Int64,
     max_vertices::Int64 = 1000000 ) where {N,T}
@@ -297,8 +289,8 @@ function   SweepDist_compute_split(
     P = m.P;
     Q = m.Q;
     for  i in 1:iters
-        P = Polygon_split_edges( P );
-        Q = Polygon_split_edges( Q );
+        P = split_edges( P );
+        Q = split_edges( Q );
         mi = SweepDist_compute( P, Q );
         Morphing_verify_valid( mi );
         push!( out, deepcopy( mi ) );
@@ -319,7 +311,7 @@ and Q. Current implementation is silly, and very similar to the
 discrete Frechet calculation.
 
 """
-function   SweepDist_lb_compute( P::Polygon{D,T}, Q::Polygon{D,T}
+function   SweepDist_lb_compute( P::PntSeq{D,T}, Q::PntSeq{D,T}
                            ) where {D,T}
 
     pq = PriorityQueue{Tuple{Int64, Int64},Float64}();
@@ -337,39 +329,39 @@ function   SweepDist_lb_compute( P::Polygon{D,T}, Q::Polygon{D,T}
     The edge is (i,j) -> (i+1,j). The function returns the minimum
     elvation fucntion, in the two adjacent cells:
 
-    min( dist( PA[i, i+1], PB[ j-1, j ] ),
-         dist( PA[i, i+1], PB[ j, j+1 ] ),
+    min( fp_dist( PA[i, i+1], PB[ j-1, j ] ),
+         fp_dist( PA[i, i+1], PB[ j, j+1 ] ),
     """
-    function edge_lb( PA::Polygon{D,T}, i, PB::Polygon{D,T}, j ) where {D,T}
+    function edge_lb( PA::PntSeq{D,T}, i, PB::PntSeq{D,T}, j ) where {D,T}
         lb::Float64 = typemax(Float64);
         if  i == cardin( PA )
             return  0.0;
         end
         if  j > 1
-            d = iseg_iseg_dist( PA[i ], PA[i + 1], PB[ j - 1 ], PB[ j ] );
+            d = fp_dist_segment_segment( PA[i ], PA[i + 1], PB[ j - 1 ], PB[ j ] );
             lb = min( lb, d );
         end
         if  j < cardin( PB )
-            d = iseg_iseg_dist( PA[ i ], PA[i + 1], PB[ j ], PB[ j + 1 ] )
+            d = fp_dist_segment_segment( PA[ i ], PA[i + 1], PB[ j ], PB[ j + 1 ] )
             lb = min( lb, d );
         end
         return  lb;
     end
 
-    function edge_v( PA::Polygon{D,T}, i::Int64, PB::Polygon{D,T},
+    function edge_v( PA::PntSeq{D,T}, i::Int64, PB::PntSeq{D,T},
                      j::Int64 )::Float64 where {D,T}
         if  ( i == cardin( PA ) )
             return 0.0;
         end
         lb = edge_lb( PA, i, PB, j );
-        len = Dist( PA[ i ], PA[ i + 1 ] );
+        len = fp_dist( PA[ i ], PA[ i + 1 ] );
         return   len * lb;
     end
 
 
     function  push_value( i::Int64, j::Int64,
         ia::Int64, ja, new_val::Float64 )
-        #new_val = val + Dist( P[ ia ], Q[ ja ] )
+        #new_val = val + fp_dist( P[ ia ], Q[ ja ] )
 
         if  ( ( dp[ ia, ja ] > 0.0 )
               &&  ( dp[ ia, ja ] <= new_val ) )

@@ -9,7 +9,8 @@ using Plots
 using PrettyTables
 using Dates
 
-using FrechetDist.cg.bbox
+using BasicCompGeometry
+import BasicCompGeometry: width, cardin, prefix_lengths, height, bound!, push_distinct!
 
 VecFloat = Vector{Float64};
 VecVecFloat = Vector{VecFloat};
@@ -44,8 +45,8 @@ function  draw_hippodrome( cr, p::Point2F, q::Point2F, r::Float64 )
     arc( cr, q[1], q[2], r, 0.0, 2.0 * pi );
     fill_preserve( cr );
 
-    v = (p - q) / Dist( p, q );
-    u = npoint( -v[2], v[1] );
+    v = (p - q) / dist( p, q );
+    u = point( -v[2], v[1] );
     px = p - r * u;
     qx = q - r * u;
     qy = q + r * u;
@@ -62,7 +63,7 @@ function  draw_hippodrome( cr, p::Point2F, q::Point2F, r::Float64 )
     Cairo.stroke( cr );
 end
 
-function  draw_polygon_w_offs( cr, P::Polygon2F, offs::VecFloat )
+function  draw_polygon_w_offs( cr, P::PntSeq2F, offs::VecFloat )
     nv::Int64 = cardin( P );
     for  i in 2:nv
         p = P.pnts[ i - 1 ];
@@ -151,11 +152,11 @@ function  draw_polygon_vertices( cr, P, r::Float64 )
 end
 
 function  draw_bbox( cr, bb, scale )
-    pa = cg.bbox.bottom_left( bb );
-    pc = cg.bbox.top_right( bb );
+    pa = bottom_left( bb );
+    pc = top_right( bb );
 
-    pb = npoint( pc[1], pa[2] );
-    pd = npoint( pa[1], pc[2] )
+    pb = point( pc[1], pa[2] );
+    pd = point( pa[1], pc[2] )
 
     pa = pa * scale;
     pb = pb * scale;
@@ -175,8 +176,8 @@ function  fill_bbox( cr, bb, scale )
     pa = bottom_left( bb );
     pc = top_right( bb );
 
-    pb = npoint( pc[1], pa[2] );
-    pd = npoint( pa[1], pc[2] )
+    pb = point( pc[1], pa[2] );
+    pd = point( pa[1], pc[2] )
 
     pa = pa * scale;
     pb = pb * scale;
@@ -234,13 +235,11 @@ function  get_color_rgb( i::Int64 )
 end
 
 
-function  compute_bounding_boxes( list::VecPolygon2F )
+function  compute_bounding_boxes( list::Vector{PntSeq2F} )
     bb::BBox2F = BBox2F();
 
-    bound( bb, list );
-    expand( bb, 1.05 );
+    bound!( bb, list );
     bbo::BBox2F = deepcopy( bb );
-    expand( bbo, 1.05 );
 
     return  bb, bbo
 end
@@ -251,7 +250,7 @@ function  get_image_dims( bbo )
     theight::Float64 = 0.0;
 
     while ( true )
-        theight = width * cg.bbox.width( bbo, 2 ) / cg.bbox.width( bbo, 1 );
+        theight = width * BasicCompGeometry.width( bbo, 2 ) / BasicCompGeometry.width( bbo, 1 );
         if  theight < 2048.0
             break;
         end
@@ -267,19 +266,19 @@ end
 
 function  set_transform( cr, iwidth::Int64, iheight::Int64,
                          bbo::BBox2F )
-    xcal = convert( Float64, iwidth) / cg.width( bbo, 1 );
+    xcal = convert( Float64, iwidth) / BasicCompGeometry.width( bbo, 1 );
 
-#        ycal = convert( Float64, iheight) / cg.width( bbo, 2 );
+#        ycal = convert( Float64, iheight) / BasicCompGeometry.width( bbo, 2 );
 #    if  ( ( (xcal / 5.0 ) < ycal ) && ( ycal <= (xcal * 5.0 ) ) )
 #        ycal = xcal;
 #    end
 
     Cairo.scale( cr, xcal, xcal );
-    bl = cg.bbox.bottom_left( bbo );
+    bl = bottom_left( bbo );
     Cairo.translate( cr, -bl[ 1 ], -bl[ 2 ]);
 end
 
-function  cairo_setup( filename::String, list::VecPolygon2F,
+function  cairo_setup( filename::String, list::Vector{PntSeq2F},
                        f_pdf::Bool = true )
     bb, bbo = compute_bounding_boxes( list );
     iheight, iwidth = get_image_dims( bbo );
@@ -306,7 +305,7 @@ end
 
 function  cairo_setup( filename::String, top_right::Point2F,
                        f_pdf::Bool = true )
-    P = Polygon2F();
+    P = PntSeq2F();
     push!( P, Point2F( 0.0, 0.0 ) );
     push!( P, top_right );
 
@@ -315,7 +314,7 @@ function  cairo_setup( filename::String, top_right::Point2F,
 end
 
 function  output_polygons( cr,bb::BBox2F,
-    list::VecPolygon2F,
+    list::Vector{PntSeq2F},
     f_draw_vertices::Bool = false,
     f_matching::Bool = false,
     u_width::Float64 = 3.0,
@@ -357,7 +356,7 @@ function  output_polygons( cr,bb::BBox2F,
         set_line_width(cr, 0.9*u_width);
         set_source_rgb( cr, 1.0, 0.0, 0.0 );
         for  poly in  list
-            draw_polygon_vertices( cr, poly, cg.width( bb) / 200  );
+            draw_polygon_vertices( cr, poly, BasicCompGeometry.width( bb) / 200  );
         end
     end
 
@@ -366,12 +365,12 @@ function  output_polygons( cr,bb::BBox2F,
         font_face::String = "Sans" #
         Cairo.select_font_face( cr, font_face, Cairo.FONT_SLANT_NORMAL,
             Cairo.FONT_WEIGHT_NORMAL)
-        w = cg.width( bb );
+        w = BasicCompGeometry.width( bb );
         font_size = w/40
         Cairo.set_font_size( cr, font_size )
 
         # Move to the position where text will be drawn
-        pc = cg.bbox.bottom_left( bb );
+        pc = bottom_left( bb );
         Cairo.move_to( cr, pc[1] + font_size, pc[2] + font_size );
         
         # Show the text
@@ -381,7 +380,7 @@ function  output_polygons( cr,bb::BBox2F,
 end
 
 
-function  output_polygons_to_file(  list::VecPolygon2F, filename,
+function  output_polygons_to_file(  list::Vector{PntSeq2F}, filename,
                                     f_pdf::Bool,
                                     f_draw_vertices::Bool = false,
                                     f_matching::Bool = false;
@@ -427,7 +426,7 @@ function  output_polygons_to_file(  list::VecPolygon2F, filename,
         set_line_width(cr, 0.9*u_width);
         set_source_rgb( cr, 1.0, 0.0, 0.0 );
         for  poly in  list
-            draw_polygon_vertices( cr, poly, cg.width( bb) / 200  );
+            draw_polygon_vertices( cr, poly, BasicCompGeometry.width( bb) / 200  );
         end
     end
 
@@ -452,7 +451,7 @@ end
 
 
 function  output_polygons_to_file_with_offsets(
-    list::VecPolygon2F,
+    list::Vector{PntSeq2F},
     loffs::VecVecFloat,
     filename,
     f_pdf::Bool,
@@ -462,9 +461,9 @@ function  output_polygons_to_file_with_offsets(
 
     c,cr,bb = cairo_setup( filename, list, f_pdf );
 
-    u_width::Float64 = 1024.0 * (cg.width( bb) / 4500.0);
+    u_width::Float64 = 1024.0 * (BasicCompGeometry.width( bb) / 4500.0);
 
-    cg.bbox.print( bb );
+    println( bb );
     set_source_rgb(cr,0.9,0.9,0.9);    # light gray
 #    set_line_width(cr, 10.0);
     set_source_rgba(cr, 1, 0.2, 0.2, 0.6);
@@ -514,7 +513,7 @@ function  output_polygons_to_file_with_offsets(
         set_line_width(cr, 2.0*u_width);
         set_source_rgb( cr, 1.0, 0.0, 0.0 );
         for  poly in  list
-            draw_polygon_vertices( cr, poly, cg.width( bb) / 200  );
+            draw_polygon_vertices( cr, poly, BasicCompGeometry.width( bb) / 200  );
         end
     end
 
@@ -572,7 +571,7 @@ end
 
 
 function  draw_frames( cr, sp::Segment2F, sq::Segment2F,
-                       frames::Int64, P::Polygon2F, Q::Polygon2F, bb::BBox2F )
+                       frames::Int64, P::PntSeq2F, Q::PntSeq2F, bb::BBox2F )
 
     delta::Float64 = 1.0 / (frames -1 );
     t::Float64 = 0.0;
@@ -603,13 +602,13 @@ end
 
 function  compute_frames( pout, qout, total_frames )
 #    println( "TOTAL FRAMES :", total_frames );
-    lpout::Vector{Float64} = Polygon_prefix_lengths( pout )
-    lqout::Vector{Float64} = Polygon_prefix_lengths( qout )
+    lpout::Vector{Float64} = prefix_lengths( pout )
+    lqout::Vector{Float64} = prefix_lengths( qout )
 
     lens::Vector{Float64} = lpout + lqout;
 
     steps::Int64 = length( lens ) - 1;
-    total_length = last( lens );
+    geom_length = last( lens );
 
 
     # compute how many frames for each leg...
@@ -623,7 +622,7 @@ function  compute_frames( pout, qout, total_frames )
             continue;
         end
         acc += leg_len;
-        num_pnts = round( Int64, total_frames * leg_len / total_length );
+        num_pnts = round( Int64, total_frames * leg_len / geom_length );
 #        println( "num_pnts: ", num_pnts );
         if  num_pnts > 0
             acc = 0;
@@ -632,7 +631,7 @@ function  compute_frames( pout, qout, total_frames )
         end
 
         # Very short edge...
-        num_pnts = round( Int64, total_frames * acc / total_length );
+        num_pnts = round( Int64, total_frames * acc / geom_length );
         if  ( num_pnts == 0 )
             continue; # skip it....
         end
@@ -672,13 +671,13 @@ function  output_frechet_movie( m::Morphing{N,T},
         exit( -1 );
     end
 
-    lpout::Vector{Float64} = Polygon_prefix_lengths( pout )
-    lqout::Vector{Float64} = Polygon_prefix_lengths( qout )
+    lpout::Vector{Float64} = prefix_lengths( pout )
+    lqout::Vector{Float64} = prefix_lengths( qout )
 
     lens::Vector{Float64} = lpout + lqout;
 
     steps = length( lens ) - 1;
-    total_length = last( lens );
+    geom_length = last( lens );
     #println( lens );
 
 
@@ -759,13 +758,13 @@ function   draw_image_frame( cm::ContextMovie, P, Q, rf::RecFrame )
     draw_polygon( cr, P );
     if   ( cm.f_show_vertices )
         set_source_rgb(cr, 0.0, 1.0, 0.0 );
-        draw_polygon_vertices( cr, P, cg.width( cm.bb ) / 200 );
+        draw_polygon_vertices( cr, P, BasicCompGeometry.width( cm.bb ) / 200 );
     end
     set_source_rgb(cr, 0.0, 0.0, 0.8 );
     draw_polygon( cr, Q );
     if   ( cm.f_show_vertices )
         set_source_rgb(cr, 0.0, 0.0, 1.0 );
-        draw_polygon_vertices( cr, Q, cg.width( cm.bb ) / 200 );
+        draw_polygon_vertices( cr, Q, BasicCompGeometry.width( cm.bb ) / 200 );
     end
 
     set_line_width(cr, 10.5);
@@ -783,7 +782,7 @@ end
 
 
 function  draw_frames_images( cm::ContextMovie, sp::Segment2F, sq::Segment2F,
-    frames::Int64, P::Polygon2F, Q::Polygon2F, vec::Vector{RecFrame}  )
+    frames::Int64, P::PntSeq2F, Q::PntSeq2F, vec::Vector{RecFrame}  )
 
     delta::Float64 = 1.0 / (frames -1 );
     t::Float64 = 0.0;
@@ -924,7 +923,7 @@ end
 mutable struct ORecFrame
     frame::Int64
     t::Float64
-    R::Polygon2F
+    R::PntSeq2F
 end
 
 
@@ -967,7 +966,7 @@ end
 mutable struct ORecFrame
     frame::Int64
     t::Float64
-    R::Polygon2F
+    R::PntSeq2F
 end
 
 """
@@ -997,7 +996,7 @@ function   draw_image_frame_o( cm::ContextMovie, P, Q, rf::ORecFrame )
     draw_polygon( cr, rf.R );
     if   ( cm.f_show_vertices )
         set_source_rgb(cr, 0.0, 1.0, 0.0 );
-        draw_polygon_vertices( cr, rf.R, cg.width( cm.bb ) / 200 );
+        draw_polygon_vertices( cr, rf.R, BasicCompGeometry.width( cm.bb ) / 200 );
     end
     Cairo.stroke( cr );
 
@@ -1043,7 +1042,7 @@ function  output_ortho_frechet_movie_mp4( m::Morphing{N,T},
 
     # We first calculate the frames we need... into vec_rf...
     for  i in 1:total_frames
-        R = Polygon_convex_comb( pout, qout, t );
+        R = PntSeq( [ convex_comb( p, q, t ) for ( p, q ) in zip( pout, qout ) ] );
 
         ofr = ORecFrame( i, t, R );
         push!( vec_rf, ofr );
@@ -1064,10 +1063,10 @@ function  output_ortho_frechet_movie_mp4( m::Morphing{N,T},
 end
 
 
-function  get_diagram_locs( PE::Vector{EventPoint{N,T}}, P::Polygon{N,T}
+function  get_diagram_locs( PE::Vector{EventPoint{N,T}}, P::PntSeq{N,T}
                             ) where {N,T}
 
-    prefixes::Vector{Float64} = Polygon_prefix_lengths( P )
+    prefixes::Vector{Float64} = prefix_lengths( P )
 
     pout = Vector{T}()
 
@@ -1100,13 +1099,13 @@ function  output_frechet_diagram( m::Morphing{N,T}, filename )  where {N,T}
     Q_coords::Vector{T} = get_diagram_locs( m.qes, m.Q );
 
     len = length( P_coords );
-    poly = Polygon2F();
+    poly = PntSeq2F();
     for  i in 1:len
-        push_smart!( poly, npoint( P_coords[ i ], Q_coords[ i ] ) );
+        push_distinct!( poly, point( P_coords[ i ], Q_coords[ i ] ) );
     end
 
-    psum::Vector{Float64} = Polygon_prefix_lengths( m.P )
-    qsum::Vector{Float64} = Polygon_prefix_lengths( m.Q )
+    psum::Vector{Float64} = prefix_lengths( m.P )
+    qsum::Vector{Float64} = prefix_lengths( m.Q )
 
     c,cr,bb = cairo_setup( filename, [ poly ], true );
 

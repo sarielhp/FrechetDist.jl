@@ -6,12 +6,8 @@ using TimerOutputs
 using Printf
 using CSV, DataFrames
 using FrechetDist
-using FrechetDist.cg
-using FrechetDist.cg.point
-using FrechetDist.cg.polygon
-
-
-
+using BasicCompGeometry
+import BasicCompGeometry: write_plt
 ######################################################################
 
 function  plt_convert( filename, target )
@@ -21,15 +17,15 @@ function  plt_convert( filename, target )
     end
     df=CSV.read( filename, DataFrame )
 
-    poly = Polygon2F();
+    poly = PntSeq2F();
     for  i in 1:nrow(df)
         #println( typeof( df[i,1] ) );
         #println( typeof( df[i,2] ) );
 
-        pnt = npoint( df[i,1],  df[i,2] );
+        pnt = point( df[i,1],  df[i,2] );
         push!( poly, pnt );
     end
-    write_to_file( poly, target );
+    write_plt( target, poly );
     #println( p );
     #exit( -1 );
 end

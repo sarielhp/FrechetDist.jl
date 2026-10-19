@@ -6,7 +6,9 @@ using TimerOutputs
 using Printf
 using CSV, DataFrames
 using FrechetDist
-using FrechetDist.cg
+using BasicCompGeometry
+import BasicCompGeometry: write_plt
+using BasicCompGeometry.ReadWrite: read_geolife_plt
 using PrettyTables
 
 
@@ -22,9 +24,9 @@ function  plt_convert( filename )
     if   s != "Geolife trajectory"
         return
     end
-    p = Polygon_read_plt_orig_file( filename );
+    p = read_geolife_plt( filename );
     println( "Rewriting: ", filename );
-    Polygon_write_to_file( p, filename );
+    write_plt( filename, p );
 end
 
 function  plt_convert_in_file( filename )

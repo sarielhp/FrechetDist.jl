@@ -3,9 +3,8 @@
 push!(LOAD_PATH, pwd()*"/src/")
 
 using FrechetDist
-using FrechetDist.cg
-using FrechetDist.cg.point
-using FrechetDist.cg.polygon
+using BasicCompGeometry
+import BasicCompGeometry: write_plt
 using CSV, DataFrames
 using Downloads
 using Dates, Printf;
@@ -13,7 +12,7 @@ using Dates, Printf;
 function  convert( filename, out )
     df = CSV.read( filename, DataFrame );
     
-    P = Polygon2F();
+    P = PntSeq2F();
     #@assert( length(x) == length(y) )
     for  i ∈ 1:nrow( df )
         if  ismissing( df.latitude[ i ] )
@@ -24,10 +23,10 @@ function  convert( filename, out )
         end
         x_p = Float64( df.latitude[ i ] );
         y_p = Float64( df.longitude[ i ] );
-        push!( P, npoint( y_p, x_p ) );
+        push!( P, point( y_p, x_p ) );
     end
     #exit( -1 );
-    write_to_file( P, out );
+    write_plt( out, P );
     println( "Out length: ", length( P ) );
 end
 

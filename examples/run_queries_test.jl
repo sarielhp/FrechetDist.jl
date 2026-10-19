@@ -6,9 +6,9 @@ using TimerOutputs
 using Printf
 using CSV, DataFrames
 using FrechetDist
-using FrechetDist.cg
-using FrechetDist.cg.polygon
-using FrechetDist.cg.point
+using BasicCompGeometry
+import FrechetDist: read_file
+import BasicCompGeometry: cardin, width
 using PrettyTables
 using Base.Threads
 using Profile
@@ -23,7 +23,7 @@ AtomicInt = Threads.Atomic{Int}
 
 struct  PolygonsInDir
     PHA::Vector{PolygonHierarchy};
-    polys::Vector{Polygon2F};
+    polys::Vector{PntSeq2F};
     widths::Vector{Float64};
     d::Dict{String, Integer};
     lock::ReentrantLock
@@ -42,7 +42,7 @@ end
 
 function  PID_init()
     return  PolygonsInDir( Vector{PolygonHierarchy}(),
-                       Vector{Polygon2F}(), Vector{Float64}(),
+                       Vector{PntSeq2F}(), Vector{Float64}(),
         Dict( "empty" => -1 ), ReentrantLock(),
      ReentrantLock() )
 end
@@ -57,7 +57,7 @@ function   PID_read_polygon( PID::PolygonsInDir,
         return  false
     end
 
-    poly = polygon.read_file( filename )
+    poly = read_file( filename )
     width = frechet_width_approx( poly )
 
     if  ( cardin( poly ) <= 1 )
@@ -199,11 +199,11 @@ function frechet_decider_PID_slow( PID, i, j, r )::Int64
     P = PID.polys[ i ];
     Q = PID.polys[ j ];
 
-    l_a =  Dist( first( P ), first( Q ) )
+    l_a =  dist( first( P ), first( Q ) )
     if  l_a > r
         return  1;
     end
-    l_b = Dist( last( P ), last( Q ) )
+    l_b = dist( last( P ), last( Q ) )
     if  l_b > r
         return  1;
     end
@@ -249,10 +249,10 @@ function frechet_decider_PID( PID::PolygonsInDir, i::Int64,
     PA = P_orig = PID.polys[ i ];
     QA = Q_orig = PID.polys[ j ];
 
-    l_b =  Dist( first( PA ), first( QA ) )
+    l_b =  dist( first( PA ), first( QA ) )
     ( l_b > r )  &&   return  1;
 
-    l_b = max( l_b, Dist( last( PA ), last( QA ) ) )
+    l_b = max( l_b, dist( last( PA ), last( QA ) ) )
     ( l_b > r )   &&   return  1;
 
     P_ph = PID.PHA[ i ];
@@ -396,11 +396,11 @@ function frechet_decider_PID_new( PID, i, j, r )::Int64
 
     f_debug  &&  println( "|P|: ", cardin( P ), " |Q|: ", cardin( Q ) )
 
-    l_a =  Dist( first( P ), first( Q ) )
+    l_a =  dist( first( P ), first( Q ) )
     if  l_a > r
         return  1;
     end
-    l_b = Dist( last( P ), last( Q ) )
+    l_b = dist( last( P ), last( Q ) )
     if  l_b > r
         return  1;
     end
@@ -525,7 +525,7 @@ function frechet_decider_PID_new( PID, i, j, r )::Int64
 end
 
 
-function frechet_decider( P::Polygon{D,T}, Q::Polygon{D,T},
+function frechet_decider( P::PntSeq{D,T}, Q::PntSeq{D,T},
     r, w_P::Float64 = -1.0, w_Q::Float64 = -1.0,
     f_use_widths::Bool = false;
 )::Int64  where {D,T}
@@ -533,11 +533,11 @@ function frechet_decider( P::Polygon{D,T}, Q::Polygon{D,T},
 
     f_debug  &&  println( "|P|: ", cardin( P ), " |Q|: ", cardin( Q ) )
 
-    l_a =  Dist( first( P ), first( Q ) )
+    l_a =  dist( first( P ), first( Q ) )
     if  l_a > r
         return  1;
     end
-    l_b = Dist( last( P ), last( Q ) )
+    l_b = dist( last( P ), last( Q ) )
     if  l_b > r
         return  1;
     end

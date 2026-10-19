@@ -3,10 +3,9 @@
 push!(LOAD_PATH, pwd()*"/src/")
 
 using FrechetDist
-using FrechetDist.cg
-using FrechetDist.cg.point
-using FrechetDist.cg.polygon
-using FrechetDist.cg.segment
+using BasicCompGeometry
+import BasicCompGeometry: cardin
+import FrechetDist: read_file
 using Profile
 using InteractiveUtils
 using Plots, Printf;
@@ -15,7 +14,7 @@ include( "graphics.jl" )
 
 ######################################################################
 
-function frechet_comp( P::Polygon{D,T}, Q::Polygon{D,T},
+function frechet_comp( P::PntSeq{D,T}, Q::PntSeq{D,T},
                        approx::Float64, prefix 
      )::Int64  where {D,T}
     println( "|P|:", cardin( P ), "  |Q| :", cardin( Q ) );

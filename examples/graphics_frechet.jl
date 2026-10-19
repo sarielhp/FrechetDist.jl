@@ -1,4 +1,6 @@
 # Graphics_frechet.jl
+using BasicCompGeometry
+import BasicCompGeometry: cardin, prefix_lengths, push_distinct!
 
 using Parameters
 using Distributions;
@@ -78,13 +80,13 @@ function  output_frechet_movie( m::Morphing{N,T},
         exit( -1 );
     end
 
-    lpout::Vector{Float64} = Polygon_prefix_lengths( pout )
-    lqout::Vector{Float64} = Polygon_prefix_lengths( qout )
+    lpout::Vector{Float64} = prefix_lengths( pout )
+    lqout::Vector{Float64} = prefix_lengths( qout )
 
     lens::Vector{Float64} = lpout + lqout;
 
     steps = length( lens ) - 1;
-    total_length = last( lens );
+    geom_length = last( lens );
     #println( lens );
 
 
@@ -264,7 +266,7 @@ function  output_ortho_frechet_movie_mp4( m::Morphing{N,T},
 
     # We first calculate the frames we need... into vec_rf...
     for  i in 1:total_frames
-        R = Polygon_convex_comb( pout, qout, t );
+        R = PntSeq( [ convex_comb( p, q, t ) for ( p, q ) in zip( pout, qout ) ] );
 
         ofr = ORecFrame( i, t, R );
         push!( vec_rf, ofr );
@@ -292,13 +294,13 @@ function  output_frechet_diagram( m::Morphing{N,T}, filename )  where {N,T}
     Q_coords::Vector{T} = get_diagram_locs( m.qes, m.Q );
 
     len = length( P_coords );
-    poly = Polygon2F();
+    poly = PntSeq2F();
     for  i in 1:len
-        push_smart!( poly, npoint( P_coords[ i ], Q_coords[ i ] ) );
+        push_distinct!( poly, point( P_coords[ i ], Q_coords[ i ] ) );
     end
 
-    psum::Vector{Float64} = Polygon_prefix_lengths( m.P )
-    qsum::Vector{Float64} = Polygon_prefix_lengths( m.Q )
+    psum::Vector{Float64} = prefix_lengths( m.P )
+    qsum::Vector{Float64} = prefix_lengths( m.Q )
 
     c,cr,bb = cairo_setup( filename, [ poly ], true );
 
@@ -329,10 +331,10 @@ function  output_frechet_diagram( m::Morphing{N,T}, filename )  where {N,T}
 end
 
 
-function  get_diagram_locs( PE::Vector{EventPoint{N,T}}, P::Polygon{N,T}
+function  get_diagram_locs( PE::Vector{EventPoint{N,T}}, P::PntSeq{N,T}
                             ) where {N,T}
 
-    prefixes::Vector{Float64} = Polygon_prefix_lengths( P )
+    prefixes::Vector{Float64} = prefix_lengths( P )
 
     pout = Vector{T}()
 

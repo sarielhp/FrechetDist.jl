@@ -3,10 +3,8 @@
 push!(LOAD_PATH, pwd()*"/src/")
 
 using FrechetDist
-using FrechetDist.cg
-using FrechetDist.cg.point
-using FrechetDist.cg.polygon
-using FrechetDist.cg.segment
+using BasicCompGeometry
+import FrechetDist: read_file
 using Profile
 using InteractiveUtils
 using Plots;
@@ -15,7 +13,7 @@ include( "graphics.jl" )
 
 ######################################################################
 
-function do_profiles( polys::Vector{Polygon{D,T}} )  where {D,T}
+function do_profiles( polys::Vector{PntSeq{D,T}} )  where {D,T}
     ratio::Float64 = 5.0;
 
     M = Vector{Morphing{D,T}}()
@@ -45,7 +43,7 @@ end
 
 num_args = length( ARGS );
 
-polys = Vector{Polygon2F}()
+polys = Vector{PntSeq2F}()
 
 if   num_args > 1
     for  i  in 1:num_args

@@ -4,11 +4,9 @@ push!(LOAD_PATH, pwd()*"/src/")
 
 using Cairo
 using FrechetDist
-using FrechetDist.cg
-using FrechetDist.cg.point
-using FrechetDist.cg.polygon
-using FrechetDist.cg.bbox
-using FrechetDist.cg.polygon_hausdorff
+using BasicCompGeometry
+import BasicCompGeometry: translate!, bound!
+import FrechetDist: read_file
 using Parameters
 
 include( "graphics.jl" )
@@ -19,24 +17,24 @@ function  plt_show( ARGS )
     if  num_args == 0  return  end
 
 
-    list = VecPolygon2F();
+    list = Vector{PntSeq2F}();
     bb = BBox2F();
     for  i in 1:num_args
         println( "Reading: ", ARGS[ i ] );
         poly_a = read_file( ARGS[ i ] );
         push!( list, poly_a );
-        bbox.bound( bb, poly_a );
+        bound!( bb, poly_a );
     end
-    p = bbox.bottom_left( bb );
+    p = bottom_left( bb );
     for  poly  in list
-        Polygon_translate!( poly, p );
+        translate!( poly, -p );
     end
 
-    out = VecPolygon2F();
+    out = Vector{PntSeq2F}();
     P =  list[ 1 ];
     push!( out, P );
 
-    r = Dist( first( P ), last( P ) ) / 30.0;
+    r = dist( first( P ), last( P ) ) / 30.0;
     Q =  hausdorff_simplify( P, r )[1];
     push!( out, Q );
 

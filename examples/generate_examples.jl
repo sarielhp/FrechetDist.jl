@@ -18,11 +18,38 @@ using PrettyTables
 using Dates
 
 using FrechetDist
-using FrechetDist.cg
-using FrechetDist.cg.point
-using FrechetDist.cg.segment
-using FrechetDist.cg.polygon
-using FrechetDist.cg.bbox
+using BasicCompGeometry
+import BasicCompGeometry: translate!, scale!, push_distinct!, write_plt, at, cardin, prefix_lengths, width, height, bound!, middle
+import FrechetDist: read_file
+import FrechetDist: Polygon_sample_uniformly
+
+# Appends the points f( r ), for r in range, to P.
+function  fill_curve( P::PntSeq{D,T}, f, range ) where {D,T}
+    for  r in range
+        push!( P, Point{D,T}( f( r )... ) );
+    end
+    return  P;
+end
+
+# Length of the ith edge of P, or zero if there is no such edge.
+function  edge_length( P::PntSeq{D,T}, i::Int64 ) where {D,T}
+    ( i < 1  ||  i >= cardin( P ) )  &&  return  0.0;
+    return  dist( P[ i ], P[ i + 1 ] );
+end
+
+# P with a new vertex in the middle of its ith edge.
+function  split_single_edge( P::PntSeq{D,T}, i::Int64 ) where {D, T}
+    i = clamp( i, 1, cardin( P ) - 1 );
+    Q = PntSeq{D,T}();
+    for t in 1:i
+        push_distinct!( Q, P[ t ] );
+    end
+    push_distinct!( Q, ( P[ i ] + P[ i+1 ] ) / 2.0 );
+    for t in i+1:cardin( P )
+        push_distinct!( Q, P[ t ] );
+    end
+    return  Q;
+end
 #using cg
 
 include( "fr_examples.jl" )
@@ -123,7 +150,7 @@ function  run_on_curves( poly_a, poly_b )
 
     println( "Computing translated distance..." );
     P = deepcopy( poly_a );
-    Polygon_translate!( P, -1.0 * first(poly_b) )
+    translate!( P, first( poly_b ) )
     m, iters = frechet_ve_r_compute( P, poly_b );
     println( "   Translated : ", m.leash, "  ", iters );
 #    m, iters = frechet_ve_r_compute( poly_a, poly_b );
@@ -133,9 +160,9 @@ end
 
 function  run_on_curves_files( filename_a, filename_b )
     println( "Reading curve: ", filename_a );
-    poly_a = polygon.read_file( filename_a );
+    poly_a = read_file( filename_a );
     println( "Reading curve: ", filename_b );
-    poly_b = polygon.read_file( filename_b );
+    poly_b = read_file( filename_b );
 
     return  run_on_curves( poly_a, poly_b );
 end
@@ -149,7 +176,7 @@ end
 
 function  collect_arrows( xs, ys, vx, vy,
                           p::Point2F, q::Point2F )
-    if  ( Dist(p, q ) == 0 )
+    if  ( dist(p, q ) == 0 )
         return;
     end
     push!( xs, p[1] );
@@ -175,26 +202,26 @@ end
 Return the location in the Frechet free space diagram, of the edge-vertex
 event between the edge P{i:i+1] and the vertex Q[j]
 """
-function  diagram_get_ev_loc( P::Polygon{N,T}, Q::Polygon{N,T},
+function  diagram_get_ev_loc( P::PntSeq{N,T}, Q::PntSeq{N,T},
     pl::Vector{T}, ql::Vector{T},
     i::Int64, j::Int64 ) where  {N,T}
     seg = Segment( P[ i ], P[ i + 1 ] );
     p = nn_point( seg, Q[ j ] );
-    x = pl[ i ] + Dist( P[ i ], p )
+    x = pl[ i ] + dist( P[ i ], p )
     y = ql[ j ]
 
-    return npoint( x, y );
+    return point( x, y );
 end
 
-function  diagram_get_ve_loc( P::Polygon{N,T}, Q::Polygon{N,T},
+function  diagram_get_ve_loc( P::PntSeq{N,T}, Q::PntSeq{N,T},
     pl::Vector{T}, ql::Vector{T},
     i::Int64, j::Int64 ) where {N,T}
     seg = Segment( Q[ j ], Q[ j + 1 ] );
     q = nn_point( seg, P[ i ] );
     x = pl[ i ]
-    y = ql[ j ] + Dist( Q[ j ], q )
+    y = ql[ j ] + dist( Q[ j ], q )
 
-    return  npoint( x, y );
+    return  point( x, y );
 end
 
 
@@ -205,7 +232,7 @@ end
 
 
 function  plot_curves_diagram(
-    P::Polygon2F, Q::Polygon2F,
+    P::PntSeq2F, Q::PntSeq2F,
     filename_diagram,
     f_draw_c::Bool = false,
     f_draw_ve::Bool = true,
@@ -226,14 +253,14 @@ function  plot_curves_diagram(
         p_last = cardin(P)-1;
         q_last = cardin(Q)-1;
 
-        pnt_start::Point2F = npoint( 0.0, 0.0 );
-        pnt_end::Point2F = npoint( total_length( P ), total_length( Q ) );
+        pnt_start::Point2F = point( 0.0, 0.0 );
+        pnt_end::Point2F = point( geom_length( P ), geom_length( Q ) );
 
         pnts = Vector{Point2F}();
-        s_a = npoint( 0.0, 0.0 );
-        s_b = npoint( 0.0, 0.0 );
-        t_a = npoint( 0.0, 0.0 );
-        t_b = npoint( 0.0, 0.0 );
+        s_a = point( 0.0, 0.0 );
+        s_b = point( 0.0, 0.0 );
+        t_a = point( 0.0, 0.0 );
+        t_b = point( 0.0, 0.0 );
         counter::Int64 = 0;
         width = 1;
         ucolor = :pink;
@@ -256,7 +283,7 @@ function  plot_curves_diagram(
                 f_use_t_a::Bool = (j < q_last);
                 f_use_t_b::Bool = (i < p_last);
                 if  ( i == p_last )  &&  ( j == q_last )
-                    t_a = t_b = npoint( last( pl ), last( ql ) );
+                    t_a = t_b = point( last( pl ), last( ql ) );
                     f_use_t_a = f_use_t_b = true;
                 else
                     t_a = diagram_get_ev_loc( P, Q, pl, ql, i, j + 1 )
@@ -290,14 +317,14 @@ function  plot_curves_diagram(
         sort!( pnts );
         unique!( pnts );
 
-        m_pnts = VecPnts_as_matrix( pnts );
+        m_pnts = reduce( hcat, pnts );
         scatter!( plt, m_pnts[1,:], m_pnts[2,:], mc=:yellow, lc=:darkgreen,
             ms=4, ma=1.0 );
 
         end_pnts = Vector{Point2F}();
         push!( end_pnts, pnt_start, pnt_end );
 
-        m_end_pnts = VecPnts_as_matrix( end_pnts );
+        m_end_pnts = reduce( hcat, end_pnts );
 
 
         scatter!( plt, m_end_pnts[1,:], m_end_pnts[2,:], mc=:red,
@@ -314,7 +341,7 @@ function  plot_curves_diagram(
         if  ( f_draw_c )
             m_c = frechet_c_compute( P, Q );
             p_c_diag = Morphing_extract_prm( m_c );
-            m_c_diag = Polygon_as_matrix( p_c_diag );
+            m_c_diag = Matrix( p_c_diag );
             plot!(plt, m_c_diag[1,:], m_c_diag[2,:],
                 linewidth=2, label=:none, ticks=false,
                 showaxis=false, grid=:false,
@@ -323,7 +350,7 @@ function  plot_curves_diagram(
         if  ( f_draw_ve )
             m_ve = frechet_ve_r_compute( P, Q );
             p_ve_diag = Morphing_extract_prm( m_ve );
-            m_ve_diag = Polygon_as_matrix( p_ve_diag );
+            m_ve_diag = Matrix( p_ve_diag );
 
             plot!(plt, m_ve_diag[1,:], m_ve_diag[2,:],
                 linewidth=4,
@@ -332,7 +359,7 @@ function  plot_curves_diagram(
             if  ( f_draw_monotone )
                 mrp_ve_m = Morphing_monotonize( m_ve );
                 p_ve_m = Morphing_extract_prm( mrp_ve_m );
-                m_ve_m = Polygon_as_matrix( p_ve_m );
+                m_ve_m = Matrix( p_ve_m );
                 plot!(plt, m_ve_m[1,:], m_ve_m[2,:],
                     linewidth=4,
                     label=:none, ticks=false, showaxis=false,
@@ -363,10 +390,10 @@ function  plot_curves_diagram(
     #------------------------------------------------------------------------
 
     function  fz(x,y)
-        p = Polygon_get_point_on( P, pl, x );
-        q = Polygon_get_point_on( Q, ql, y );
+        p = at( P, x / last( pl ) );
+        q = at( Q, y / last( ql ) );
 
-        return Dist( p, q );
+        return dist( p, q );
     end
     ### sub-function fz end
     #------------------------------------------------------------------------
@@ -376,11 +403,11 @@ function  plot_curves_diagram(
 
     f_debug  && println( "Getting ready to draw heatmap/graph/curves..." );
 
-    len_P = total_length( P )
-    len_Q = total_length( Q )
+    len_P = geom_length( P )
+    len_Q = geom_length( Q )
 
-    pl = Polygon_prefix_lengths( P );
-    ql = Polygon_prefix_lengths( Q );
+    pl = prefix_lengths( P );
+    ql = prefix_lengths( Q );
 
     x_range = range(0, len_P, length = 200 )
     y_range = range(0, len_Q; length = 200 )
@@ -439,7 +466,7 @@ function  plot_curves_diagram(
 
     if  ( f_m_out_defined )
         p_c_diag = Morphing_extract_prm( m_out );
-        m_c_diag = Polygon_as_matrix( p_c_diag );
+        m_c_diag = Matrix( p_c_diag );
         plot!(plt, m_c_diag[1,:], m_c_diag[2,:],
               linewidth=2, label=:none, ticks=false,
               showaxis=false, grid=:false,
@@ -471,7 +498,7 @@ end
 ########################################################################
 
 
-function  create_movie( P::Polygon{N,T}, Q::Polygon{N,T},
+function  create_movie( P::PntSeq{N,T}, Q::PntSeq{N,T},
     total_frames, filename, m ) where {N,T}
 #    println( "About to compute the Frechet distance..." );
 #    println( "Done!" );
@@ -569,18 +596,18 @@ end
 
 
 function  draw_m_polygon( m::Morphing2F, curves_out )
-    list = VecPolygon2F();
+    list = Vector{PntSeq2F}();
 
     push!( list, deepcopy( m.P ) );
     push!( list, deepcopy( m.Q ) );
 
     bb = BBox2F();
-    bbox.bound( bb, m.P );
-    bbox.bound( bb, m.Q );
+    bound!( bb, m.P );
+    bound!( bb, m.Q );
 
-    p = bbox.bottom_left( bb );
+    p = bottom_left( bb );
     for  poly  in list
-        Polygon_translate!( poly, p );
+        translate!( poly, -p );
     end
 
     output_polygons_to_file( list, curves_out * ".pdf", true, true );
@@ -608,8 +635,8 @@ function  create_demo( title::String,
     f_debug  &&  println( "Cardinality of both polygons: ", cardi );
     total_frames = min( 50 * (cardin( poly_a ) + cardin( poly_b )), 800 );
 
-    write_to_file( poly_a, prefix * "poly_a.txt" );
-    write_to_file( poly_b, prefix * "poly_b.txt" );
+    write_plt( prefix * "poly_a.txt", poly_a );
+    write_plt( prefix * "poly_b.txt", poly_b );
 
     filename_curves = prefix*"curves.pdf";
     f_debug && println( "Outputing the curves..." );
@@ -881,12 +908,12 @@ function  create_demo( title::String,
     # Table...
     row_a = [ "<a href=\"poly_a.txt\">P</a>"
               string( cardin( poly_a ) )
-              string( total_length( poly_a ) ) ]
+              string( geom_length( poly_a ) ) ]
     row_a_x = permutedims( row_a );
 
     row_b =  ["<a href=\"poly_b.txt\">Q</a>"
               string( cardin( poly_b ) )
-              string( total_length( poly_b ) )
+              string( geom_length( poly_b ) )
               ];
     row_b_x = permutedims( row_b );
 
@@ -1215,8 +1242,8 @@ function  create_demo_files( title::String,
         return;
     end
 
-    poly_a = polygon.read_file( f_a );
-    poly_b = polygon.read_file( f_b );
+    poly_a = read_file( f_a );
+    poly_b = read_file( f_b );
     println( "#poly_a: ", cardin( poly_a ) );
     println( "#poly_b: ", cardin( poly_b ) );
     create_demo( title, prefix, poly_a, poly_b, f_draw_c, f_draw_ve, note );
@@ -1255,8 +1282,8 @@ function  gen_example_31()
     uheart(t) = (16*(sin(t))^3,
                  -(13.0*cos(t)-5.0*cos(2*t) -2.0 *cos(3*t) - cos(4.0*t) ) )
 
-    poly_a = Polygon_fill( Polygon2F(), heart, -pi:0.02:pi );
-    poly_b = Polygon_fill( Polygon2F(), uheart, 0:0.02:2.0*pi );
+    poly_a = fill_curve( PntSeq2F(), heart, -pi:0.02:pi );
+    poly_b = fill_curve( PntSeq2F(), uheart, 0:0.02:2.0*pi );
     create_demo( "Example 31:Inverse hearts",
                  "output/31/",
                  poly_a,poly_b,
@@ -1473,8 +1500,8 @@ end
 function  gen_example_37()
     ( ! is_rebuild( "output/37" ) )  &&  return;
 
-    P = polygon.read_file( "data/characters/2335.txt" );
-    Q = polygon.read_file( "data/characters/535.txt" )
+    P = read_file( "data/characters/2335.txt" );
+    Q = read_file( "data/characters/535.txt" )
 
     create_demo( "Example 37", "output/37/",  P, Q,
                  false, true,
@@ -1488,7 +1515,7 @@ function  gen_example_38()
     P = peano_curve( 3 );
     d = 1.0 / length( P );
     Q = hilbert_curve( length( P ) )
-    polygon.shift!( P, npoint( d, 2.0*d ) );
+    translate!( P, point( d, 2.0*d ) );
 
     create_demo( "Example 38", "output/38/",  P, Q,
                  false, true,
@@ -1504,10 +1531,10 @@ function  gen_example_39()
     #d = 1.0 / length( P );
     Q = dragon_curve( 8 );
 
-    bb = bbox.init( Q );
-    shift!( Q, -bbox.bottom_left( bb ) );
-    t = 1.0 / max( bbox.width( bb, 1 ), bbox.width( bb, 2 ) );
-    mult!( Q, t );
+    bb = BBox( Q );
+    translate!( Q, -bottom_left( bb ) );
+    t = 1.0 / max( width( bb, 1 ), width( bb, 2 ) );
+    scale!( Q, t );
 
     #println( typeof( Q ) );
 
@@ -1768,18 +1795,18 @@ function  SW_test()
 
         i,j, mx = Morphing_get_max_edges_err( m );
         println( "Max edge fidelity: ", mx, " (", i, ", ", j, ")" );
-#        PA = Polygon_split_single_edge( m.P, i+1 );
-#        QA = Polygon_split_single_edge( m.Q, j+1 );
+#        PA = split_single_edge( m.P, i+1 );
+#        QA = split_single_edge( m.Q, j+1 );
 
-        l_p = Polygon_edge_length( m.P, i );
-        l_q = Polygon_edge_length( m.Q, j );
+        l_p = edge_length( m.P, i );
+        l_q = edge_length( m.Q, j );
 
         if  l_p > l_q
-            P = Polygon_split_single_edge( m.P, i );
+            P = split_single_edge( m.P, i );
             Q = m.Q;
         else
             P = m.P;
-            Q = Polygon_split_single_edge( m.Q, j );
+            Q = split_single_edge( m.Q, j );
         end
     end
 end

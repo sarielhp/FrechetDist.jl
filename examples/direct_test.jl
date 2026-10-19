@@ -6,7 +6,9 @@ using TimerOutputs
 using Printf
 using CSV, DataFrames
 using FrechetDist
-using FrechetDist.cg
+using BasicCompGeometry
+import FrechetDist: read_file
+import BasicCompGeometry: cardin
 using PrettyTables
 #using cg
 
@@ -45,8 +47,8 @@ function test_files( df::DataFrame, fl_a, fl_b, desc = "" )
 
     tmo = TimerOutput()
 
-    poly_a = Polygon_read_file( fl_a );
-    poly_b = Polygon_read_file( fl_b );
+    poly_a = read_file( fl_a );
+    poly_b = read_file( fl_b );
 
     println( "#P: ", str_int_w_commas( cardin( poly_a ) ) );
     println( "#Q: ", str_int_w_commas( cardin( poly_b ) ) );

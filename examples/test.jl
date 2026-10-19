@@ -2,9 +2,10 @@
 
 push!(LOAD_PATH, pwd()*"/src/")
 
-using FrechetDist, FrechetDist.cg.polygon, FrechetDist.cg.point, Plots
+using FrechetDist, Plots
+using BasicCompGeometry
 
 
-P = Polygon2F() |> (2.0,1.0) |> (2.0, 3.4);
+P = PntSeq( [ point( 2.0, 1.0 ), point( 2.0, 3.4 ) ] );
 
 println( P );

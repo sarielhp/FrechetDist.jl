@@ -3,15 +3,15 @@
 push!(LOAD_PATH, pwd()*"/src/")
 
 using FrechetDist
-using FrechetDist.cg
-using FrechetDist.cg.point
-using FrechetDist.cg.polygon
+using BasicCompGeometry
+import FrechetDist: read_file
+import BasicCompGeometry: cardin
 using Profile
 using InteractiveUtils
 
 ######################################################################
 
-function frechet_comp( P::Polygon{D,T}, Q::Polygon{D,T}
+function frechet_comp( P::PntSeq{D,T}, Q::PntSeq{D,T}
      )::Int64  where {D,T}
     ratio::Float64 = 5.0;
 
@@ -115,8 +115,8 @@ function  test_files( fl_a, fl_b )
     println( fl_a );
     println( fl_b );
     println( "---------------------------------------------" );
-    P = polygon.read_file( fl_a );
-    Q = polygon.read_file( fl_b );
+    P = read_file( fl_a );
+    Q = read_file( fl_b );
 
     #@profile
     #@code_warntype

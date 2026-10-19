@@ -18,7 +18,9 @@ using Printf
 
 
 using FrechetDist
-using FrechetDist.cg
+using BasicCompGeometry
+import FrechetDist: read_file
+import BasicCompGeometry: cardin
 
 
 function search_dir(path,key)
@@ -34,11 +36,11 @@ function find_closest_in_directory( path::String, threshold,
     files=search_dir( path, "plt" );
 
 #    println( "bogi" );
-    polygons = Vector{Polygon2F}();#  polygons;
+    polygons = Vector{PntSeq2F}();#  polygons;
     for  x in files
         filename = path * x;
         print( "Reading: ", filename );
-        poly_a =  Polygon_read_file( filename );
+        poly_a =  read_file( filename );
         push!( polygons,  poly_a );
         println( " #: ", cardin( poly_a ) );
     end
@@ -72,8 +74,8 @@ function find_closest_in_directory( path::String, threshold,
             P = polygons[ i ];
             Q = polygons[ j ];
 #            - widths[ i ] - widths[ j ];
-            d = max( Dist( first( P ), first( Q ) ),
-                     Dist( last( P ), last( Q ) ) );
+            d = max( dist( first( P ), first( Q ) ),
+                     dist( last( P ), last( Q ) ) );
             lb = d
             ub = d + widths[ i ] + widths[ j ];
             @assert( ub > 0.0 );

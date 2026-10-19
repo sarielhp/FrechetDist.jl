@@ -58,8 +58,8 @@ HeapVerticesType = BinaryMinHeap{Tuple{Float64,Int64},};
 
 #@with_kw
 mutable struct FRContext{N,T}
-    P::Polygon{N,T};
-    Q::Polygon{N,T};
+    P::PntSeq{N,T};
+    Q::PntSeq{N,T};
     p_offs::Vector{Float64};
     q_offs::Vector{Float64};
 #    handled::DictHandledType;
@@ -72,7 +72,7 @@ mutable struct FRContext{N,T}
     upper_bound::T
 end
 
-function  FR_Context(P::Polygon{N,T}, Q::Polygon{N,T}) where {N,T}
+function  FR_Context(P::PntSeq{N,T}, Q::PntSeq{N,T}) where {N,T}
 #    d_h = DictHandledType();
     d_ver = DictVERType();
     h = HeapVerticesType();
@@ -94,16 +94,16 @@ function  ve_event_value( c::FRContext{N,T}, id::Int64 ) where {N,T}
 
     if  EID_i_is_vert( id )
         if  EID_j_is_vert( id )
-            d = Dist( P[ i ], Q[ j ] );
+            d = fp_dist( P[ i ], Q[ j ] );
             # Old code: Bug? Missing if check
             if  c.f_offsets
                 penalty = c.p_offs[ i ] - c.q_offs[ j ];
                 return  d - penalty, penalty;
             else
-                return  Dist( P[ i ], Q[ j ] ), 0.0;
+                return  fp_dist( P[ i ], Q[ j ] ), 0.0;
             end
         end
-        d = dist_iseg_nn_point( Q[ j ], Q[ j + 1 ], c.P[ i ] );
+        d = fp_dist_point_segment( c.P[ i ], Q[ j ], Q[ j + 1 ] );
         if  c.f_offsets
 #            if  ( c.q_offs[ j ] > 0 )
 #                println( "Larger than 0!" );
@@ -119,7 +119,7 @@ function  ve_event_value( c::FRContext{N,T}, id::Int64 ) where {N,T}
     end
 
     if  EID_j_is_vert( id )
-        d = dist_iseg_nn_point( P[ i ], P[ i + 1 ], Q[ j ] );
+        d = fp_dist_point_segment( Q[ j ], P[ i ], P[ i + 1 ] );
         if  c.f_offsets
             penalty = max(c.p_offs[ i ], c.p_offs[ i + 1 ] ) + c.q_offs[ j ];
             return  d - penalty, penalty;
@@ -146,27 +146,27 @@ end
                &&  ( EID_j( id ) == ( n_q - 1 ) ) )
 end
 
-function f_r_create_event( R::Polygon{N,T}, i::Integer,
+function f_r_create_event( R::PntSeq{N,T}, i::Integer,
                         is_vert::Bool, qr::Point{N,T} ) where {N,T}
     if  ( is_vert )
         ev = EventPoint( R[ i ], Int64(i), PT_VERTEX, 0.0, 0.0 );
         return  ev;
     end
 
-    p::Point{N,T},t::T = iseg_nn_point_ext( R[ i ], R[ i + 1 ], qr );
+    p::Point{N,T},t::T = fp_nn_point_ext( R[ i ], R[ i + 1 ], qr );
 
 
     #seg = Segment( R[ i ], R[ i + 1 ] );
-    #p = nn_point( seg, qr );
+    #p = fp_nn_point( seg, qr );
     #=
-    if  ( isNaN( p ) )
+    if  ( any( isnan, p ) )
         println( seg );
         println( qr );
         @assert( false );
     end
     =#
 
-    #t::Float64 = Segment_get_convex_coef( seg, p );
+    #t::Float64 = fp_convex_coef( seg, p );
 
     if  ( ! ( 0.0 <= t  &&  t <= 1.0 ) )
         println( R[ i ] );
@@ -185,7 +185,7 @@ function f_r_create_event( R::Polygon{N,T}, i::Integer,
     end
     #        println( "TTT= ", t );
 
-    @assert( ! isNaN( p ) );
+    @assert( ! any( isnan, p ) );
     return  EventPoint( p, Int64(i), PT_ON_EDGE, t, 0.0 );
 end
 
@@ -225,7 +225,7 @@ end
 end
 
 
-function  f_r_extract_solution_basic( P::Polygon{N,T}, Q::Polygon{N,T},
+function  f_r_extract_solution_basic( P::PntSeq{N,T}, Q::PntSeq{N,T},
                                 end_event_id::Int64,
                                 dict::DictVERType
                                 ) where {N,T}
@@ -271,7 +271,7 @@ function  f_r_extract_solution_basic( P::Polygon{N,T}, Q::Polygon{N,T},
     return  pes, qes;
 end
 
-function  f_r_extract_solution( P::Polygon{N,T}, Q::Polygon{N,T},
+function  f_r_extract_solution( P::PntSeq{N,T}, Q::PntSeq{N,T},
                                 end_event_id::Int64,
                                 dict::DictVERType,
                                 c::FRContext{N,T}
@@ -343,7 +343,7 @@ function   eid_same_status( arr::Vector{Int64}, curr::Int64, len::Int64 )
 end
 
 
-function  f_r_extract_solution_ids( P::Polygon{N,T}, Q::Polygon{N,T},
+function  f_r_extract_solution_ids( P::PntSeq{N,T}, Q::PntSeq{N,T},
                                     end_event_id::Int64,
                                     start_event_id::Int64,
                                     dict
@@ -385,13 +385,13 @@ end
 """
 @inline function    max_leash( l_min::T, l_max::T,
                                s_a::Point{N,T}, s_b::Point{N,T},
-                               P::Polygon{N,T}, low,
+                               P::PntSeq{N,T}, low,
                                hi ) where {N,T}
     #seg = Segment( s_a, s_b );
-    len_seg_sq::Float64 = DistSq( s_a, s_b );
+    len_seg_sq::Float64 = fp_dist_sq( s_a, s_b );
     if  ( len_seg_sq == 0.0 )
         for  j in low:hi
-            l_min = max( l_min, Dist( s_a, P[ j ] ) );
+            l_min = max( l_min, fp_dist( s_a, P[ j ] ) );
         end
         return  l_min, max( l_min, l_max );
     end
@@ -399,29 +399,29 @@ end
     max_t = 0.0;
     max_s = s_a;
 
-    seg_len_sq = DistSq( s_a, s_b )  # Squared distance between s_a and s_b
-    s_vec =  sub(s_b, s_a)
+    seg_len_sq = fp_dist_sq( s_a, s_b )  # Squared distance between s_a and s_b
+    s_vec =  s_b - s_a
 
     for  j in low:hi
         p = P[ j ];
 
-        sq, new_t = iseg_nn_point_ext_ext( s_a, s_b, p, seg_len_sq, s_vec );
+        sq, new_t = fp_nn_point_ext_ext( s_a, s_b, p, seg_len_sq, s_vec );
 
-        dst = Dist( sq, p );
+        dst = fp_dist( sq, p );
         l_min = max( l_min, dst );
         if  ( new_t >= max_t )
             max_t = new_t;
-            max_s = sq; #convex_comb( p_a, p_b, max_t );
+            max_s = sq; #fp_convex_comb( p_a, p_b, max_t );
         end
 
-        l_max = max( l_max, Dist( max_s, p ) );
+        l_max = max( l_max, fp_dist( max_s, p ) );
     end
 
     return  l_min, l_max;
 end
 
-function   compute_leash_from_arr( P::Polygon{N,T},
-                                   Q::Polygon{N,T},
+function   compute_leash_from_arr( P::PntSeq{N,T},
+                                   Q::PntSeq{N,T},
                                    arr::Vector{Int64}
                                    ) where {N,T}
     curr::Int64 = 1;
@@ -436,7 +436,7 @@ function   compute_leash_from_arr( P::Polygon{N,T},
         j = EID_j( eid );
 
         if  EID_i_is_vert( eid )  &&  EID_j_is_vert( eid )
-            l_min = max( l_min, Dist( P[ i ], Q[ j ] ) );
+            l_min = max( l_min, fp_dist( P[ i ], Q[ j ] ) );
             curr = curr + 1;
             continue;
         end
@@ -456,8 +456,7 @@ function   compute_leash_from_arr( P::Polygon{N,T},
 
             if ( low == hi )
                 curr = curr + 1;
-                l_min = max( l_min, dist_iseg_nn_point( q_a, q_b,
-                                                P[ EID_i( eid_start ) ] )
+                l_min = max( l_min, fp_dist_point_segment( P[ EID_i( eid_start ) ], q_a, q_b )
                              );
                 continue;
             end
@@ -488,8 +487,7 @@ function   compute_leash_from_arr( P::Polygon{N,T},
             if ( low == hi )
                 curr = curr + 1;
                 l_min = max( l_min,
-                             dist_iseg_nn_point( p_a, p_b,
-                                                Q[ EID_j( eid_start ) ] ) );
+                             fp_dist_point_segment( Q[ EID_j( eid_start ) ], p_a, p_b ) );
                 continue;
             end
 
@@ -515,8 +513,8 @@ end
     Frechet distance.
 
 """
-function   frechet_ve_r_compute_range( P::Polygon{N,T},
-                                       Q::Polygon{N,T},
+function   frechet_ve_r_compute_range( P::PntSeq{N,T},
+                                       Q::PntSeq{N,T},
                                        upper_bound::T
                                        ) where {N,T}
     f_debug::Bool = false;
@@ -576,8 +574,8 @@ end
 #
 # Returns a Morphing that encodes the solution
 ##########################################################################
-function   frechet_ve_r_compute_ext( P::Polygon{N,T},
-                                     Q::Polygon{N,T},
+function   frechet_ve_r_compute_ext( P::PntSeq{N,T},
+                                     Q::PntSeq{N,T},
                                      p_offs::Vector{Float64},
                                      q_offs::Vector{Float64},
                                      f_use_offsets::Bool = false,
@@ -650,7 +648,7 @@ function   frechet_ve_r_compute_ext( P::Polygon{N,T},
 end
 
 
-function   frechet_ve_r_compute( P::Polygon{N,T}, Q::Polygon{N,T} ) where {N,T}
+function   frechet_ve_r_compute( P::PntSeq{N,T}, Q::PntSeq{N,T} ) where {N,T}
     return frechet_ve_r_compute_ext( P, Q, Vector{Float64}(),
                                      Vector{Float64}(), false );
 end
@@ -671,7 +669,7 @@ move to the cloest point on seg to the current point, making sure
 never moving back.
 
 """
-function  frechet_width_approx( P::Polygon{N,T},
+function  frechet_width_approx( P::PntSeq{N,T},
                                 rng::UnitRange{Int64} = 0:0
                                 )::T where {N,T}
     card = cardin( P );
@@ -690,21 +688,21 @@ function  frechet_width_approx( P::Polygon{N,T},
     s_p = P[ first( rng ) ];
     s_q = P[ last( rng ) ];
 
-    seg_len_sq = DistSq( s_p, s_q )
-    s_vec =  sub(s_q, s_p)
+    seg_len_sq = fp_dist_sq( s_p, s_q )
+    s_vec =  s_q - s_p
 
     t::Float64 = 0;
     curr::Point{N,T} = s_p;
     leash::Float64 = 0;
     for  i  in  first(rng)+1:last(rng)-1
-        q,new_t = iseg_nn_point_ext_ext( s_p, s_q, P[ i ], seg_len_sq, s_vec );
-        #q = nn_point( seg, P[ i ] );
-        #new_t = Segment_get_convex_coef( seg, q );
+        q,new_t = fp_nn_point_ext_ext( s_p, s_q, P[ i ], seg_len_sq, s_vec );
+        #q = fp_nn_point( seg, P[ i ] );
+        #new_t = fp_convex_coef( seg, q );
         if  ( new_t > t )
             t = new_t;
             curr = q;
         end
-        leash = max( leash, DistSq( curr, P[ i ] ) );
+        leash = max( leash, fp_dist_sq( curr, P[ i ] ) );
     end
     return  sqrt( leash );
 end
@@ -723,7 +721,7 @@ for every vertex of the subcurve, the frechet distance of this
 subcurve. Thus, providing a fast estimates of the offsets.
 
 """
-function    frechet_offsets( P::Polygon{N,T}, p_indices::Vector{Int64}
+function    frechet_offsets( P::PntSeq{N,T}, p_indices::Vector{Int64}
                              ) where {N,T}
     offs = Vector{Float64}();
 
@@ -758,14 +756,14 @@ picked.
 
 """
 #####################################################################
-function   discrete_frechet_sample( polya::Polygon{N,T},
-                                    polyb::Polygon{N,T},
+function   discrete_frechet_sample( polya::PntSeq{N,T},
+                                    polyb::PntSeq{N,T},
                                     n::Int64,
                                     f_lopt::Bool = true
                                     )    where {N,T}
 #    polya,polyb = example_4()
-    lena = polygon.total_length( polya );
-    lenb = polygon.total_length( polyb );
+    lena = fp_geom_length( polya );
+    lenb = fp_geom_length( polyb );
 
 #    n::Int64 = 100;
     delta = (lena+ lenb)/ n;
@@ -796,8 +794,8 @@ Q[ i ] =P[ p_indices[ i ]].
 
 """
 function    frechet_c_mono_approx_subcurve(
-    P::Polygon{N,T},
-    Q::Polygon{N,T},
+    P::PntSeq{N,T},
+    Q::PntSeq{N,T},
     p_indices::Vector{Int64} ) where {N,T}
 
     offsets = zeros( T, length( p_indices ) );
@@ -820,14 +818,14 @@ function    frechet_c_mono_approx_subcurve(
         seg = Segment( Q[ i ], Q[ i + 1 ] );
         for  j in (pind + 1):(pind_next - 1)
             p = P[ j ];
-            q = nn_point( seg, p );
-            new_t = Segment_get_convex_coef( seg, q );
+            q = fp_nn_point( seg, p );
+            new_t = fp_convex_coef( seg, q );
             if  ( new_t >= max_t )
                 max_t = new_t;
             else # new_t < max_t
-                q = segment.at( seg, max_t )
+                q = fp_at( seg, max_t )
             end
-            max_d = max( max_d, Dist( P[ j ], q ) );
+            max_d = max( max_d, fp_dist( P[ j ], q ) );
             push!( pes, EventPoint( P[ j ], j, PT_VERTEX, 0.0, 0.0 ) );
             push!( qes, EventPoint( q, i, PT_ON_EDGE, max_t, 0.0 ) );
         end
@@ -863,7 +861,7 @@ not seem to be necessary/benefitial from the experimentation we did.
 Output:
      Sorted( t[1]/2, t[1], (t[1]+t[2])/2, t[2],...)
 """
-function   add_points_along_seg( pout::Polygon{N,T},
+function   add_points_along_seg( pout::PntSeq{N,T},
                                  seg::Segment{N,T},
                                  times::Vector{Float64},
                                  n_mid_points::Int64 = 1 ) where {N,T}
@@ -924,7 +922,7 @@ function   add_points_along_seg( pout::Polygon{N,T},
             continue;
         end
         prev = tm;
-        push_smart!( pout, segment.at( seg, tm ) )
+        push_distinct!( pout, fp_at( seg, tm ) )
     end
 end
 
@@ -963,11 +961,11 @@ end
                        rid of non-monotonicity, but the polygons grow
                        faster.
 """
-function  extract_refined_polygon( poly::Polygon{N,T},
+function  extract_refined_polygon( poly::PntSeq{N,T},
                                    s::Vector{EventPoint{N,T}},
                                    points_to_add::Int64 = 1,
                                    delta::Float64 = 0.0 ) where {N,T}
-    pout = Polygon{N,T}()
+    pout = PntSeq{N,T}()
     opnts = Vector{EventPoint{N,T}}();
 
     len = length( s );
@@ -977,7 +975,7 @@ function  extract_refined_polygon( poly::Polygon{N,T},
     while  ( i <= len )
         ep = s[ i ];
         if  ep.type == PT_VERTEX
-            push_smart!( pout, s[i].p );
+            push_distinct!( pout, s[i].p );
             i = i + 1;
             continue;
         end
@@ -999,12 +997,12 @@ function  extract_refined_polygon( poly::Polygon{N,T},
             end
         end
 
-        lnx = Dist( poly[ loc ], poly[ loc + 1 ] );
+        lnx = fp_dist( poly[ loc ], poly[ loc + 1 ] );
 
         if  (  is_monotone_inc( times )
                ||  ( lnx < (delta / 2.0 ) ) )
             for  k in i:j
-                push_smart!( pout, s[k].p );
+                push_distinct!( pout, s[k].p );
             end
             i = j + 1
             continue
@@ -1042,7 +1040,7 @@ function  extract_refined_polygon( poly::Polygon{N,T},
 end
 
 
-function  frechet_refinement( P::Polygon{N,T}, Q::Polygon{N,T},
+function  frechet_refinement( P::PntSeq{N,T}, Q::PntSeq{N,T},
                               m::Morphing{N,T} ) where {N,T}
     poly_a_2 = extract_refined_polygon( P, m.pes, 1 );
     poly_b_2 = extract_refined_polygon( Q, m.qes, 1 );
@@ -1051,7 +1049,7 @@ function  frechet_refinement( P::Polygon{N,T}, Q::Polygon{N,T},
 end
 
 
-function  frechet_mono_via_refinement_ext( Pa::Polygon{N,T}, Qa::Polygon{N,T},
+function  frechet_mono_via_refinement_ext( Pa::PntSeq{N,T}, Qa::PntSeq{N,T},
                                            out::Vector{Morphing{N,T}},
                                            f_snapshots::Bool,
                                            approx::Float64 = 1.00001
@@ -1123,8 +1121,8 @@ function  frechet_mono_via_refinement_ext( Pa::Polygon{N,T}, Qa::Polygon{N,T},
 end
 
 
-function  frechet_mono_via_refinement_delta( Pa::Polygon{N,T},
-    Qa::Polygon{N,T},
+function  frechet_mono_via_refinement_delta( Pa::PntSeq{N,T},
+    Qa::PntSeq{N,T},
     delta::Float64,
     f_fix_prm::Bool = false
 )  where {N,T}
@@ -1219,7 +1217,7 @@ Returns a 4-tuple  ( m, f, P, Q ):
 'out' if specified returns the middle morphings used in computing the
       solution.
 """
-function  frechet_mono_via_refinement( Pa::Polygon{N,T}, Qa::Polygon{N,T},
+function  frechet_mono_via_refinement( Pa::PntSeq{N,T}, Qa::PntSeq{N,T},
                                        approx::Float64 = 1.00001
                                      )  where {N,T}
     ot::Vector{Morphing{N,T}} = Vector{Morphing{N,T}}();
@@ -1240,8 +1238,8 @@ real approximation of the Frechet distance, and should not be used
 otherwise.
 
 """
-function  frechet_dist_upper_bound( poly_a::Polygon{N,T},
-                                    poly_b::Polygon{N,T}
+function  frechet_dist_upper_bound( poly_a::PntSeq{N,T},
+                                    poly_b::PntSeq{N,T}
                                    ) where {N,T}
     w_a = frechet_width_approx( poly_a );
     w_b = frechet_width_approx( poly_b );
@@ -1249,8 +1247,8 @@ function  frechet_dist_upper_bound( poly_a::Polygon{N,T},
           ||  ( cardin( poly_a ) < 2 ) )
         return  w_a + w_b;
     end
-    w = max( Dist( poly_a[ 1 ], poly_b[ 1 ] ),
-             Dist( last( poly_a ), last( poly_b ) ) )
+    w = max( fp_dist( poly_a[ 1 ], poly_b[ 1 ] ),
+             fp_dist( last( poly_a ), last( poly_b ) ) )
     return  w_a + w_b + w;
 end
 
@@ -1262,8 +1260,8 @@ Computing the ver frechet distance, and then monotonize it. No
 guarentee as far as the quality of the distance this realizes...
 
 """
-function  frechet_ve_r_mono_compute( poly_a::Polygon{D,T},
-                                     poly_b::Polygon{D,T} ) where {D,T}
+function  frechet_ve_r_mono_compute( poly_a::PntSeq{D,T},
+                                     poly_b::PntSeq{D,T} ) where {D,T}
     m = frechet_ve_r_compute( poly_a, poly_b );
     mm = Morphing_monotonize( m )
 
@@ -1289,8 +1287,8 @@ ret.leash/ret.ratio is a lower bound on the Frechet distance, while
 ret.leash is an upper bound.
 
 """
-function  frechet_c_approx( poly_a::Polygon{N,T},
-    poly_b::Polygon{N,T}, approx::Float64 )::Morphing{N,T} where {N,T}
+function  frechet_c_approx( poly_a::PntSeq{N,T},
+    poly_b::PntSeq{N,T}, approx::Float64 )::Morphing{N,T} where {N,T}
 
     f_debug::Bool = false;
 
@@ -1309,8 +1307,8 @@ function  frechet_c_approx( poly_a::Polygon{N,T},
     # r: Radius of simplification allowed
     r::Float64 = d/( approx + 4.0 ); #max( d/4, d * min( approx, 1.0 ) );
 
-    P::Polygon{N,T} = poly_a;
-    Q::Polygon{N,T} = poly_b;
+    P::PntSeq{N,T} = poly_a;
+    Q::PntSeq{N,T} = poly_b;
 
     p_indices = Vector{Int64}();
     q_indices = Vector{Int64}();
@@ -1412,9 +1410,9 @@ function  frechet_c_approx( poly_a::Polygon{N,T},
                 println( "Leash lower bound: ", d - 2r );
                 println( "approx ratio          : ",ratio  );
                 println( "Required approximation: ", 1.0 + approx );
-                println( "||P||: ", polygon.total_length( poly_a ),
+                println( "||P||: ", fp_geom_length( poly_a ),
                     "  ||Q||: ",
-                    polygon.total_length( poly_b ) );
+                    fp_geom_length( poly_b ) );
             end
             mm_out.ratio = ratio;
             mm_out.lower_bound = m.leash / ratio;
@@ -1441,7 +1439,7 @@ function  count_below_zero( arr )
 end
 
 
-function  Polygon_simplify_radii_ext( P::Polygon{N,T}, r::Vector{T}
+function  Polygon_simplify_radii_ext( P::PntSeq{N,T}, r::Vector{T}
                                       ) where {N,T}
     f_exact::Bool = false;
     #f_debug  &&  println( "#P :", cardin( P ) );
@@ -1490,7 +1488,7 @@ function  eq( a::Float64, b::Float64, tolerance::Float64 )::Bool
 end
 
 
-function  get_refinement_map( PSR::Polygon{N,T}, PS::Polygon{N,T} ) where {N,T}
+function  get_refinement_map( PSR::PntSeq{N,T}, PS::PntSeq{N,T} ) where {N,T}
     @assert( cardin( PSR ) >= cardin( PS ) );
 
     len = cardin( PSR );
@@ -1582,8 +1580,8 @@ simplification is computed using refinement, so tha the ve_r distance
   But floating point issues require us to pick some value.
 
 """
-function  frechet_c_compute( P::Polygon{N,T},
-                             Q::Polygon{N,T},
+function  frechet_c_compute( P::PntSeq{N,T},
+                             Q::PntSeq{N,T},
                              f_accept_approx::Bool = true,
                              tolerance::Float64  = 0.00001
                              )  where {N,T}
@@ -1608,8 +1606,8 @@ function  frechet_c_compute( P::Polygon{N,T},
         println( "RATIO 2: ", m_rough.ratio, "\nleash: ", m_rough.leash );
     end
 
-    len_a = total_length( P );
-    len_b = total_length( Q );
+    len_a = fp_geom_length( P );
+    len_b = fp_geom_length( Q );
     f_debug  &&  println( "#", cardin( P ) )
     
     approx = min( 1.0 + (len_a + len_b ) / (100.0 * m_rough.leash ), 1.1 );
@@ -1781,7 +1779,7 @@ end
 # Greedy simplification
 
 
-function  find_frechet_prefix_inner( P::Polygon{D,T},
+function  find_frechet_prefix_inner( P::PntSeq{D,T},
     strt::Int64, i::Int64, j::Int64, w::T ) where {D,T}
     if  ( i >= j )  ||  ( (strt + 1) == j )
         return  j; # the width is zero, nothing to do.
@@ -1809,7 +1807,7 @@ function  find_frechet_prefix_inner( P::Polygon{D,T},
     return  find_frechet_prefix_inner( P, strt, mid, j, w );
 end
 
-function  find_frechet_prefix( P::Polygon{D,T}, i::Int64,
+function  find_frechet_prefix( P::PntSeq{D,T}, i::Int64,
     j::Int64, w::T )  where {D,T}
     r = frechet_width_approx( P, i:j )
     if  ( r <= w )
@@ -1818,15 +1816,15 @@ function  find_frechet_prefix( P::Polygon{D,T}, i::Int64,
     return  find_frechet_prefix_inner( P, i, i, j, w );
 end
 
-function  frechet_simplify_to_width( P::Polygon{D,T}, w::T ) where {D,T}
-    pout = Polygon{D,T}();
+function  frechet_simplify_to_width( P::PntSeq{D,T}, w::T ) where {D,T}
+    pout = PntSeq{D,T}();
     pindices = Vector{Int64}();
 
     len = cardin( P );
     if  ( len == 0 )
         return pout;
     end
-    if  ( push_smart!( pout, P[1] ) )
+    if  ( push_distinct!( pout, P[1] ) )
         push!( pindices, 1 );
     end
 
@@ -1847,8 +1845,8 @@ function  frechet_simplify_to_width( P::Polygon{D,T}, w::T ) where {D,T}
 end
 
 
-function  frechet_simplify_to_cardin( P::Polygon{D,T}, sz::Int64 ) where {D,T}
-    pout = Polygon{D,T}();
+function  frechet_simplify_to_cardin( P::PntSeq{D,T}, sz::Int64 ) where {D,T}
+    pout = PntSeq{D,T}();
     pindices = Vector{Int64}();
 
     @assert( cardin( P ) >= 2 );
@@ -1883,7 +1881,7 @@ end
 
 
 
-function  exp_search_width_prefix( P::Polygon{N,T},
+function  exp_search_width_prefix( P::PntSeq{N,T},
                                    start::Int64,
                                    w::Float64 ) where {N,T}
     len = cardin( P );
@@ -1900,15 +1898,15 @@ function  exp_search_width_prefix( P::Polygon{N,T},
 end
 
 
-function  frechet_simplify_w_exp( P::Polygon{D,T}, w::T ) where {D,T}
-    pout = Polygon{D,T}();
+function  frechet_simplify_w_exp( P::PntSeq{D,T}, w::T ) where {D,T}
+    pout = PntSeq{D,T}();
     pindices = Vector{Int64}();
 
     card = cardin( P );
     if  ( card == 0 )
         return pout, pindices;
     end
-    if  ( push_smart!( pout, P[1] ) )
+    if  ( push_distinct!( pout, P[1] ) )
         push!( pindices, 1 );
     end
 

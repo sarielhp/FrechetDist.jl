@@ -147,8 +147,8 @@ function  lt(o::EventsOrder, a::Int64, b::Int64 )
 end
 
 mutable struct FEVERContext{N,T}
-    P::Polygon{N,T};
-    Q::Polygon{N,T};
+    P::PntSeq{N,T};
+    Q::PntSeq{N,T};
 
     eid::EIDCalc;
     vals::Vector{T}   # An array containing all the event values.
@@ -166,13 +166,9 @@ mutable struct FEVERContext{N,T}
     upper_bound::T
 end
 
-function   FEVER_reset_heap( c::FEVERContext )
-    c.heap = BinaryHeap( c.comparator, Vector{Int64}() );
-end
 
-
-function   FEVER_Context(  P::Polygon{N,T},
-    Q::Polygon{N,T} ) where {N,T}
+function   FEVER_Context(  P::PntSeq{N,T},
+    Q::PntSeq{N,T} ) where {N,T}
 
     @assert( ( cardin( P ) > 1 )  &&  ( cardin( Q ) > 1 ) );
 
@@ -182,8 +178,8 @@ function   FEVER_Context(  P::Polygon{N,T},
     vals = fill( T( -1.0 ), mx );
     prev = zeros( Int64, mx );
 
-    vals[ ID_START ] = Dist( first( P ), first( Q ) );
-    vals[ ID_END ] = Dist( last( P ), last( Q ) );
+    vals[ ID_START ] = fp_dist( first( P ), first( Q ) );
+    vals[ ID_END ] = fp_dist( last( P ), last( Q ) );
 
     comparator = EventsOrder{T}( vals );
 
@@ -238,16 +234,16 @@ end
     Q = c.Q
     if  i_is_vert
         if  j_is_vert
-            d = Dist( P[ i ], Q[ j ] );
+            d = fp_dist( P[ i ], Q[ j ] );
         else
-            d = dist_iseg_nn_point( Q[ j ], Q[ j + 1 ], c.P[ i ] );
+            d = fp_dist_point_segment( c.P[ i ], Q[ j ], Q[ j + 1 ] );
         end
         c.vals[ id ] = d;
         return  d;
     end
 
     if  j_is_vert
-        d = dist_iseg_nn_point( P[ i ], P[ i + 1 ], Q[ j ] );
+        d = fp_dist_point_segment( Q[ j ], P[ i ], P[ i + 1 ] );
         c.vals[ id ] = d;
         return  d;
     end
@@ -278,7 +274,7 @@ end
 end
 
 
-function  try_extract_sol_ids( P::Polygon{N,T}, Q::Polygon{N,T},
+function  try_extract_sol_ids( P::PntSeq{N,T}, Q::PntSeq{N,T},
                                  prevArr::Vector{Int64}
                                  )::Bool where {N,T}
     curr = ID_END;
@@ -291,7 +287,7 @@ function  try_extract_sol_ids( P::Polygon{N,T}, Q::Polygon{N,T},
     return  true;
 end
 
-function  fever_extract_sol_ids( P::Polygon{N,T}, Q::Polygon{N,T},
+function  fever_extract_sol_ids( P::PntSeq{N,T}, Q::PntSeq{N,T},
                                  prevArr::Vector{Int64}
                                  ) where {N,T}
     f_debug::Bool = false;
@@ -351,8 +347,8 @@ end
 
 
 function   fever_comp_leash( c::FEVERContext{N,T},
-                             P::Polygon{N,T},
-                             Q::Polygon{N,T},
+                             P::PntSeq{N,T},
+                             Q::PntSeq{N,T},
                              arr::Vector{Int64}
                              ) where {N,T}
     curr::Int64 = 1;
@@ -408,8 +404,8 @@ end
 
 
 function   fever_extract_morphing( c::FEVERContext{N,T},
-                                   P::Polygon{N,T},
-                                   Q::Polygon{N,T},
+                                   P::PntSeq{N,T},
+                                   Q::PntSeq{N,T},
                                    arr::Vector{Int64}
                                    ) where {N,T}
     pes = Vector{EventPoint{N,T}}();
@@ -447,8 +443,8 @@ end
 
 #global fever_comp_count = 0;
 
-function   FEVER_compute_range( P::Polygon{N,T},
-                                Q::Polygon{N,T},
+function   FEVER_compute_range( P::PntSeq{N,T},
+                                Q::PntSeq{N,T},
                                 upper_bound::T
                                ) where {N,T}
     #global fever_comp_count += 1;
@@ -548,8 +544,8 @@ quadratic space to perform lookups. Seems wasteful, but works
 reasonably well for small curves (say of size at most 200).
 
 """
-function   FEVER_compute( P::Polygon{N,T},
-                          Q::Polygon{N,T}
+function   FEVER_compute( P::PntSeq{N,T},
+                          Q::PntSeq{N,T}
                           ) where {N,T}
 
     f_debug::Bool = false;

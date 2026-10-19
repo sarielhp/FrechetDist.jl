@@ -3,10 +3,9 @@
 push!(LOAD_PATH, pwd()*"/src/")
 
 using FrechetDist
-using FrechetDist.cg
-using FrechetDist.cg.point
-using FrechetDist.cg.polygon
-using FrechetDist.cg.segment
+using BasicCompGeometry
+import BasicCompGeometry: cardin
+import FrechetDist: read_file, Polygon_sample_uniformly
 using Profile
 using InteractiveUtils
 using Plots;
@@ -15,7 +14,7 @@ include( "graphics.jl" )
 
 ######################################################################
 
-function frechet_comp( P::Polygon{D,T}, Q::Polygon{D,T}
+function frechet_comp( P::PntSeq{D,T}, Q::PntSeq{D,T}
      )::Int64  where {D,T}
     ratio::Float64 = 5.0;
 

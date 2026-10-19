@@ -4,10 +4,9 @@ push!(LOAD_PATH, pwd()*"/src/")
 
 using Cairo
 using FrechetDist
-using FrechetDist.cg
-using FrechetDist.cg.point
-using FrechetDist.cg.polygon
-using FrechetDist.cg.bbox
+using BasicCompGeometry
+import BasicCompGeometry: width, translate!, cardin, bound!, expand!
+import FrechetDist: read_file
 using Parameters
 
 VecFloat = Vector{Float64};
@@ -28,7 +27,7 @@ mutable struct  Affine2d
 end;
 
 function  Base.:*(t::Affine2d, p::Point{D,T}) where  {D,T}
-    return  npoint( ( p[ 1 ] + t.x)*t.scale,
+    return  point( ( p[ 1 ] + t.x)*t.scale,
         ( p[ 2 ] + t.y)*t.scale );
 end
 
@@ -66,8 +65,8 @@ function  draw_bbox( cr, bb, scale )
     pa = bottom_left( bb );
     pc = top_right( bb );
 
-    pb = npoint( pc[1], pa[2] );
-    pd = npoint( pa[1], pc[2] )
+    pb = point( pc[1], pa[2] );
+    pd = point( pa[1], pc[2] )
 
     pa = pa * scale;
     pb = pb * scale;
@@ -84,19 +83,19 @@ function  draw_bbox( cr, bb, scale )
 end
 
 
-function  compute_bounding_boxes( list::VecPolygon2F )
+function  compute_bounding_boxes( list::Vector{PntSeq2F} )
     bb::BBox2F = BBox2F();
 
-    bound( bb, list );
+    bound!( bb, list );
     expand!( bb, 1.05 );
     bbo = deepcopy( bb );
     println( typeof( bbo ) );
     expand!( bbo, 1.05 );
 
     println( "--------------------" );
-    bbox.print( bbo );
+    print( bbo );
     println( "--------------------" );
-    bbox.print( bb );
+    print( bb );
     println( "--------------------" );
 
     return  bb, bbo
@@ -108,7 +107,7 @@ function  get_image_dims( bbo )
     theight::Float64 = 0.0;
 
     while ( true )
-        theight = width * bbox.width( bbo, 2 ) / bbox.width( bbo, 1 );
+        theight = width * BasicCompGeometry.width( bbo, 2 ) / BasicCompGeometry.width( bbo, 1 );
         if  theight < 2048.0
             break;
         end
@@ -128,7 +127,7 @@ end
 
 function  set_transform( cr, iwidth::Int64, iheight::Int64,
                          bbo::BBox2F )
-    xcal = convert( Float64, iwidth) / bbox.width( bbo, 1 );
+    xcal = convert( Float64, iwidth) / BasicCompGeometry.width( bbo, 1 );
 
     println( "Scaling: ", xcal );
     #Cairo.scale( cr, xcal, xcal );
@@ -141,7 +140,7 @@ function  set_transform( cr, iwidth::Int64, iheight::Int64,
     return  Affine2d( -bl[ 1 ], -bl[ 2 ], xcal );
 end
 
-function  cairo_setup( filename::String, list::VecPolygon2F,
+function  cairo_setup( filename::String, list::Vector{PntSeq2F},
                        f_pdf::Bool = true )
     bb, bbo = compute_bounding_boxes( list );
     iheight, iwidth = get_image_dims( bbo );
@@ -167,14 +166,14 @@ function  cairo_setup( filename::String, list::VecPolygon2F,
 end
 
 
-function  output_polygons_hierarchy_to_file(  list::VecPolygon2F, filename,
+function  output_polygons_hierarchy_to_file(  list::Vector{PntSeq2F}, filename,
     f_pdf::Bool,
     f_draw_vertices::Bool = false,
     f_matching::Bool = false
                                     )
     c,cr,bb, T = cairo_setup( filename, list, f_pdf );
 
-    u_width::Float64 = 1024.0 * (bbox.width( bb) / 100.0);
+    u_width::Float64 = 1024.0 * (BasicCompGeometry.width( bb) / 100.0);
 
     set_source_rgb(cr,0.9,0.9,0.9);    # light gray
     set_source_rgba(cr, 1, 0.2, 0.2, 0.6);
@@ -230,7 +229,7 @@ function  output_polygons_hierarchy_to_file(  list::VecPolygon2F, filename,
         set_line_width(cr, 2.0);
         set_source_rgb( cr, 1.0, 0.0, 0.0 );
         for  poly in  list
-            draw_polygon_vertices( cr, poly, bbox.width( bb) / 200  );
+            draw_polygon_vertices( cr, poly, BasicCompGeometry.width( bb) / 200  );
         end
     end
 
@@ -246,17 +245,17 @@ end
 function  plt_show_ph( ARGS )
     num_args = length( ARGS );
 
-    list = VecPolygon2F();
+    list = Vector{PntSeq2F}();
     bb = BBox2F();
     for  i in 1:num_args
         println( "Reading: ", ARGS[ i ] );
-        poly_a = polygon.read_file( ARGS[ i ] );
+        poly_a = read_file( ARGS[ i ] );
         push!( list, poly_a );
-        bound( bb, poly_a );
+        bound!( bb, poly_a );
     end
     p = bottom_left( bb );
     for  poly  in list
-        Polygon_translate!( poly, p );
+        translate!( poly, -p );
     end
 
     #for  poly  in list

@@ -15,6 +15,7 @@ using Printf
 include( "DistFunc.jl" );
 
 
+
 @enum FPointType begin
     PT_VERTEX = 1
     PT_ON_EDGE = 2
@@ -61,8 +62,8 @@ Encoding of a morphing (i.e., matching) between two polygonal cuves.
 
 """
 @with_kw mutable struct  Morphing{N,T}
-    P::Polygon{N,T}
-    Q::Polygon{N,T}
+    P::PntSeq{N,T}
+    Q::PntSeq{N,T}
     pes::Vector{EventPoint{N,T}}; # P event sequence
     qes::Vector{EventPoint{N,T}}; # Q event sequence
     leash::Float64
@@ -78,7 +79,7 @@ Encoding of a morphing (i.e., matching) between two polygonal cuves.
     lower_bound::T;
 end
 
-function   Morphing_init( P::Polygon{N,T}, Q::Polygon{N,T},
+function   Morphing_init( P::PntSeq{N,T}, Q::PntSeq{N,T},
     pes::Vector{EventPoint{N,T}},
     qes::Vector{EventPoint{N,T}} ) where {N,T}
 
@@ -113,11 +114,11 @@ function  Morphing_get_max_edges_err( m::Morphing{D,T} ) where {D,T}
             continue;
         end
 
-        d = max( Dist( P[ i ], Q[ j ] ),
-                 Dist( P[ i ], Q[ j + 1 ] ),
-                 Dist( P[ i + 1 ], Q[ j ] ),
-                 Dist( P[ i + 1 ], Q[ j + 1 ] ) );
-        ld = iseg_iseg_dist( P[ i ], P[ i + 1 ], Q[ j ], Q[ j + 1 ] );
+        d = max( fp_dist( P[ i ], Q[ j ] ),
+                 fp_dist( P[ i ], Q[ j + 1 ] ),
+                 fp_dist( P[ i + 1 ], Q[ j ] ),
+                 fp_dist( P[ i + 1 ], Q[ j + 1 ] ) );
+        ld = fp_dist_segment_segment( P[ i ], P[ i + 1 ], Q[ j ], Q[ j + 1 ] );
         delta = d - ld;
         #println( "delta : ", delta, " (", i, ", ", j, ")" );
         if  ( delta > mx )
@@ -135,7 +136,7 @@ end
 # vertex.
 ####################################################
 
-function   extract_vertex_leash( P::Polygon{N,T},
+function   extract_vertex_leash( P::PntSeq{N,T},
     pes::Vector{EventPoint{N,T}},
     qes::Vector{EventPoint{N,T}}
 ) where {N,T}
@@ -149,7 +150,7 @@ function   extract_vertex_leash( P::Polygon{N,T},
         # conservative about vertices that should not be simplified.
 
         # if ( ev.type == PT_VERTEX )
-        vl[ ev.i ] = max( vl[ ev.i ], Dist( ev.p, evx.p ) );
+        vl[ ev.i ] = max( vl[ ev.i ], fp_dist( ev.p, evx.p ) );
         #end
     end
 
@@ -184,7 +185,7 @@ end
 
 Returns an empty morhping (i.e., a constructor).
 """
-function   Morphing_empty( P::Polygon{N,T}, Q::Polygon{N,T} )  where {N,T}
+function   Morphing_empty( P::PntSeq{N,T}, Q::PntSeq{N,T} )  where {N,T}
     pes = Vector{EventPoint{N,T}}();
     qes = Vector{EventPoint{N,T}}()
     r::Float64 = -1;
@@ -234,7 +235,7 @@ end
 # Make the matching (which might be potentially not monotone) into a monotone
 # one.
 ##############################################################################
-function  events_seq_make_monotone( P::Polygon{N,T},
+function  events_seq_make_monotone( P::PntSeq{N,T},
                                     s::Vector{EventPoint{N,T}} ) where {N,T}
     ns = Vector{EventPoint{N,T}}();
 
@@ -259,9 +260,9 @@ function  events_seq_make_monotone( P::Polygon{N,T},
             nep = deepcopy( s[ j ] );
             t = max( t, nep.t );
             if  ( t > nep.t )
-                ell = Dist( P[ nep.i ], P[ nep.i + 1 ] );
+                ell = fp_dist( P[ nep.i ], P[ nep.i + 1 ] );
                 delta = max( delta, ( t - nep.t ) * ell );
-                p = convex_comb( P[ nep.i ], P[ nep.i + 1 ], t );
+                p = fp_convex_comb( P[ nep.i ], P[ nep.i + 1 ], t );
                 nep = ev_update_p_t( nep, p, t );
             end
             push!( ns, nep );
@@ -270,9 +271,9 @@ function  events_seq_make_monotone( P::Polygon{N,T},
 
         nep = deepcopy( s[ j ] );
         if  ( t > nep.t )
-            ell = Dist( P[ nep.i ], P[ nep.i + 1 ] );
+            ell = fp_dist( P[ nep.i ], P[ nep.i + 1 ] );
             delta = max( delta, ( t - nep.t ) * ell );
-            p = convex_comb( P[ nep.i ], P[ nep.i + 1 ],
+            p = fp_convex_comb( P[ nep.i ], P[ nep.i + 1 ],
                                  t );
             nep = ev_update_p_t( nep, p, t );
         end
@@ -290,7 +291,7 @@ end
 # Make the matching (which might be potentially not monotone) into a monotone
 # one.
 ##############################################################################
-function  events_seq_get_monotone_leash( P::Polygon{N,T},
+function  events_seq_get_monotone_leash( P::PntSeq{N,T},
     s::Vector{EventPoint{N,T}},
     s_alt::Vector{EventPoint{N,T}},
     leash::T ) where {N,T}
@@ -313,19 +314,19 @@ function  events_seq_get_monotone_leash( P::Polygon{N,T},
             nep = s[ j ];
             t = max( t, nep.t );
             if  ( t > nep.t )
-                ell = Dist( P[ nep.i ], P[ nep.i + 1 ] );
-                new_p = convex_comb( P[ nep.i ], P[ nep.i + 1 ],
+                ell = fp_dist( P[ nep.i ], P[ nep.i + 1 ] );
+                new_p = fp_convex_comb( P[ nep.i ], P[ nep.i + 1 ],
                                      t  );
-                leash = max( leash, Dist( new_p, s_alt[ j ].p ) );
+                leash = max( leash, fp_dist( new_p, s_alt[ j ].p ) );
             end
             j = j + 1
         end
 
         nep = s[ j ];
         if  ( t > nep.t )
-            ell = Dist( P[ nep.i ], P[ nep.i + 1 ] );
-            new_p = convex_comb( P[ nep.i ], P[ nep.i + 1 ], t );
-            leash = max( leash, Dist( new_p, s_alt[ j ].p ) );
+            ell = fp_dist( P[ nep.i ], P[ nep.i + 1 ] );
+            new_p = fp_convex_comb( P[ nep.i ], P[ nep.i + 1 ], t );
+            leash = max( leash, fp_dist( new_p, s_alt[ j ].p ) );
         end
         i = j + 1;
     end
@@ -338,7 +339,7 @@ function  Morphing_recompute_leash( m::Morphing{N,T} ) where  {N,T}
     @assert( length( m.pes ) == length( m.qes ) );
     r = 0;
     for  i  in eachindex( m.pes )
-        ell = (Dist( m.pes[ i ].p, m.qes[ i ].p )
+        ell = (fp_dist( m.pes[ i ].p, m.qes[ i ].p )
                         - m.pes[ i ].penalty - m.pes[ i ].penalty );
         if   ell > r
             r = ell;
@@ -361,8 +362,8 @@ and Q will definitely have reapeated points.
 
 """
 function  Morphing_as_polygons( m::Morphing{N,T} ) where  {N,T}
-    P = Polygon{N,T}();
-    Q = Polygon{N,T}();
+    P = PntSeq{N,T}();
+    Q = PntSeq{N,T}();
 
     Morphing_verify_valid( m );
 
@@ -370,7 +371,7 @@ function  Morphing_as_polygons( m::Morphing{N,T} ) where  {N,T}
     for  i  in eachindex( m.pes )
         push!( P, m.pes[ i ].p );
         push!( Q, m.qes[ i ].p );
-        d = Dist( m.pes[ i ].p, m.qes[ i ].p )
+        d = fp_dist( m.pes[ i ].p, m.qes[ i ].p )
         #=if  ( d > leash )
             leash = max( leash, d );
         end=#
@@ -389,15 +390,15 @@ function  Morphing_as_polygons_w_times( m::Morphing{N,T} ) where  {N,T}
     P, Q = Morphing_as_polygons( m );
     t = Vector{Float64}();
 
-    len = polygon.total_length( P ) + polygon.total_length( Q );
+    len = fp_geom_length( P ) + fp_geom_length( Q );
     if  len == 0.0
         return  P, Q, zeros( length( P ) );
     end
     c_z::Int64 = 0;
     min_delta::Float64 = len;
     for  i  in  1:length(P) - 1
-        delta = ( Dist( P[ i ], P[ i + 1] )
-                  + Dist( Q[ i ], Q[ i + 1] ) );
+        delta = ( fp_dist( P[ i ], P[ i + 1] )
+                  + fp_dist( Q[ i ], Q[ i + 1] ) );
         if  ( delta == 0.0 )
             c_z = c_z + 1;
             continue;
@@ -409,8 +410,8 @@ function  Morphing_as_polygons_w_times( m::Morphing{N,T} ) where  {N,T}
 
     push!( t, 0.0 );
     for  i  in  1:length(P) - 1
-        delta = ( Dist( P[ i ], P[ i + 1] )
-                  + Dist( Q[ i ], Q[ i + 1] ) );
+        delta = ( fp_dist( P[ i ], P[ i + 1] )
+                  + fp_dist( Q[ i ], Q[ i + 1] ) );
         if  ( delta == 0.0 )
             delta = fake_delta;
         end
@@ -429,7 +430,7 @@ function  Morphing_as_function_w_times( m::Morphing{N,T} ) where  {N,T}
     P, Q = Morphing_as_polygons( m );
     t = Vector{Float64}();
 
-    len = polygon.total_length( P );
+    len = fp_geom_length( P );
     if  len == 0.0
         return  P, Q, zeros( length( P ) );
     end
@@ -437,17 +438,17 @@ function  Morphing_as_function_w_times( m::Morphing{N,T} ) where  {N,T}
     c_z = 0;
     fake_delta = len / (4 + length( P ) );
     for  i  in  1:length(P) - 1
-        delta = Dist( P[ i ], P[ i + 1] ) / len;
+        delta = fp_dist( P[ i ], P[ i + 1] ) / len;
         if  ( delta == 0.0 )
             c_z = c_z + 1;
             len = len + fake_delta;
         end
     end
     for  i  in  1:length(P) - 1
-        if  ( Dist( P[ i ], P[ i + 1] ) == 0.0 )
+        if  ( fp_dist( P[ i ], P[ i + 1] ) == 0.0 )
             delta = fake_delta / len;
         else
-            delta = Dist( P[ i ], P[ i + 1] ) / len;
+            delta = fp_dist( P[ i ], P[ i + 1] ) / len;
         end
 
         push!( t, min( last(t) + delta, 1.0 ) );
@@ -460,8 +461,8 @@ function  Morphing_as_function_w_times( m::Morphing{N,T} ) where  {N,T}
 end
 
 
-function  polygons_get_loc_at_time( P::Polygon{D,T},
-                                    Q::Polygon{D,T},
+function  polygons_get_loc_at_time( P::PntSeq{D,T},
+                                    Q::PntSeq{D,T},
                                     times::Vector{T},
                                     t::T
                                     ) where {D,T}
@@ -495,9 +496,9 @@ function  polygons_get_loc_at_time( P::Polygon{D,T},
 
     if  ( ( prev + 1 ) == pos )
         delta = ( t - times[ prev ] ) / (times[ pos ] - times[ prev ] );
-        p = convex_comb( P[ prev ], P[ pos ], delta )
-        q = convex_comb( Q[ prev ], Q[ pos ], delta )
-        #println( "DDD: ", Dist( P[prev], Q[prev ] ), " PREV ", prev,
+        p = fp_convex_comb( P[ prev ], P[ pos ], delta )
+        q = fp_convex_comb( Q[ prev ], Q[ pos ], delta )
+        #println( "DDD: ", fp_dist( P[prev], Q[prev ] ), " PREV ", prev,
         #         "times: ", times[prev ] );
         return  p, q;
     end
@@ -621,9 +622,9 @@ the ith nubmer if the distance of the ith point in sequence from the
 beginning of the curve. Here, distance means the total distance of the
 subcurve from the start point, to the current point.
 """
-function  extract_param_inner( P::Polygon{N,T},
+function  extract_param_inner( P::PntSeq{N,T},
                                V::Vector{EventPoint{N,T}} ) where {N,T}
-    lens::Vector{Float64} = Polygon_prefix_lengths( P )
+    lens::Vector{Float64} = fp_prefix_lengths( P )
     out = Vector{Float64}();
     check_times( V );
 
@@ -654,9 +655,9 @@ end
     lengths of the two given polygons of P and Q, respectively.
 
 """
-function  Morphing_extract_prm( m::Morphing{N,T} )::cg.Polygon2F where {N,T}
-    P::Polygon{N,T} = m.P;
-    Q::Polygon{N,T} = m.Q;
+function  Morphing_extract_prm( m::Morphing{N,T} )::PntSeq2F where {N,T}
+    P::PntSeq{N,T} = m.P;
+    Q::PntSeq{N,T} = m.Q;
     peout::Vector{EventPoint{N,T}} = m.pes;
     qeout::Vector{EventPoint{N,T}} = m.qes;
 
@@ -670,9 +671,9 @@ function  Morphing_extract_prm( m::Morphing{N,T} )::cg.Polygon2F where {N,T}
 
     @assert( length( pps ) == length( qps ) )
 
-    out = cg.Polygon2F();
+    out = PntSeq2F();
     for  i in eachindex(pps)
-        push!( out, npoint( pps[ i ], qps[ i ] ) )
+        push!( out, point( pps[ i ], qps[ i ] ) )
     end
     return  out;
 end
@@ -683,7 +684,7 @@ function  eval_pl_func_on_dim( p::Point{N,T}, q::Point{N,T}, val::Float64,
     @assert( p[ d ] <= q[ d ] );
     t = (val - p[d]) / (q[d] - p[d]);
 
-    return  convex_comb( p, q, t );
+    return  fp_convex_comb( p, q, t );
 end
 
 function  eval_pl_func( p::Point2F, q::Point2F, val::Float64 )
@@ -695,7 +696,7 @@ function  eval_inv_pl_func( p::Point2F, q::Point2F, val::Float64 )
     return  o[1];
 end
 
-function  check_monotone_top( out::Polygon2F )
+function  check_monotone_top( out::PntSeq2F )
     l = cardin( out )
     if  l < 2
         return;
@@ -722,15 +723,15 @@ end
 # parameterization_combine
 # Given two parameterization f, g, compute f(g( . ))
 ###############################################################
-function   parameterization_combine( f::Polygon2F,
-                                     g::Polygon2F )::Polygon2F
+function   parameterization_combine( f::PntSeq2F,
+                                     g::PntSeq2F )::PntSeq2F
     if  ( ! fp_equal( last( g )[2], last( f )[ 1 ] ) )
         println( last( g )[2], " != ",  last( f )[ 1 ] );
         @assert( fp_equal( last( g )[2], last( f )[ 1 ] ) )
     end
     idf::Int64 = 1;
     idg::Int64 = 1;
-    out::Polygon2F = Polygon2F();
+    out::PntSeq2F = PntSeq2F();
 
     l_f = cardin( f )
     l_g = cardin( g )
@@ -750,23 +751,23 @@ function   parameterization_combine( f::Polygon2F,
         yg = g[ idg ][2];
         f_equal_yf_yg::Bool = fp_equal( yf, yg )
         if  ( f_equal_yf_yg )  &&  ( idf == l_f )  &&  ( idg == l_g )
-            push!( out, npoint( g[ idg ][1], f[ idf ][2] ) )
+            push!( out, point( g[ idg ][1], f[ idf ][2] ) )
             break;
         end
         if  ( f_equal_yf_yg   &&  ( idf < l_f )
               &&  ( f[ idf + 1 ][1] == yf ) )
-            push!( out, npoint( g[ idg ][1], f[ idf ][2] ) )
+            push!( out, point( g[ idg ][1], f[ idf ][2] ) )
             idf = idf + 1
             continue;
         end
         if  ( f_equal_yf_yg   &&  ( idg < l_g )
               &&  ( fp_equal( g[ idg + 1 ][2], yg ) ) )
-            push!( out, npoint( g[ idg ][1], f[ idf ][2] ) )
+            push!( out, point( g[ idg ][1], f[ idf ][2] ) )
             idg = idg + 1
             continue;
         end
         if  f_equal_yf_yg
-            push!( out, npoint( g[ idg ][1], f[ idf ][2] ) )
+            push!( out, point( g[ idg ][1], f[ idf ][2] ) )
             idf = min( idf + 1, l_f );
             idg = min( idg + 1, l_g );
             continue;
@@ -788,7 +789,7 @@ function   parameterization_combine( f::Polygon2F,
             if  ( xg < g[ idg - 1 ][ 1 ] )
                 xg = g[ idg - 1 ][ 1 ]
             end
-            push!( out, npoint( xg, f[ idf ][ 2 ] ) )
+            push!( out, point( xg, f[ idf ][ 2 ] ) )
             idf = min( idf + 1, l_f );
             continue;
         end
@@ -801,7 +802,7 @@ function   parameterization_combine( f::Polygon2F,
             if  ( zf < f[ idf - 1 ][ 2 ] )
                 zf = f[ idf - 1 ][ 2 ]
             end
-            push!( out, npoint( g[ idg ][ 1 ], zf ) )
+            push!( out, point( g[ idg ][ 1 ], zf ) )
             idg = min( idg + 1, l_g );
             continue;
         end
@@ -812,7 +813,7 @@ function   parameterization_combine( f::Polygon2F,
     # Should really just get rid of tiny flatting point jitters.
     curr::Point2F = deepcopy( out[ 1 ] );
     for  i in 2:cardin( out )
-        curr = Point_max( out[ i ], curr );
+        curr = point_max( out[ i ], curr );
         out[ i ] = curr;
         #=for  j in 1:2
             curr[ j ] = max( curr[ j ], out[ i ][ j ] )
@@ -833,7 +834,7 @@ edgss of P.
 
 """
 function  get_point(
-    P::Polygon{N,T}, lens::Vector{Float64},
+    P::PntSeq{N,T}, lens::Vector{Float64},
     i::Int64, pos::Float64 ) where {N,T}
 
     if  ( i == length( lens ) )
@@ -856,13 +857,13 @@ function  get_point(
     if  ( t == 1 )
         return  P[ i + 1 ], 1.0;
     end
-    p = convex_comb( P[ i ], P[i + 1], t );
+    p = fp_convex_comb( P[ i ], P[i + 1], t );
 #    println( "inside... 4" );
     return p, t;
 end
 
-function  event_sequences_extract( prm::Polygon2F, P::Polygon{N,T},
-                                   Q::Polygon{N,T} ) where {N,T}
+function  event_sequences_extract( prm::PntSeq2F, P::PntSeq{N,T},
+                                   Q::PntSeq{N,T} ) where {N,T}
 
     i_p::Int64 = 1;
     i_q::Int64 = 1;
@@ -872,8 +873,8 @@ function  event_sequences_extract( prm::Polygon2F, P::Polygon{N,T},
     len_q = cardin( Q );
     len_p = cardin( P );
 
-    lp::Vector{Float64} = Polygon_prefix_lengths( P )
-    lq::Vector{Float64} = Polygon_prefix_lengths( Q )
+    lp::Vector{Float64} = fp_prefix_lengths( P )
+    lq::Vector{Float64} = fp_prefix_lengths( Q )
 
     for  i in 1:( cardin( prm ) - 1 )
 #        println( "before?? A" );
@@ -936,8 +937,8 @@ function  event_sequences_extract( prm::Polygon2F, P::Polygon{N,T},
         #       println( "here? B" );
     end
 
-    @assert( !point.isNaN( last( P ) ) );
-    @assert( !point.isNaN( last( Q ) ) );
+    @assert( !any(isnan, last( P ) ) );
+    @assert( !any(isnan, last( Q ) ) );
     
     push!( pes, EventPoint( deepcopy(last(P)), cardin( P ), PT_VERTEX, 0.0,
                             0.0 ) );
@@ -976,15 +977,15 @@ end
     and Q.
 
 """
-function  Morphing_from_prm( prm::Polygon2F,
-                             P::Polygon{N,T},
-                             Q::Polygon{N,T} ) where {N,T}
+function  Morphing_from_prm( prm::PntSeq2F,
+                             P::PntSeq{N,T},
+                             Q::PntSeq{N,T} ) where {N,T}
     pes, qes = event_sequences_extract( prm, P, Q );
     return  Morphing_init( P, Q, pes, qes );
 end
 
 
-function   compute_offsets( P::Polygon{N,T},
+function   compute_offsets( P::PntSeq{N,T},
                             pes::Vector{EventPoint{N,T}},
                             qes::Vector{EventPoint{N,T}},
                             )  where  {N,T}
@@ -993,7 +994,7 @@ function   compute_offsets( P::Polygon{N,T},
     for  i  in eachindex( pes )
         ev = pes[ i ];
         evx = qes[ i ];
-        r = Dist( ev.p, evx.p );
+        r = fp_dist( ev.p, evx.p );
         offs[ ev.i ] = max( offs[ ev.i ], r )
     end
 
@@ -1057,7 +1058,7 @@ function  Morphing_SweepDist_approx_price( m::Morphing{N,T} ) where  {N,T}
     len = cardin( P );
     price::Float64 = 0;
     for  i in 1:(len-1)
-        price = price + segs_match_price( P[ i ], P[ i + 1 ],
+        price = price + fp_match_price( P[ i ], P[ i + 1 ],
                                           Q[ i ], Q[ i + 1 ] );
     end
 
@@ -1101,7 +1102,7 @@ function  morphing_profile( m::Morphing{D,T}, n::Int64 ) where  {D,T}
         end;
     end;
     #println( length( times ) );
-    lP = total_length( PB );
+    lP = fp_geom_length( PB );
     X = range(0, lP, length=n)
 
     Y = Vector{Float64}();
@@ -1109,7 +1110,7 @@ function  morphing_profile( m::Morphing{D,T}, n::Int64 ) where  {D,T}
         pos = x / lP;
         #println( " pos : ", pos );
         p, q = polygons_get_loc_at_time( PB, QB, times, pos );
-        push!( Y, Dist(p,q ) );
+        push!( Y, fp_dist(p,q ) );
     end
     f_debug  &&  println( maximum( Y ) );
     return  X, Y;

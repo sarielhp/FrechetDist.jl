@@ -4,38 +4,25 @@
 module FrechetDist
 
 using Parameters
-using StaticArrays
 using LinearAlgebra
 using DelimitedFiles
 using DataStructures
 using Printf
 
+using StaticArrays
+using BasicCompGeometry
+import BasicCompGeometry: cardin, Points, push_distinct!, split_edges
+using BasicCompGeometry.ReadWrite
 
-#include( "point.jl" );
-#include( "polygon.jl" );
-
-include( "cg.jl" );
-
-using .cg
-using .cg.point
-using .cg.segment
-using .cg.polygon
-
-
-#using .Point;
-#using .Polygon;
-#using .Point
-#using .Polygon
-#using .cg
-#using  cg;  # A submodule?
-
+include( "fp_geometry.jl" );
+include( "curve_utils.jl" );
 include( "morphing.jl" );
 include( "frechet_discrete.jl" );
 include( "frechet.jl" );
 include( "SweepDist.jl" );
 include( "utils.jl" );
-include( "polygon_hierarchy.jl" );
-include( "palette.jl" )
+include( "palette.jl" );
+include( "polygon_hierarchy.jl" )
 include( "fever.jl" )
 
 ##########################################################################

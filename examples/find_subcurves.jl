@@ -3,19 +3,21 @@
 push!(LOAD_PATH, pwd()*"/src/")
 
 using FrechetDist
-using FrechetDist.cg
+using BasicCompGeometry
+import FrechetDist: read_file
+import BasicCompGeometry: cardin
 using Graphs
 
 struct  SubFrechetMatcher{N,T}
-    X::Polygon{N,T};
-    Y::Polygon{N,T};
+    X::PntSeq{N,T};
+    Y::PntSeq{N,T};
     Delta::Int64;
     nX::Int64  # |X|
     nY::Int64  # |Y|
     G::SimpleDiGraph{Int64}
 
-    function  SubFrechetMatcher( _X::Polygon{N,T},
-                         _Y::Polygon{N,T},
+    function  SubFrechetMatcher( _X::PntSeq{N,T},
+                         _Y::PntSeq{N,T},
                          _Delta::Int64 ) where {N,T}
         nX = cardin( _X );
         nY = cardin( _Y );
@@ -33,7 +35,7 @@ function  SFM_compute_costs( M::SubFrechetMatcher{N,T} ) where {N,T}
     costs = Vector{Float64}();
     for  x in 1:nX
         for y in 1:nY
-            push!( costs, Dist( M.X[ x ], M.Y[ y ] ) );
+            push!( costs, dist( M.X[ x ], M.Y[ y ] ) );
         end;
     end;
     sort!( costs );
@@ -42,7 +44,7 @@ function  SFM_compute_costs( M::SubFrechetMatcher{N,T} ) where {N,T}
 end
 
 function  dM(M::SubFrechetMatcher{N,T}, x::Int64, y::Int64 ) where  {N,T}
-    return Dist( M.X[ x ], M.Y[ y ] )
+    return dist( M.X[ x ], M.Y[ y ] )
 end
 
 function  SFM_build_graph( M::SubFrechetMatcher{N,T},
@@ -146,7 +148,7 @@ end
 
 ######################################################################
 
-function frechet_comp( P::Polygon{D,T}, Q::Polygon{D,T}
+function frechet_comp( P::PntSeq{D,T}, Q::PntSeq{D,T}
      )::Int64  where {D,T}
     ratio::Float64 = 5.0;
 
@@ -186,8 +188,8 @@ function  test_files( fl_a, fl_b )
     println( fl_a );
     println( fl_b );
     println( "---------------------------------------------" );
-    P = Polygon_read_file( fl_a );
-    Q = Polygon_read_file( fl_b );
+    P = read_file( fl_a );
+    Q = read_file( fl_b );
 
     M = SubFrechetMatcher( P, Q, 10 );
     costs = SFM_compute_costs( M );

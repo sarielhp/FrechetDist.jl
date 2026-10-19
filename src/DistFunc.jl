@@ -215,7 +215,7 @@ function  SweepDist_segs_p( p_a::Point{D,T},
                       q_b::Point{D,T} ) where {D,T}
 
     f_debug::Bool = false;
-    len_edge_p = Dist( p_a, p_b );
+    len_edge_p = fp_dist( p_a, p_b );
     if  fp_equal( p_a, p_b )  ||  ( len_edge_p == 0.0 )
         return  0.0;
     end
@@ -227,19 +227,19 @@ function  SweepDist_segs_p( p_a::Point{D,T},
     f_debug  &&  println( "q_b: ", q_b );
     f_debug  &&  println( "p_a: ", p_a );
     f_debug  &&  println( "p_b: ", p_b );
-    v_start = sub( q_a, p_a ) ;
-    v_end = sub( q_b, p_b );
+    v_start = q_a - p_a;
+    v_end = q_b - p_b;
 
-    if  Dist( v_start, v_end ) < 0.0000001 * point.norm( v_start )
-        return  len_edge_p * point.norm( v_start );
+    if  fp_dist( v_start, v_end ) < 0.0000001 * fp_norm( v_start )
+        return  len_edge_p * fp_norm( v_start );
     end
 
     f_debug  &&  println( "v_start: ", v_start );
     f_debug  &&  println( "v_end: ", v_end );
-    diff::Point{D,T} =  sub(v_end, v_start);
+    diff::Point{D,T} = v_end - v_start;
 
     f_debug  &&  println( "Diff: ", diff );
-    p_diff::Point{D,T} = mult( (1.0 / len_edge_p), diff );
+    p_diff::Point{D,T} = (1.0 / len_edge_p) * diff;
     f_debug  &&  println( "p_diff: ", p_diff );
     # Location of the point at time t along the edge p.
     # p(t) := (t / len_edge_p) * diff + v_start;
@@ -247,9 +247,9 @@ function  SweepDist_segs_p( p_a::Point{D,T},
     #
     # f(t) := ||p(t)|| = <p(t), p(t)>
     #       = t^2 * ||p_diff||^2 + 2*<p_diff,v_start> + <v_start,v_start>
-    a = point.dot( p_diff, p_diff );
-    b = 2.0 * point.dot( p_diff, v_start );
-    c = point.dot( v_start, v_start );
+    a = fp_dot( p_diff, p_diff );
+    b = 2.0 * fp_dot( p_diff, v_start );
+    c = fp_dot( v_start, v_start );
 
     f_debug  &&  println( "a: ",  a, " b: ", b, " c: ", c );
     f = dist_func( a, b, c );

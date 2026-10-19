@@ -15,7 +15,7 @@ Extracting the morphing computd realizing the discrete Frechet
 distnace.
 
 """
-function   d_frechet_extract_solution( P::Polygon{D,T}, Q,
+function   d_frechet_extract_solution( P::PntSeq{D,T}, Q,
     dp_dec_i, n_p, n_q )::Morphing{D,T} where {D,T}
     i = n_p;
     j = n_q;
@@ -53,7 +53,7 @@ end
 
 
 
-function   frechet_d_compute_inner( P::Polygon{D,T}, Q::Polygon{D,T},
+function   frechet_d_compute_inner( P::PntSeq{D,T}, Q::PntSeq{D,T},
                                     dp::Array{Float64, 2}, dp_dec_i
                                         ) where {D,T}
     d::Float64 = 0;
@@ -64,12 +64,12 @@ function   frechet_d_compute_inner( P::Polygon{D,T}, Q::Polygon{D,T},
     n_q::Int64 = cardin( Q );
 
     iters::Int64 = 0;
-    dp[ 1, 1 ] = Dist( P[ 1 ], Q[ 1 ] );
+    dp[ 1, 1 ] = fp_dist( P[ 1 ], Q[ 1 ] );
     for  i::Int64 in 1:n_p
         ip = max( i - 1, 1 );
         for  j in 1:n_q
             iters = iters + 1;
-            d = Dist( P[ i ], Q[ j ] );
+            d = fp_dist( P[ i ], Q[ j ] );
             jp = max( j - 1, 1 );
 
             f_dec_i = false;
@@ -109,8 +109,8 @@ points. It interpresents the vertices of the polygons and the desired
 sequence of points.
 
 """
-function   frechet_d_compute( P::Polygon{D,T},
-                              Q::Polygon{D,T} ) where {D,T}
+function   frechet_d_compute( P::PntSeq{D,T},
+                              Q::PntSeq{D,T} ) where {D,T}
     n_p::Int64 = cardin( P );
     n_q::Int64 = cardin( Q );
 
@@ -124,21 +124,6 @@ function   frechet_d_compute( P::Polygon{D,T},
 
     return  m;
 end
-
-
-function   frechet_d_compute_dist( P::Polygon{D,T},
-                                   Q::Polygon{D,T} ) where {D,T}
-    n_p::Int64 = cardin( P );
-    n_q::Int64 = cardin( Q );
-
-    dp::Array{Float64, 2} = Array{Float64, 2}(undef, n_p,n_q);
-    dp_dec_i = falses( n_p, n_q );
-
-    frechet_d_compute_inner( P, Q, dp, dp_dec_i );
-
-    return  dp[ n_p, n_q ];
-end
-
 
 
 ##########################################################################
@@ -157,7 +142,7 @@ tables. Doesn't seem to matter, but this might be worth fixing in
 future versions.
 
 """
-function   frechet_d_r_compute( P::Polygon{D,T}, Q::Polygon{D,T}
+function   frechet_d_r_compute( P::PntSeq{D,T}, Q::PntSeq{D,T}
                                             ) where {D,T}
     n_p = cardin( P );
     n_q = cardin( Q );
@@ -167,7 +152,7 @@ function   frechet_d_r_compute( P::Polygon{D,T}, Q::Polygon{D,T}
     dp_def = falses( n_p, n_q );
     in_heap = falses( n_p, n_q );
 
-    dp[ 1, 1 ] = Dist( P[ 1 ] , Q[ 1 ] );
+    dp[ 1, 1 ] = fp_dist( P[ 1 ] , Q[ 1 ] );
     dp_def[ 1, 1 ] = true;
 
     x = [( Float64(dp[ 1, 1 ]), (1, 1) ) ];
@@ -185,7 +170,7 @@ function   frechet_d_r_compute( P::Polygon{D,T}, Q::Polygon{D,T}
         j = coords[ 2 ];
         value = ele[ 1 ];
 
-        d = Dist( P[ i ], Q[ j ] );
+        d = fp_dist( P[ i ], Q[ j ] );
 
         ip = max( i - 1, 1 );
         jp = max( j - 1, 1 );
@@ -222,14 +207,14 @@ function   frechet_d_r_compute( P::Polygon{D,T}, Q::Polygon{D,T}
         jnext = j + 1;
         if  ( inext <= n_p )
             if  ( ! in_heap[ inext, j ] )
-                push!( heap, ( Dist( P[ inext ], Q[ j ] ),
+                push!( heap, ( fp_dist( P[ inext ], Q[ j ] ),
                                (inext, j) ) );
                 in_heap[ inext, j ] = true;
             end
         end
         if  ( jnext <= n_q )
             if  ( ! in_heap[ i, jnext ] )
-                push!( heap, ( Dist( P[ i ], Q[ jnext ] ),
+                push!( heap, ( fp_dist( P[ i ], Q[ jnext ] ),
                                (i, jnext) ) );
                 in_heap[ i, jnext ] = true;
             end
@@ -253,7 +238,7 @@ end
     the discrete morphing.
 
 """
-function   DTW_d_compute( P::Polygon{D,T}, Q::Polygon{D,T}
+function   DTW_d_compute( P::PntSeq{D,T}, Q::PntSeq{D,T}
                           ) where {D,T}
 
     pq = PriorityQueue{Tuple{Int64, Int64},Float64}();
@@ -266,7 +251,7 @@ function   DTW_d_compute( P::Polygon{D,T}, Q::Polygon{D,T}
     handled = falses( n_p, n_q );
 
     function  push_value( ia, ja, val, i )
-        new_val = val + Dist( P[ ia ], Q[ ja ] )
+        new_val = val + fp_dist( P[ ia ], Q[ ja ] )
 
         if  ( ( dp[ ia, ja ] > 0.0 )
               &&  ( dp[ ia, ja ] <= new_val ) )
@@ -277,7 +262,7 @@ function   DTW_d_compute( P::Polygon{D,T}, Q::Polygon{D,T}
         dp_dec_i[ ia, ja ] = ( i < ia );
     end
 
-    dp[ 1, 1 ] = Dist( P[ 1 ] , Q[ 1 ] );
+    dp[ 1, 1 ] = fp_dist( P[ 1 ] , Q[ 1 ] );
     #handled[ 1, 1 ] = true;
 
     enqueue!( pq, (1,1), dp[ 1, 1 ] );
@@ -347,14 +332,14 @@ picked.
      true: Use the rectractable Frechet distance version
      false: Use the standard discrete Frechet version.
 """
-function   frechet_d_r_compute_sample( polya::Polygon{D,T},
-                                       polyb::Polygon{D,T},
+function   frechet_d_r_compute_sample( polya::PntSeq{D,T},
+                                       polyb::PntSeq{D,T},
                                        n::Int64,
                                        f_lopt::Bool = true
                                      )    where {D,T}
 #    polya,polyb = example_4()
-    lena = polygon.total_length( polya );
-    lenb = polygon.total_length( polyb );
+    lena = fp_geom_length( polya );
+    lenb = fp_geom_length( polyb );
 
 #    n::Int64 = 100;
     delta = (lena+ lenb)/ n;
