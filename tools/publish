@@ -1,0 +1,43 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# Usage: tools/publish [--dry-run] <release notes>
+# Asks JuliaRegistrator to register the current commit. The commit must be on
+# main, pushed, with a clean tree. Run it after tools/release. The registry PR
+# then auto-merges (about 15 minutes for a new version) and TagBot tags it.
+
+require 'open3'
+require 'optparse'
+
+Dir.chdir(File.expand_path('..', __dir__))
+dry_run = false
+parser = OptionParser.new do |o|
+  o.banner = 'Usage: tools/publish [--dry-run] <release notes>'
+  o.on('--dry-run') { dry_run = true }
+end
+parser.parse!
+notes = ARGV.join(' ').strip
+abort parser.to_s if notes.empty?
+
+def git(*args)
+  out, err, status = Open3.capture3('git', *args)
+  abort "git #{args.join(' ')} failed:\n#{err}" unless status.success?
+  out.strip
+end
+
+branch = git('symbolic-ref', '--quiet', '--short', 'HEAD')
+abort "Publish from main (currently on #{branch.inspect})." unless branch == 'main'
+abort "Uncommitted changes:\n#{git('status', '--porcelain')}" unless git('status', '--porcelain').empty?
+sha = git('rev-parse', 'HEAD')
+remote = git('ls-remote', 'origin', 'refs/heads/main').split.first
+abort "HEAD #{sha} is not what origin/main has (#{remote}); push first." unless remote == sha
+
+version = File.read('Project.toml')[/^version = "(.+)"$/, 1] or abort 'No version in Project.toml'
+repo = git('remote', 'get-url', 'origin')[%r{github.com[:/](.+?)(\.git)?$}, 1] or abort 'Cannot find the GitHub repo.'
+puts "Register #{version} at #{sha} (#{repo})"
+exit if dry_run
+
+body = "@JuliaRegistrator register\n\nRelease notes:\n#{notes}"
+url, err, status = Open3.capture3('gh', 'api', "repos/#{repo}/commits/#{sha}/comments", '-f', "body=#{body}", '--jq', '.html_url')
+abort "Registration request failed:\n#{err}" unless status.success?
+puts "Registration requested: #{url.strip}"
