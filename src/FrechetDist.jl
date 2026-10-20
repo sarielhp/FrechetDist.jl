@@ -23,6 +23,7 @@ include("utils.jl")
 include("palette.jl")
 include("polygon_hierarchy.jl")
 include("fever.jl")
+include("validate.jl")
 
 ##########################################################################
 

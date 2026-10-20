@@ -118,6 +118,7 @@ sequence of points.
 
 """
 function frechet_d_compute(P::PntSeq{D,T}, Q::PntSeq{D,T}) where {D,T}
+    check_curves(P, Q, "frechet_d_compute"; min_vertices = 1)
     n_p::Int64 = cardin(P)
     n_q::Int64 = cardin(Q)
 
@@ -150,6 +151,7 @@ future versions.
 
 """
 function frechet_d_r_compute(P::PntSeq{D,T}, Q::PntSeq{D,T}) where {D,T}
+    check_curves(P, Q, "frechet_d_r_compute"; min_vertices = 1)
     n_p = cardin(P)
     n_q = cardin(Q)
 
@@ -243,6 +245,7 @@ end
 
 """
 function DTW_d_compute(P::PntSeq{D,T}, Q::PntSeq{D,T}) where {D,T}
+    check_curves(P, Q, "DTW_d_compute"; min_vertices = 1)
 
     pq = PriorityQueue{Tuple{Int64,Int64},Float64}()
 
@@ -340,6 +343,7 @@ function frechet_d_r_compute_sample(
     n::Int64,
     f_lopt::Bool = true,
 ) where {D,T}
+    check_curves(polya, polyb, "frechet_d_r_compute_sample"; min_vertices = 1)
     #    polya,polyb = example_4()
     lena = fp_geom_length(polya)
     lenb = fp_geom_length(polyb)

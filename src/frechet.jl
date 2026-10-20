@@ -527,6 +527,8 @@ function frechet_ve_r_compute_range(
     Q::PntSeq{N,T},
     upper_bound::T,
 ) where {N,T}
+    check_curves(P, Q, "frechet_ve_r_compute_range"; min_vertices = 2)
+    check_nonnegative(upper_bound, "frechet_ve_r_compute_range", "upper_bound")
     f_debug::Bool = false
     c::FRContext{N,T} = FR_Context(P, Q)
     c.f_upper_bound = true
@@ -591,6 +593,14 @@ function frechet_ve_r_compute_ext(
     q_offs::Vector{Float64},
     f_use_offsets::Bool = false,
 ) where {N,T}
+    check_curves(P, Q, "frechet_ve_r_compute_ext"; min_vertices = 2)
+    if f_use_offsets && (length(p_offs) != cardin(P) || length(q_offs) != cardin(Q))
+        throw(
+            ArgumentError(
+                "frechet_ve_r_compute_ext: p_offs and q_offs need one entry per vertex of their curve",
+            ),
+        )
+    end
     f_debug::Bool = false
     c = FR_Context(P, Q)
 
@@ -660,6 +670,7 @@ end
 
 
 function frechet_ve_r_compute(P::PntSeq{N,T}, Q::PntSeq{N,T}) where {N,T}
+    check_curves(P, Q, "frechet_ve_r_compute"; min_vertices = 2)
     return frechet_ve_r_compute_ext(P, Q, Vector{Float64}(), Vector{Float64}(), false)
 end
 
@@ -1063,8 +1074,10 @@ function frechet_mono_via_refinement_ext(
     Qa::PntSeq{N,T},
     out::Vector{Morphing{N,T}},
     f_snapshots::Bool,
-    approx::Float64 = 1.00001,
+    approx::Real = 1.00001,
 ) where {N,T}
+    check_curves(Pa, Qa, "frechet_mono_via_refinement_ext"; min_vertices = 2)
+    approx = check_approx(approx, "frechet_mono_via_refinement_ext"; exceed_one = false)
     if (approx <= 1.0)
         approx = 1.0000001
         @assert(approx > 1.0)
@@ -1136,6 +1149,8 @@ function frechet_mono_via_refinement_delta(
     delta::Float64,
     f_fix_prm::Bool = false,
 ) where {N,T}
+    check_curves(Pa, Qa, "frechet_mono_via_refinement_delta"; min_vertices = 2)
+    check_nonnegative(delta, "frechet_mono_via_refinement_delta", "delta")
     f_debug::Bool = false
 
     P = Pa
@@ -1229,8 +1244,10 @@ Returns a 4-tuple  ( m, f, P, Q ):
 function frechet_mono_via_refinement(
     Pa::PntSeq{N,T},
     Qa::PntSeq{N,T},
-    approx::Float64 = 1.00001,
+    approx::Real = 1.00001,
 ) where {N,T}
+    check_curves(Pa, Qa, "frechet_mono_via_refinement"; min_vertices = 2)
+    approx = check_approx(approx, "frechet_mono_via_refinement"; exceed_one = false)
     ot::Vector{Morphing{N,T}} = Vector{Morphing{N,T}}()
     return frechet_mono_via_refinement_ext(Pa, Qa, ot, false, approx)
 end
@@ -1250,6 +1267,7 @@ otherwise.
 
 """
 function frechet_dist_upper_bound(poly_a::PntSeq{N,T}, poly_b::PntSeq{N,T}) where {N,T}
+    check_curves(poly_a, poly_b, "frechet_dist_upper_bound"; min_vertices = 2)
     w_a = frechet_width_approx(poly_a)
     w_b = frechet_width_approx(poly_b)
     if ((cardin(poly_a) < 2) || (cardin(poly_a) < 2))
@@ -1296,8 +1314,10 @@ ret.leash is an upper bound.
 function frechet_c_approx(
     poly_a::PntSeq{N,T},
     poly_b::PntSeq{N,T},
-    approx::Float64,
+    approx::Real,
 )::Morphing{N,T} where {N,T}
+    check_curves(poly_a, poly_b, "frechet_c_approx"; min_vertices = 2)
+    approx = check_approx(approx, "frechet_c_approx")
 
     f_debug::Bool = false
 
@@ -1589,8 +1609,10 @@ function frechet_c_compute(
     P::PntSeq{N,T},
     Q::PntSeq{N,T},
     f_accept_approx::Bool = true,
-    tolerance::Float64 = 0.00001,
+    tolerance::Real = 0.00001,
 ) where {N,T}
+    check_curves(P, Q, "frechet_c_compute"; min_vertices = 2)
+    tolerance = check_tolerance(tolerance, "frechet_c_compute")
     f_debug = false
 
     # Repeated consecutive vertices describe the same curve. The refinement below
@@ -1844,6 +1866,8 @@ function find_frechet_prefix(P::PntSeq{D,T}, i::Int64, j::Int64, w::T) where {D,
 end
 
 function frechet_simplify_to_width(P::PntSeq{D,T}, w::T) where {D,T}
+    check_curve(P, "frechet_simplify_to_width", "the curve"; min_vertices = 0)
+    check_nonnegative(w, "frechet_simplify_to_width", "w")
     pout = PntSeq{D,T}()
     pindices = Vector{Int64}()
 
@@ -1886,6 +1910,7 @@ straight track), no curve with more vertices exists at that accuracy, and it is
 returned even if it has fewer than `sz + 2` vertices.
 """
 function frechet_simplify_to_cardin(P::PntSeq{D,T}, sz::Int64) where {D,T}
+    check_curve(P, "frechet_simplify_to_cardin", "the curve")
     pout = PntSeq{D,T}()
     pindices = Vector{Int64}()
 
@@ -1939,6 +1964,8 @@ end
 
 
 function frechet_simplify_w_exp(P::PntSeq{D,T}, w::T) where {D,T}
+    check_curve(P, "frechet_simplify_w_exp", "the curve"; min_vertices = 0)
+    check_nonnegative(w, "frechet_simplify_w_exp", "w")
     pout = PntSeq{D,T}()
     pindices = Vector{Int64}()
 

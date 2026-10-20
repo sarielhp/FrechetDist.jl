@@ -26,6 +26,7 @@ const ph_approx = PH.hierarchy_approx
 const ph_compute_hierarchy = PH.hierarchy_build!
 
 function ph_init(P::PntSeq{D,T}, ph_lock) where {D,T}
+    check_curve(P, "ph_init", "the curve")
     ph = PH.hierarchy_init(P, frechet_measure; lock = ph_lock)
     ph.len = fp_geom_length(P)
 
