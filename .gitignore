@@ -24,3 +24,8 @@ data_old
 /results
 /snapshot
 /vers
+
+# Large datasets (GitHub rejects files over 100 MB)
+/raw/
+/data_geolife/
+/info/geolife_sorted_by_rt.txt
