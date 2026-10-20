@@ -36,19 +36,14 @@ function frechet_ve_r_mono_compute(poly_a::PntSeq{D,T}, poly_b::PntSeq{D,T}) whe
 end
 
 
-# Lifts the morphing m between the simplified curves P, Q back to a monotone
-# morphing between poly_a and poly_b. Also returns the total simplification error.
+# Lifts the morphing m between the simplified curves back to a monotone morphing
+# between the originals, given the simplification morphisms m_p (poly_a to P) and
+# m_q (poly_b to Q). Also returns the total simplification error.
 function combine_via_simplified(
-    poly_a::PntSeq{N,T},
-    poly_b::PntSeq{N,T},
-    P::PntSeq{N,T},
-    Q::PntSeq{N,T},
-    p_indices::Vector{Int64},
-    q_indices::Vector{Int64},
+    m_p::Morphing{N,T},
     m::Morphing{N,T},
+    m_q::Morphing{N,T},
 ) where {N,T}
-    m_p = frechet_c_mono_approx_subcurve(poly_a, P, p_indices)[1]
-    m_q = frechet_c_mono_approx_subcurve(poly_b, Q, q_indices)[1]
     Morphing_swap_sides!(m_q)
 
     # m = m_p * mm * m_q
@@ -149,8 +144,11 @@ function frechet_c_approx(
             f_do_one_round = false
         end
 
-        mm_out, total_err =
-            combine_via_simplified(poly_a, poly_b, P, Q, p_indices, q_indices, m)
+        mm_out, total_err = combine_via_simplified(
+            frechet_c_mono_approx_subcurve(poly_a, P, p_indices)[1],
+            m,
+            frechet_c_mono_approx_subcurve(poly_b, Q, q_indices)[1],
+        )
         ratio = approx_ratio_bound(m.leash, t_approx, total_err, mm_out.leash, approx)
         if ratio <= approx
             mm_out.ratio = ratio

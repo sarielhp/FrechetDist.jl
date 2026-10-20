@@ -70,7 +70,8 @@ end
         fc.i_is_vert = true
         fc.j_is_vert = true
         return 0
-    elseif (id == ID_END)
+    end
+    if (id == ID_END)
         fc.i = e.nP
         fc.j = e.nQ
         fc.i_is_vert = true
@@ -403,7 +404,7 @@ function fever_comp_leash(
         if (fc.i_is_vert && (! fc.j_is_vert))
             q_a = Q[fc.j]
             q_b = Q[fc.j+1]
-            l_min, l_max = max_leash(l_min, l_max, q_a, q_b, P, fc.i, fe.i)
+            l_min, l_max = max_leash((l_min, l_max), q_a, q_b, P, fc.i:fe.i)
             curr = hi + 1
             continue
         end
@@ -411,7 +412,7 @@ function fever_comp_leash(
         if ((! fc.i_is_vert) && (fc.j_is_vert))
             p_a = P[fc.i]
             p_b = P[fc.i+1]
-            l_min, l_max = max_leash(l_min, l_max, p_a, p_b, Q, fc.j, fe.j)
+            l_min, l_max = max_leash((l_min, l_max), p_a, p_b, Q, fc.j:fe.j)
             curr = hi + 1
             continue
         end

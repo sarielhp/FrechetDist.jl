@@ -106,9 +106,8 @@ function ve_event_value(c::FRContext{N,T}, id::Int64) where {N,T}
             if c.f_offsets
                 penalty = c.p_offs[i] + c.q_offs[j]
                 return d - penalty, penalty
-            else
-                return fp_dist(P[i], Q[j]), 0.0
             end
+            return fp_dist(P[i], Q[j]), 0.0
         end
         d = fp_dist_point_segment(c.P[i], Q[j], Q[j+1])
         if c.f_offsets
@@ -120,9 +119,8 @@ function ve_event_value(c::FRContext{N,T}, id::Int64) where {N,T}
             #            return  d - c.q_offs[ j ];
             penalty = max(c.q_offs[j], c.q_offs[j+1]) + c.p_offs[i]
             return d - penalty, penalty
-        else
-            return d, 0.0
         end
+        return d, 0.0
     end
 
     if EID_j_is_vert(id)
@@ -130,9 +128,8 @@ function ve_event_value(c::FRContext{N,T}, id::Int64) where {N,T}
         if c.f_offsets
             penalty = max(c.p_offs[i], c.p_offs[i+1]) + c.q_offs[j]
             return d - penalty, penalty
-        else
-            return d, 0.0
         end
+        return d, 0.0
     end
 
     error("ve_event_value: edge-edge events are not supported (event id $id)")
@@ -385,18 +382,17 @@ end
     monotonization.
 """
 @inline function max_leash(
-    l_min::T,
-    l_max::T,
+    bounds::Tuple{T,T},
     s_a::Point{N,T},
     s_b::Point{N,T},
     P::PntSeq{N,T},
-    low,
-    hi,
+    idx::UnitRange{Int64},
 ) where {N,T}
+    l_min, l_max = bounds
     #seg = Segment( s_a, s_b );
     len_seg_sq::Float64 = fp_dist_sq(s_a, s_b)
     if (len_seg_sq == 0.0)
-        for j = low:hi
+        for j in idx
             l_min = max(l_min, fp_dist(s_a, P[j]))
         end
         return l_min, max(l_min, l_max)
@@ -408,7 +404,7 @@ end
     seg_len_sq = fp_dist_sq(s_a, s_b)  # Squared distance between s_a and s_b
     s_vec = s_b - s_a
 
-    for j = low:hi
+    for j in idx
         p = P[j]
 
         sq, new_t = fp_nn_point_ext_ext(s_a, s_b, p, seg_len_sq, s_vec)
@@ -431,17 +427,16 @@ end
 # curve contributing the segment; vert_is_i tells whether V is the first curve.
 # Returns the updated (l_min, l_max) and the next position in arr.
 function leash_vertex_run(
-    l_min::T,
-    l_max::T,
+    bounds::Tuple{T,T},
     arr::Vector{Int64},
     curr::Int64,
-    len::Int64,
     V::PntSeq{N,T},
     S::PntSeq{N,T},
-    vert_is_i::Bool,
 ) where {N,T}
+    l_min, l_max = bounds
+    vert_is_i = EID_i_is_vert(arr[curr])
     low = curr
-    hi = eid_same_status(arr, curr, len)
+    hi = eid_same_status(arr, curr, length(arr))
     if low > hi
         return l_min, l_max, curr + 1
     end
@@ -457,7 +452,7 @@ function leash_vertex_run(
     end
 
     v_end = vert_is_i ? EID_i(eid_end) : EID_j(eid_end)
-    l_min, l_max = max_leash(l_min, l_max, s_a, s_b, V, v_start, v_end)
+    l_min, l_max = max_leash((l_min, l_max), s_a, s_b, V, v_start:v_end)
     return l_min, l_max, hi + 1
 end
 
@@ -481,9 +476,9 @@ function compute_leash_from_arr(
             l_min = max(l_min, fp_dist(P[EID_i(eid)], Q[EID_j(eid)]))
             curr = curr + 1
         elseif i_vert
-            l_min, l_max, curr = leash_vertex_run(l_min, l_max, arr, curr, len, P, Q, true)
+            l_min, l_max, curr = leash_vertex_run((l_min, l_max), arr, curr, P, Q)
         elseif j_vert
-            l_min, l_max, curr = leash_vertex_run(l_min, l_max, arr, curr, len, Q, P, false)
+            l_min, l_max, curr = leash_vertex_run((l_min, l_max), arr, curr, Q, P)
         else
             @assert(false)
         end

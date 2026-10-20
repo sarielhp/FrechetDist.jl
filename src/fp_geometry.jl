@@ -87,7 +87,8 @@ combination coefficient. The caller must precompute
 
     if (t <= 0.0)
         return s_p, zero(T)
-    elseif (t >= 1.0)
+    end
+    if (t >= 1.0)
         return s_q, one(T)
     end
 
