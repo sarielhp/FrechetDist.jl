@@ -30,3 +30,11 @@ end
         @test hi >= lo
     end
 end
+
+@testset "no endpoint snapping distortion on long edges" begin
+    for L in (1.0e4, 1.0e6, 1.0e8)
+        P = PntSeq([Point(0.0, 0.0), Point(L, 0.0)])
+        Q = PntSeq([Point(0.0, 0.0), Point(0.5, 0.3), Point(L, 0.0)])
+        @test isapprox(frechet_c_compute(P, Q).leash, 0.3; rtol = 1e-9)
+    end
+end

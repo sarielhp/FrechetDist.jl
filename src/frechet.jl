@@ -177,11 +177,15 @@ function f_r_create_event(
         "f_r_create_event: the nearest-point parameter t = $t on edge $i is outside " *
         "[0, 1] (query point $qr)",
     )
-    if (0 < t < 0.000001)
+    # Snap to the vertices only when the displacement is rounding noise for the
+    # coordinates involved (independent of the edge length).
+    noise = 4 * eps(Float64) * max(maximum(abs, R[i]), maximum(abs, R[i+1]))
+    len = fp_dist(R[i], R[i+1])
+    if (0 < t) && (t * len <= noise)
         t = 0
         p = R[i]
     end
-    if (0.999999 < t < 1.0)
+    if (t < 1.0) && ((1.0 - t) * len <= noise)
         t = 1.0
         p = R[i+1]
     end

@@ -40,16 +40,13 @@ end
 """
     fp_convex_comb( p, q, t )
 
-`(1-t) p + t q`, snapped to `p` for `t` in `[0, 1e-6]` and to `q` for
-`t` in `(0.99999, 1]`.
+`(1-t) p + t q`, returning `p` and `q` exactly at `t == 0` and `t == 1`. There is no
+snapping band: a fixed band in `t` moves points by a distance proportional to the edge
+length, which distorts long edges.
 """
 @inline function fp_convex_comb(p::Point{D,T}, q::Point{D,T}, t::Float64) where {D,T}
-    if (0 <= t <= 0.000001)
-        return p
-    end
-    if (0.99999 < t <= 1.0)
-        return q
-    end
+    (t == 0.0) && return p
+    (t == 1.0) && return q
 
     o = MVector{D,T}(undef)
     @inbounds for i = 1:D
@@ -177,6 +174,13 @@ Distance from `qr` to the segment `s_p`-`s_q`, computed from the quadratic
             val = a + b + c
         else
             val = a*t^2 + b*t + c
+            if (val < 1.0e-8 * c)
+                # a*t^2 + b*t cancels against c: the digits are lost when the point
+                # is much closer to the segment than the segment is long. Recompute
+                # from the vector to the closest point instead.
+                r = dff + t * (s_q - s_p)
+                val = fp_dot(r, r)
+            end
         end
     end
     if (val <= 1e-20)
