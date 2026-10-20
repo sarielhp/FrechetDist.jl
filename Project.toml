@@ -18,11 +18,9 @@ Printf = "de0858da-6303-5e67-8744-51eddeeeb8d7"
 StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
 TimerOutputs = "a759f4b9-e2f1-59dc-863e-4aeb61b1ea8f"
 
-[sources]
-BasicCompGeometry = {path = "/home/sariel/prog/26/BasicCompGeometry"}
 
 [compat]
-BasicCompGeometry = "0.5"
+BasicCompGeometry = "0.5.1"
 CPUSummary = "0.2.7"
 CSV = "0.10.15"
 CpuId = "0.3.1"
