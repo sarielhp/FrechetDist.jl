@@ -1,8 +1,8 @@
 # Change log
     What had changed...
 
-Unreleased
-==========
+v2.2.0 Release Notes
+====================
 * Input contract: public entry points validate their curves and parameters and throw `ArgumentError`; library code no longer calls `exit()` or prints.
 * Fixed endpoint snapping that distorted long edges and near-identical curves (leashes change by at most ~1e-16 relative).
 * Fixed `SweepDist` for crossing configurations, and the penalty handling of the `*_ext` functions.
