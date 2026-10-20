@@ -91,8 +91,7 @@ function get_event_points(c::SDContext{N,T}, id::Int64) where {N,T}
         return p, Q[j]
     end
 
-    println("Error: This kind of event is not handled yet...")
-    return P[1], Q[1]
+    error("get_event_points: edge-edge events are not supported (event id $id)")
 end
 
 

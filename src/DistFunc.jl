@@ -266,10 +266,7 @@ function SweepDist_segs_p(
     #println( "ymin: ", ymin );
     #println( "ymax: ", ymax );
 
-    if (isnan(vl))
-        @assert(! isnan(vl))
-        println("VL: ", vl)
-    end
+    isnan(vl) && error("SweepDist_segs_p: the integral of the leash length is NaN")
     f_debug && println("VL: ", vl)
 
     return vl

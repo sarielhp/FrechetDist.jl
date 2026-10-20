@@ -173,13 +173,10 @@ function f_r_create_event(
 
     #t::Float64 = fp_convex_coef( seg, p );
 
-    if (! (0.0 <= t && t <= 1.0))
-        println(R[i])
-        println(R[i+1])
-        println("qr: ", qr)
-        println("t: ", t)
-        @assert(0.0 <= t && t <= 1.0)
-    end
+    (0.0 <= t <= 1.0) || error(
+        "f_r_create_event: the nearest-point parameter t = $t on edge $i is outside " *
+        "[0, 1] (query point $qr)",
+    )
     if (0 < t < 0.000001)
         t = 0
         p = R[i]
@@ -1558,7 +1555,6 @@ function simplify_morphing_sensitive(m::Morphing{D,T}, factor::Float64) where {D
 
     lower_bound = m.lower_bound
 
-    println("LLLlower_bound: ", lower_bound)
     pz = ((lower_bound * ones(length(pl))) - pl) / factor
     qz = ((lower_bound * ones(length(ql))) - ql) / factor
 

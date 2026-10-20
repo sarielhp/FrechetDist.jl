@@ -43,6 +43,5 @@ approximation.
 """
 function frechet_palette_level(P::PntSeq{N,T}, plt::Vector{T}, level::Int64) where {N,T}
     pout, pout_is = PH.palette_level(P, plt, level)
-    println("|pout|: ", cardin(pout))
     return pout, pout_is
 end

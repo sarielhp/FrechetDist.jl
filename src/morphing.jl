@@ -473,12 +473,8 @@ function polygons_get_loc_at_time(
     (t >= 1.0) && return last(P), last(Q)
 
     pos = searchsortedfirst(times, t)
-    if (! (1 < pos <= length(P)))
-        println(pos)
-        println(times[pos])
-        println(t)
-        @assert(1 < pos <= length(P))
-    end
+    (1 < pos <= length(P)) ||
+        error("polygons_get_loc_at_time: time $t is outside the event times")
 
     #=
     println( "POS : ", pos );
@@ -489,7 +485,6 @@ function polygons_get_loc_at_time(
     prev = pos - 1
 
     while (prev > 1) && (times[prev-1] == times[prev])
-        println("GOING BACK!")
         prev = prev - 1
     end
     while (pos < length(times)) && (times[pos] == times[pos+1])
@@ -725,10 +720,12 @@ end
 # Given two parameterization f, g, compute f(g( . ))
 ###############################################################
 function parameterization_combine(f::PntSeq2F, g::PntSeq2F)::PntSeq2F
-    if (! fp_equal(last(g)[2], last(f)[1]))
-        println(last(g)[2], " != ", last(f)[1])
-        @assert(fp_equal(last(g)[2], last(f)[1]))
-    end
+    fp_equal(last(g)[2], last(f)[1]) || throw(
+        ArgumentError(
+            "parameterization_combine: the parameterizations do not compose " *
+            "($(last(g)[2]) != $(last(f)[1]))",
+        ),
+    )
     idf::Int64 = 1
     idg::Int64 = 1
     out::PntSeq2F = PntSeq2F()
@@ -884,22 +881,10 @@ function event_sequences_extract(prm::PntSeq2F, P::PntSeq{N,T}, Q::PntSeq{N,T}) 
         while (i_p < length(lp)) && (p_loc >= lp[i_p+1])
             i_p = i_p + 1
         end
-        if (! (lp[i_p] <= p_loc))
-            println("-----------------------")
-            println("lp[ i_p - 1]  : ", lp[i_p-1])
-            println("lp[ i_p ]     : ", lp[i_p])
-            println("lp[ i_p + 1 ] : ", lp[i_p+1])
-            println("p_loc         : ", p_loc)
-            println(" i_p : ", i_p)
-            println(" len : ", length(lp))
-            println(prm[i-1])
-            println(prm[i])
-            println(prm[i+1])
-            #            println( prm );
-
-        end
-        #println( lp[ i_p ], "<=", p_loc );
-        @assert(lp[i_p] <= p_loc)
+        (lp[i_p] <= p_loc) || error(
+            "event_sequences_extract: parameter $p_loc precedes the vertex position " *
+            "$(lp[i_p]) (vertex $i_p of $(length(lp)))",
+        )
         while (i_q < length(lq)) && (curr[2] >= lq[i_q+1])
             i_q = i_q + 1
         end
@@ -914,10 +899,8 @@ function event_sequences_extract(prm::PntSeq2F, P::PntSeq{N,T}, Q::PntSeq{N,T}) 
         qcurr, t_q = get_point(Q, lq, i_q, curr[2])
         #@assert( ! isNaN( qcurr ) );
 
-        if (! (0.0 <= t_q <= 1.0))
-            println("t_q: ", t_q)
-            @assert(0.0 <= t_q <= 1.0)
-        end
+        (0.0 <= t_q <= 1.0) ||
+            error("event_sequences_extract: the parameter t_q = $t_q is outside [0, 1]")
         #        println( "here? " );
 
         if (t_p == 0.0) || ((t_p == 1.0) && (i_p == len_p))
