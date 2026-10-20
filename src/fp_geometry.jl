@@ -40,16 +40,13 @@ end
 """
     fp_convex_comb( p, q, t )
 
-`(1-t) p + t q`, snapped to `p` for `t` in `[0, 1e-6]` and to `q` for
-`t` in `(0.99999, 1]`.
+`(1-t) p + t q`, returning `p` and `q` exactly at `t == 0` and `t == 1`. There is no
+snapping band: a fixed band in `t` moves points by a distance proportional to the edge
+length, which distorts long edges.
 """
 @inline function fp_convex_comb(p::Point{D,T}, q::Point{D,T}, t::Float64) where {D,T}
-    if (0 <= t <= 0.000001)
-        return p
-    end
-    if (0.99999 < t <= 1.0)
-        return q
-    end
+    (t == 0.0) && return p
+    (t == 1.0) && return q
 
     o = MVector{D,T}(undef)
     @inbounds for i = 1:D
@@ -152,7 +149,7 @@ end
 
 Distance from `qr` to the segment `s_p`-`s_q`, computed from the quadratic
 `a t^2 + b t + c` without constructing the nearest point. Values below
-`1e-20` (squared) are reported as zero.
+`1e-20 max(a, c)` (squared, relative to the scale of the inputs) are reported as zero.
 """
 @inline function fp_dist_point_segment(
     qr::Point{D,T},
@@ -165,18 +162,29 @@ Distance from `qr` to the segment `s_p`-`s_q`, computed from the quadratic
     b = 2.0 * fp_dot(dff, s_q - s_p)
     c = fp_dot(dff, dff)
 
-    t = -b / (2.0 * a)
-
     local val::Float64
-    if (t < 0)
+    if (a == 0.0)
+        # A zero-length segment is a single point; -b / (2a) below would be NaN.
         val = c
-    elseif (t > 1)
-        val = a + b + c
     else
-        val = a*t^2 + b*t + c
+        t = -b / (2.0 * a)
+        if (t < 0)
+            val = c
+        elseif (t > 1)
+            val = a + b + c
+        else
+            val = a*t^2 + b*t + c
+            if (val < 1.0e-8 * c)
+                # a*t^2 + b*t cancels against c: the digits are lost when the point
+                # is much closer to the segment than the segment is long. Recompute
+                # from the vector to the closest point instead.
+                r = dff + t * (s_q - s_p)
+                val = fp_dot(r, r)
+            end
+        end
     end
-    if (val <= 1e-20)
-        return 0
+    if (val <= 1e-20 * max(a, c))
+        return 0.0
     end
     return sqrt(val)
 end
@@ -212,9 +220,9 @@ function fp_dist_segment_segment(
     ]
 
     rk = rank(m)
-    @assert(rk > 0)
-    if (rk == 1)
-        # The minimum distance is realized by one of the endpoints.
+    if (rk <= 1)
+        # Parallel segments, or one or both of zero length: the minimum distance is
+        # realized by one of the endpoints.
         return min(
             fp_dist_point_segment(b_p, a_p, a_q),
             fp_dist_point_segment(b_q, a_p, a_q),

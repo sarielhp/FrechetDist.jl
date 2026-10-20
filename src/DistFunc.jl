@@ -39,7 +39,7 @@ function normalize(f::DistFunction{T}) where {T}
     f.disc = f.b*f.b - 4.0*f.a*f.c
     if (abs(f.disc) < 1e-13)
         f.f_linear = true
-        root = -f.b/(2.0*f.a)
+        f.root = -f.b/(2.0*f.a)
     end
     return f
 end
@@ -55,8 +55,8 @@ end
 
 function d_eval(f::DistFunction{T}, x::T) where {T}
     v = f.a*x*x + f.b*x + f.c
-    if (abs(v) < 1e-16)
-        return 0
+    if (v < 1e-16)
+        return 0.0
     end
     return sqrt(v)
 end
@@ -266,10 +266,7 @@ function SweepDist_segs_p(
     #println( "ymin: ", ymin );
     #println( "ymax: ", ymax );
 
-    if (isnan(vl))
-        @assert(! isnan(vl))
-        println("VL: ", vl)
-    end
+    isnan(vl) && error("SweepDist_segs_p: the integral of the leash length is NaN")
     f_debug && println("VL: ", vl)
 
     return vl

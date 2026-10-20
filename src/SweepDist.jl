@@ -44,8 +44,8 @@ end
 
 
 
-DictVerticesType = Dict{Int64,TreeVertex};
-DictHandledType = Dict{Int64,Bool};
+const DictVerticesType = Dict{Int64,TreeVertex};
+const DictHandledType = Dict{Int64,Bool};
 
 @with_kw mutable struct SDContext{N,T}
     P::PntSeq{N,T}
@@ -91,8 +91,7 @@ function get_event_points(c::SDContext{N,T}, id::Int64) where {N,T}
         return p, Q[j]
     end
 
-    println("Error: This kind of event is not handled yet...")
-    return P[1], Q[1]
+    error("get_event_points: edge-edge events are not supported (event id $id)")
 end
 
 
@@ -183,6 +182,7 @@ end
 # Returns a Morphing that encodes the solution
 ##########################################################################
 function SweepDist_compute(P::PntSeq{N,T}, Q::PntSeq{N,T}) where {N,T}
+    check_curves(P, Q, "SweepDist_compute"; min_vertices = 2)
     f_debug::Bool = false
     c::SDContext{N,T} = SDContext(P, Q)
 
@@ -256,6 +256,7 @@ end
 
 
 function SweepDist_compute_refine_mono(poly_a::PntSeq{N,T}, poly_b::PntSeq{N,T}) where {N,T}
+    check_curves(poly_a, poly_b, "SweepDist_compute_refine_mono"; min_vertices = 2)
     ell = fp_geom_length(poly_a) + fp_geom_length(poly_b)
 
     P = poly_a
@@ -296,6 +297,7 @@ function SweepDist_compute_split(
     iters::Int64,
     max_vertices::Int64 = 1000000,
 ) where {N,T}
+    check_curves(poly_a, poly_b, "SweepDist_compute_split"; min_vertices = 2)
 
     m = SweepDist_compute_refine_mono(poly_a, poly_b)
     Morphing_verify_valid(m)
@@ -327,6 +329,7 @@ discrete Frechet calculation.
 
 """
 function SweepDist_lb_compute(P::PntSeq{D,T}, Q::PntSeq{D,T}) where {D,T}
+    check_curves(P, Q, "SweepDist_lb_compute"; min_vertices = 2)
 
     pq = PriorityQueue{Tuple{Int64,Int64},Float64}()
 
