@@ -849,10 +849,10 @@ function get_point(
     t = (pos - lens[i]) / edge_len
 
     if (0 > t > -0.00000001)
-        t = 0
+        t = 0.0
     end
     if (1.0 < t < 1.000000001)
-        t = 1
+        t = 1.0
     end
 
     #    println( "inside... 3" );

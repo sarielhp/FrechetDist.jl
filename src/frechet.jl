@@ -1845,7 +1845,7 @@ function frechet_simplify_to_width(P::PntSeq{D,T}, w::T) where {D,T}
 
     len = cardin(P)
     if (len == 0)
-        return pout
+        return pout, pindices
     end
     if (push_distinct!(pout, P[1]))
         push!(pindices, 1)
