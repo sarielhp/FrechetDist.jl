@@ -1,0 +1,222 @@
+Julia check completed!
+Architecture:                         x86_64
+CPU op-mode(s):                       32-bit, 64-bit
+Address sizes:                        39 bits physical, 48 bits virtual
+Byte Order:                           Little Endian
+CPU(s):                               16
+On-line CPU(s) list:                  0-15
+Vendor ID:                            GenuineIntel
+Model name:                           11th Gen Intel(R) Core(TM) i7-11700 @ 2.50GHz
+CPU family:                           6
+Model:                                167
+Thread(s) per core:                   2
+Core(s) per socket:                   8
+Socket(s):                            1
+Stepping:                             1
+CPU(s) scaling MHz:                   79%
+CPU max MHz:                          4900.0000
+CPU min MHz:                          800.0000
+BogoMIPS:                             4992.00
+Flags:                                fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush dts acpi mmx fxsr sse sse2 ss ht tm pbe syscall nx pdpe1gb rdtscp lm constant_tsc art arch_perfmon pebs bts rep_good nopl xtopology nonstop_tsc cpuid aperfmperf tsc_known_freq pni pclmulqdq dtes64 monitor ds_cpl vmx smx est tm2 ssse3 sdbg fma cx16 xtpr pdcm pcid sse4_1 sse4_2 x2apic movbe popcnt tsc_deadline_timer aes xsave avx f16c rdrand lahf_lm abm 3dnowprefetch cpuid_fault epb ssbd ibrs ibpb stibp ibrs_enhanced tpr_shadow flexpriority ept vpid ept_ad fsgsbase tsc_adjust bmi1 avx2 smep bmi2 erms invpcid mpx avx512f avx512dq rdseed adx smap avx512ifma clflushopt intel_pt avx512cd sha_ni avx512bw avx512vl xsaveopt xsavec xgetbv1 xsaves dtherm ida arat pln pts hwp hwp_notify hwp_act_window hwp_epp hwp_pkg_req vnmi avx512vbmi umip pku ospke avx512_vbmi2 gfni vaes vpclmulqdq avx512_vnni avx512_bitalg avx512_vpopcntdq rdpid fsrm md_clear flush_l1d arch_capabilities
+Virtualization:                       VT-x
+L1d cache:                            384 KiB (8 instances)
+L1i cache:                            256 KiB (8 instances)
+L2 cache:                             4 MiB (8 instances)
+L3 cache:                             16 MiB (1 instance)
+NUMA node(s):                         1
+NUMA node0 CPU(s):                    0-15
+Vulnerability Gather data sampling:   Mitigation; Microcode
+Vulnerability Itlb multihit:          Not affected
+Vulnerability L1tf:                   Not affected
+Vulnerability Mds:                    Not affected
+Vulnerability Meltdown:               Not affected
+Vulnerability Mmio stale data:        Mitigation; Clear CPU buffers; SMT vulnerable
+Vulnerability Reg file data sampling: Not affected
+Vulnerability Retbleed:               Mitigation; Enhanced IBRS
+Vulnerability Spec rstack overflow:   Not affected
+Vulnerability Spec store bypass:      Mitigation; Speculative Store Bypass disabled via prctl
+Vulnerability Spectre v1:             Mitigation; usercopy/swapgs barriers and __user pointer sanitization
+Vulnerability Spectre v2:             Mitigation; Enhanced / Automatic IBRS; IBPB conditional; RSB filling; PBRSB-eIBRS SW sequence; BHI SW loop, KVM SW loop
+Vulnerability Srbds:                  Not affected
+Vulnerability Tsx async abort:        Not affected
+               total        used        free      shared  buff/cache   available
+Mem:        65571864     9006924    19527024       54364    37850468    56564940
+Swap:       73692156     4831812    68860344
+Julia version : 1.12.3
+
+Reading polygons...
+Scanning for polygon files...
+Reading polygon files...
+4095  Reading: data/geolife/13367.txt      
+8191  Reading: data/geolife/16724_1292.txt      
+12287  Reading: data/geolife/4530.txt      
+16383  Reading: data/geolife/8019_581.txt      
+
+Initialize simplification hierarchies...
+512        1024        1536        2048        2560        3072        3584        4096        4608        5120        5632        6144        6656        7168        7680        8192        8704        9216        9728        10240        10752        11264        11776        12288        12800        13312        13824        14336        14848        15360        15872        16384        16896        17408        17920        18432        
+
+
+Reading query files...
+
+Running tests...
+Threads: 16
+2047 T1D : 2048/322000
+4095 T1D : 4096/322000
+6143 T1D : 6144/322000
+8191 T1D : 8192/322000
+10239 T1D : 10240/322000
+12287 T1D : 12288/322000
+14335 T1D : 14336/322000
+16383 T1D : 16384/322000
+18431 T1D : 18432/322000
+20479 T1D : 20480/322000
+22527 T1D : 22528/322000
+24575 T1D : 24576/322000
+26623 T1D : 26624/322000
+28671 T1D : 28672/322000
+30719 T1D : 30720/322000
+32767 T1D : 32768/322000
+34815 T1D : 34816/322000
+36863 T1D : 36864/322000
+38911 T1D : 38912/322000
+40959 T1D : 40960/322000
+43007 T1D : 43008/322000
+45055 T1D : 45056/322000
+47103 T1D : 47104/322000
+49151 T1D : 49152/322000
+51199 T1D : 51200/322000
+53247 T1D : 53248/322000
+55295 T1D : 55296/322000
+57343 T1D : 57344/322000
+59391 T1D : 59392/322000
+61439 T1D : 61440/322000
+63487 T1D : 63488/322000
+65535 T1D : 65536/322000
+67583 T1D : 67584/322000
+69631 T1D : 69632/322000
+71679 T1D : 71680/322000
+73727 T1D : 73728/322000
+75775 T1D : 75776/322000
+77823 T1D : 77824/322000
+79871 T1D : 79872/322000
+81919 T1D : 81920/322000
+83967 T1D : 83968/322000
+86015 T1D : 86016/322000
+88063 T1D : 88064/322000
+90111 T1D : 90112/322000
+92159 T1D : 92160/322000
+94207 T1D : 94208/322000
+96255 T1D : 96256/322000
+98303 T1D : 98304/322000
+100351 T1D : 100352/322000
+102399 T1D : 102400/322000
+104447 T1D : 104448/322000
+106495 T1D : 106496/322000
+108543 T1D : 108544/322000
+110591 T1D : 110592/322000
+112639 T1D : 112640/322000
+114687 T1D : 114688/322000
+116735 T1D : 116736/322000
+118783 T1D : 118784/322000
+120831 T1D : 120832/322000
+122879 T1D : 122880/322000
+124927 T1D : 124928/322000
+126975 T1D : 126976/322000
+129023 T1D : 129024/322000
+131071 T1D : 131072/322000
+133119 T1D : 133120/322000
+135167 T1D : 135168/322000
+137215 T1D : 137216/322000
+139263 T1D : 139264/322000
+141311 T1D : 141312/322000
+143359 T1D : 143360/322000
+145407 T1D : 145408/322000
+147455 T1D : 147456/322000
+149503 T1D : 149504/322000
+151551 T1D : 151552/322000
+153599 T1D : 153600/322000
+155647 T1D : 155648/322000
+157695 T1D : 157696/322000
+159743 T1D : 159744/322000
+161791 T1D : 161792/322000
+163839 T1D : 163840/322000
+165887 T1D : 165888/322000
+167935 T1D : 167936/322000
+169983 T1D : 169984/322000
+172031 T1D : 172032/322000
+174079 T1D : 174080/322000
+176127 T1D : 176128/322000
+178175 T1D : 178176/322000
+180223 T1D : 180224/322000
+182271 T1D : 182272/322000
+184319 T1D : 184320/322000
+186367 T1D : 186368/322000
+188415 T1D : 188416/322000
+190463 T1D : 190464/322000
+192511 T1D : 192512/322000
+194559 T1D : 194560/322000
+196607 T1D : 196608/322000
+198655 T1D : 198656/322000
+200703 T1D : 200704/322000
+202751 T1D : 202752/322000
+204799 T1D : 204800/322000
+206847 T1D : 206848/322000
+208895 T1D : 208896/322000
+210943 T1D : 210944/322000
+212991 T1D : 212992/322000
+215039 T1D : 215040/322000
+217087 T1D : 217088/322000
+219135 T1D : 219136/322000
+221183 T1D : 221184/322000
+223231 T1D : 223232/322000
+225279 T1D : 225280/322000
+227327 T1D : 227328/322000
+229375 T1D : 229376/322000
+231423 T1D : 231424/322000
+233471 T1D : 233472/322000
+235519 T1D : 235520/322000
+237567 T1D : 237568/322000
+239615 T1D : 239616/322000
+241663 T1D : 241664/322000
+243711 T1D : 243712/322000
+245759 T1D : 245760/322000
+247807 T1D : 247808/322000
+249855 T1D : 249856/322000
+251903 T1D : 251904/322000
+253951 T1D : 253952/322000
+255999 T1D : 256000/322000
+258047 T1D : 258048/322000
+260095 T1D : 260096/322000
+262143 T1D : 262144/322000
+264191 T1D : 264192/322000
+266239 T1D : 266240/322000
+268287 T1D : 268288/322000
+270335 T1D : 270336/322000
+272383 T1D : 272384/322000
+274431 T1D : 274432/322000
+276479 T1D : 276480/322000
+278527 T1D : 278528/322000
+280575 T1D : 280576/322000
+282623 T1D : 282624/322000
+284671 T1D : 284672/322000
+286719 T1D : 286720/322000
+288767 T1D : 288768/322000
+290815 T1D : 290816/322000
+292863 T1D : 292864/322000
+294911 T1D : 294912/322000
+296959 T1D : 296960/322000
+299007 T1D : 299008/322000
+301055 T1D : 301056/322000
+303103 T1D : 303104/322000
+305151 T1D : 305152/322000
+307199 T1D : 307200/322000
+309247 T1D : 309248/322000
+311295 T1D : 311296/322000
+313343 T1D : 313344/322000
+315391 T1D : 315392/322000
+317439 T1D : 317440/322000
+319487 T1D : 319488/322000
+321535 T1D : 321536/322000
+TEST COMPLETED SUCCESSFULLY!
+# of pairs compared : 322000
+Running time:  50

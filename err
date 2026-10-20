@@ -1,0 +1,151 @@
+/home/sariel/prog/24/FrechetDist/c_impl
+Cloning into '.'...
+Switched to a new branch 'decider_experiments'
+branch 'decider_experiments' set up to track 'origin/decider_experiments'.
+CMake Deprecation Warning at CMakeLists.txt:13 (cmake_minimum_required):
+  Compatibility with CMake < 3.10 will be removed from a future version of
+  CMake.
+
+  Update the VERSION argument <min> value.  Or, use the <min>...<max> syntax
+  to tell CMake that the project requires at least <min> but has been updated
+  to work with policies introduced by <max> or earlier.
+
+
+-- The CXX compiler identification is GNU 15.2.0
+-- Detecting CXX compiler ABI info
+-- Detecting CXX compiler ABI info - done
+-- Check for working CXX compiler: /usr/bin/c++ - skipped
+-- Detecting CXX compile features
+-- Detecting CXX compile features - done
+-- Found OpenMP_CXX: -fopenmp (found version "4.5")
+-- Found OpenMP: TRUE (found version "4.5")
+-- Configuring done (0.4s)
+-- Generating done (0.0s)
+-- Build files have been written to: /home/sariel/prog/24/FrechetDist/c_impl/build
+[  3%] Building CXX object CMakeFiles/calc_frechet_distance.dir/src/freespace_light_vis.cpp.o
+[  3%] Building CXX object CMakeFiles/run_tests.dir/src/unit_tests.cpp.o
+[  5%] Building CXX object CMakeFiles/calc_frechet_distance.dir/src/geometry_basics.cpp.o
+[  5%] Building CXX object CMakeFiles/calc_frechet_distance.dir/src/frechet_naive.cpp.o
+[  6%] Building CXX object CMakeFiles/export_freespace_diagram.dir/src/export_freespace_diagram.cpp.o
+[  7%] Building CXX object CMakeFiles/export_freespace_diagram.dir/src/frechet_light.cpp.o
+[  8%] Building CXX object CMakeFiles/calc_frechet_distance.dir/src/filter.cpp.o
+[  9%] Building CXX object CMakeFiles/common.dir/src/frechet_light.cpp.o
+[ 11%] Building CXX object CMakeFiles/test_curves.dir/src/geometry_basics.cpp.o
+[  3%] Building CXX object CMakeFiles/common.dir/src/frechet_naive.cpp.o
+[ 10%] Building CXX object CMakeFiles/test_curves.dir/src/filter.cpp.o
+[ 13%] Building CXX object CMakeFiles/calc_frechet_distance.dir/src/frechet_light.cpp.o
+[ 14%] Building CXX object CMakeFiles/test_curves.dir/src/test_curves.cpp.o
+[ 15%] Building CXX object CMakeFiles/calc_frechet_distance.dir/src/orth_range_search.cpp.o
+[ 15%] Building CXX object CMakeFiles/run_tests.dir/src/run_tests.cpp.o
+[ 16%] Building CXX object CMakeFiles/export_freespace_diagram.dir/src/geometry_basics.cpp.o
+[ 17%] Building CXX object CMakeFiles/run_tests.dir/src/frechet_naive.cpp.o
+[ 18%] Building CXX object CMakeFiles/pruning_progress.dir/src/pruning_progress.cpp.o
+[ 19%] Building CXX object CMakeFiles/compare_implementations.dir/src/compare_implementations.cpp.o
+[ 20%] Building CXX object CMakeFiles/common.dir/src/filter.cpp.o
+[ 21%] Building CXX object CMakeFiles/test_curves.dir/src/frechet_light.cpp.o
+[ 22%] Building CXX object CMakeFiles/calc_frechet_distance.dir/src/calc_frechet_distance.cpp.o
+[ 23%] Building CXX object CMakeFiles/run_tests.dir/src/geometry_basics.cpp.o
+[ 24%] Building CXX object CMakeFiles/test_curves.dir/src/frechet_naive.cpp.o
+[ 25%] Building CXX object CMakeFiles/calc_frechet_distance.dir/src/parser.cpp.o
+[ 26%] Building CXX object CMakeFiles/common.dir/src/query.cpp.o
+[ 27%] Building CXX object CMakeFiles/pruning_progress.dir/src/geometry_basics.cpp.o
+[ 28%] Building CXX object CMakeFiles/test_curves.dir/src/freespace_light_vis.cpp.o
+[ 29%] Building CXX object CMakeFiles/common.dir/src/parser.cpp.o
+[ 30%] Building CXX object CMakeFiles/run_tests.dir/src/filter.cpp.o
+[ 31%] Building CXX object CMakeFiles/common.dir/src/orth_range_search.cpp.o
+[ 32%] Building CXX object CMakeFiles/export_freespace_diagram.dir/src/frechet_naive.cpp.o
+[ 34%] Building CXX object CMakeFiles/export_freespace_diagram.dir/src/filter.cpp.o
+[ 34%] Building CXX object CMakeFiles/common.dir/src/geometry_basics.cpp.o
+[ 35%] Building CXX object CMakeFiles/test_curves.dir/src/parser.cpp.o
+[ 36%] Building CXX object CMakeFiles/pruning_progress.dir/src/frechet_naive.cpp.o
+[ 37%] Building CXX object CMakeFiles/run_tests.dir/src/freespace_light_vis.cpp.o
+[ 38%] Building CXX object CMakeFiles/compare_implementations.dir/src/geometry_basics.cpp.o
+[ 39%] Building CXX object CMakeFiles/pruning_progress.dir/src/frechet_light.cpp.o
+[ 40%] Building CXX object CMakeFiles/common.dir/src/curve.cpp.o
+[ 41%] Building CXX object CMakeFiles/run_tests.dir/src/orth_range_search.cpp.o
+[ 42%] Building CXX object CMakeFiles/compare_implementations.dir/src/filter.cpp.o
+[ 43%] Building CXX object CMakeFiles/run_tests.dir/src/frechet_light.cpp.o
+[ 44%] Building CXX object CMakeFiles/common.dir/src/times.cpp.o
+[ 46%] Building CXX object CMakeFiles/compare_implementations.dir/src/frechet_light.cpp.o
+[ 47%] Building CXX object CMakeFiles/compare_implementations.dir/src/orth_range_search.cpp.o
+[ 48%] Building CXX object CMakeFiles/compare_implementations.dir/src/parser.cpp.o
+[ 49%] Building CXX object CMakeFiles/pruning_progress.dir/src/orth_range_search.cpp.o
+[ 50%] Building CXX object CMakeFiles/pruning_progress.dir/src/filter.cpp.o
+[ 51%] Building CXX object CMakeFiles/test_curves.dir/src/query.cpp.o
+[ 45%] Building CXX object CMakeFiles/calc_frechet_distance.dir/src/query.cpp.o
+[ 52%] Building CXX object CMakeFiles/pruning_progress.dir/src/parser.cpp.o
+[ 53%] Building CXX object CMakeFiles/compare_implementations.dir/src/query.cpp.o
+[ 55%] Building CXX object CMakeFiles/export_freespace_diagram.dir/src/freespace_light_vis.cpp.o
+[ 56%] Building CXX object CMakeFiles/export_freespace_diagram.dir/src/orth_range_search.cpp.o
+[ 57%] Building CXX object CMakeFiles/run_tests.dir/src/query.cpp.o
+[ 58%] Building CXX object CMakeFiles/test_curves.dir/src/times.cpp.o
+[ 59%] Building CXX object CMakeFiles/pruning_progress.dir/src/times.cpp.o
+[ 60%] Building CXX object CMakeFiles/test_curves.dir/src/curve.cpp.o
+[ 61%] Building CXX object CMakeFiles/calc_frechet_distance.dir/src/curve.cpp.o
+[ 62%] Building CXX object CMakeFiles/calc_frechet_distance.dir/src/times.cpp.o
+[ 63%] Building CXX object CMakeFiles/calc_frechet_distance.dir/src/certificate.cpp.o
+[ 64%] Building CXX object CMakeFiles/export_freespace_diagram.dir/src/query.cpp.o
+[ 65%] Building CXX object CMakeFiles/compare_implementations.dir/src/curve.cpp.o
+[ 66%] Building CXX object CMakeFiles/pruning_progress.dir/src/freespace_light_vis.cpp.o
+[ 67%] Building CXX object CMakeFiles/export_freespace_diagram.dir/src/parser.cpp.o
+[ 68%] Building CXX object CMakeFiles/compare_implementations.dir/src/frechet_naive.cpp.o
+[ 69%] Building CXX object CMakeFiles/export_freespace_diagram.dir/src/times.cpp.o
+[ 70%] Building CXX object CMakeFiles/test_curves.dir/src/certificate.cpp.o
+[ 71%] Building CXX object CMakeFiles/pruning_progress.dir/src/query.cpp.o
+[ 72%] Building CXX object CMakeFiles/run_tests.dir/src/parser.cpp.o
+[ 72%] Building CXX object CMakeFiles/test_curves.dir/src/orth_range_search.cpp.o
+[ 73%] Building CXX object CMakeFiles/export_freespace_diagram.dir/src/curve.cpp.o
+[ 74%] Building CXX object CMakeFiles/pruning_progress.dir/src/curve.cpp.o
+[ 75%] Building CXX object CMakeFiles/compare_implementations.dir/src/times.cpp.o
+[ 76%] Building CXX object CMakeFiles/export_freespace_diagram.dir/src/certificate.cpp.o
+[ 77%] Building CXX object CMakeFiles/run_tests.dir/src/curve.cpp.o
+[ 78%] Building CXX object CMakeFiles/compare_implementations.dir/src/certificate.cpp.o
+[ 79%] Building CXX object CMakeFiles/pruning_progress.dir/src/certificate.cpp.o
+[ 80%] Building CXX object CMakeFiles/run_tests.dir/src/certificate.cpp.o
+[ 81%] Building CXX object CMakeFiles/run_tests.dir/src/times.cpp.o
+[ 81%] Built target common
+[ 82%] Building CXX object CMakeFiles/performance_test.dir/src/performance_test.cpp.o
+[ 83%] Building CXX object CMakeFiles/frechet.dir/src/main.cpp.o
+[ 84%] Building CXX object CMakeFiles/decider_experiments.dir/src/decider_experiments.cpp.o
+[ 85%] Building CXX object CMakeFiles/create_benchmark.dir/src/create_benchmark.cpp.o
+[ 86%] Building CXX object CMakeFiles/paper_experiments.dir/src/paper_experiments.cpp.o
+[ 87%] Building CXX object CMakeFiles/create_benchmark_decider.dir/src/create_benchmark_decider.cpp.o
+[ 88%] Linking CXX executable compare_implementations
+[ 89%] Linking CXX executable pruning_progress
+[ 89%] Built target pruning_progress
+[ 89%] Built target compare_implementations
+[ 90%] Linking CXX executable export_freespace_diagram
+[ 91%] Linking CXX executable test_curves
+[ 92%] Linking CXX executable frechet
+[ 92%] Built target export_freespace_diagram
+[ 93%] Linking CXX executable run_tests
+[ 93%] Built target test_curves
+[ 94%] Linking CXX executable calc_frechet_distance
+[ 94%] Built target frechet
+[ 94%] Built target run_tests
+[ 94%] Built target calc_frechet_distance
+[ 95%] Linking CXX executable performance_test
+[ 95%] Built target performance_test
+[ 96%] Linking CXX executable create_benchmark
+[ 96%] Built target create_benchmark
+[ 97%] Linking CXX executable decider_experiments
+/usr/bin/ld: CMakeFiles/common.dir/src/query.cpp.o: in function `Query::Query(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&)':
+/home/sariel/prog/24/FrechetDist/c_impl/src/query.cpp:41:(.text+0xf68): undefined reference to `omp_get_max_threads'
+/usr/bin/ld: CMakeFiles/common.dir/src/query.cpp.o: in function `Query::run_parallel()':
+/home/sariel/prog/24/FrechetDist/c_impl/src/query.cpp:192:(.text+0x2d60): undefined reference to `GOMP_parallel'
+/usr/bin/ld: CMakeFiles/common.dir/src/query.cpp.o: in function `Query::run_impl_parallel(Curve const&, double, Result&)':
+/home/sariel/prog/24/FrechetDist/c_impl/src/query.cpp:343:(.text+0x3551): undefined reference to `omp_get_thread_num'
+/usr/bin/ld: CMakeFiles/common.dir/src/query.cpp.o: in function `std::vector<QueryElement, std::allocator<QueryElement> >::size() const':
+/usr/include/c++/15/bits/stl_vector.h:1119:(.text+0x37be): undefined reference to `GOMP_loop_ull_nonmonotonic_guided_start'
+/usr/bin/ld: /usr/include/c++/15/bits/stl_vector.h:1119:(.text+0x37c9): undefined reference to `GOMP_loop_end_nowait'
+/usr/bin/ld: CMakeFiles/common.dir/src/query.cpp.o: in function `Query::run_parallel() [clone ._omp_fn.0]':
+/home/sariel/prog/24/FrechetDist/c_impl/src/query.cpp:192:(.text+0x37e9): undefined reference to `GOMP_loop_ull_nonmonotonic_guided_next'
+collect2: error: ld returned 1 exit status
+make[2]: *** [CMakeFiles/decider_experiments.dir/build.make:119: decider_experiments] Error 1
+make[1]: *** [CMakeFiles/Makefile2:443: CMakeFiles/decider_experiments.dir/all] Error 2
+make[1]: *** Waiting for unfinished jobs....
+[ 98%] Linking CXX executable create_benchmark_decider
+[ 98%] Built target create_benchmark_decider
+[100%] Linking CXX executable paper_experiments
+[100%] Built target paper_experiments
+make: *** [Makefile:101: all] Error 2
