@@ -8,7 +8,7 @@
 Simplify the input curve P, where every vertex in distance larger than
 r is added to the simplification. Maybe the cheapest and simplest
 simplification algorithm. Works for all measures. Returns the
-simplification and the indices of the vertices kept.
+simplification and the indices of the vertices kept (both empty for an empty curve).
 """
 function Polygon_simplify_ext(P::PntSeq{D,T}, r::T) where {D,T}
     pout = PntSeq{D,T}()
@@ -16,7 +16,7 @@ function Polygon_simplify_ext(P::PntSeq{D,T}, r::T) where {D,T}
 
     len = cardin(P)
     if (len == 0)
-        return pout
+        return pout, pindices
     end
     if (push_distinct!(pout, P[1]))
         push!(pindices, 1)

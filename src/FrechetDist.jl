@@ -5,13 +5,12 @@ module FrechetDist
 
 using Parameters
 using LinearAlgebra
-using DelimitedFiles
 using DataStructures
 using Printf
 
 using StaticArrays
 using BasicCompGeometry
-import BasicCompGeometry: cardin, Points, push_distinct!, split_edges
+import BasicCompGeometry: cardin, push_distinct!, split_edges
 using BasicCompGeometry.ReadWrite
 
 include("fp_geometry.jl")

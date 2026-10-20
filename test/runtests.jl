@@ -86,3 +86,12 @@ end
         end
     end
 end
+
+@testset "Polygon_simplify_ext" begin
+    # Always returns the simplification and the kept indices, also for an empty curve.
+    Q, idx = FrechetDist.Polygon_simplify_ext(PntSeq2F(), 1.0)
+    @test length(Q) == 0 && isempty(idx)
+    P = PntSeq([point(0.0, 0.0), point(0.1, 0.0), point(5.0, 0.0), point(5.1, 0.0)])
+    Q, idx = FrechetDist.Polygon_simplify_ext(P, 1.0)
+    @test idx == [1, 3, 4] && length(Q) == 3
+end
