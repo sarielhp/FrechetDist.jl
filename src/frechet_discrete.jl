@@ -71,12 +71,7 @@ end
 
 
 # Same as d_step_dec_i, when only some entries of dp are defined yet.
-@inline function d_r_step_dec_i(
-    dp::Array{Float64,2},
-    dp_def::BitMatrix,
-    i::Int64,
-    j::Int64,
-)
+@inline function d_r_step_dec_i(dp::Array{Float64,2}, dp_def::BitMatrix, i::Int64, j::Int64)
     if j == 1
         return true
     end
