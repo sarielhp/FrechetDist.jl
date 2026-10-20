@@ -1,6 +1,10 @@
 # Change log
     What had changed...
 
+v2.2.2 Release Notes
+====================
+* Repository hygiene, no behaviour change: stopped tracking scratch output, `*.jl.*.mem` allocation files and large datasets (now in `.gitignore`); added `AGENTS.md`; removed a stale GPS regression test and its fixtures.
+
 v2.2.1 Release Notes
 ====================
 * Internal cleanups, no behaviour change: removed dead debug code, reduced argument counts, added `test/snapshots/` (bit-for-bit comparison against a git revision) and `tools/` release scripts.
