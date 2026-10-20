@@ -69,6 +69,8 @@ end
 # nearly collinear GPS tracks (it stopped refining too early). The curves are the first
 # 200 GPS points of two GeoLife trajectories, in meters. A prefix with n and m vertices
 # corresponds to the first 120/160/180/200 raw GPS points of each file.
+# The fixtures are kept in the repository (the dataset is not); `tools/gen_gps_fixtures --check`
+# verifies them against the GeoLife data.
 @testset "frechet_c_compute on GPS tracks" begin
     P = FrechetDist.read_file(joinpath(@__DIR__, "fixtures", "gps_P.txt"))
     Q = FrechetDist.read_file(joinpath(@__DIR__, "fixtures", "gps_Q.txt"))

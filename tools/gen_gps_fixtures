@@ -1,0 +1,54 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# Regenerates test/fixtures/gps_{P,Q}.txt from the GeoLife dataset (the pair that exposed the
+# frechet_c_compute bug, see the regression test in test/runtests.jl).
+#
+#   tools/gen_gps_fixtures [--check] [GEOLIFE_DIR]
+#
+# GEOLIFE_DIR holds the converted trajectories (lat lon per line; default data/geolife). Each
+# fixture is the first 200 GPS points of one trajectory, projected to meters with an
+# equirectangular projection (R = 6371000, lat0 = first latitude), consecutive duplicates dropped.
+# With --check, nothing is written; exits 1 if a fixture differs by more than 1e-6 m.
+# Trajectory numbering depends on the download: the numbers below match data/geolife on red;
+# originals: 065/trajectory/20110907100433.plt (P) and 020/trajectory/20110828143340.plt (Q).
+
+ROOT = File.expand_path('..', __dir__)
+SOURCES = { 'P' => '6926.txt', 'Q' => '2741.txt' }.freeze
+POINTS = 200
+EARTH_RADIUS = 6_371_000.0
+RAD = Math::PI / 180
+TOLERANCE = 1e-6
+
+def project(path)
+  pts = File.foreach(path).first(POINTS).map { |line| line.split.map(&:to_f) }
+  lat0 = pts.first[0]
+  xy = pts.map { |lat, lon| [EARTH_RADIUS * Math.cos(lat0 * RAD) * lon * RAD, EARTH_RADIUS * lat * RAD] }
+  xy.chunk_while { |a, b| a == b }.map(&:first)
+end
+
+def max_difference(got, want)
+  return Float::INFINITY unless got.size == want.size
+
+  got.zip(want).flat_map { |a, b| a.zip(b).map { |u, v| (u - v).abs } }.max
+end
+
+def fixture_path(name)
+  File.join(ROOT, 'test', 'fixtures', "gps_#{name}.txt")
+end
+
+check = ARGV.delete('--check')
+dir = ARGV.first || File.join(ROOT, 'data', 'geolife')
+failed = false
+SOURCES.each do |name, file|
+  pts = project(File.join(dir, file))
+  if check
+    want = File.readlines(fixture_path(name)).map { |line| line.split(',').map(&:to_f) }
+    diff = max_difference(pts, want)
+    puts "#{name}: #{pts.size} points, max difference #{diff} m"
+    failed ||= diff > TOLERANCE
+  else
+    File.write(fixture_path(name), pts.map { |x, y| "#{x},#{y}\n" }.join)
+  end
+end
+exit(failed ? 1 : 0)
