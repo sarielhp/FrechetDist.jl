@@ -46,3 +46,14 @@ end
     R = PntSeq([Point(1.0, 0.0), Point(0.0, 0.0)])
     @test FrechetDist.SweepDist_segs(P[1], P[2], R[1], R[2]) ≈ 1.0
 end
+
+@testset "tiny-scale point-segment distance" begin
+    for s in (1.0, 1.0e-10, 1.0e-100)
+        d = FrechetDist.fp_dist_point_segment(
+            Point(0.5s, 0.25s),
+            Point(0.0, 0.0),
+            Point(s, 0.0),
+        )
+        @test d ≈ 0.25s rtol = 1e-9
+    end
+end

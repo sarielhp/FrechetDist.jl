@@ -149,7 +149,7 @@ end
 
 Distance from `qr` to the segment `s_p`-`s_q`, computed from the quadratic
 `a t^2 + b t + c` without constructing the nearest point. Values below
-`1e-20` (squared) are reported as zero.
+`1e-20 max(a, c)` (squared, relative to the scale of the inputs) are reported as zero.
 """
 @inline function fp_dist_point_segment(
     qr::Point{D,T},
@@ -183,7 +183,7 @@ Distance from `qr` to the segment `s_p`-`s_q`, computed from the quadratic
             end
         end
     end
-    if (val <= 1e-20)
+    if (val <= 1e-20 * max(a, c))
         return 0.0
     end
     return sqrt(val)
