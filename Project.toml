@@ -29,10 +29,10 @@ DataStructures = "^0.18"
 Hwloc = "3.3.0"
 Parameters = "~0.12"
 PrettyTables = "3.1.2"
-Printf = "1.11.0"
+Printf = "1"
 StaticArrays = "^1.9"
 TimerOutputs = "0.5.29"
-julia = "^1.6"
+julia = "1.10"
 
 [extras]
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
