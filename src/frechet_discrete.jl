@@ -58,6 +58,41 @@ end
 
 
 
+# Whether the optimal predecessor of dp[i, j] is dp[i-1, j] (else dp[i, j-1]).
+@inline function d_step_dec_i(dp::Array{Float64,2}, i::Int64, j::Int64)
+    if j == 1
+        return true
+    end
+    if i == 1
+        return false
+    end
+    return dp[i-1, j] < dp[i, j-1]
+end
+
+
+# Same as d_step_dec_i, when only some entries of dp are defined yet.
+@inline function d_r_step_dec_i(
+    dp::Array{Float64,2},
+    dp_def::BitMatrix,
+    i::Int64,
+    j::Int64,
+)
+    if j == 1
+        return true
+    end
+    if i == 1
+        return false
+    end
+    if ! dp_def[i-1, j]
+        return false
+    end
+    if ! dp_def[i, j-1]
+        return true
+    end
+    return dp[i-1, j] < dp[i, j-1]
+end
+
+
 function frechet_d_compute_inner(
     P::PntSeq{D,T},
     Q::PntSeq{D,T},
@@ -80,22 +115,7 @@ function frechet_d_compute_inner(
             d = fp_dist(P[i], Q[j])
             jp = max(j - 1, 1)
 
-            f_dec_i = false
-            if (j == 1)
-                f_dec_i = true
-            else
-                if (i == 1)
-                    f_dec_i = false
-                else
-                    if (dp[i-1, j] < dp[i, j-1])
-                        f_dec_i = true
-                    else
-                        f_dec_i = false
-                    end
-                end
-            end
-
-            if (f_dec_i)
+            if d_step_dec_i(dp, i, j)
                 dp[i, j] = max(d, dp[ip, j])
                 dp_dec_i[i, j] = true
             else
@@ -185,24 +205,7 @@ function frechet_d_r_compute(P::PntSeq{D,T}, Q::PntSeq{D,T}) where {D,T}
         ip = max(i - 1, 1)
         jp = max(j - 1, 1)
 
-        f_dec_i::Bool = false
-        if (j == 1)
-            f_dec_i = true
-        elseif (i == 1)
-            f_dec_i = false
-        elseif ! dp_def[i-1, j]
-            f_dec_i = false
-        elseif ! dp_def[i, j-1]
-            f_dec_i = true
-        else
-            if (dp[i-1, j] < dp[i, j-1])
-                f_dec_i = true
-            else
-                f_dec_i = false
-            end
-        end
-
-        if (f_dec_i)
+        if d_r_step_dec_i(dp, dp_def, i, j)
             dp[i, j] = max(d, dp[ip, j])
             dp_def[i, j] = true
             dp_dec_i[i, j] = true
@@ -215,17 +218,13 @@ function frechet_d_r_compute(P::PntSeq{D,T}, Q::PntSeq{D,T}) where {D,T}
         # Now we need to schedule the next two adjacent entries..
         inext = i + 1
         jnext = j + 1
-        if (inext <= n_p)
-            if (! in_heap[inext, j])
-                push!(heap, (fp_dist(P[inext], Q[j]), (inext, j)))
-                in_heap[inext, j] = true
-            end
+        if (inext <= n_p) && (! in_heap[inext, j])
+            push!(heap, (fp_dist(P[inext], Q[j]), (inext, j)))
+            in_heap[inext, j] = true
         end
-        if (jnext <= n_q)
-            if (! in_heap[i, jnext])
-                push!(heap, (fp_dist(P[i], Q[jnext]), (i, jnext)))
-                in_heap[i, jnext] = true
-            end
+        if (jnext <= n_q) && (! in_heap[i, jnext])
+            push!(heap, (fp_dist(P[i], Q[jnext]), (i, jnext)))
+            in_heap[i, jnext] = true
         end
         if ((i == n_p) && (j == n_q))
             break

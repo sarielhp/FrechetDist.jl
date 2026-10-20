@@ -104,6 +104,74 @@ end
 
 
 
+# Emits the output point for a matched pair of vertices (f[idf], g[idg]) with
+# equal y coordinate yf == yg, and advances the indices. Returns the new
+# (idf, idg) and whether the end of both curves was reached.
+function combine_step_equal!(
+    out::PntSeq2F,
+    f::PntSeq2F,
+    g::PntSeq2F,
+    idf::Int64,
+    idg::Int64,
+    yf::Float64,
+    yg::Float64,
+)
+    l_f = cardin(f)
+    l_g = cardin(g)
+    push!(out, point(g[idg][1], f[idf][2]))
+    if (idf == l_f) && (idg == l_g)
+        return idf, idg, true
+    end
+    if (idf < l_f) && (f[idf+1][1] == yf)
+        return idf + 1, idg, false
+    end
+    if (idg < l_g) && (fp_equal(g[idg+1][2], yg))
+        return idf, idg + 1, false
+    end
+    return min(idf + 1, l_f), min(idg + 1, l_g), false
+end
+
+
+# Output point when f[idf] is below g[idg] in the y axis: evaluates g at yf.
+function combine_point_f_first(g::PntSeq2F, f::PntSeq2F, idf::Int64, idg::Int64, yf::Float64)
+    xg = eval_inv_pl_func(g[idg-1], g[idg], yf)
+
+    # A bit of a hack... Because of floating point errors,
+    # things can go a bit backward, which we really should not
+    # allow.
+    if (xg < g[idg-1][1])
+        xg = g[idg-1][1]
+    end
+    return point(xg, f[idf][2])
+end
+
+
+# Output point when g[idg] is below f[idf] in the y axis: evaluates f at yg.
+function combine_point_g_first(g::PntSeq2F, f::PntSeq2F, idf::Int64, idg::Int64, yg::Float64)
+    zf = eval_pl_func(f[idf-1], f[idf], yg)
+    # A bit of a hack again...
+    if (zf > f[idf][2])
+        zf = f[idf][2]
+    end
+    if (zf < f[idf-1][2])
+        zf = f[idf-1][2]
+    end
+    return point(g[idg][1], zf)
+end
+
+
+# We monotononize the output because of floating point error...
+# Should really just get rid of tiny flatting point jitters.
+function parameterization_monotonize!(out::PntSeq2F)
+    curr::Point2F = deepcopy(out[1])
+    for i = 2:cardin(out)
+        curr = point_max(out[i], curr)
+        out[i] = curr
+    end
+    return out
+end
+
+
 ##############################################################3
 # parameterization_combine
 # Given two parameterization f, g, compute f(g( . ))
@@ -125,7 +193,6 @@ function parameterization_combine(f::PntSeq2F, g::PntSeq2F)::PntSeq2F
     @assert(l_f > 1)
     @assert(l_g > 1)
 
-
     # x = dim(g,1)
     # y = dim(g,2) = dim(f, 1)
     # z = dim(f,2)
@@ -135,77 +202,21 @@ function parameterization_combine(f::PntSeq2F, g::PntSeq2F)::PntSeq2F
         # The two points under consideration, on the y axis
         yf = f[idf][1]
         yg = g[idg][2]
-        f_equal_yf_yg::Bool = fp_equal(yf, yg)
-        if (f_equal_yf_yg) && (idf == l_f) && (idg == l_g)
-            push!(out, point(g[idg][1], f[idf][2]))
-            break
-        end
-        if (f_equal_yf_yg && (idf < l_f) && (f[idf+1][1] == yf))
-            push!(out, point(g[idg][1], f[idf][2]))
-            idf = idf + 1
-            continue
-        end
-        if (f_equal_yf_yg && (idg < l_g) && (fp_equal(g[idg+1][2], yg)))
-            push!(out, point(g[idg][1], f[idf][2]))
-            idg = idg + 1
-            continue
-        end
-        if f_equal_yf_yg
-            push!(out, point(g[idg][1], f[idf][2]))
+        if fp_equal(yf, yg)
+            idf, idg, done = combine_step_equal!(out, f, g, idf, idg, yf, yg)
+            done && break
+        elseif (yf < yg)
+            push!(out, combine_point_f_first(g, f, idf, idg, yf))
             idf = min(idf + 1, l_f)
+        elseif (yf > yg)
+            push!(out, combine_point_g_first(g, f, idf, idg, yg))
             idg = min(idg + 1, l_g)
-            continue
+        else
+            @assert(false)
         end
-        if (yf < yg)
-            #            println( "idf :", idf  );
-            #            println( "idg :", idg );
-            #            println( "yf :" ,yf );
-            #            println( "yg :" ,yg );
-            #            println( g );
-
-            # compute g( yf )...
-            xg = eval_inv_pl_func(g[idg-1], g[idg], yf)
-            #        println( "xg: ", xg );
-
-            # A bit of a hack... Because of floating point errors,
-            # things can go a bit backward, which we really should not
-            # allow.
-            if (xg < g[idg-1][1])
-                xg = g[idg-1][1]
-            end
-            push!(out, point(xg, f[idf][2]))
-            idf = min(idf + 1, l_f)
-            continue
-        end
-        if (yf > yg)
-            zf = eval_pl_func(f[idf-1], f[idf], yg)
-            # A bit of a hack again...
-            if (zf > f[idf][2])
-                zf = f[idf][2]
-            end
-            if (zf < f[idf-1][2])
-                zf = f[idf-1][2]
-            end
-            push!(out, point(g[idg][1], zf))
-            idg = min(idg + 1, l_g)
-            continue
-        end
-        @assert(false)
     end
 
-    # We monotononize the output because of floating point error...
-    # Should really just get rid of tiny flatting point jitters.
-    curr::Point2F = deepcopy(out[1])
-    for i = 2:cardin(out)
-        curr = point_max(out[i], curr)
-        out[i] = curr
-        #=for  j in 1:2
-            curr[ j ] = max( curr[ j ], out[ i ][ j ] )
-            out[ i ][ j ] = curr[ j ];
-        end=#
-    end
-
-    return out
+    return parameterization_monotonize!(out)
 end
 
 """
@@ -248,6 +259,15 @@ function get_point(
     #    println( "inside... 4" );
     return p, t
 end
+
+# Event at point pt, at parameter t along edge idx of a curve with n vertices.
+function curve_event(pt::Point{N,T}, idx::Int64, t::Real, n::Int64, ::Type{T}) where {N,T}
+    if (t == 0.0) || ((t == 1.0) && (idx == n))
+        return EventPoint(deepcopy(pt), idx, PT_VERTEX, 0.0, 0.0)
+    end
+    return EventPoint(deepcopy(pt), idx, PT_ON_EDGE, T(t), 0.0)
+end
+
 
 function event_sequences_extract(prm::PntSeq2F, P::PntSeq{N,T}, Q::PntSeq{N,T}) where {N,T}
 
@@ -292,19 +312,8 @@ function event_sequences_extract(prm::PntSeq2F, P::PntSeq{N,T}, Q::PntSeq{N,T}) 
             error("event_sequences_extract: the parameter t_q = $t_q is outside [0, 1]")
         #        println( "here? " );
 
-        if (t_p == 0.0) || ((t_p == 1.0) && (i_p == len_p))
-            push!(pes, EventPoint(deepcopy(pcurr), i_p, PT_VERTEX, 0.0, 0.0))
-        else
-            push!(pes, EventPoint(deepcopy(pcurr), i_p, PT_ON_EDGE, T(t_p), 0.0))
-        end
-
-        #println( pcurr );
-        #println( qcurr );
-        if (t_q == 0.0) || ((t_q == 1) && (i_q == len_q))
-            push!(qes, EventPoint(deepcopy(qcurr), i_q, PT_VERTEX, 0.0, 0.0))
-        else
-            push!(qes, EventPoint(deepcopy(qcurr), i_q, PT_ON_EDGE, T(t_q), 0.0))
-        end
+        push!(pes, curve_event(pcurr, i_p, t_p, len_p, T))
+        push!(qes, curve_event(qcurr, i_q, t_q, len_q, T))
         #       println( "here? B" );
     end
 
