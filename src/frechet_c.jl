@@ -149,7 +149,8 @@ function frechet_c_approx(
             f_do_one_round = false
         end
 
-        mm_out, total_err = combine_via_simplified(poly_a, poly_b, P, Q, p_indices, q_indices, m)
+        mm_out, total_err =
+            combine_via_simplified(poly_a, poly_b, P, Q, p_indices, q_indices, m)
         ratio = approx_ratio_bound(m.leash, t_approx, total_err, mm_out.leash, approx)
         if ratio <= approx
             mm_out.ratio = ratio
@@ -416,7 +417,7 @@ function frechet_c_compute(
             lower_bound = max(lower_bound, lb)
             factor = factor * factor_scale
             aprx_refinement = 1.0 + (aprx_refinement - 1.0) / approx_scale
-                println("1 aprx_refinement: ", aprx_refinement, "  scale :", approx_scale)
+            println("1 aprx_refinement: ", aprx_refinement, "  scale :", approx_scale)
 
             pl, ql = Morphing_extract_vertex_radii(mw)
             continue
@@ -451,4 +452,3 @@ function frechet_c_compute(
         end
     end  # While loop end
 end
-

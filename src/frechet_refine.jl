@@ -486,4 +486,3 @@ function frechet_mono_via_refinement(
     ot::Vector{Morphing{N,T}} = Vector{Morphing{N,T}}()
     return frechet_mono_via_refinement_ext(Pa, Qa, ot, false, approx)
 end
-

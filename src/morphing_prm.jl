@@ -133,7 +133,13 @@ end
 
 
 # Output point when f[idf] is below g[idg] in the y axis: evaluates g at yf.
-function combine_point_f_first(g::PntSeq2F, f::PntSeq2F, idf::Int64, idg::Int64, yf::Float64)
+function combine_point_f_first(
+    g::PntSeq2F,
+    f::PntSeq2F,
+    idf::Int64,
+    idg::Int64,
+    yf::Float64,
+)
     xg = eval_inv_pl_func(g[idg-1], g[idg], yf)
 
     # A bit of a hack... Because of floating point errors,
@@ -147,7 +153,13 @@ end
 
 
 # Output point when g[idg] is below f[idf] in the y axis: evaluates f at yg.
-function combine_point_g_first(g::PntSeq2F, f::PntSeq2F, idf::Int64, idg::Int64, yg::Float64)
+function combine_point_g_first(
+    g::PntSeq2F,
+    f::PntSeq2F,
+    idf::Int64,
+    idg::Int64,
+    yg::Float64,
+)
     zf = eval_pl_func(f[idf-1], f[idf], yg)
     # A bit of a hack again...
     if (zf > f[idf][2])
@@ -392,8 +404,3 @@ function Morphing_extract_offsets(m::Morphing)
 
     return p_offs, q_offs
 end
-
-
-
-
-

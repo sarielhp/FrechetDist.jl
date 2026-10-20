@@ -725,5 +725,3 @@ function frechet_offsets(P::PntSeq{N,T}, p_indices::Vector{Int64}) where {N,T}
     end
     return offs
 end
-
-
