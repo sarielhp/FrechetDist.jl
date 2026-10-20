@@ -1,0 +1,16 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# Usage: tools/commit <message>
+# Runs the quality gate, then stages everything not ignored and commits.
+
+require 'open3'
+
+Dir.chdir(File.expand_path('..', __dir__))
+message = ARGV.join(' ').strip
+abort 'Usage: tools/commit <message>' if message.empty?
+
+abort 'Quality gate failed; commit stopped.' unless system('./tools/check')
+abort 'Git staging failed; commit stopped.' unless system('git', 'add', '-A')
+abort 'Git commit failed.' unless system('git', 'commit', '-q', '-m', message)
+puts "Committed #{`git rev-parse --short HEAD`.strip}: #{message}"

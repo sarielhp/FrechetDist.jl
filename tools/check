@@ -1,0 +1,25 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# Quality gate: static analysis (syntax, format, JET, imports), code metrics, tests.
+# Prints the output of the failing step only.
+
+require 'open3'
+
+ROOT = File.expand_path('..', __dir__)
+Dir.chdir(ROOT)
+STANDARDS = File.expand_path('~/prog/standards/julia/bin')
+
+STEPS = [
+  ['Static analysis', [File.join(STANDARDS, 'julia-static-analysis')]],
+  ['Code metrics', [File.join(STANDARDS, 'julia-audit')]],
+  ['Tests', ['julia', '--project=.', 'test/runtests.jl']]
+].freeze
+
+STEPS.each do |name, command|
+  out, status = Open3.capture2e(*command)
+  next puts("ok #{name}") if status.success?
+
+  puts "FAILED #{name}: #{command.join(' ')}", out
+  exit 1
+end

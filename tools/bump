@@ -1,0 +1,57 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# Usage: tools/bump [--minor | --major] [--dry-run]
+# Bumps the version in Project.toml (patch by default), commits it, pushes the
+# current branch, and verifies that the remote has the commit. Refuses to run
+# with uncommitted changes. Does not register the package (see tools/release).
+
+require 'open3'
+require 'optparse'
+
+ROOT = File.expand_path('..', __dir__)
+Dir.chdir(ROOT)
+PROJECT = 'Project.toml'
+VERSION_LINE = /^version = "(\d+)\.(\d+)\.(\d+)"$/
+
+def git(*args)
+  out, err, status = Open3.capture3('git', *args)
+  abort "git #{args.join(' ')} failed:\n#{err}" unless status.success?
+  out.strip
+end
+
+def next_version(current, level)
+  major, minor, patch = current
+  case level
+  when :major then [major + 1, 0, 0]
+  when :minor then [major, minor + 1, 0]
+  else [major, minor, patch + 1]
+  end
+end
+
+level = :patch
+dry_run = false
+OptionParser.new do |o|
+  o.banner = 'Usage: tools/bump [--minor | --major] [--dry-run]'
+  o.on('--minor') { level = :minor }
+  o.on('--major') { level = :major }
+  o.on('--dry-run') { dry_run = true }
+end.parse!
+
+abort "Cannot bump: uncommitted changes:\n#{git('status', '--porcelain')}" unless git('status', '--porcelain').empty?
+branch = git('symbolic-ref', '--quiet', '--short', 'HEAD')
+text = File.read(PROJECT)
+match = text.match(VERSION_LINE) or abort "No version line in #{PROJECT}"
+current = match.captures.map(&:to_i)
+target = next_version(current, level).join('.')
+puts "Bump #{current.join('.')} -> #{target} on #{branch}"
+exit if dry_run
+
+File.write(PROJECT, text.sub(VERSION_LINE, "version = \"#{target}\""))
+git('add', PROJECT)
+git('commit', '-q', '-m', "Bump version to #{target}")
+sha = git('rev-parse', 'HEAD')
+git('push', 'origin', "#{sha}:refs/heads/#{branch}")
+remote = git('ls-remote', 'origin', "refs/heads/#{branch}").split.first
+abort "Remote #{branch} is at #{remote}, expected #{sha}." unless remote == sha
+puts "Pushed #{target} (#{sha})"
