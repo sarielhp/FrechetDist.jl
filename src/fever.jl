@@ -317,7 +317,6 @@ function fever_extract_sol_ids(
     Q::PntSeq{N,T},
     prevArr::Vector{Int64},
 ) where {N,T}
-    f_debug::Bool = false
     out_arr = Vector{Int64}()
 
     #=
@@ -330,12 +329,8 @@ function fever_extract_sol_ids(
     =#
 
     curr = ID_END
-    f_debug && println("Curr: ", curr)
     while (curr != ID_START)
         push!(out_arr, curr)
-        if (f_debug)
-            println("   Curr: ", curr)
-        end
         curr = prevArr[curr]
     end
     push!(out_arr, curr)
@@ -475,7 +470,6 @@ function FEVER_compute_range(P::PntSeq{N,T}, Q::PntSeq{N,T}, upper_bound::T) whe
     #global fever_comp_count += 1;
     #println( fever_comp_count );
 
-    f_debug::Bool = false
     #=
     if  ( fever_comp_count == 41619 )
         println( "Bug starts here..." );
@@ -488,7 +482,6 @@ function FEVER_compute_range(P::PntSeq{N,T}, Q::PntSeq{N,T}, upper_bound::T) whe
     fc = FeverCoords(0, false, 0, false)
 
     ## DEBUG code
-    f_debug && ID_tester(cardin(P), cardin(Q))
 
     c.f_upper_bound = true
     c.upper_bound = upper_bound
@@ -503,10 +496,8 @@ function FEVER_compute_range(P::PntSeq{N,T}, Q::PntSeq{N,T}, upper_bound::T) whe
     f_reached_end::Bool = false
     while ! isempty(heap)
         iters = iters + 1
-        f_debug && println("Iters: ", iters)
         id = pop!(heap)
 
-        f_debug && println("id: ", id)
         if id == ID_START
             fever_schedule_event(c, 1, false, 1, true, id)
             fever_schedule_event(c, 1, true, 1, false, id)
@@ -523,7 +514,6 @@ function FEVER_compute_range(P::PntSeq{N,T}, Q::PntSeq{N,T}, upper_bound::T) whe
             # ...not quite, but we arrived to final cell. Time to
             # schedule the final event.
             if ((fc.i == n_pm) && (fc.j == n_qm))
-                f_debug && println("Reached the end?")
                 f_reached_end = true
                 c.prev[ID_END] = id
 
@@ -573,7 +563,6 @@ function FEVER_compute(P::PntSeq{N,T}, Q::PntSeq{N,T}) where {N,T}
     check_curves(P, Q, "FEVER_compute"; min_vertices = 2)
     check_quadratic_size(cardin(P), cardin(Q), 33, "FEVER_compute")
 
-    f_debug::Bool = false
     c::FEVERContext{N,T} = FEVER_Context(P, Q)
     fc = FeverCoords(0, false, 0, false)
 

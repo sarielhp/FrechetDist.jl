@@ -332,7 +332,6 @@ function frechet_mono_via_refinement_ext(
         approx = 1.0000001
         @assert(approx > 1.0)
     end
-    f_debug::Bool = false
 
     mm::Morphing{N,T} = Morphing_empty(Pa, Qa)
     m::Morphing{N,T} = Morphing_empty(Pa, Qa)
@@ -340,16 +339,11 @@ function frechet_mono_via_refinement_ext(
     f_refinement::Bool = false
     P = Pa
     Q = Qa
-    f_debug && println("fmvr before while...")
-    f_debug && println("APPROX : ", approx)
     rounds::Int = 0
     while true
         rounds += 1
         check_rounds(rounds, "frechet_mono_via_refinement_ext")
-        f_debug && println("\n<<<<<<< ")
-        f_debug && println("Before ve_r_compute( ", cardin(P), ", ", cardin(Q))
         m = frechet_ve_r_compute(P, Q)
-        f_debug && println(">>> After... m.leash : ", m.leash)
         mm = Morphing_monotonize(m)
 
         if (f_snapshots)
@@ -359,11 +353,6 @@ function frechet_mono_via_refinement_ext(
         fr_retract = m.leash
         fr_r_mono = mm.leash
 
-        if (f_debug)
-            println("ve_r            : ", m.leash)
-            println("ve_r.mono       : ", fr_r_mono)
-            println("ve_r*approx     : ", approx * fr_retract)
-        end
 
         if (fr_r_mono == fr_retract)
             f_exact = true
@@ -391,7 +380,6 @@ function frechet_mono_via_refinement_ext(
 
     mm.lower_bound = m.leash
 
-    f_debug && println("RETURNING!", @__FILE__, ":", @__LINE__)
     return mm, f_exact, P, Q
 end
 
@@ -404,7 +392,6 @@ function frechet_mono_via_refinement_delta(
 ) where {N,T}
     check_curves(Pa, Qa, "frechet_mono_via_refinement_delta"; min_vertices = 2)
     check_nonnegative(delta, "frechet_mono_via_refinement_delta", "delta")
-    f_debug::Bool = false
 
     P = Pa
     Q = Qa

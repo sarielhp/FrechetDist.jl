@@ -678,23 +678,9 @@ function Morphing_SweepDist_price(m::Morphing{N,T}) where {N,T}
 end
 
 function morphing_profile(m::Morphing{D,T}, n::Int64) where {D,T}
-    f_debug::Bool = false
 
-    if (f_debug)
-        Morphing_recompute_leash(m)
-        println("LEASH recomputed: ", m.leash)
-    end
     PB, QB, times = Morphing_as_polygons_w_times(m)
     #println( times );
-    if (f_debug)
-        for i = 1:(length(times)-1)
-            if (! (times[i] <= times[i+1]))
-                println(i)
-                println(times[i], ", ", times[i+1])
-                @assert((times[i] <= times[i+1]))
-            end
-        end
-    end
     #println( length( times ) );
     lP = fp_geom_length(PB)
     X = range(0, lP, length = n)
@@ -706,7 +692,6 @@ function morphing_profile(m::Morphing{D,T}, n::Int64) where {D,T}
         p, q = polygons_get_loc_at_time(PB, QB, times, pos)
         push!(Y, fp_dist(p, q))
     end
-    f_debug && println(maximum(Y))
     return X, Y
 end
 

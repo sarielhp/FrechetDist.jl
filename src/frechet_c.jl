@@ -62,11 +62,7 @@ function frechet_c_approx(
     check_curves(poly_a, poly_b, "frechet_c_approx"; min_vertices = 2)
     approx = check_approx(approx, "frechet_c_approx")
 
-    f_debug::Bool = false
 
-    if f_debug
-        println("\n\n\n============================XXX")
-    end
     t_approx::Float64 = approx
     @assert((cardin(poly_a) > 1) && (cardin(poly_b) > 1))
     @assert(approx > 1.0)
@@ -74,7 +70,6 @@ function frechet_c_approx(
     f_do_one_round::Bool = true
     d = frechet_dist_upper_bound(poly_a, poly_b)
 
-    f_debug && println("DIST :", d)
 
     # r: Radius of simplification allowed
     r::Float64 = d/(approx + 4.0) #max( d/4, d * min( approx, 1.0 ) );
@@ -90,16 +85,12 @@ function frechet_c_approx(
     while (true)
         rounds += 1
         check_rounds(rounds, "frechet_c_approx")
-        f_debug && println("AAAAAAAAAAAAAa")
         while ((r >= (d / (approx + 4.0))) || f_do_one_round)
             r = r / 2.0
-            f_debug && println("BBBBBB r=", r)
             P, p_indices = Polygon_simplify_ext(poly_a, r)
             Q, q_indices = Polygon_simplify_ext(poly_b, r)
 
             if ((2 * cardin(P) > cardin(poly_a)) && (2 * cardin(Q) > cardin(poly_b)))
-                f_debug && println("DDDD")
-                f_debug && println("VVV Calling frechet_mono_via_refinement")
                 m = frechet_mono_via_refinement(poly_a, poly_b)[1]
                 m.ratio = 1.0
                 m.lower_bound = m.leash
@@ -109,23 +100,15 @@ function frechet_c_approx(
 
             @assert((cardin(P) > 1) && (cardin(Q) > 1))
 
-            f_debug && println("cardins: ", cardin(P), " , ", cardin(Q))
             t_approx = 3.0/4.0 + t_approx / 4.0
 
             m = frechet_mono_via_refinement(P, Q, t_approx)[1]
             d = m.leash  #        frechet_ve_r_compute_dist( P, Q )
-            f_debug && println("d : ", d)
             if (fp_equal(d, 0.0))
-                f_debug && println("Breaking...")
                 break
             end
-            f_debug && println("ddd = ", d)
-            f_debug && println("after")
 
             # d - 2r: Lower bound on the real Frechet distance.
-            if f_debug
-                println("d: ", d, "  r: ", r, "    #P: ", cardin(P), " Q: ", cardin(Q))
-            end
             f_do_one_round = false
         end
 
@@ -133,12 +116,10 @@ function frechet_c_approx(
         #        println( "mono a" );
         #m_p = frechet_ve_r_mono_compute( poly_a, P )
         #m_p = frechet_ve_r_mono_compute( poly_a, P )
-        f_debug && println("=== f_c_dist( poly_a, P )")
         m_p = frechet_c_mono_approx_subcurve(poly_a, P, p_indices)[1]
         #        println( "mono b" );
 
         #m_q = frechet_ve_r_mono_compute( Q, poly_b )
-        f_debug && println("f_c_dist( poly_b, Q )")
         m_q = frechet_c_mono_approx_subcurve(poly_b, Q, q_indices)[1]
         Morphing_swap_sides!(m_q)
 
@@ -146,23 +127,12 @@ function frechet_c_approx(
         #println( "Error: ", err );
 
         # m = m_p * mm * m_q
-        f_debug && println("Combine m_p, m")
         mmu = Morphing_monotonize(Morphing_combine(m_p, m))
-        f_debug && println("Combine mmu,m_q")
         mm_out = Morphing_combine(mmu, m_q)
 
-        f_debug && println("Verification...")
-        f_debug && Morphing_verify_valid(m_p)
-        f_debug && Morphing_verify_valid(m)
-        f_debug && Morphing_verify_valid(m_q)
-        f_debug && Morphing_verify_valid(mmu)
 
         total_err = m_p.leash + m_q.leash
         lbx = (m.leash / t_approx) - total_err
-        if f_debug
-            println("total_error : ", total_err)
-            println("lbx         : ", lbx)
-        end
         if (total_err == 0.0) && (m.leash == 0.0)
             ratio = 1.0
         else
@@ -172,21 +142,7 @@ function frechet_c_approx(
                 ratio = mm_out.leash / lbx
             end
         end
-        f_debug && println("Ratio :", ratio)
         if ratio <= approx
-            if f_debug
-                println("-----------------------------------")
-                println("Leash out: ", mm_out.leash)
-                println("Leash lower bound: ", d - 2r)
-                println("approx ratio          : ", ratio)
-                println("Required approximation: ", 1.0 + approx)
-                println(
-                    "||P||: ",
-                    fp_geom_length(poly_a),
-                    "  ||Q||: ",
-                    fp_geom_length(poly_b),
-                )
-            end
             mm_out.ratio = ratio
             mm_out.lower_bound = m.leash / ratio
             return mm_out
@@ -194,9 +150,6 @@ function frechet_c_approx(
             #            break;
         end
         f_do_one_round = true
-        if f_debug
-            println("Another final round? ", ratio)
-        end
     end
 end
 
@@ -358,7 +311,6 @@ function frechet_c_compute(
 ) where {N,T}
     check_curves(P, Q, "frechet_c_compute"; min_vertices = 2)
     tolerance = check_tolerance(tolerance, "frechet_c_compute")
-    f_debug = false
 
     # Repeated consecutive vertices describe the same curve. The refinement below
     # drops them, which breaks the vertex correspondence it relies on
@@ -374,8 +326,6 @@ function frechet_c_compute(
 
     min_approx::Float64 = 1.00000000001
 
-    f_debug && println("P#", cardin(P))
-    f_debug && println("Q#", cardin(Q))
 
     m_rough = frechet_c_approx(P, Q, aprx_refinement)
     if (m_rough.leash == 0.0)
@@ -383,30 +333,11 @@ function frechet_c_compute(
     end
 
     ratio_2 = m_rough.ratio
-    if f_debug
-        println("RATIO 2: ", m_rough.ratio, "\nleash: ", m_rough.leash)
-    end
 
     len_a = fp_geom_length(P)
     len_b = fp_geom_length(Q)
-    f_debug && println("#", cardin(P))
 
     approx = min(1.0 + (len_a + len_b) / (100.0 * m_rough.leash), 1.1)
-    if f_debug
-        println(
-            "\n\nRatio         : ",
-            ratio_2,
-            "\n\nlen_a         : ",
-            len_a,
-            "\nlen_b         : ",
-            len_b,
-            "\n2approx_leash : ",
-            m_rough.leash,
-            "\n\n",
-            approx,
-            " approximation...",
-        )
-    end
 
     m = m_rough
     if m_rough.ratio > approx
@@ -414,21 +345,12 @@ function frechet_c_compute(
     end
     ratio = m.ratio
 
-    if (f_debug)
-        println("Approximation computed...")
-        println("m.leash : ", m.leash)
-    end
 
     # Okay - we computed a good enough approximation. 
     # We next extract the leases distances at the vertices...
     pl, ql = Morphing_extract_vertex_radii(m)
 
     lower_bound = m.leash / ratio
-    if f_debug
-        println("Before while loop...")
-        println("LOWER BOUND: ", lower_bound)
-        println("upper BOUND: ", m.leash, "\n")
-    end
 
     ### Now we start looping refining if we need to improve th eapproxiamtion.
     round::Int64 = 0
@@ -437,12 +359,6 @@ function frechet_c_compute(
         check_rounds(round, "frechet_c_compute")
         aprx_refinement = max(aprx_refinement, min_approx)
 
-        f_debug && println(
-            "---------------------------\nFactor: ",
-            factor,
-            "  Approx : ",
-            aprx_refinement,
-        )
 
         # Computes the slack at the vertices. The larger tha slack the more one can move a 
         # vertex without changing the Frechet distance. Negatie slack means not to move the 
@@ -455,10 +371,6 @@ function frechet_c_compute(
         propogate_mins(pz, 8)
         propogate_mins(qz, 8)
 
-        if f_debug
-            println("pz count <0: ", count_below_zero(pz), " / ", length(pz))
-            println("qz count <0: ", count_below_zero(qz), " / ", length(qz))
-        end
         f_PS_exact::Bool = false
         f_QS_exact::Bool = false
 
@@ -466,25 +378,18 @@ function frechet_c_compute(
         PS, p_indices, f_PS_exact = Polygon_simplify_radii_ext(P, pz)
         QS, q_indices, f_QS_exact = Polygon_simplify_radii_ext(Q, qz)
 
-        if f_debug
-            println("|PS| = ", cardin(PS), "  |P| = ", cardin(P))
-            println("|QS| = ", cardin(QS), "  |Q| = ", cardin(Q))
-        end
 
         # If the PS and QS are really large, this is a waste of
         # time. Just compute the Frechet distance using
         # monotonization.
         if ((2 * cardin(PS) > cardin(P)) && (2 * cardin(QS) > cardin(Q)))
-            f_debug && println("Simpl. not profitable, doing mono")
             return frechet_mono_via_refinement(P, Q, 1.0 + tolerance)[1]
         end
 
         t_aprx = max(tolerance + 1.0, aprx_refinement)
-        f_debug && println("f_m_via_refine( PS, QS )\nt_aprx : ", t_aprx)
 
         m_mid, _f_exact, PSR, QSR = frechet_mono_via_refinement(PS, QS, t_aprx)
 
-        f_debug && println("frechet mono via refinement computed")
 
         # BUG FIX: Used the mono computation instead of the subcurve code,
         # which is much faster...
@@ -497,30 +402,19 @@ function frechet_c_compute(
 
         mw = Morphing_combine(mmu, m_b)
 
-        f_debug && println("eq?  ", m_mid.leash, " = ", mw.leash)
 
         # is there is NO hope we got the optimal solution?
         if (! eq(m_mid.leash, mw.leash, tolerance))
             lb = mw.leash - 2.0*m_a.leash - 2.0*m_b.leash
             lower_bound = max(lower_bound, lb)
-            if f_debug
-                println("!!! Ratio        : ", fp_ratio(m_mid.leash, mw.leash))
-                println("!!! m_mid.leash  : ", m_mid.leash)
-                println("!!! mw.leash     : ", mw.leash)
-                println("!!! Diff         : ", m_mid.leash - mw.leash)
-                println("!!! lower_bound  : ", lower_bound)
-                println("!!! LB           : ", lb)
-            end
             factor = factor * factor_scale
             aprx_refinement = 1.0 + (aprx_refinement - 1.0) / approx_scale
-            f_debug &&
                 println("1 aprx_refinement: ", aprx_refinement, "  scale :", approx_scale)
 
             pl, ql = Morphing_extract_vertex_radii(mw)
             continue
         end
 
-        f_debug && println("Extracting offsets...")
 
         # Now we compute the distance, with offsets...
         #PS_offs = offsets_a;#Morphing_extract_offsets( m_a )[2]
@@ -537,28 +431,15 @@ function frechet_c_compute(
         # very important! We have to use the refined curves PSR/QSR to monotonicity 
         # copies...
         m_final = frechet_ve_r_compute_ext(PSR, QSR, PS_offs, QS_offs, true)
-        f_debug && println("*** lower_bound.leash  : ", m_final.leash)
-        f_debug && println("*** mw     .leash      : ", mw.leash)
 
         if (eq(m_final.leash, mw.leash, tolerance))
-            f_debug && println("Return from frechet_c_compute")
             return mw
         end
 
         # WE have to try harder - making slack at vertices smaller, and approximation smaller...
         factor = factor * factor_scale
         aprx_refinement = 1.0 + ((aprx_refinement - 1.0) / approx_scale)
-        if f_debug
-            println("m_a.leash      : ", m_a.leash)
-            println("m_b.leash      : ", m_b.leash)
-            println("m_mid.leash    : ", m_mid.leash)
-            println("MW Leash length: ", mw.leash)
-            println("m_final.leash  : ", m_final.leash)
-        end
         if f_accept_approx && (1.00001 * m_final.leash > mw.leash)
-            f_debug && println("MW Leash length: ", mw.leash)
-            f_debug && println("m_final.leash  : ", m_final.leash)
-            f_debug && println("Return (2) from frechet_c_compute")
             return mw
         end
     end  # While loop end

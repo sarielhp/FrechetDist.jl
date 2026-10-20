@@ -524,7 +524,6 @@ function frechet_ve_r_compute_range(
 ) where {N,T}
     check_curves(P, Q, "frechet_ve_r_compute_range"; min_vertices = 2)
     check_nonnegative(upper_bound, "frechet_ve_r_compute_range", "upper_bound")
-    f_debug::Bool = false
     c::FRContext{N,T} = FR_Context(P, Q)
     c.f_upper_bound = true
     c.upper_bound = upper_bound
@@ -604,7 +603,6 @@ function frechet_ve_r_compute_ext(
             ),
         )
     end
-    f_debug::Bool = false
     c = FR_Context(P, Q)
 
     if f_use_offsets
@@ -626,17 +624,6 @@ function frechet_ve_r_compute_ext(
         id = last(tp)
         value = first(tp)
         iters = iters + 1
-
-        if f_debug && ((iters % 10000) == 0)
-            print("Iters :")
-            print_int_w_commas(iters)
-            print("  ", length(heap))
-            print("  ")
-            print_int_w_commas(c.n_p * c.n_q * 2)
-            print("   dict size: ")
-            print_int_w_commas(length(c.dict))
-            println("  ")
-        end
 
         i = EID_i(id)
         j = EID_j(id)
