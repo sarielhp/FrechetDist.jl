@@ -1,6 +1,10 @@
 # Change log
     What had changed...
 
+v2.2.1 Release Notes
+====================
+* Internal cleanups, no behaviour change: removed dead debug code, reduced argument counts, added `test/snapshots/` (bit-for-bit comparison against a git revision) and `tools/` release scripts.
+
 v2.2.0 Release Notes
 ====================
 * Input contract: public entry points validate their curves and parameters and throw `ArgumentError`; library code no longer calls `exit()` or prints.
