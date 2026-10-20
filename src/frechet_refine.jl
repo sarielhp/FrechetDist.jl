@@ -110,6 +110,41 @@ function frechet_c_mono_approx_subcurve(
 end
 
 
+# Candidate split times in (0, 1): the given times, plus n_mid_points evenly
+# spaced times between consecutive ones, plus midpoints towards both ends.
+function seg_candidate_times(times::Vector{Float64}, n_mid_points::Int64)
+    out_times = Vector{Float64}()
+
+    function push_time(tm::Float64)
+        if (tm <= 0.0) || (tm >= 1.0)
+            return
+        end
+
+        push!(out_times, tm)
+    end
+
+    times_length = length(times)
+    if (n_mid_points > 0)
+        push_time(times[1] / 2.0)
+    end
+
+    for i = 1:length(times)
+        push_time(times[i])
+        if (i < times_length) && (n_mid_points > 0)
+            K = n_mid_points + 1
+            for pos = 1:(K-1)
+                coef::Float64 = pos / K
+                push_time(times[i] * (1.0 - coef) + times[i+1] * coef)
+            end
+        end
+    end
+    if (n_mid_points > 0)
+        push_time((1.0 + last(times)) / 2.0)
+    end
+    return out_times
+end
+
+
 """
     add_points_along_seg
 
@@ -137,46 +172,14 @@ function add_points_along_seg(
     times::Vector{Float64},
     n_mid_points::Int64 = 1,
 ) where {N,T}
-    out_times = Vector{Float64}()
-
-    function push_time(tm::Float64)
-        if (tm <= 0.0) || (tm >= 1.0)
-            return
-        end
-
-        push!(out_times, tm)
-    end
-
     sort!(times)
     unique!(times)
-    times_length = length(times)
 
     if isempty(times)
         return
     end
 
-    if (n_mid_points > 0)
-        push_time(times[1] / 2.0)
-    end
-
-    for i = 1:length(times)
-        t = times[i]
-        push_time(t)
-        if (i < times_length) && (n_mid_points > 0)
-            K = n_mid_points + 1
-            #println( "K : ", K );
-            #if  ( times[ i + 1 ] > times[ i ] )  continue  end;
-            for pos = 1:(K-1)
-                coef::Float64 = pos / K
-                tm = times[i] * (1.0 - coef) + times[i+1] * coef
-                push_time(tm)
-            end
-        end
-    end
-    if (n_mid_points > 0)
-        push_time((1.0 + last(times)) / 2.0)
-    end
-
+    out_times = seg_candidate_times(times, n_mid_points)
     if isempty(out_times)
         return
     end
@@ -215,6 +218,31 @@ end
 
 
 ################################################################
+# Last index of the run s[i:j] of events lying on the same edge as s[i].
+function edge_run_end(s::Vector{EventPoint{N,T}}, i::Int64) where {N,T}
+    len = length(s)
+    j = i
+    loc = s[i].i
+    while ((j < len) && (s[j+1].type == PT_ON_EDGE) && (s[j+1].i == loc))
+        j = j + 1
+    end
+    return j
+end
+
+
+# Time stamps of s[i:j] along the edge, with consecutive repeats removed.
+function run_distinct_times(s::Vector{EventPoint{N,T}}, i::Int64, j::Int64) where {N,T}
+    times = Vector{Float64}()
+    push!(times, s[i].t)
+    for k = (i+1):j
+        if s[k].t != last(times)
+            push!(times, s[k].t)
+        end
+    end
+    return times
+end
+
+
 """
     extract_refined_polygon( P, pes, num_points_to_add, delta )
 
@@ -240,70 +268,37 @@ function extract_refined_polygon(
     delta::Float64 = 0.0,
 ) where {N,T}
     pout = PntSeq{N,T}()
-    opnts = Vector{EventPoint{N,T}}()
 
     len = length(s)
     push!(pout, s[1].p)
 
     i = 2
     while (i <= len)
-        ep = s[i]
-        if ep.type == PT_VERTEX
+        if s[i].type == PT_VERTEX
             push_distinct!(pout, s[i].p)
             i = i + 1
             continue
         end
 
-        j = i
+        j = edge_run_end(s, i)
         loc = s[i].i
-        while ((j < len) && (s[j+1].type == PT_ON_EDGE) && (s[j+1].i == loc))
-            j = j + 1
-        end
-
         # s[i:j]: The sequence of points on the same edge
-        times = Vector{Float64}()
-        push!(times, s[i].t)
-        for k = (i+1):j
-            if s[k].t != last(times)
-                push!(times, s[k].t)
-            end
-        end
-
+        times = run_distinct_times(s, i, j)
         lnx = fp_dist(poly[loc], poly[loc+1])
 
         if (is_monotone_inc(times) || (lnx < (delta / 2.0)))
             for k = i:j
                 push_distinct!(pout, s[k].p)
             end
-            i = j + 1
-            continue
-        end
-
-        #=
-        diff = 0.0;
-        min_t = max_t = times[ 1 ];
-
-        for  i in 2:length(times)
-            max_t = max( times[ i ], max_t );
-            if  ( times[ i ] < max_t )  &&  ( ( max_t - times[ i ] ) > diff )
-                min_t = times[ i ];
-                diff = max_t - times[ i ];
+        else
+            n_times::Int64 = points_to_add
+            if (delta > 0.0)
+                n_times = round(Int64, lnx / delta)
+                n_times = max(min(n_times, 3), 1)
             end
+            seg = Segment(poly[loc], poly[loc+1])
+            add_points_along_seg(pout, seg, times, n_times)
         end
-        =#
-        #println( "diff: ", diff );
-        #println( "min_t: ", min_t );
-
-        #println( times );
-        #exit( -1 );
-        n_times::Int64 = points_to_add
-        if (delta > 0.0)
-            n_times = round(Int64, lnx / delta)
-            n_times = max(min(n_times, 3), 1)
-        end
-        seg = Segment(poly[loc], poly[loc+1])
-        add_points_along_seg(pout, seg, times, n_times)
-
         i = j + 1
     end
 

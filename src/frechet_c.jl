@@ -36,6 +36,43 @@ function frechet_ve_r_mono_compute(poly_a::PntSeq{D,T}, poly_b::PntSeq{D,T}) whe
 end
 
 
+# Lifts the morphing m between the simplified curves P, Q back to a monotone
+# morphing between poly_a and poly_b. Also returns the total simplification error.
+function combine_via_simplified(
+    poly_a::PntSeq{N,T},
+    poly_b::PntSeq{N,T},
+    P::PntSeq{N,T},
+    Q::PntSeq{N,T},
+    p_indices::Vector{Int64},
+    q_indices::Vector{Int64},
+    m::Morphing{N,T},
+) where {N,T}
+    m_p = frechet_c_mono_approx_subcurve(poly_a, P, p_indices)[1]
+    m_q = frechet_c_mono_approx_subcurve(poly_b, Q, q_indices)[1]
+    Morphing_swap_sides!(m_q)
+
+    # m = m_p * mm * m_q
+    mmu = Morphing_monotonize(Morphing_combine(m_p, m))
+    mm_out = Morphing_combine(mmu, m_q)
+
+    return mm_out, m_p.leash + m_q.leash
+end
+
+
+# Upper/lower ratio certified for a morphing built from simplifications with
+# total error total_err.
+function approx_ratio_bound(m_leash, t_approx, total_err, out_leash, approx)
+    lbx = (m_leash / t_approx) - total_err
+    if (total_err == 0.0) && (m_leash == 0.0)
+        return 1.0
+    end
+    if (lbx <= 0.0)
+        return 2.0 + approx # Very bad.
+    end
+    return out_leash / lbx
+end
+
+
 """
     frechet_c_approx
 
@@ -112,42 +149,12 @@ function frechet_c_approx(
             f_do_one_round = false
         end
 
-        #mm = Morphing_monotonize( m );
-        #        println( "mono a" );
-        #m_p = frechet_ve_r_mono_compute( poly_a, P )
-        #m_p = frechet_ve_r_mono_compute( poly_a, P )
-        m_p = frechet_c_mono_approx_subcurve(poly_a, P, p_indices)[1]
-        #        println( "mono b" );
-
-        #m_q = frechet_ve_r_mono_compute( Q, poly_b )
-        m_q = frechet_c_mono_approx_subcurve(poly_b, Q, q_indices)[1]
-        Morphing_swap_sides!(m_q)
-
-        #err = max( m_p.leash, m_q.leash );
-        #println( "Error: ", err );
-
-        # m = m_p * mm * m_q
-        mmu = Morphing_monotonize(Morphing_combine(m_p, m))
-        mm_out = Morphing_combine(mmu, m_q)
-
-
-        total_err = m_p.leash + m_q.leash
-        lbx = (m.leash / t_approx) - total_err
-        if (total_err == 0.0) && (m.leash == 0.0)
-            ratio = 1.0
-        else
-            if (lbx <= 0.0)
-                ratio = 2.0 + approx # Very bad.
-            else
-                ratio = mm_out.leash / lbx
-            end
-        end
+        mm_out, total_err = combine_via_simplified(poly_a, poly_b, P, Q, p_indices, q_indices, m)
+        ratio = approx_ratio_bound(m.leash, t_approx, total_err, mm_out.leash, approx)
         if ratio <= approx
             mm_out.ratio = ratio
             mm_out.lower_bound = m.leash / ratio
             return mm_out
-
-            #            break;
         end
         f_do_one_round = true
     end

@@ -426,6 +426,42 @@ end
     return l_min, l_max
 end
 
+# Processes the run of consecutive ids starting at arr[curr] that are
+# vertex-on-segment events. V is the curve contributing the vertices, S the
+# curve contributing the segment; vert_is_i tells whether V is the first curve.
+# Returns the updated (l_min, l_max) and the next position in arr.
+function leash_vertex_run(
+    l_min::T,
+    l_max::T,
+    arr::Vector{Int64},
+    curr::Int64,
+    len::Int64,
+    V::PntSeq{N,T},
+    S::PntSeq{N,T},
+    vert_is_i::Bool,
+) where {N,T}
+    low = curr
+    hi = eid_same_status(arr, curr, len)
+    if low > hi
+        return l_min, l_max, curr + 1
+    end
+    eid_start = arr[low]
+    eid_end = arr[hi]
+    v_start = vert_is_i ? EID_i(eid_start) : EID_j(eid_start)
+    s_idx = vert_is_i ? EID_j(eid_start) : EID_i(eid_start)
+    s_a = S[s_idx]
+    s_b = S[s_idx+1]
+
+    if low == hi
+        return max(l_min, fp_dist_point_segment(V[v_start], s_a, s_b)), l_max, curr + 1
+    end
+
+    v_end = vert_is_i ? EID_i(eid_end) : EID_j(eid_end)
+    l_min, l_max = max_leash(l_min, l_max, s_a, s_b, V, v_start, v_end)
+    return l_min, l_max, hi + 1
+end
+
+
 function compute_leash_from_arr(
     P::PntSeq{N,T},
     Q::PntSeq{N,T},
@@ -438,70 +474,19 @@ function compute_leash_from_arr(
 
     while curr <= len
         eid = arr[curr]
+        i_vert = EID_i_is_vert(eid)
+        j_vert = EID_j_is_vert(eid)
 
-        i = EID_i(eid)
-        j = EID_j(eid)
-
-        if EID_i_is_vert(eid) && EID_j_is_vert(eid)
-            l_min = max(l_min, fp_dist(P[i], Q[j]))
+        if i_vert && j_vert
+            l_min = max(l_min, fp_dist(P[EID_i(eid)], Q[EID_j(eid)]))
             curr = curr + 1
-            continue
+        elseif i_vert
+            l_min, l_max, curr = leash_vertex_run(l_min, l_max, arr, curr, len, P, Q, true)
+        elseif j_vert
+            l_min, l_max, curr = leash_vertex_run(l_min, l_max, arr, curr, len, Q, P, false)
+        else
+            @assert(false)
         end
-
-        if (EID_i_is_vert(eid) && (! EID_j_is_vert(eid)))
-            low = curr
-            hi = eid_same_status(arr, curr, len)
-
-            if low > hi
-                curr = curr + 1
-                continue
-            end
-            eid_start = arr[low]
-            eid_end = arr[hi]
-            q_a = Q[EID_j(eid_start)]
-            q_b = Q[EID_j(eid_start)+1]
-
-            if (low == hi)
-                curr = curr + 1
-                l_min = max(l_min, fp_dist_point_segment(P[EID_i(eid_start)], q_a, q_b))
-                continue
-            end
-
-            #println( " ((( ", l_min, "...", l_max, " )))", EID_i( eid_start ),
-            #    "...",  EID_i( eid_end ),  "    >>>", EID_j( eid_start ) );
-            l_min, l_max =
-                max_leash(l_min, l_max, q_a, q_b, P, EID_i(eid_start), EID_i(eid_end))
-            #println( "(((( ", l_min, "...", l_max, " )))");
-            curr = hi + 1
-            continue
-        end
-
-        if ((! EID_i_is_vert(eid)) && (EID_j_is_vert(eid)))
-            low = curr
-            hi = eid_same_status(arr, curr, len)
-
-            if low > hi
-                curr = curr + 1
-                continue
-            end
-            eid_start = arr[low]
-            eid_end = arr[hi]
-            p_a = P[EID_i(eid_start)]
-            p_b = P[EID_i(eid_start)+1]
-
-            if (low == hi)
-                curr = curr + 1
-                l_min = max(l_min, fp_dist_point_segment(Q[EID_j(eid_start)], p_a, p_b))
-                continue
-            end
-
-            l_min, l_max =
-                max_leash(l_min, l_max, p_a, p_b, Q, EID_j(eid_start), EID_j(eid_end))
-            curr = hi + 1
-            continue
-        end
-
-        @assert(false)
     end
 
     l_max = max(l_min, l_max)
