@@ -32,7 +32,6 @@ data_old
 
 # Scratch output
 /err
-/examples/julial
 /geolife.txt
 /geolife_err_*
 /tests.txt
