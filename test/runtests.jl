@@ -99,6 +99,7 @@ end
     @test length(Q) == 0 && isempty(idx)
 end
 
+include("test_primitives.jl")
 include("agreement.jl")
 
 @testset "Oracles" begin

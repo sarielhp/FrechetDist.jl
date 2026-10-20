@@ -165,18 +165,22 @@ Distance from `qr` to the segment `s_p`-`s_q`, computed from the quadratic
     b = 2.0 * fp_dot(dff, s_q - s_p)
     c = fp_dot(dff, dff)
 
-    t = -b / (2.0 * a)
-
     local val::Float64
-    if (t < 0)
+    if (a == 0.0)
+        # A zero-length segment is a single point; -b / (2a) below would be NaN.
         val = c
-    elseif (t > 1)
-        val = a + b + c
     else
-        val = a*t^2 + b*t + c
+        t = -b / (2.0 * a)
+        if (t < 0)
+            val = c
+        elseif (t > 1)
+            val = a + b + c
+        else
+            val = a*t^2 + b*t + c
+        end
     end
     if (val <= 1e-20)
-        return 0
+        return 0.0
     end
     return sqrt(val)
 end
@@ -212,9 +216,9 @@ function fp_dist_segment_segment(
     ]
 
     rk = rank(m)
-    @assert(rk > 0)
-    if (rk == 1)
-        # The minimum distance is realized by one of the endpoints.
+    if (rk <= 1)
+        # Parallel segments, or one or both of zero length: the minimum distance is
+        # realized by one of the endpoints.
         return min(
             fp_dist_point_segment(b_p, a_p, a_q),
             fp_dist_point_segment(b_q, a_p, a_q),
