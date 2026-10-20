@@ -70,7 +70,6 @@ was computed by woflram alpha. It seems to be wrong(?).
 """
 
 function integral_alpha(f::DistFunction{T}, x::T) where {T}
-    f_debug::Bool = false
     f_x = d_eval(f, x)
     sqrt_f_x = sqrt(f_x)
     sqrt_a = sqrt(f.a)
@@ -97,27 +96,16 @@ was computed by sage math.
 
 """
 function integral(f::DistFunction{T}, x::T) where {T}
-    f_debug::Bool = false
     v = d_eval(f, x)
 
-    f_debug && begin
-        println("FFF f_a: ", f.a)
-        println("FFF f_b: ", f.b)
-        println("FFF f_c: ", f.c)
-        println("      x: ", x)
-    end
     tmp_a = 4.0 * f.a * f.c
     tmp_b = f.b*f.b
 
     val::Float64 = tmp_a - tmp_b
-    f_debug && println("tmp_a: ", tmp_a)
-    f_debug && println("tmp_b: ", tmp_b)
-    f_debug && println("__VVVVVVV: ", val)
     if (abs(val) < 1e-10)
         val = 0.0
     end
 
-    f_debug && println("VVVVVVV: ", val)
     local as
     if (val == 0.0)
         as = 64
@@ -218,19 +206,13 @@ function SweepDist_segs_p(
     q_b::Point{D,T},
 ) where {D,T}
 
-    f_debug::Bool = false
     len_edge_p = fp_dist(p_a, p_b)
     if fp_equal(p_a, p_b) || (len_edge_p == 0.0)
         return 0.0
     end
 
-    f_debug && println("len: ", len_edge_p)
     @assert(len_edge_p > 0.0)
 
-    f_debug && println("q_a: ", q_a)
-    f_debug && println("q_b: ", q_b)
-    f_debug && println("p_a: ", p_a)
-    f_debug && println("p_b: ", p_b)
     v_start = q_a - p_a
     v_end = q_b - p_b
 
@@ -238,13 +220,9 @@ function SweepDist_segs_p(
         return len_edge_p * fp_norm(v_start)
     end
 
-    f_debug && println("v_start: ", v_start)
-    f_debug && println("v_end: ", v_end)
     diff::Point{D,T} = v_end - v_start
 
-    f_debug && println("Diff: ", diff)
     p_diff::Point{D,T} = (1.0 / len_edge_p) * diff
-    f_debug && println("p_diff: ", p_diff)
     # Location of the point at time t along the edge p.
     # p(t) := (t / len_edge_p) * diff + v_start;
     # p(t) := t  * p_diff + v_start;
@@ -255,7 +233,6 @@ function SweepDist_segs_p(
     b = 2.0 * fp_dot(p_diff, v_start)
     c = fp_dot(v_start, v_start)
 
-    f_debug && println("a: ", a, " b: ", b, " c: ", c)
     f = dist_func(a, b, c)
 
     vl = integral_interval(f, 0.0, len_edge_p)
@@ -267,7 +244,6 @@ function SweepDist_segs_p(
     #println( "ymax: ", ymax );
 
     isnan(vl) && error("SweepDist_segs_p: the integral of the leash length is NaN")
-    f_debug && println("VL: ", vl)
 
     return vl
 end
