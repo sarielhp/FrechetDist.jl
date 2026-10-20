@@ -29,3 +29,10 @@ data_old
 /raw/
 /data_geolife/
 /info/geolife_sorted_by_rt.txt
+
+# Scratch output
+/err
+/examples/julial
+/geolife.txt
+/geolife_err_*
+/tests.txt
