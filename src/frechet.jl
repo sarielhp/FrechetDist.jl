@@ -1866,6 +1866,19 @@ function frechet_simplify_to_width(P::PntSeq{D,T}, w::T) where {D,T}
 end
 
 
+"""
+    frechet_simplify_to_cardin( P, sz )
+
+Simplifies `P` by refining the allowed Frechet error until the simplification has
+at least `sz + 2` vertices, or at least half the vertices of `P`, whichever comes
+first. The vertices kept are a subset of those of `P`, in order. Returns the
+simplification and the indices of the kept vertices in `P`. Note that the number of
+vertices returned can be considerably larger than `sz`.
+
+When the simplification found is exact (Frechet distance zero, for example for a
+straight track), no curve with more vertices exists at that accuracy, and it is
+returned even if it has fewer than `sz + 2` vertices.
+"""
 function frechet_simplify_to_cardin(P::PntSeq{D,T}, sz::Int64) where {D,T}
     pout = PntSeq{D,T}()
     pindices = Vector{Int64}()
@@ -1889,10 +1902,12 @@ function frechet_simplify_to_cardin(P::PntSeq{D,T}, sz::Int64) where {D,T}
         m = frechet_c_mono_approx_subcurve(P, Q, q_indices)[1]
         R, R_indices = frechet_simplify_to_width(P, m.leash)
         if ((cardin(R) >= sz + 2) || (2*cardin(R) >= cardin(P)))
-            println(" RRR :", cardin(R), " / ", sz)
             return R, R_indices
         end
         m = frechet_c_mono_approx_subcurve(P, R, R_indices)[1]
+        # R is already exact: a smaller width cannot produce a larger simplification
+        # (without this the loop below never ends, since w stays 0).
+        (m.leash == 0.0) && return R, R_indices
         w = m.leash
     end
 end
