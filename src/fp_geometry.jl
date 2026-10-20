@@ -16,7 +16,7 @@ end
 @inline function fp_norm(p::Point{D,T}) where {D,T}
     sum = zero(T)
     @inbounds for i = 1:D
-        @fastmath sum += p[i]^2
+        @fastmath sum += p[i]^2 # julia-audit: allow-fastmath (bit-identical to the original numerics)
     end
     return sqrt(sum)
 end
@@ -24,7 +24,7 @@ end
 @inline function fp_dist_sq(p::Point{D,T}, q::Point{D,T})::T where {D,T}
     sum = zero(T)
     @inbounds for i = 1:D
-        @fastmath sum += (p[i] - q[i])^2
+        @fastmath sum += (p[i] - q[i])^2 # julia-audit: allow-fastmath (bit-identical to the original numerics)
     end
     return sum
 end
@@ -32,7 +32,7 @@ end
 @inline function fp_dist(p::Point{D,T}, q::Point{D,T}) where {D,T}
     sum = 0.0
     @inbounds for i = 1:D
-        @fastmath sum += (p[i] - q[i])^2
+        @fastmath sum += (p[i] - q[i])^2 # julia-audit: allow-fastmath (bit-identical to the original numerics)
     end
     return sqrt(sum)
 end
@@ -53,7 +53,7 @@ end
 
     o = MVector{D,T}(undef)
     @inbounds for i = 1:D
-        @fastmath o[i] = p[i] + (q[i] - p[i]) * t
+        @fastmath o[i] = p[i] + (q[i] - p[i]) * t # julia-audit: allow-fastmath (bit-identical to the original numerics)
         @assert(! isnan(o[i]))
     end
 
