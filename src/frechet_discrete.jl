@@ -15,89 +15,97 @@ Extracting the morphing computd realizing the discrete Frechet
 distnace.
 
 """
-function   d_frechet_extract_solution( P::PntSeq{D,T}, Q,
-    dp_dec_i, n_p, n_q )::Morphing{D,T} where {D,T}
-    i = n_p;
-    j = n_q;
+function d_frechet_extract_solution(
+    P::PntSeq{D,T},
+    Q,
+    dp_dec_i,
+    n_p,
+    n_q,
+)::Morphing{D,T} where {D,T}
+    i = n_p
+    j = n_q
 
     #println( "Extract solution?" );
-    up::Int64 = n_p + n_q + 1;
-    peout = Vector{EventPoint{D,T}}( undef, up );
-    qeout = Vector{EventPoint{D,T}}( undef, up );
+    up::Int64 = n_p + n_q + 1
+    peout = Vector{EventPoint{D,T}}(undef, up)
+    qeout = Vector{EventPoint{D,T}}(undef, up)
 
-    pos::Int64 = 0;
-    while  ( ( i != 1 )  ||  ( j != 1 )  )
-        pos = pos + 1;
-        peout[ pos ] = EventPoint( P[ i ], i, PT_VERTEX, 0.0 );
-        qeout[ pos ] = EventPoint( Q[ j ], j, PT_VERTEX, 0.0 );
+    pos::Int64 = 0
+    while ((i != 1) || (j != 1))
+        pos = pos + 1
+        peout[pos] = EventPoint(P[i], i, PT_VERTEX, 0.0)
+        qeout[pos] = EventPoint(Q[j], j, PT_VERTEX, 0.0)
 
-        if  dp_dec_i[ i, j ]
-            i = i - 1;
+        if dp_dec_i[i, j]
+            i = i - 1
         else
-            j = j - 1;
+            j = j - 1
         end
     end
-    pos = pos + 1;
-    peout[ pos ] = EventPoint( P[ 1 ], i, PT_VERTEX, 0.0 );
-    qeout[ pos ] = EventPoint( Q[ 1 ], j, PT_VERTEX, 0.0 );
+    pos = pos + 1
+    peout[pos] = EventPoint(P[1], i, PT_VERTEX, 0.0)
+    qeout[pos] = EventPoint(Q[1], j, PT_VERTEX, 0.0)
 
-    @assert( pos <= up );
-    resize!( peout, pos );
-    resize!( qeout, pos );
+    @assert(pos <= up)
+    resize!(peout, pos)
+    resize!(qeout, pos)
 
-    reverse!( peout );
-    reverse!( qeout );
+    reverse!(peout)
+    reverse!(qeout)
 
-    return  Morphing_init( P, Q, peout, qeout );
+    return Morphing_init(P, Q, peout, qeout)
 end
 
 
 
-function   frechet_d_compute_inner( P::PntSeq{D,T}, Q::PntSeq{D,T},
-                                    dp::Array{Float64, 2}, dp_dec_i
-                                        ) where {D,T}
-    d::Float64 = 0;
-    jp::Int64 = 0;
-    ip::Int64 = 0;
+function frechet_d_compute_inner(
+    P::PntSeq{D,T},
+    Q::PntSeq{D,T},
+    dp::Array{Float64,2},
+    dp_dec_i,
+) where {D,T}
+    d::Float64 = 0
+    jp::Int64 = 0
+    ip::Int64 = 0
 
-    n_p::Int64 = cardin( P );
-    n_q::Int64 = cardin( Q );
+    n_p::Int64 = cardin(P)
+    n_q::Int64 = cardin(Q)
 
-    iters::Int64 = 0;
-    dp[ 1, 1 ] = fp_dist( P[ 1 ], Q[ 1 ] );
-    for  i::Int64 in 1:n_p
-        ip = max( i - 1, 1 );
-        for  j in 1:n_q
-            iters = iters + 1;
-            d = fp_dist( P[ i ], Q[ j ] );
-            jp = max( j - 1, 1 );
+    iters::Int64 = 0
+    dp[1, 1] = fp_dist(P[1], Q[1])
+    for i::Int64 = 1:n_p
+        ip = max(i - 1, 1)
+        for j = 1:n_q
+            iters = iters + 1
+            d = fp_dist(P[i], Q[j])
+            jp = max(j - 1, 1)
 
-            f_dec_i = false;
-            if  ( j == 1 )
-                f_dec_i = true;
+            f_dec_i = false
+            if (j == 1)
+                f_dec_i = true
             else
-                if  ( i == 1 )
-                    f_dec_i = false;
+                if (i == 1)
+                    f_dec_i = false
                 else
-                    if  ( dp[ i - 1, j ] < dp[ i, j - 1 ] )
-                        f_dec_i = true;
+                    if (dp[i-1, j] < dp[i, j-1])
+                        f_dec_i = true
                     else
-                        f_dec_i = false;
+                        f_dec_i = false
                     end
                 end
             end
 
-            if  ( f_dec_i )
-                dp[ i, j ] = max( d, dp[ ip, j ] );
-                dp_dec_i[ i, j ] = true;
+            if (f_dec_i)
+                dp[i, j] = max(d, dp[ip, j])
+                dp_dec_i[i, j] = true
             else
-                dp[ i, j ] = max( d, dp[ i, jp ] );
-                dp_dec_i[ i, j ] = false;  # redundant
+                dp[i, j] = max(d, dp[i, jp])
+                dp_dec_i[i, j] = false  # redundant
             end
         end
     end
 
-    return  iters;
+    return iters
 end
 
 
@@ -109,20 +117,19 @@ points. It interpresents the vertices of the polygons and the desired
 sequence of points.
 
 """
-function   frechet_d_compute( P::PntSeq{D,T},
-                              Q::PntSeq{D,T} ) where {D,T}
-    n_p::Int64 = cardin( P );
-    n_q::Int64 = cardin( Q );
+function frechet_d_compute(P::PntSeq{D,T}, Q::PntSeq{D,T}) where {D,T}
+    n_p::Int64 = cardin(P)
+    n_q::Int64 = cardin(Q)
 
-    dp::Array{Float64, 2} = Array{Float64, 2}(undef, n_p,n_q);
-    dp_dec_i = falses( n_p, n_q );
+    dp::Array{Float64,2} = Array{Float64,2}(undef, n_p, n_q)
+    dp_dec_i = falses(n_p, n_q)
 
-    iters = frechet_d_compute_inner( P, Q, dp, dp_dec_i );
+    iters = frechet_d_compute_inner(P, Q, dp, dp_dec_i)
 
-    m = d_frechet_extract_solution( P, Q, dp_dec_i, n_p, n_q );
-    m.iters = iters;
+    m = d_frechet_extract_solution(P, Q, dp_dec_i, n_p, n_q)
+    m.iters = iters
 
-    return  m;
+    return m
 end
 
 
@@ -142,92 +149,89 @@ tables. Doesn't seem to matter, but this might be worth fixing in
 future versions.
 
 """
-function   frechet_d_r_compute( P::PntSeq{D,T}, Q::PntSeq{D,T}
-                                            ) where {D,T}
-    n_p = cardin( P );
-    n_q = cardin( Q );
+function frechet_d_r_compute(P::PntSeq{D,T}, Q::PntSeq{D,T}) where {D,T}
+    n_p = cardin(P)
+    n_q = cardin(Q)
 
-    dp = zeros( n_p, n_q );
-    dp_dec_i = falses( n_p, n_q );
-    dp_def = falses( n_p, n_q );
-    in_heap = falses( n_p, n_q );
+    dp = zeros(n_p, n_q)
+    dp_dec_i = falses(n_p, n_q)
+    dp_def = falses(n_p, n_q)
+    in_heap = falses(n_p, n_q)
 
-    dp[ 1, 1 ] = fp_dist( P[ 1 ] , Q[ 1 ] );
-    dp_def[ 1, 1 ] = true;
+    dp[1, 1] = fp_dist(P[1], Q[1])
+    dp_def[1, 1] = true
 
-    x = [( Float64(dp[ 1, 1 ]), (1, 1) ) ];
+    x = [(Float64(dp[1, 1]), (1, 1))]
 
-    heap = BinaryMinHeap( x );
-    in_heap[ 1, 1 ] = true;
+    heap = BinaryMinHeap(x)
+    in_heap[1, 1] = true
 
-    iters::Int64 = 0;
-    while  ! isempty( heap )
-        ele = pop!( heap );
-        iters = iters + 1;
+    iters::Int64 = 0
+    while ! isempty(heap)
+        ele = pop!(heap)
+        iters = iters + 1
 
-        coords = ele[2];
-        i = coords[ 1 ];
-        j = coords[ 2 ];
-        value = ele[ 1 ];
+        coords = ele[2]
+        i = coords[1]
+        j = coords[2]
+        value = ele[1]
 
-        d = fp_dist( P[ i ], Q[ j ] );
+        d = fp_dist(P[i], Q[j])
 
-        ip = max( i - 1, 1 );
-        jp = max( j - 1, 1 );
+        ip = max(i - 1, 1)
+        jp = max(j - 1, 1)
 
-        f_dec_i::Bool = false;
-        if      ( j == 1 )
-            f_dec_i = true;
-        elseif  ( i == 1 )
-            f_dec_i = false;
-        elseif  ! dp_def[ i - 1, j ]
-            f_dec_i = false;
-        elseif  ! dp_def[ i, j - 1 ]
-            f_dec_i = true;
+        f_dec_i::Bool = false
+        if (j == 1)
+            f_dec_i = true
+        elseif (i == 1)
+            f_dec_i = false
+        elseif ! dp_def[i-1, j]
+            f_dec_i = false
+        elseif ! dp_def[i, j-1]
+            f_dec_i = true
         else
-            if  ( dp[ i - 1, j ] < dp[ i, j - 1 ] )
-                f_dec_i = true;
+            if (dp[i-1, j] < dp[i, j-1])
+                f_dec_i = true
             else
-                f_dec_i = false;
+                f_dec_i = false
             end
         end
 
-        if  ( f_dec_i )
-            dp[ i, j ] = max( d, dp[ ip, j ] );
-            dp_def[ i, j ] = true;
-            dp_dec_i[ i, j ] = true;
+        if (f_dec_i)
+            dp[i, j] = max(d, dp[ip, j])
+            dp_def[i, j] = true
+            dp_dec_i[i, j] = true
         else
-            dp[ i, j ] = max( d, dp[ i, jp ] );
-            dp_def[ i, j ] = true;
-            dp_dec_i[ i, j ] = false;  # redundant
+            dp[i, j] = max(d, dp[i, jp])
+            dp_def[i, j] = true
+            dp_dec_i[i, j] = false  # redundant
         end
 
         # Now we need to schedule the next two adjacent entries..
-        inext = i + 1;
-        jnext = j + 1;
-        if  ( inext <= n_p )
-            if  ( ! in_heap[ inext, j ] )
-                push!( heap, ( fp_dist( P[ inext ], Q[ j ] ),
-                               (inext, j) ) );
-                in_heap[ inext, j ] = true;
+        inext = i + 1
+        jnext = j + 1
+        if (inext <= n_p)
+            if (! in_heap[inext, j])
+                push!(heap, (fp_dist(P[inext], Q[j]), (inext, j)))
+                in_heap[inext, j] = true
             end
         end
-        if  ( jnext <= n_q )
-            if  ( ! in_heap[ i, jnext ] )
-                push!( heap, ( fp_dist( P[ i ], Q[ jnext ] ),
-                               (i, jnext) ) );
-                in_heap[ i, jnext ] = true;
+        if (jnext <= n_q)
+            if (! in_heap[i, jnext])
+                push!(heap, (fp_dist(P[i], Q[jnext]), (i, jnext)))
+                in_heap[i, jnext] = true
             end
         end
-        if  ( ( i == n_p )  &&  ( j == n_q ) )
-            break;
+        if ((i == n_p) && (j == n_q))
+            break
         end
     end
 
-    m = d_frechet_extract_solution( P, Q, dp_dec_i, n_p, n_q );
-    m.iters = iters;
+    m = d_frechet_extract_solution(P, Q, dp_dec_i, n_p, n_q)
+    m.iters = iters
 
-    return  m;
+    return m
 end
 
 """
@@ -238,71 +242,69 @@ end
     the discrete morphing.
 
 """
-function   DTW_d_compute( P::PntSeq{D,T}, Q::PntSeq{D,T}
-                          ) where {D,T}
+function DTW_d_compute(P::PntSeq{D,T}, Q::PntSeq{D,T}) where {D,T}
 
-    pq = PriorityQueue{Tuple{Int64, Int64},Float64}();
+    pq = PriorityQueue{Tuple{Int64,Int64},Float64}()
 
-    n_p = cardin( P );
-    n_q = cardin( Q );
+    n_p = cardin(P)
+    n_q = cardin(Q)
 
-    dp = zeros( n_p, n_q );
-    dp_dec_i = falses( n_p, n_q );
-    handled = falses( n_p, n_q );
+    dp = zeros(n_p, n_q)
+    dp_dec_i = falses(n_p, n_q)
+    handled = falses(n_p, n_q)
 
-    function  push_value( ia, ja, val, i )
-        new_val = val + fp_dist( P[ ia ], Q[ ja ] )
+    function push_value(ia, ja, val, i)
+        new_val = val + fp_dist(P[ia], Q[ja])
 
-        if  ( ( dp[ ia, ja ] > 0.0 )
-              &&  ( dp[ ia, ja ] <= new_val ) )
-            return;
+        if ((dp[ia, ja] > 0.0) && (dp[ia, ja] <= new_val))
+            return
         end
-        dp[ ia, ja ] = new_val;
-        pq[ ia, ja ] = new_val;  # Push to queue
-        dp_dec_i[ ia, ja ] = ( i < ia );
+        dp[ia, ja] = new_val
+        pq[ia, ja] = new_val  # Push to queue
+        dp_dec_i[ia, ja] = (i < ia)
     end
 
-    dp[ 1, 1 ] = fp_dist( P[ 1 ] , Q[ 1 ] );
+    dp[1, 1] = fp_dist(P[1], Q[1])
     #handled[ 1, 1 ] = true;
 
-    enqueue!( pq, (1,1), dp[ 1, 1 ] );
+    enqueue!(pq, (1, 1), dp[1, 1])
 
-    iters::Int64 = 0;
-    while  ! isempty( pq )
-        iters = iters + 1;
+    iters::Int64 = 0
+    while ! isempty(pq)
+        iters = iters + 1
 
-        ele = peek( pq );
-        i, j = ele[ 1 ];
-        value = ele[ 2 ];
+        ele = peek(pq)
+        i, j = ele[1]
+        value = ele[2]
 
         #println( "  VALUE   : ", value );
         #println( "  dp[", i, ", ", j, "] : ", dp[ i, j ] );
         #println( pq );
 
-        dequeue!( pq );
-        if  handled[ i, j ]
-            continue;
+        dequeue!(pq)
+        if handled[i, j]
+            continue
         end
 
-        handled[ i, j ] = true;
-        if  ( ( i == n_p )  &&  ( j == n_q ) )
-            break;
+        handled[i, j] = true
+        if ((i == n_p) && (j == n_q))
+            break
         end
 
         # Now we need to schedule the next two adjacent entries..
-        if  ( i < n_p )
-            push_value( i + 1, j, value, i );
+        if (i < n_p)
+            push_value(i + 1, j, value, i)
         end
-        if  ( j < n_q )
-            push_value( i, j+1, value, i );
+        if (j < n_q)
+            push_value(i, j+1, value, i)
         end
     end
 
-    m = d_frechet_extract_solution( P, Q, dp_dec_i, n_p, n_q );
-    m.iters = iters;
+    m = d_frechet_extract_solution(P, Q, dp_dec_i, n_p, n_q)
+    m.iters = iters
 
     #exit( -1 );
-    return  m;
+    return m
 end
 
 
@@ -332,32 +334,33 @@ picked.
      true: Use the rectractable Frechet distance version
      false: Use the standard discrete Frechet version.
 """
-function   frechet_d_r_compute_sample( polya::PntSeq{D,T},
-                                       polyb::PntSeq{D,T},
-                                       n::Int64,
-                                       f_lopt::Bool = true
-                                     )    where {D,T}
-#    polya,polyb = example_4()
-    lena = fp_geom_length( polya );
-    lenb = fp_geom_length( polyb );
+function frechet_d_r_compute_sample(
+    polya::PntSeq{D,T},
+    polyb::PntSeq{D,T},
+    n::Int64,
+    f_lopt::Bool = true,
+) where {D,T}
+    #    polya,polyb = example_4()
+    lena = fp_geom_length(polya)
+    lenb = fp_geom_length(polyb)
 
-#    n::Int64 = 100;
-    delta = (lena+ lenb)/ n;
+    #    n::Int64 = 100;
+    delta = (lena + lenb) / n
 
-    na::Int64 = ceil( lena / delta ) +2;
-    nb::Int64 = ceil( lenb / delta ) +2;
+    na::Int64 = ceil(lena / delta) + 2
+    nb::Int64 = ceil(lenb / delta) + 2
 
-    qa = Polygon_sample_uniformly( polya, na );
-    qb = Polygon_sample_uniformly( polyb, nb );
+    qa = Polygon_sample_uniformly(polya, na)
+    qb = Polygon_sample_uniformly(polyb, nb)
 
-    if  ( f_lopt )
-        morph = frechet_d_r_compute( qa, qb );
+    if (f_lopt)
+        morph = frechet_d_r_compute(qa, qb)
     else
-        morph = frechet_d_compute( qa, qb );
+        morph = frechet_d_compute(qa, qb)
     end
-#    output_morphing( morph, filename, polyb );
+    #    output_morphing( morph, filename, polyb );
 
-    return  morph
+    return morph
 end
 
 

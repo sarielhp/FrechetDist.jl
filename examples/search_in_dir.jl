@@ -23,129 +23,124 @@ import FrechetDist: read_file
 import BasicCompGeometry: cardin
 
 
-function search_dir(path,key)
+function search_dir(path, key)
     #println( readdir( path ) );
-    return  filter(x->occursin(key,x), readdir(path))
+    return filter(x->occursin(key, x), readdir(path))
 end
 
 ###########################################################################
 ### Main starts here
 ###########################################################################
-function find_closest_in_directory( path::String, threshold,
-                                    si::Int64, sj::Int64 = 0 )
-    files=search_dir( path, "plt" );
+function find_closest_in_directory(path::String, threshold, si::Int64, sj::Int64 = 0)
+    files=search_dir(path, "plt")
 
-#    println( "bogi" );
-    polygons = Vector{PntSeq2F}();#  polygons;
-    for  x in files
-        filename = path * x;
-        print( "Reading: ", filename );
-        poly_a =  read_file( filename );
-        push!( polygons,  poly_a );
-        println( " #: ", cardin( poly_a ) );
+    #    println( "bogi" );
+    polygons = Vector{PntSeq2F}()#  polygons;
+    for x in files
+        filename = path * x
+        print("Reading: ", filename)
+        poly_a = read_file(filename)
+        push!(polygons, poly_a)
+        println(" #: ", cardin(poly_a))
     end
-    println( "bogi2" );
+    println("bogi2")
 
-    loc_i::Int64 = -1;
-    loc_j::Int64 = -1;
+    loc_i::Int64 = -1
+    loc_j::Int64 = -1
 
-    if  ( si > 0 )  &&  ( sj > 0 )  &&  (si != sj )
-        println( "Special pair: ", si, " , ", sj );
-        m = frechet_c_compute( polygons[ si ], polygons[ sj ] );
-        exit( -1 );
+    if (si > 0) && (sj > 0) && (si != sj)
+        println("Special pair: ", si, " , ", sj)
+        m = frechet_c_compute(polygons[si], polygons[sj])
+        exit(-1)
     end
 
-    min_dist = -1;
-    len = length( files );
-    widths = zeros(Float64, len )
+    min_dist = -1
+    len = length(files)
+    widths = zeros(Float64, len)
 
-    for  i in 1:len
-        widths[ i ] = frechet_width_approx( polygons[ i ] );
+    for i = 1:len
+        widths[i] = frechet_width_approx(polygons[i])
     end
-    
-    dists_lb = zeros(Float64, len, len )
-    dists_ub = zeros(Float64, len, len )
 
-    for  i in 1:len
-        dists_ub[ i, i ] = Inf
+    dists_lb = zeros(Float64, len, len)
+    dists_ub = zeros(Float64, len, len)
+
+    for i = 1:len
+        dists_ub[i, i] = Inf
     end
-    for  i in 1:( len - 1 )
-        for  j  in  (i+1):len
-            P = polygons[ i ];
-            Q = polygons[ j ];
-#            - widths[ i ] - widths[ j ];
-            d = max( dist( first( P ), first( Q ) ),
-                     dist( last( P ), last( Q ) ) );
+    for i = 1:(len-1)
+        for j = (i+1):len
+            P = polygons[i]
+            Q = polygons[j]
+            #            - widths[ i ] - widths[ j ];
+            d = max(dist(first(P), first(Q)), dist(last(P), last(Q)))
             lb = d
-            ub = d + widths[ i ] + widths[ j ];
-            @assert( ub > 0.0 );
-            dists_lb[ i, j ] = lb;
-            dists_lb[ j, i ] = lb;
-            dists_ub[ i, j ] = ub;
-            dists_ub[ j, i ] = ub;
+            ub = d + widths[i] + widths[j]
+            @assert(ub > 0.0)
+            dists_lb[i, j] = lb
+            dists_lb[j, i] = lb
+            dists_ub[i, j] = ub
+            dists_ub[j, i] = ub
         end
     end
 
-    pos = findmin( dists_ub )[ 2 ]
-    up_val = dists_ub[ pos ];
-    println( "pos :" , pos );
-    println( "up_val: ", up_val );
-    for  i in 1:( len - 1 )
-        for  j  in  (i+1):len
-            if  dists_lb[ i, j ] > up_val
+    pos = findmin(dists_ub)[2]
+    up_val = dists_ub[pos]
+    println("pos :", pos)
+    println("up_val: ", up_val)
+    for i = 1:(len-1)
+        for j = (i+1):len
+            if dists_lb[i, j] > up_val
                 continue
             end
-            print( "i; ", i, " j: ", j, " : " );
-            m = frechet_c_approx( polygons[ i ], polygons[ j ], 2.0 );
-            dist = m.leash;
-            println( "  : ", dist, "        [",
-                     dists_lb[ i,j ], " ... ",
-                     dists_ub[ i,j ], "]" );
+            print("i; ", i, " j: ", j, " : ")
+            m = frechet_c_approx(polygons[i], polygons[j], 2.0)
+            dist = m.leash
+            println("  : ", dist, "        [", dists_lb[i, j], " ... ", dists_ub[i, j], "]")
 
-            if  ( dist < up_val )
-                up_val = dist;
+            if (dist < up_val)
+                up_val = dist
             end
-            if  ( min_dist < 0 )  ||  ( dist < min_dist )
-                loc_i = i;
-                loc_j = j;
-                min_dist = dist;
-                println( "= Close pair ============================" );
-                println( dist );
-                println( "#: ", cardin( polygons[ i ] )
-                    + cardin( polygons[ j ] ) );
-                println( files[ i ] );
-                println( files[ j ] );
-                println( "=========================================" );
+            if (min_dist < 0) || (dist < min_dist)
+                loc_i = i
+                loc_j = j
+                min_dist = dist
+                println("= Close pair ============================")
+                println(dist)
+                println("#: ", cardin(polygons[i]) + cardin(polygons[j]))
+                println(files[i])
+                println(files[j])
+                println("=========================================")
             end
-#            println( "Curr   ", loc_i, ", ", loc_j, "  d: ",  min_dist );
+            #            println( "Curr   ", loc_i, ", ", loc_j, "  d: ",  min_dist );
         end
     end
 
-    if  ( loc_i >= 0 )
-        println( "Best pair found..." );
-        println( path*files[ loc_i ] );
-        println( path*files[ loc_j ] );
+    if (loc_i >= 0)
+        println("Best pair found...")
+        println(path*files[loc_i])
+        println(path*files[loc_j])
     end
 
-    exit( -1 );
+    exit(-1)
 end
 
 
 
 
-num_args = length( ARGS );
-if   num_args == 1
-    path = ARGS[ 1 ];
-    println( path );
-    find_closest_in_directory( path, 0.01, 0, 0 );
+num_args = length(ARGS);
+if num_args == 1
+    path = ARGS[1]
+    println(path)
+    find_closest_in_directory(path, 0.01, 0, 0)
 
-    exit( 0 );
+    exit(0)
 end
 
 
-println( "Wrong number of parameters!" );
+println("Wrong number of parameters!");
 
-exit( -1 );
+exit(-1);
 
 
 #################################################################

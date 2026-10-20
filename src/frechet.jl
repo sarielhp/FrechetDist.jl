@@ -7,7 +7,7 @@
 # A library to compute various versions of the Frechet distance.
 #-------------------------------------------------------------
 
-DictVERType = Dict{Int64, Int64};
+DictVERType = Dict{Int64,Int64};
 #DictHandledType = Dict{Int64, Bool};
 
 
@@ -16,144 +16,151 @@ DictVERType = Dict{Int64, Int64};
 
 A function that encodes a matching "edge" betwee two polygons.
 """
-function  EID(
+function EID(
     i::Int64 = 0,
     i_is_vert::Bool = false,
     j::Int64 = 0,
-    j_is_vert::Bool = false
+    j_is_vert::Bool = false,
 )::Int64
     #---
-    val::Int64 = ( ( i << 32 )  |  ( j << 2 )
-                   |  ( convert( Int64, i_is_vert ) << 1)
-                   |  ( convert( Int64, j_is_vert ) )
-    );
-    return  val;
+    val::Int64 = (
+        (i << 32) | (j << 2) | (convert(Int64, i_is_vert) << 1) |
+        (convert(Int64, j_is_vert))
+    )
+    return val
 end
 
-@inline function  EID_i( id::Int64 )::Int64
-    return  ( id >> 32 );
+@inline function EID_i(id::Int64)::Int64
+    return (id >> 32)
 end
 
-@inline function  EID_j( id::Int64 )::Int64
-    return   ( id & 0xfffffffc ) >> 2;
+@inline function EID_j(id::Int64)::Int64
+    return (id & 0xfffffffc) >> 2
 end
 
-@inline function   EID_ij_status( id::Int64 )::Int64
-    return   id & 0x3;
+@inline function EID_ij_status(id::Int64)::Int64
+    return id & 0x3
 end
 
-@inline function   EID_i_is_vert( id::Int64 )::Bool
-    return   ( (id & 0x2) != 0 );
+@inline function EID_i_is_vert(id::Int64)::Bool
+    return ((id & 0x2) != 0)
 end
 
-@inline function  EID_j_is_vert( id::Int64 )::Bool
-    return  ( (id & 0x1) != 0 );
+@inline function EID_j_is_vert(id::Int64)::Bool
+    return ((id & 0x1) != 0)
 end
 
 #DictVERType = Dict{Int64, TreeVertex};
 #HeapVERType = BinaryMinHeap{TreeVertex};
 
-HeapVerticesType = BinaryMinHeap{Tuple{Float64,Int64},};
+HeapVerticesType = BinaryMinHeap{Tuple{Float64,Int64}};
 
 
 #@with_kw
 mutable struct FRContext{N,T}
-    P::PntSeq{N,T};
-    Q::PntSeq{N,T};
-    p_offs::Vector{Float64};
-    q_offs::Vector{Float64};
-#    handled::DictHandledType;
-    dict::DictVERType;
-    heapAlt::HeapVerticesType;
-    f_offsets::Bool ;
+    P::PntSeq{N,T}
+    Q::PntSeq{N,T}
+    p_offs::Vector{Float64}
+    q_offs::Vector{Float64}
+    #    handled::DictHandledType;
+    dict::DictVERType
+    heapAlt::HeapVerticesType
+    f_offsets::Bool
     n_p::Int64 #0
     n_q::Int64 #0
     f_upper_bound::Bool
     upper_bound::T
 end
 
-function  FR_Context(P::PntSeq{N,T}, Q::PntSeq{N,T}) where {N,T}
-#    d_h = DictHandledType();
-    d_ver = DictVERType();
-    h = HeapVerticesType();
-    return FRContext( P, Q, Vector{Float64}(),  Vector{Float64}(),
-                      d_ver,
-                      h,
-                      false, Int64(cardin( P) ), Int64(cardin( Q )),
-                      false, zero(T)  # Upper bound
-                      );
+function FR_Context(P::PntSeq{N,T}, Q::PntSeq{N,T}) where {N,T}
+    #    d_h = DictHandledType();
+    d_ver = DictVERType()
+    h = HeapVerticesType()
+    return FRContext(
+        P,
+        Q,
+        Vector{Float64}(),
+        Vector{Float64}(),
+        d_ver,
+        h,
+        false,
+        Int64(cardin(P)),
+        Int64(cardin(Q)),
+        false,
+        zero(T),  # Upper bound
+    )
 end
 
 
-function  ve_event_value( c::FRContext{N,T}, id::Int64 ) where {N,T}
+function ve_event_value(c::FRContext{N,T}, id::Int64) where {N,T}
     P = c.P
     Q = c.Q
-    i = EID_i( id );
-    j = EID_j( id );
-    penalty::T = 0;
+    i = EID_i(id)
+    j = EID_j(id)
+    penalty::T = 0
 
-    if  EID_i_is_vert( id )
-        if  EID_j_is_vert( id )
-            d = fp_dist( P[ i ], Q[ j ] );
+    if EID_i_is_vert(id)
+        if EID_j_is_vert(id)
+            d = fp_dist(P[i], Q[j])
             # Old code: Bug? Missing if check
-            if  c.f_offsets
-                penalty = c.p_offs[ i ] - c.q_offs[ j ];
-                return  d - penalty, penalty;
+            if c.f_offsets
+                penalty = c.p_offs[i] - c.q_offs[j]
+                return d - penalty, penalty
             else
-                return  fp_dist( P[ i ], Q[ j ] ), 0.0;
+                return fp_dist(P[i], Q[j]), 0.0
             end
         end
-        d = fp_dist_point_segment( c.P[ i ], Q[ j ], Q[ j + 1 ] );
-        if  c.f_offsets
-#            if  ( c.q_offs[ j ] > 0 )
-#                println( "Larger than 0!" );
-#            end
+        d = fp_dist_point_segment(c.P[i], Q[j], Q[j+1])
+        if c.f_offsets
+            #            if  ( c.q_offs[ j ] > 0 )
+            #                println( "Larger than 0!" );
+            #            end
             #--------------------------------------------------------------
-# Old code: Bug?
+            # Old code: Bug?
             #            return  d - c.q_offs[ j ];
-            penalty = max(c.q_offs[ j ], c.q_offs[ j + 1 ] ) + c.p_offs[ i ];
-            return  d - penalty, penalty;
+            penalty = max(c.q_offs[j], c.q_offs[j+1]) + c.p_offs[i]
+            return d - penalty, penalty
         else
-            return  d, 0.0;
+            return d, 0.0
         end
     end
 
-    if  EID_j_is_vert( id )
-        d = fp_dist_point_segment( Q[ j ], P[ i ], P[ i + 1 ] );
-        if  c.f_offsets
-            penalty = max(c.p_offs[ i ], c.p_offs[ i + 1 ] ) + c.q_offs[ j ];
-            return  d - penalty, penalty;
+    if EID_j_is_vert(id)
+        d = fp_dist_point_segment(Q[j], P[i], P[i+1])
+        if c.f_offsets
+            penalty = max(c.p_offs[i], c.p_offs[i+1]) + c.q_offs[j]
+            return d - penalty, penalty
         else
-            return  d, 0.0;
+            return d, 0.0
         end
     end
 
-    println( "Error: This kind of event is not handled yet..." );
-    exit( -1 )
-    return  0.0, 0.0;
+    println("Error: This kind of event is not handled yet...")
+    exit(-1)
+    return 0.0, 0.0
 end
 
 
-@inline function   is_start_event( id::Int64 )
-    return ( ( EID_i( id ) == 1 )
-             && ( EID_j( id ) == 1 )
-             && EID_i_is_vert( id )
-             &&  EID_j_is_vert( id ) )
+@inline function is_start_event(id::Int64)
+    return ((EID_i(id) == 1) && (EID_j(id) == 1) && EID_i_is_vert(id) && EID_j_is_vert(id))
 end
 
-@inline function  is_final_cell( id::Int64, n_p::Int64, n_q::Int64 )
-    return   ( ( EID_i( id ) == ( n_p - 1 ) )
-               &&  ( EID_j( id ) == ( n_q - 1 ) ) )
+@inline function is_final_cell(id::Int64, n_p::Int64, n_q::Int64)
+    return ((EID_i(id) == (n_p - 1)) && (EID_j(id) == (n_q - 1)))
 end
 
-function f_r_create_event( R::PntSeq{N,T}, i::Integer,
-                        is_vert::Bool, qr::Point{N,T} ) where {N,T}
-    if  ( is_vert )
-        ev = EventPoint( R[ i ], Int64(i), PT_VERTEX, 0.0, 0.0 );
-        return  ev;
+function f_r_create_event(
+    R::PntSeq{N,T},
+    i::Integer,
+    is_vert::Bool,
+    qr::Point{N,T},
+) where {N,T}
+    if (is_vert)
+        ev = EventPoint(R[i], Int64(i), PT_VERTEX, 0.0, 0.0)
+        return ev
     end
 
-    p::Point{N,T},t::T = fp_nn_point_ext( R[ i ], R[ i + 1 ], qr );
+    p::Point{N,T}, t::T = fp_nn_point_ext(R[i], R[i+1], qr)
 
 
     #seg = Segment( R[ i ], R[ i + 1 ] );
@@ -168,211 +175,212 @@ function f_r_create_event( R::PntSeq{N,T}, i::Integer,
 
     #t::Float64 = fp_convex_coef( seg, p );
 
-    if  ( ! ( 0.0 <= t  &&  t <= 1.0 ) )
-        println( R[ i ] );
-        println( R[ i + 1 ] );
-        println( "qr: ", qr );
-        println( "t: ", t );
-        @assert( 0.0 <= t  &&  t <= 1.0 );
+    if (! (0.0 <= t && t <= 1.0))
+        println(R[i])
+        println(R[i+1])
+        println("qr: ", qr)
+        println("t: ", t)
+        @assert(0.0 <= t && t <= 1.0)
     end
-    if  ( 0 < t < 0.000001 )
-        t = 0;
-        p = R[ i ];
+    if (0 < t < 0.000001)
+        t = 0
+        p = R[i]
     end
-    if  ( 0.999999 < t < 1.0 )
-        t = 1.0;
-        p = R[ i + 1 ];
+    if (0.999999 < t < 1.0)
+        t = 1.0
+        p = R[i+1]
     end
     #        println( "TTT= ", t );
 
-    @assert( ! any( isnan, p ) );
-    return  EventPoint( p, Int64(i), PT_ON_EDGE, t, 0.0 );
+    @assert(! any(isnan, p))
+    return EventPoint(p, Int64(i), PT_ON_EDGE, t, 0.0)
 end
 
 
-@inline function  is_schedule_event( dict::DictVERType, id::Int64, n_p::Int64,
-                             n_q::Int64 )::Bool
-    if  haskey( dict, id )
-        return  false
+@inline function is_schedule_event(
+    dict::DictVERType,
+    id::Int64,
+    n_p::Int64,
+    n_q::Int64,
+)::Bool
+    if haskey(dict, id)
+        return false
     end
-    if  ( EID_i( id )  < n_p )  &&  ( EID_j( id ) < n_q )
-        return  true;
+    if (EID_i(id) < n_p) && (EID_j(id) < n_q)
+        return true
     end
-    if  ( EID_i( id )  > n_p )  ||  ( EID_j( id ) > n_q )
-        return  false;
+    if (EID_i(id) > n_p) || (EID_j(id) > n_q)
+        return false
     end
-    if  ( EID_i(id) >= n_p )  &&  ( ! EID_i_is_vert( id ) )
-        return  false
+    if (EID_i(id) >= n_p) && (! EID_i_is_vert(id))
+        return false
     end
-    if  ( EID_j( id ) >= n_q )  &&  ( ! EID_j_is_vert( id ) )
-        return  false
+    if (EID_j(id) >= n_q) && (! EID_j_is_vert(id))
+        return false
     end
-    return  true
+    return true
 end
 
-@inline function  f_r_schedule_event( id::Int64, prev_id::Int64,
-                              c::FRContext{N,T} ) where  {N,T}
-    if  ! is_schedule_event( c.dict, id, c.n_p, c.n_q )
+@inline function f_r_schedule_event(
+    id::Int64,
+    prev_id::Int64,
+    c::FRContext{N,T},
+) where {N,T}
+    if ! is_schedule_event(c.dict, id, c.n_p, c.n_q)
         return
     end
-    new_val, penalty = ve_event_value( c, id )
-    if  ( c.f_upper_bound  &&  ( c.upper_bound < new_val ) )
-        return;
+    new_val, penalty = ve_event_value(c, id)
+    if (c.f_upper_bound && (c.upper_bound < new_val))
+        return
     end
     ### Also... Blocks the event from being considered again...
-    c.dict[ id ] = prev_id;
-    push!( c.heapAlt, (new_val, id ) );
+    c.dict[id] = prev_id
+    push!(c.heapAlt, (new_val, id))
 end
 
 
-function  f_r_extract_solution_basic( P::PntSeq{N,T}, Q::PntSeq{N,T},
-                                end_event_id::Int64,
-                                dict::DictVERType
-                                ) where {N,T}
+function f_r_extract_solution_basic(
+    P::PntSeq{N,T},
+    Q::PntSeq{N,T},
+    end_event_id::Int64,
+    dict::DictVERType,
+) where {N,T}
     #############################################################3
     # Extracting the solution
     #
     # The final event is always the same - final vertex of P versus
     # final vertex of Q.
-    pes = Vector{EventPoint{N,T}}();
-    qes = Vector{EventPoint{N,T}}();
+    pes = Vector{EventPoint{N,T}}()
+    qes = Vector{EventPoint{N,T}}()
 
-    idx = end_event_id;
-    pex::EventPoint = f_r_create_event( P, EID_i( idx ),
-                                        EID_i_is_vert( idx ),
-                                        Q[ EID_j( idx) ] );
-    qex::EventPoint = f_r_create_event( Q, EID_j( idx),
-                                        EID_j_is_vert( idx ),
-                                        P[ EID_i( idx ) ] );
+    idx = end_event_id
+    pex::EventPoint = f_r_create_event(P, EID_i(idx), EID_i_is_vert(idx), Q[EID_j(idx)])
+    qex::EventPoint = f_r_create_event(Q, EID_j(idx), EID_j_is_vert(idx), P[EID_i(idx)])
 
-    push!( pes, pex );
-    push!( qes, qex );
+    push!(pes, pex)
+    push!(qes, qex)
 
-    curr = end_event_id;
-    while  ! is_start_event( curr )
-        prev = curr;
-        curr = dict[ prev ];
+    curr = end_event_id
+    while ! is_start_event(curr)
+        prev = curr
+        curr = dict[prev]
 
-#        id = curr.id;
-        id_i = EID_i( curr );
-        id_j = EID_j( curr );
+        #        id = curr.id;
+        id_i = EID_i(curr)
+        id_j = EID_j(curr)
 
-        pe::EventPoint = f_r_create_event( P, id_i, EID_i_is_vert( curr ),
-                                                 Q[ id_j ] );
-        qe::EventPoint = f_r_create_event( Q, id_j, EID_j_is_vert( curr ),
-                                              P[ id_i ] );
-        push!( pes, pe );
-        push!( qes, qe );
+        pe::EventPoint = f_r_create_event(P, id_i, EID_i_is_vert(curr), Q[id_j])
+        qe::EventPoint = f_r_create_event(Q, id_j, EID_j_is_vert(curr), P[id_i])
+        push!(pes, pe)
+        push!(qes, qe)
     end
 
-    reverse!( pes );
-    reverse!( qes );
+    reverse!(pes)
+    reverse!(qes)
 
-    return  pes, qes;
+    return pes, qes
 end
 
-function  f_r_extract_solution( P::PntSeq{N,T}, Q::PntSeq{N,T},
-                                end_event_id::Int64,
-                                dict::DictVERType,
-                                c::FRContext{N,T}
-                                ) where {N,T}
+function f_r_extract_solution(
+    P::PntSeq{N,T},
+    Q::PntSeq{N,T},
+    end_event_id::Int64,
+    dict::DictVERType,
+    c::FRContext{N,T},
+) where {N,T}
     #############################################################3
     # Extracting the solution
     #
     # The final event is always the same - final vertex of P versus
     # final vertex of Q.
-    pes = Vector{EventPoint{N,T}}();
-    qes = Vector{EventPoint{N,T}}();
+    pes = Vector{EventPoint{N,T}}()
+    qes = Vector{EventPoint{N,T}}()
 
-    idx = end_event_id;
-    pex::EventPoint = f_r_create_event( P, EID_i( idx ),
-                                        EID_i_is_vert( idx ),
-                                        Q[ EID_j( idx) ] );
-    qex::EventPoint = f_r_create_event( Q, EID_j( idx),
-                                        EID_j_is_vert( idx ),
-                                        P[ EID_i( idx ) ] );
+    idx = end_event_id
+    pex::EventPoint = f_r_create_event(P, EID_i(idx), EID_i_is_vert(idx), Q[EID_j(idx)])
+    qex::EventPoint = f_r_create_event(Q, EID_j(idx), EID_j_is_vert(idx), P[EID_i(idx)])
 
-    if  ( c.f_offsets  )
-        val, penalty = ve_event_value( c, idx );
-        pex = ev_update_penalty( pex, penalty );
+    if (c.f_offsets)
+        val, penalty = ve_event_value(c, idx)
+        pex = ev_update_penalty(pex, penalty)
         #pex.penalty = penalty;
     end
-    push!( pes, pex );
-    push!( qes, qex );
+    push!(pes, pex)
+    push!(qes, qex)
 
-    curr = end_event_id;
-    while  ! is_start_event( curr )
-        prev = curr;
-        curr = dict[ prev ];
+    curr = end_event_id
+    while ! is_start_event(curr)
+        prev = curr
+        curr = dict[prev]
 
-#        id = curr.id;
-        id_i = EID_i( curr );
-        id_j = EID_j( curr );
+        #        id = curr.id;
+        id_i = EID_i(curr)
+        id_j = EID_j(curr)
 
-        pe::EventPoint = f_r_create_event( P, id_i, EID_i_is_vert( curr ),
-                                                 Q[ id_j ] );
-        qe::EventPoint = f_r_create_event( Q, id_j, EID_j_is_vert( curr ),
-                                              P[ id_i ] );
-        if  ( c.f_offsets  )
-            val, penalty = ve_event_value( c, curr );
-            pe = ev_update_penalty( pe, penalty) ;
+        pe::EventPoint = f_r_create_event(P, id_i, EID_i_is_vert(curr), Q[id_j])
+        qe::EventPoint = f_r_create_event(Q, id_j, EID_j_is_vert(curr), P[id_i])
+        if (c.f_offsets)
+            val, penalty = ve_event_value(c, curr)
+            pe = ev_update_penalty(pe, penalty)
         end
-        push!( pes, pe );
-        push!( qes, qe );
+        push!(pes, pe)
+        push!(qes, qe)
     end
 
-    reverse!( pes );
-    reverse!( qes );
+    reverse!(pes)
+    reverse!(qes)
 
-    return  pes, qes;
+    return pes, qes
 end
 
 
 
-function   eid_same_status( arr::Vector{Int64}, curr::Int64, len::Int64 )
-    eid = arr[ curr ];
-    status = EID_ij_status( arr[ curr ] );
-    t = curr + 1;
-    while  ( t <= len )
-        if EID_ij_status( arr[ t ] ) != status
-            break;
+function eid_same_status(arr::Vector{Int64}, curr::Int64, len::Int64)
+    eid = arr[curr]
+    status = EID_ij_status(arr[curr])
+    t = curr + 1
+    while (t <= len)
+        if EID_ij_status(arr[t]) != status
+            break
         end
-        t = t + 1;
+        t = t + 1
     end
-    return  t - 1;
+    return t - 1
 end
 
 
-function  f_r_extract_solution_ids( P::PntSeq{N,T}, Q::PntSeq{N,T},
-                                    end_event_id::Int64,
-                                    start_event_id::Int64,
-                                    dict
-                                    ) where {N,T}
-    out_arr = Vector{Int64}();
+function f_r_extract_solution_ids(
+    P::PntSeq{N,T},
+    Q::PntSeq{N,T},
+    end_event_id::Int64,
+    start_event_id::Int64,
+    dict,
+) where {N,T}
+    out_arr = Vector{Int64}()
 
-    push!( out_arr, end_event_id );
+    push!(out_arr, end_event_id)
 
-    curr = end_event_id;
-    while  ( curr != start_event_id )
-        push!( out_arr, curr );
-        prev = curr;
-        if  ! haskey( dict, prev )
-            println( "start_event_id: ", start_event_id );
-            println( "end_event_id: ", end_event_id );
-            println( "|P|: ", cardin( P ) );
-            println( "|Q|: ", cardin( Q ) );
-            println( P );
-            println( "----------------------------------" );
-            println( Q );
-            println( "----------------------------------" );
+    curr = end_event_id
+    while (curr != start_event_id)
+        push!(out_arr, curr)
+        prev = curr
+        if ! haskey(dict, prev)
+            println("start_event_id: ", start_event_id)
+            println("end_event_id: ", end_event_id)
+            println("|P|: ", cardin(P))
+            println("|Q|: ", cardin(Q))
+            println(P)
+            println("----------------------------------")
+            println(Q)
+            println("----------------------------------")
         end
-        curr = dict[ prev ];
+        curr = dict[prev]
     end
-    push!( out_arr, curr );
+    push!(out_arr, curr)
 
-    reverse!( out_arr );
+    reverse!(out_arr)
 
-    return  out_arr;
+    return out_arr
 end
 
 """
@@ -383,125 +391,128 @@ end
     to nearest point on th esegment. The max is the result of brute force
     monotonization.
 """
-@inline function    max_leash( l_min::T, l_max::T,
-                               s_a::Point{N,T}, s_b::Point{N,T},
-                               P::PntSeq{N,T}, low,
-                               hi ) where {N,T}
+@inline function max_leash(
+    l_min::T,
+    l_max::T,
+    s_a::Point{N,T},
+    s_b::Point{N,T},
+    P::PntSeq{N,T},
+    low,
+    hi,
+) where {N,T}
     #seg = Segment( s_a, s_b );
-    len_seg_sq::Float64 = fp_dist_sq( s_a, s_b );
-    if  ( len_seg_sq == 0.0 )
-        for  j in low:hi
-            l_min = max( l_min, fp_dist( s_a, P[ j ] ) );
+    len_seg_sq::Float64 = fp_dist_sq(s_a, s_b)
+    if (len_seg_sq == 0.0)
+        for j = low:hi
+            l_min = max(l_min, fp_dist(s_a, P[j]))
         end
-        return  l_min, max( l_min, l_max );
+        return l_min, max(l_min, l_max)
     end
 
-    max_t = 0.0;
-    max_s = s_a;
+    max_t = 0.0
+    max_s = s_a
 
-    seg_len_sq = fp_dist_sq( s_a, s_b )  # Squared distance between s_a and s_b
-    s_vec =  s_b - s_a
+    seg_len_sq = fp_dist_sq(s_a, s_b)  # Squared distance between s_a and s_b
+    s_vec = s_b - s_a
 
-    for  j in low:hi
-        p = P[ j ];
+    for j = low:hi
+        p = P[j]
 
-        sq, new_t = fp_nn_point_ext_ext( s_a, s_b, p, seg_len_sq, s_vec );
+        sq, new_t = fp_nn_point_ext_ext(s_a, s_b, p, seg_len_sq, s_vec)
 
-        dst = fp_dist( sq, p );
-        l_min = max( l_min, dst );
-        if  ( new_t >= max_t )
-            max_t = new_t;
-            max_s = sq; #fp_convex_comb( p_a, p_b, max_t );
+        dst = fp_dist(sq, p)
+        l_min = max(l_min, dst)
+        if (new_t >= max_t)
+            max_t = new_t
+            max_s = sq #fp_convex_comb( p_a, p_b, max_t );
         end
 
-        l_max = max( l_max, fp_dist( max_s, p ) );
+        l_max = max(l_max, fp_dist(max_s, p))
     end
 
-    return  l_min, l_max;
+    return l_min, l_max
 end
 
-function   compute_leash_from_arr( P::PntSeq{N,T},
-                                   Q::PntSeq{N,T},
-                                   arr::Vector{Int64}
-                                   ) where {N,T}
-    curr::Int64 = 1;
-    len::Int64 = length( arr );
-    l_max::T = 0.0;
-    l_min::T = 0.0;
+function compute_leash_from_arr(
+    P::PntSeq{N,T},
+    Q::PntSeq{N,T},
+    arr::Vector{Int64},
+) where {N,T}
+    curr::Int64 = 1
+    len::Int64 = length(arr)
+    l_max::T = 0.0
+    l_min::T = 0.0
 
-    while  curr <= len
-        eid = arr[ curr ];
+    while curr <= len
+        eid = arr[curr]
 
-        i = EID_i( eid );
-        j = EID_j( eid );
+        i = EID_i(eid)
+        j = EID_j(eid)
 
-        if  EID_i_is_vert( eid )  &&  EID_j_is_vert( eid )
-            l_min = max( l_min, fp_dist( P[ i ], Q[ j ] ) );
-            curr = curr + 1;
-            continue;
+        if EID_i_is_vert(eid) && EID_j_is_vert(eid)
+            l_min = max(l_min, fp_dist(P[i], Q[j]))
+            curr = curr + 1
+            continue
         end
 
-        if  ( EID_i_is_vert( eid )  &&  ( ! EID_j_is_vert( eid ) ) )
-            low = curr;
-            hi = eid_same_status( arr, curr, len )
+        if (EID_i_is_vert(eid) && (! EID_j_is_vert(eid)))
+            low = curr
+            hi = eid_same_status(arr, curr, len)
 
-            if  low > hi
-                curr = curr + 1;
-                continue;
+            if low > hi
+                curr = curr + 1
+                continue
             end
-            eid_start = arr[ low ];
-            eid_end = arr[ hi ];
-            q_a = Q[ EID_j( eid_start ) ];
-            q_b = Q[ EID_j( eid_start ) + 1 ];
+            eid_start = arr[low]
+            eid_end = arr[hi]
+            q_a = Q[EID_j(eid_start)]
+            q_b = Q[EID_j(eid_start)+1]
 
-            if ( low == hi )
-                curr = curr + 1;
-                l_min = max( l_min, fp_dist_point_segment( P[ EID_i( eid_start ) ], q_a, q_b )
-                             );
-                continue;
+            if (low == hi)
+                curr = curr + 1
+                l_min = max(l_min, fp_dist_point_segment(P[EID_i(eid_start)], q_a, q_b))
+                continue
             end
 
             #println( " ((( ", l_min, "...", l_max, " )))", EID_i( eid_start ),
             #    "...",  EID_i( eid_end ),  "    >>>", EID_j( eid_start ) );
-            l_min, l_max = max_leash( l_min, l_max, q_a, q_b, P,
-                                      EID_i( eid_start ),
-                                      EID_i( eid_end ) );
+            l_min, l_max =
+                max_leash(l_min, l_max, q_a, q_b, P, EID_i(eid_start), EID_i(eid_end))
             #println( "(((( ", l_min, "...", l_max, " )))");
-            curr = hi + 1;
-            continue;
+            curr = hi + 1
+            continue
         end
 
-        if  ( ( ! EID_i_is_vert( eid ) )  &&  (  EID_j_is_vert( eid ) ) )
-            low = curr;
-            hi = eid_same_status( arr, curr, len )
+        if ((! EID_i_is_vert(eid)) && (EID_j_is_vert(eid)))
+            low = curr
+            hi = eid_same_status(arr, curr, len)
 
-            if  low > hi
-                curr = curr + 1;
-                continue;
+            if low > hi
+                curr = curr + 1
+                continue
             end
-            eid_start = arr[ low ];
-            eid_end = arr[ hi ];
-            p_a = P[ EID_i( eid_start ) ];
-            p_b = P[ EID_i( eid_start ) + 1 ];
+            eid_start = arr[low]
+            eid_end = arr[hi]
+            p_a = P[EID_i(eid_start)]
+            p_b = P[EID_i(eid_start)+1]
 
-            if ( low == hi )
-                curr = curr + 1;
-                l_min = max( l_min,
-                             fp_dist_point_segment( Q[ EID_j( eid_start ) ], p_a, p_b ) );
-                continue;
+            if (low == hi)
+                curr = curr + 1
+                l_min = max(l_min, fp_dist_point_segment(Q[EID_j(eid_start)], p_a, p_b))
+                continue
             end
 
-            l_min, l_max = max_leash( l_min, l_max, p_a, p_b, Q, EID_j( eid_start ),
-                               EID_j( eid_end ) );
-            curr = hi + 1;
-            continue;
+            l_min, l_max =
+                max_leash(l_min, l_max, p_a, p_b, Q, EID_j(eid_start), EID_j(eid_end))
+            curr = hi + 1
+            continue
         end
 
-        @assert( false );
+        @assert(false)
     end
 
-    l_max = max( l_min, l_max );
-    return  l_min, l_max;
+    l_max = max(l_min, l_max)
+    return l_min, l_max
 end
 
 
@@ -513,57 +524,58 @@ end
     Frechet distance.
 
 """
-function   frechet_ve_r_compute_range( P::PntSeq{N,T},
-                                       Q::PntSeq{N,T},
-                                       upper_bound::T
-                                       ) where {N,T}
-    f_debug::Bool = false;
-    c::FRContext{N,T} = FR_Context( P, Q )
-    c.f_upper_bound = true;
-    c.upper_bound = upper_bound;
+function frechet_ve_r_compute_range(
+    P::PntSeq{N,T},
+    Q::PntSeq{N,T},
+    upper_bound::T,
+) where {N,T}
+    f_debug::Bool = false
+    c::FRContext{N,T} = FR_Context(P, Q)
+    c.f_upper_bound = true
+    c.upper_bound = upper_bound
 
-    n_pm::Int64 = c.n_p - 1;
-    n_qm::Int64 = c.n_q - 1;
+    n_pm::Int64 = c.n_p - 1
+    n_qm::Int64 = c.n_q - 1
 
-    start_id = EID( 1, true, 1, true );
+    start_id = EID(1, true, 1, true)
 
-    end_id = EID( c.n_p, true, c.n_q, true );
-    f_r_schedule_event( start_id, start_id, c );
+    end_id = EID(c.n_p, true, c.n_q, true)
+    f_r_schedule_event(start_id, start_id, c)
 
-    heapAlt = c.heapAlt;
-    while  ! isempty( heapAlt )
-        tp = pop!( heapAlt );
-        id = last( tp );
-        value = first( tp );
+    heapAlt = c.heapAlt
+    while ! isempty(heapAlt)
+        tp = pop!(heapAlt)
+        id = last(tp)
+        value = first(tp)
 
-        i = EID_i( id );
-        j = EID_j( id );
+        i = EID_i(id)
+        j = EID_j(id)
 
-        if  id == start_id
-            f_r_schedule_event( EID( 1, false, 1, true ), id, c );
-            f_r_schedule_event( EID( 1, true, 1, false ), id, c );
-            continue;
+        if id == start_id
+            f_r_schedule_event(EID(1, false, 1, true), id, c)
+            f_r_schedule_event(EID(1, true, 1, false), id, c)
+            continue
         end
 
-        if  ( i >= n_pm )  &&  ( j >= n_qm )
+        if (i >= n_pm) && (j >= n_qm)
             # Is it the *final* event?
-            if  ( i == c.n_p )  &&  ( j == c.n_q )
-                break;
+            if (i == c.n_p) && (j == c.n_q)
+                break
             end
-            if  is_final_cell( id, c.n_p, c.n_q )
-                f_r_schedule_event( end_id, id, c );
-                continue;
+            if is_final_cell(id, c.n_p, c.n_q)
+                f_r_schedule_event(end_id, id, c)
+                continue
             end
         end
-        f_r_schedule_event( EID( i+1, true, j, false ), id, c );
-        f_r_schedule_event( EID( i, false, j+1, true ), id, c );
+        f_r_schedule_event(EID(i+1, true, j, false), id, c)
+        f_r_schedule_event(EID(i, false, j+1, true), id, c)
     end
 
-    out_arr = f_r_extract_solution_ids( P, Q, end_id, start_id, c.dict );
+    out_arr = f_r_extract_solution_ids(P, Q, end_id, start_id, c.dict)
 
-    l_min, l_max = compute_leash_from_arr( P, Q, out_arr )
+    l_min, l_max = compute_leash_from_arr(P, Q, out_arr)
 
-    return  l_min,l_max
+    return l_min, l_max
 end
 
 
@@ -574,83 +586,83 @@ end
 #
 # Returns a Morphing that encodes the solution
 ##########################################################################
-function   frechet_ve_r_compute_ext( P::PntSeq{N,T},
-                                     Q::PntSeq{N,T},
-                                     p_offs::Vector{Float64},
-                                     q_offs::Vector{Float64},
-                                     f_use_offsets::Bool = false,
-                                     ) where {N,T}
-    f_debug::Bool = false;
-    c = FR_Context( P, Q )
+function frechet_ve_r_compute_ext(
+    P::PntSeq{N,T},
+    Q::PntSeq{N,T},
+    p_offs::Vector{Float64},
+    q_offs::Vector{Float64},
+    f_use_offsets::Bool = false,
+) where {N,T}
+    f_debug::Bool = false
+    c = FR_Context(P, Q)
 
-    if  f_use_offsets
-        c.p_offs = p_offs;
-        c.q_offs = q_offs;
-        c.f_offsets = true;
+    if f_use_offsets
+        c.p_offs = p_offs
+        c.q_offs = q_offs
+        c.f_offsets = true
     end
 
-    start_id = EID( 1, true, 1, true );
+    start_id = EID(1, true, 1, true)
 
-    end_id = EID( c.n_p, true, c.n_q, true );
-    f_r_schedule_event( start_id, start_id, c );
+    end_id = EID(c.n_p, true, c.n_q, true)
+    f_r_schedule_event(start_id, start_id, c)
 
     #end_event_i::TreeVertex = start_event;
-    iters = 0;
-    heapAlt = c.heapAlt;
-    while  ! isempty( heapAlt )
-        tp = pop!( heapAlt );
-        id = last( tp );
-        value = first( tp );
-        iters = iters + 1;
+    iters = 0
+    heapAlt = c.heapAlt
+    while ! isempty(heapAlt)
+        tp = pop!(heapAlt)
+        id = last(tp)
+        value = first(tp)
+        iters = iters + 1
 
-        if  f_debug  &&  ( (iters % 10000) == 0 )
-            print( "Iters :" );
-            print_int_w_commas( iters );
-            print( "  ", length( heap ) );
-            print( "  " );
-            print_int_w_commas( c.n_p * c.n_q * 2 );
-            print( "   dict size: " );
-            print_int_w_commas( length( c.dict ) );
-            println( "  " );
+        if f_debug && ((iters % 10000) == 0)
+            print("Iters :")
+            print_int_w_commas(iters)
+            print("  ", length(heap))
+            print("  ")
+            print_int_w_commas(c.n_p * c.n_q * 2)
+            print("   dict size: ")
+            print_int_w_commas(length(c.dict))
+            println("  ")
         end
 
-        i = EID_i( id );
-        j = EID_j( id );
+        i = EID_i(id)
+        j = EID_j(id)
 
-        if  id == start_id #is_start_event( id )
-            f_r_schedule_event( EID( 1, false, 1, true ), id, c );
-            f_r_schedule_event( EID( 1, true, 1, false ), id, c );
-            continue;
+        if id == start_id #is_start_event( id )
+            f_r_schedule_event(EID(1, false, 1, true), id, c)
+            f_r_schedule_event(EID(1, true, 1, false), id, c)
+            continue
         end
 
         # Is it the *final* event?
-        if  ( i == c.n_p )  &&  ( j == c.n_q )
-            break;
+        if (i == c.n_p) && (j == c.n_q)
+            break
         end
 
         # Is it on the boundary of the final cell?
-        if  is_final_cell( id, c.n_p, c.n_q )
-            f_r_schedule_event( end_id, id, c );
-            continue;
+        if is_final_cell(id, c.n_p, c.n_q)
+            f_r_schedule_event(end_id, id, c)
+            continue
         end
-        f_r_schedule_event( EID( i+1, true, j, false ), id, c );
-        f_r_schedule_event( EID( i, false, j+1, true ), id, c );
+        f_r_schedule_event(EID(i+1, true, j, false), id, c)
+        f_r_schedule_event(EID(i, false, j+1, true), id, c)
     end
 
     #@time
     #XXX
-    pes, qes = f_r_extract_solution( P, Q, end_id, c.dict, c );
+    pes, qes = f_r_extract_solution(P, Q, end_id, c.dict, c)
 
-    morph::Morphing{N,T} = Morphing_init( P, Q, pes, qes );
-    morph.iters = iters;
+    morph::Morphing{N,T} = Morphing_init(P, Q, pes, qes)
+    morph.iters = iters
 
-    return  morph
+    return morph
 end
 
 
-function   frechet_ve_r_compute( P::PntSeq{N,T}, Q::PntSeq{N,T} ) where {N,T}
-    return frechet_ve_r_compute_ext( P, Q, Vector{Float64}(),
-                                     Vector{Float64}(), false );
+function frechet_ve_r_compute(P::PntSeq{N,T}, Q::PntSeq{N,T}) where {N,T}
+    return frechet_ve_r_compute_ext(P, Q, Vector{Float64}(), Vector{Float64}(), false)
 end
 
 
@@ -669,45 +681,43 @@ move to the cloest point on seg to the current point, making sure
 never moving back.
 
 """
-function  frechet_width_approx( P::PntSeq{N,T},
-                                rng::UnitRange{Int64} = 0:0
-                                )::T where {N,T}
-    card = cardin( P );
-    if  ( card <= 2 )
-        return  0;
+function frechet_width_approx(P::PntSeq{N,T}, rng::UnitRange{Int64} = 0:0)::T where {N,T}
+    card = cardin(P)
+    if (card <= 2)
+        return 0
     end
 
-    if  ( rng == 0:0 )
+    if (rng == 0:0)
         rng = 1:card
     end
 
-    if  ( length( rng ) <= 2 )
-        return  0;
+    if (length(rng) <= 2)
+        return 0
     end
 
-    s_p = P[ first( rng ) ];
-    s_q = P[ last( rng ) ];
+    s_p = P[first(rng)]
+    s_q = P[last(rng)]
 
-    seg_len_sq = fp_dist_sq( s_p, s_q )
-    s_vec =  s_q - s_p
+    seg_len_sq = fp_dist_sq(s_p, s_q)
+    s_vec = s_q - s_p
 
-    t::Float64 = 0;
-    curr::Point{N,T} = s_p;
-    leash::Float64 = 0;
-    for  i  in  first(rng)+1:last(rng)-1
-        q,new_t = fp_nn_point_ext_ext( s_p, s_q, P[ i ], seg_len_sq, s_vec );
+    t::Float64 = 0
+    curr::Point{N,T} = s_p
+    leash::Float64 = 0
+    for i = (first(rng)+1):(last(rng)-1)
+        q, new_t = fp_nn_point_ext_ext(s_p, s_q, P[i], seg_len_sq, s_vec)
         #q = fp_nn_point( seg, P[ i ] );
         #new_t = fp_convex_coef( seg, q );
-        if  ( new_t > t )
-            t = new_t;
-            curr = q;
+        if (new_t > t)
+            t = new_t
+            curr = q
         end
-        leash = max( leash, fp_dist_sq( curr, P[ i ] ) );
+        leash = max(leash, fp_dist_sq(curr, P[i]))
     end
-    return  sqrt( leash );
+    return sqrt(leash)
 end
 
-eachindexButLast(x) =  firstindex(x):lastindex(x)-1
+eachindexButLast(x) = firstindex(x):(lastindex(x)-1)
 
 #####################################################################
 """
@@ -721,15 +731,14 @@ for every vertex of the subcurve, the frechet distance of this
 subcurve. Thus, providing a fast estimates of the offsets.
 
 """
-function    frechet_offsets( P::PntSeq{N,T}, p_indices::Vector{Int64}
-                             ) where {N,T}
-    offs = Vector{Float64}();
+function frechet_offsets(P::PntSeq{N,T}, p_indices::Vector{Int64}) where {N,T}
+    offs = Vector{Float64}()
 
-    for  i in eachindexButLast( p_indices )
-        d = frechet_width_approx( P, p_indices[ i ]:p_indices[ i+1 ] );
-        push!( offs, d );;
+    for i in eachindexButLast(p_indices)
+        d = frechet_width_approx(P, p_indices[i]:p_indices[i+1])
+        push!(offs, d)
     end
-    return  offs;
+    return offs
 end
 
 
@@ -756,32 +765,33 @@ picked.
 
 """
 #####################################################################
-function   discrete_frechet_sample( polya::PntSeq{N,T},
-                                    polyb::PntSeq{N,T},
-                                    n::Int64,
-                                    f_lopt::Bool = true
-                                    )    where {N,T}
-#    polya,polyb = example_4()
-    lena = fp_geom_length( polya );
-    lenb = fp_geom_length( polyb );
+function discrete_frechet_sample(
+    polya::PntSeq{N,T},
+    polyb::PntSeq{N,T},
+    n::Int64,
+    f_lopt::Bool = true,
+) where {N,T}
+    #    polya,polyb = example_4()
+    lena = fp_geom_length(polya)
+    lenb = fp_geom_length(polyb)
 
-#    n::Int64 = 100;
-    delta = (lena+ lenb)/ n;
+    #    n::Int64 = 100;
+    delta = (lena + lenb) / n
 
-    na::Int64 = ceil( lena / delta ) +2;
-    nb::Int64 = ceil( lenb / delta ) +2;
+    na::Int64 = ceil(lena / delta) + 2
+    nb::Int64 = ceil(lenb / delta) + 2
 
-    qa = Polygon_sample_uniformly( polya, na );
-    qb = Polygon_sample_uniformly( polyb, nb );
+    qa = Polygon_sample_uniformly(polya, na)
+    qb = Polygon_sample_uniformly(polyb, nb)
 
-    if  ( f_lopt )
-        morph = frechet_d_r_compute( qa, qb );
+    if (f_lopt)
+        morph = frechet_d_r_compute(qa, qb)
     else
-        morph = frechet_d_compute( qa, qb );
+        morph = frechet_d_compute(qa, qb)
     end
-#    output_morphing( morph, filename, polyb );
+    #    output_morphing( morph, filename, polyb );
 
-    return  morph
+    return morph
 end
 
 
@@ -793,50 +803,51 @@ Q vertices are the vertices of P specifieid by p_indices. That is
 Q[ i ] =P[ p_indices[ i ]].
 
 """
-function    frechet_c_mono_approx_subcurve(
+function frechet_c_mono_approx_subcurve(
     P::PntSeq{N,T},
     Q::PntSeq{N,T},
-    p_indices::Vector{Int64} ) where {N,T}
+    p_indices::Vector{Int64},
+) where {N,T}
 
-    offsets = zeros( T, length( p_indices ) );
+    offsets = zeros(T, length(p_indices))
     #println( "#P: ", cardin( P ), "#Q: ", cardin( Q ), "  #qind: ",
     #         length( p_indices ) );
 
-    @assert( cardin(Q) == length( p_indices ) );
+    @assert(cardin(Q) == length(p_indices))
 
-    pes = Vector{EventPoint{N,T}}();
-    qes = Vector{EventPoint{N,T}}();
+    pes = Vector{EventPoint{N,T}}()
+    qes = Vector{EventPoint{N,T}}()
 
-    for  i  in  eachindexButLast( p_indices )
-        pind = p_indices[ i ];
-        pind_next = p_indices[ i + 1 ];
-        push!( pes, EventPoint( P[ pind ], pind, PT_VERTEX, 0.0, 0.0 ) );
-        push!( qes, EventPoint( Q[ i ],    i,    PT_VERTEX, 0.0, 0.0 ) );
+    for i in eachindexButLast(p_indices)
+        pind = p_indices[i]
+        pind_next = p_indices[i+1]
+        push!(pes, EventPoint(P[pind], pind, PT_VERTEX, 0.0, 0.0))
+        push!(qes, EventPoint(Q[i], i, PT_VERTEX, 0.0, 0.0))
 
-        max_d::Float64 = 0;
-        max_t::Float64 = 0;
-        seg = Segment( Q[ i ], Q[ i + 1 ] );
-        for  j in (pind + 1):(pind_next - 1)
-            p = P[ j ];
-            q = fp_nn_point( seg, p );
-            new_t = fp_convex_coef( seg, q );
-            if  ( new_t >= max_t )
-                max_t = new_t;
+        max_d::Float64 = 0
+        max_t::Float64 = 0
+        seg = Segment(Q[i], Q[i+1])
+        for j = (pind+1):(pind_next-1)
+            p = P[j]
+            q = fp_nn_point(seg, p)
+            new_t = fp_convex_coef(seg, q)
+            if (new_t >= max_t)
+                max_t = new_t
             else # new_t < max_t
-                q = fp_at( seg, max_t )
+                q = fp_at(seg, max_t)
             end
-            max_d = max( max_d, fp_dist( P[ j ], q ) );
-            push!( pes, EventPoint( P[ j ], j, PT_VERTEX, 0.0, 0.0 ) );
-            push!( qes, EventPoint( q, i, PT_ON_EDGE, max_t, 0.0 ) );
+            max_d = max(max_d, fp_dist(P[j], q))
+            push!(pes, EventPoint(P[j], j, PT_VERTEX, 0.0, 0.0))
+            push!(qes, EventPoint(q, i, PT_ON_EDGE, max_t, 0.0))
         end
-        offsets[ i ] = max( offsets[ i ], max_d );
-        offsets[ i + 1 ] = max( offsets[ i + 1 ], max_d );
+        offsets[i] = max(offsets[i], max_d)
+        offsets[i+1] = max(offsets[i+1], max_d)
     end
 
-    push!( pes, EventPoint( last( P ), cardin( P ), PT_VERTEX, 0.0, 0.0 ) );
-    push!( qes, EventPoint( last( Q ), cardin(Q), PT_VERTEX, 0.0, 0.0 ) );
+    push!(pes, EventPoint(last(P), cardin(P), PT_VERTEX, 0.0, 0.0))
+    push!(qes, EventPoint(last(Q), cardin(Q), PT_VERTEX, 0.0, 0.0))
 
-    return  Morphing_init( P, Q, pes, qes ), offsets;
+    return Morphing_init(P, Q, pes, qes), offsets
 end
 
 
@@ -861,84 +872,86 @@ not seem to be necessary/benefitial from the experimentation we did.
 Output:
      Sorted( t[1]/2, t[1], (t[1]+t[2])/2, t[2],...)
 """
-function   add_points_along_seg( pout::PntSeq{N,T},
-                                 seg::Segment{N,T},
-                                 times::Vector{Float64},
-                                 n_mid_points::Int64 = 1 ) where {N,T}
-    out_times = Vector{Float64}();
+function add_points_along_seg(
+    pout::PntSeq{N,T},
+    seg::Segment{N,T},
+    times::Vector{Float64},
+    n_mid_points::Int64 = 1,
+) where {N,T}
+    out_times = Vector{Float64}()
 
-    function  push_time( tm::Float64 )
-        if  ( tm <= 0.0 )  ||  ( tm >= 1.0 )
+    function push_time(tm::Float64)
+        if (tm <= 0.0) || (tm >= 1.0)
             return
         end
 
-        push!( out_times, tm );
+        push!(out_times, tm)
     end
 
-    sort!( times )
-    unique!( times )
-    times_length = length(times);
+    sort!(times)
+    unique!(times)
+    times_length = length(times)
 
-    if  isempty( times )
+    if isempty(times)
         return
     end
 
-    if  ( n_mid_points > 0 )
-        push_time(  times[ 1 ] / 2.0 );
+    if (n_mid_points > 0)
+        push_time(times[1] / 2.0)
     end
 
-    for  i in 1:length(times)
-        t = times[ i ];
-        push_time( t );
-        if   ( i < times_length )  &&  ( n_mid_points > 0 )
+    for i = 1:length(times)
+        t = times[i]
+        push_time(t)
+        if (i < times_length) && (n_mid_points > 0)
             K = n_mid_points + 1
             #println( "K : ", K );
             #if  ( times[ i + 1 ] > times[ i ] )  continue  end;
-            for  pos in 1:(K-1)
-                coef::Float64 = pos / K;
-                tm = times[ i ] * (1.0 - coef) + times[ i + 1 ] * coef
-                push_time( tm );
+            for pos = 1:(K-1)
+                coef::Float64 = pos / K
+                tm = times[i] * (1.0 - coef) + times[i+1] * coef
+                push_time(tm)
             end
         end
     end
-    if  ( n_mid_points > 0 )
-        push_time( ( 1.0 + last(times) ) / 2.0 );
+    if (n_mid_points > 0)
+        push_time((1.0 + last(times)) / 2.0)
     end
 
-    if  isempty( out_times )
-        return;
+    if isempty(out_times)
+        return
     end
 
-    sort!( out_times )
-    unique!( out_times )
+    sort!(out_times)
+    unique!(out_times)
 
-    prev::Float64 = -1.0;
-    dlt = 0.09;
-    for  tm in out_times
-        if  ( ( tm <= 0.0 )  ||  ( tm >= 1.0 ) )
-            continue;
+    prev::Float64 = -1.0
+    dlt = 0.09
+    for tm in out_times
+        if ((tm <= 0.0) || (tm >= 1.0))
+            continue
         end
-        if  ( tm < ( prev + dlt ) )
-            continue;
+        if (tm < (prev + dlt))
+            continue
         end
-        prev = tm;
-        push_distinct!( pout, fp_at( seg, tm ) )
+        prev = tm
+        push_distinct!(pout, fp_at(seg, tm))
     end
 end
 
 
-function  is_monotone_inc( nums::Vector{Float64} )
-    len = length( nums );
-    if  ( len <= 1 )
-        return  true
+function is_monotone_inc(nums::Vector{Float64})
+    len = length(nums)
+    if (len <= 1)
+        return true
     end
-    for  i in 1:(len-1)
-        if  nums[ i ] > nums[ i + 1 ]
-            return  false
+    for i = 1:(len-1)
+        if nums[i] > nums[i+1]
+            return false
         end
     end
 
-    return  true
+    return true
 end
 
 
@@ -961,48 +974,47 @@ end
                        rid of non-monotonicity, but the polygons grow
                        faster.
 """
-function  extract_refined_polygon( poly::PntSeq{N,T},
-                                   s::Vector{EventPoint{N,T}},
-                                   points_to_add::Int64 = 1,
-                                   delta::Float64 = 0.0 ) where {N,T}
+function extract_refined_polygon(
+    poly::PntSeq{N,T},
+    s::Vector{EventPoint{N,T}},
+    points_to_add::Int64 = 1,
+    delta::Float64 = 0.0,
+) where {N,T}
     pout = PntSeq{N,T}()
-    opnts = Vector{EventPoint{N,T}}();
+    opnts = Vector{EventPoint{N,T}}()
 
-    len = length( s );
-    push!( pout, s[1].p );
+    len = length(s)
+    push!(pout, s[1].p)
 
-    i = 2;
-    while  ( i <= len )
-        ep = s[ i ];
-        if  ep.type == PT_VERTEX
-            push_distinct!( pout, s[i].p );
-            i = i + 1;
-            continue;
+    i = 2
+    while (i <= len)
+        ep = s[i]
+        if ep.type == PT_VERTEX
+            push_distinct!(pout, s[i].p)
+            i = i + 1
+            continue
         end
 
         j = i
-        loc = s[ i ].i;
-        while  ( ( j < len )
-            &&  ( s[ j + 1 ].type == PT_ON_EDGE )
-            &&  ( s[ j + 1 ].i == loc ) )
+        loc = s[i].i
+        while ((j < len) && (s[j+1].type == PT_ON_EDGE) && (s[j+1].i == loc))
             j = j + 1
         end
 
         # s[i:j]: The sequence of points on the same edge
-        times = Vector{Float64}();
-        push!( times, s[ i ].t );
-        for  k in (i+1):j
-            if  s[ k ].t != last( times )
-                push!( times, s[ k ].t );
+        times = Vector{Float64}()
+        push!(times, s[i].t)
+        for k = (i+1):j
+            if s[k].t != last(times)
+                push!(times, s[k].t)
             end
         end
 
-        lnx = fp_dist( poly[ loc ], poly[ loc + 1 ] );
+        lnx = fp_dist(poly[loc], poly[loc+1])
 
-        if  (  is_monotone_inc( times )
-               ||  ( lnx < (delta / 2.0 ) ) )
-            for  k in i:j
-                push_distinct!( pout, s[k].p );
+        if (is_monotone_inc(times) || (lnx < (delta / 2.0)))
+            for k = i:j
+                push_distinct!(pout, s[k].p)
             end
             i = j + 1
             continue
@@ -1025,120 +1037,120 @@ function  extract_refined_polygon( poly::PntSeq{N,T},
 
         #println( times );
         #exit( -1 );
-        n_times::Int64 = points_to_add;
-        if  ( delta > 0.0 )
-            n_times = round( Int64, lnx / delta );
-            n_times = max( min( n_times, 3 ), 1 );
+        n_times::Int64 = points_to_add
+        if (delta > 0.0)
+            n_times = round(Int64, lnx / delta)
+            n_times = max(min(n_times, 3), 1)
         end
-        seg = Segment( poly[ loc ], poly[ loc + 1 ] );
-        add_points_along_seg( pout, seg, times, n_times );
+        seg = Segment(poly[loc], poly[loc+1])
+        add_points_along_seg(pout, seg, times, n_times)
 
         i = j + 1
     end
 
-    return  pout
+    return pout
 end
 
 
-function  frechet_refinement( P::PntSeq{N,T}, Q::PntSeq{N,T},
-                              m::Morphing{N,T} ) where {N,T}
-    poly_a_2 = extract_refined_polygon( P, m.pes, 1 );
-    poly_b_2 = extract_refined_polygon( Q, m.qes, 1 );
+function frechet_refinement(P::PntSeq{N,T}, Q::PntSeq{N,T}, m::Morphing{N,T}) where {N,T}
+    poly_a_2 = extract_refined_polygon(P, m.pes, 1)
+    poly_b_2 = extract_refined_polygon(Q, m.qes, 1)
 
-    return  poly_a_2, poly_b_2;
+    return poly_a_2, poly_b_2
 end
 
 
-function  frechet_mono_via_refinement_ext( Pa::PntSeq{N,T}, Qa::PntSeq{N,T},
-                                           out::Vector{Morphing{N,T}},
-                                           f_snapshots::Bool,
-                                           approx::Float64 = 1.00001
-                                     )  where {N,T}
-    if  ( approx <= 1.0 )
-        approx = 1.0000001;
-        @assert( approx > 1.0 );
+function frechet_mono_via_refinement_ext(
+    Pa::PntSeq{N,T},
+    Qa::PntSeq{N,T},
+    out::Vector{Morphing{N,T}},
+    f_snapshots::Bool,
+    approx::Float64 = 1.00001,
+) where {N,T}
+    if (approx <= 1.0)
+        approx = 1.0000001
+        @assert(approx > 1.0)
     end
-    f_debug::Bool = false;
+    f_debug::Bool = false
 
-    mm::Morphing{N,T} = Morphing_empty( Pa, Qa );
-    m::Morphing{N,T} = Morphing_empty( Pa, Qa );
-    f_exact::Bool = false;
-    f_refinement::Bool = false;
-    P = Pa;
-    Q = Qa;
-    f_debug && println( "fmvr before while..." );
-    f_debug && println( "APPROX : ", approx );
-    while  true
-        f_debug && println( "\n<<<<<<< " );
-        f_debug && println( "Before ve_r_compute( ", cardin(P), ", ",
-                            cardin( Q ) );
-        m = frechet_ve_r_compute( P, Q )
-        f_debug  && println( ">>> After... m.leash : ", m.leash );
-        mm = Morphing_monotonize( m );
+    mm::Morphing{N,T} = Morphing_empty(Pa, Qa)
+    m::Morphing{N,T} = Morphing_empty(Pa, Qa)
+    f_exact::Bool = false
+    f_refinement::Bool = false
+    P = Pa
+    Q = Qa
+    f_debug && println("fmvr before while...")
+    f_debug && println("APPROX : ", approx)
+    while true
+        f_debug && println("\n<<<<<<< ")
+        f_debug && println("Before ve_r_compute( ", cardin(P), ", ", cardin(Q))
+        m = frechet_ve_r_compute(P, Q)
+        f_debug && println(">>> After... m.leash : ", m.leash)
+        mm = Morphing_monotonize(m)
 
-        if  ( f_snapshots )
-            push!( out, m );
+        if (f_snapshots)
+            push!(out, m)
         end
 
-        fr_retract = m.leash;
-        fr_r_mono = mm.leash;
+        fr_retract = m.leash
+        fr_r_mono = mm.leash
 
-        if ( f_debug )
-            println( "ve_r            : ", m.leash );
-            println( "ve_r.mono       : ", fr_r_mono );
-            println( "ve_r*approx     : ", approx * fr_retract );
+        if (f_debug)
+            println("ve_r            : ", m.leash)
+            println("ve_r.mono       : ", fr_r_mono)
+            println("ve_r*approx     : ", approx * fr_retract)
         end
 
-        if  ( fr_r_mono == fr_retract )
-            f_exact = true;
-            break;
+        if (fr_r_mono == fr_retract)
+            f_exact = true
+            break
         end
-        if  ( fr_r_mono <= approx * fr_retract )
-            f_exact = false;
-            break;
+        if (fr_r_mono <= approx * fr_retract)
+            f_exact = false
+            break
         end
-        f_refinement = true;
+        f_refinement = true
 
-        poly_a_2 = extract_refined_polygon( P, m.pes, 1 );
-        poly_b_2 = extract_refined_polygon( Q, m.qes, 1 );
+        poly_a_2 = extract_refined_polygon(P, m.pes, 1)
+        poly_b_2 = extract_refined_polygon(Q, m.qes, 1)
 
-        P = poly_a_2;
-        Q = poly_b_2;
+        P = poly_a_2
+        Q = poly_b_2
     end
 
     # We potentially need to flatten the morphing back to the original
     # curves...
-    if   ( ( cardin( mm.P ) != cardin( Pa ) )
-           ||  ( cardin( mm.Q ) != cardin( Qa ) ) )
-        prm = Morphing_extract_prm( mm );
-        mm = Morphing_from_prm( prm, Pa, Qa );
+    if ((cardin(mm.P) != cardin(Pa)) || (cardin(mm.Q) != cardin(Qa)))
+        prm = Morphing_extract_prm(mm)
+        mm = Morphing_from_prm(prm, Pa, Qa)
     end
 
-    mm.lower_bound = m.leash;
+    mm.lower_bound = m.leash
 
-    f_debug  &&  println( "RETURNING!", @__FILE__, ":", @__LINE__ );
-    return  mm, f_exact, P, Q
+    f_debug && println("RETURNING!", @__FILE__, ":", @__LINE__)
+    return mm, f_exact, P, Q
 end
 
 
-function  frechet_mono_via_refinement_delta( Pa::PntSeq{N,T},
+function frechet_mono_via_refinement_delta(
+    Pa::PntSeq{N,T},
     Qa::PntSeq{N,T},
     delta::Float64,
-    f_fix_prm::Bool = false
-)  where {N,T}
-    f_debug::Bool = false;
+    f_fix_prm::Bool = false,
+) where {N,T}
+    f_debug::Bool = false
 
-    P = Pa;
-    Q = Qa;
+    P = Pa
+    Q = Qa
     #println( "ROUNDS\n" );
-    local  m, mm;
-    count::Int64 = 0;
-    for  count  in 0:64
+    local m, mm
+    count::Int64 = 0
+    for count = 0:64
         #println( count, "  ", length( P ), "  ", length( Q ) );
         #( count > 0 )  &&  println( "FVER round: ", count );
 
         #@time m_old = frechet_ve_r_compute( P, Q )
-        m = FEVER_compute( P, Q );
+        m = FEVER_compute(P, Q)
         #=
         println( "---" );
 
@@ -1147,46 +1159,45 @@ function  frechet_mono_via_refinement_delta( Pa::PntSeq{N,T},
         end
         =#
 
-        mm = Morphing_monotonize( m );
+        mm = Morphing_monotonize(m)
 
-        res = 3;
-        if  ( delta > 0.0 )
-            gap = ( mm.leash - m.leash ) / delta;
-            if  ( gap > 0.0 )
-                res = 1 + (max( 1, round(Int64, (log(gap)/log(2) ) ) ))^2
+        res = 3
+        if (delta > 0.0)
+            gap = (mm.leash - m.leash) / delta
+            if (gap > 0.0)
+                res = 1 + (max(1, round(Int64, (log(gap)/log(2)))))^2
             end
         else
-            gap = delta;
+            gap = delta
         end
 
-        ( ( mm.leash - m.leash ) <= delta )  &&  break;
+        ((mm.leash - m.leash) <= delta) && break
         #println( count, ": X GAP: ", gap, "   res: ", res );
         #println( count, ":   res: ", res );
 
         #times::Int64 = 4;# min( round(Int64,
         #   (mm.leash - m.leash) / delta ), 7 );;
         # res was 3
-        poly_a_2 = extract_refined_polygon( P, m.pes, res, delta/11 );
-        poly_b_2 = extract_refined_polygon( Q, m.qes, res, delta/11 );
+        poly_a_2 = extract_refined_polygon(P, m.pes, res, delta/11)
+        poly_b_2 = extract_refined_polygon(Q, m.qes, res, delta/11)
 
         #        println( "P len: ", length( P ) );
         #println( "P_a_2 len: ", length( poly_a_2 ) );
 
-        P = poly_a_2;
-        Q = poly_b_2;
+        P = poly_a_2
+        Q = poly_b_2
     end
 
     # We potentially need to flatten the morphing back to the original
     # curves...
-    if   f_fix_prm  &&  ( ( cardin( mm.P ) != cardin( Pa ) )
-                          ||  ( cardin( mm.Q ) != cardin( Qa ) ) )
-        prm = Morphing_extract_prm( mm );
-        mm = Morphing_from_prm( prm, Pa, Qa );
+    if f_fix_prm && ((cardin(mm.P) != cardin(Pa)) || (cardin(mm.Q) != cardin(Qa)))
+        prm = Morphing_extract_prm(mm)
+        mm = Morphing_from_prm(prm, Pa, Qa)
     end
 
-    mm.lower_bound = m.leash;
+    mm.lower_bound = m.leash
 
-    return  mm, P, Q
+    return mm, P, Q
 end
 
 
@@ -1217,11 +1228,13 @@ Returns a 4-tuple  ( m, f, P, Q ):
 'out' if specified returns the middle morphings used in computing the
       solution.
 """
-function  frechet_mono_via_refinement( Pa::PntSeq{N,T}, Qa::PntSeq{N,T},
-                                       approx::Float64 = 1.00001
-                                     )  where {N,T}
-    ot::Vector{Morphing{N,T}} = Vector{Morphing{N,T}}();
-    return  frechet_mono_via_refinement_ext( Pa, Qa, ot, false, approx );
+function frechet_mono_via_refinement(
+    Pa::PntSeq{N,T},
+    Qa::PntSeq{N,T},
+    approx::Float64 = 1.00001,
+) where {N,T}
+    ot::Vector{Morphing{N,T}} = Vector{Morphing{N,T}}()
+    return frechet_mono_via_refinement_ext(Pa, Qa, ot, false, approx)
 end
 
 ###########################################################################
@@ -1238,18 +1251,14 @@ real approximation of the Frechet distance, and should not be used
 otherwise.
 
 """
-function  frechet_dist_upper_bound( poly_a::PntSeq{N,T},
-                                    poly_b::PntSeq{N,T}
-                                   ) where {N,T}
-    w_a = frechet_width_approx( poly_a );
-    w_b = frechet_width_approx( poly_b );
-    if  ( ( cardin( poly_a ) < 2 )
-          ||  ( cardin( poly_a ) < 2 ) )
-        return  w_a + w_b;
+function frechet_dist_upper_bound(poly_a::PntSeq{N,T}, poly_b::PntSeq{N,T}) where {N,T}
+    w_a = frechet_width_approx(poly_a)
+    w_b = frechet_width_approx(poly_b)
+    if ((cardin(poly_a) < 2) || (cardin(poly_a) < 2))
+        return w_a + w_b
     end
-    w = max( fp_dist( poly_a[ 1 ], poly_b[ 1 ] ),
-             fp_dist( last( poly_a ), last( poly_b ) ) )
-    return  w_a + w_b + w;
+    w = max(fp_dist(poly_a[1], poly_b[1]), fp_dist(last(poly_a), last(poly_b)))
+    return w_a + w_b + w
 end
 
 
@@ -1260,12 +1269,11 @@ Computing the ver frechet distance, and then monotonize it. No
 guarentee as far as the quality of the distance this realizes...
 
 """
-function  frechet_ve_r_mono_compute( poly_a::PntSeq{D,T},
-                                     poly_b::PntSeq{D,T} ) where {D,T}
-    m = frechet_ve_r_compute( poly_a, poly_b );
-    mm = Morphing_monotonize( m )
+function frechet_ve_r_mono_compute(poly_a::PntSeq{D,T}, poly_b::PntSeq{D,T}) where {D,T}
+    m = frechet_ve_r_compute(poly_a, poly_b)
+    mm = Morphing_monotonize(m)
 
-    return   mm;
+    return mm
 end
 
 
@@ -1287,256 +1295,255 @@ ret.leash/ret.ratio is a lower bound on the Frechet distance, while
 ret.leash is an upper bound.
 
 """
-function  frechet_c_approx( poly_a::PntSeq{N,T},
-    poly_b::PntSeq{N,T}, approx::Float64 )::Morphing{N,T} where {N,T}
+function frechet_c_approx(
+    poly_a::PntSeq{N,T},
+    poly_b::PntSeq{N,T},
+    approx::Float64,
+)::Morphing{N,T} where {N,T}
 
-    f_debug::Bool = false;
+    f_debug::Bool = false
 
-    if  f_debug
-        println( "\n\n\n============================XXX" );
+    if f_debug
+        println("\n\n\n============================XXX")
     end
-    t_approx::Float64 = approx;
-    @assert( ( cardin( poly_a ) > 1 )  &&  ( cardin( poly_b ) > 1 ) )
-    @assert( approx > 1.0 )
+    t_approx::Float64 = approx
+    @assert((cardin(poly_a) > 1) && (cardin(poly_b) > 1))
+    @assert(approx > 1.0)
 
-    f_do_one_round::Bool = true;
-    d = frechet_dist_upper_bound( poly_a, poly_b )
+    f_do_one_round::Bool = true
+    d = frechet_dist_upper_bound(poly_a, poly_b)
 
-    f_debug  &&  println( "DIST :", d );
+    f_debug && println("DIST :", d)
 
     # r: Radius of simplification allowed
-    r::Float64 = d/( approx + 4.0 ); #max( d/4, d * min( approx, 1.0 ) );
+    r::Float64 = d/(approx + 4.0) #max( d/4, d * min( approx, 1.0 ) );
 
-    P::PntSeq{N,T} = poly_a;
-    Q::PntSeq{N,T} = poly_b;
+    P::PntSeq{N,T} = poly_a
+    Q::PntSeq{N,T} = poly_b
 
-    p_indices = Vector{Int64}();
-    q_indices = Vector{Int64}();
+    p_indices = Vector{Int64}()
+    q_indices = Vector{Int64}()
 
-    m = Morphing_empty( poly_a, poly_b );
-    while  ( true )
-        f_debug  &&  println( "AAAAAAAAAAAAAa" );
-        while  ( (r >= ( d / (approx + 4.0) ) )
-                 ||  f_do_one_round )
-            r = r / 2.0;
-            f_debug  &&  println( "BBBBBB r=",r );
-            P, p_indices = Polygon_simplify_ext( poly_a, r )
-            Q, q_indices = Polygon_simplify_ext( poly_b, r )
+    m = Morphing_empty(poly_a, poly_b)
+    while (true)
+        f_debug && println("AAAAAAAAAAAAAa")
+        while ((r >= (d / (approx + 4.0))) || f_do_one_round)
+            r = r / 2.0
+            f_debug && println("BBBBBB r=", r)
+            P, p_indices = Polygon_simplify_ext(poly_a, r)
+            Q, q_indices = Polygon_simplify_ext(poly_b, r)
 
-            if  ( (2 * cardin( P ) > cardin( poly_a ) )
-                  &&  (2 * cardin( Q ) > cardin( poly_b ) ) )
-                f_debug  && println( "DDDD" );
-                f_debug  &&  println( "VVV Calling frechet_mono_via_refinement" );
-                m = frechet_mono_via_refinement( poly_a, poly_b )[ 1 ];
-                m.ratio = 1.0;
-                m.lower_bound = m.leash;
+            if ((2 * cardin(P) > cardin(poly_a)) && (2 * cardin(Q) > cardin(poly_b)))
+                f_debug && println("DDDD")
+                f_debug && println("VVV Calling frechet_mono_via_refinement")
+                m = frechet_mono_via_refinement(poly_a, poly_b)[1]
+                m.ratio = 1.0
+                m.lower_bound = m.leash
                 #                exit( -1 ); # DDDD
-                return  m;
+                return m
             end
 
-            @assert( ( cardin( P ) > 1 )  &&  ( cardin( Q ) > 1 ) )
+            @assert((cardin(P) > 1) && (cardin(Q) > 1))
 
-            f_debug &&  println( "cardins: ", cardin( P ), " , ",
-                                 cardin( Q )  );
+            f_debug && println("cardins: ", cardin(P), " , ", cardin(Q))
             t_approx = 3.0/4.0 + t_approx / 4.0
 
-            m = frechet_mono_via_refinement( P, Q, t_approx )[1];
-            d = m.leash;  #        frechet_ve_r_compute_dist( P, Q )
-            f_debug  &&  println( "d : ", d );
-            if  ( fp_equal( d, 0.0 ) )
-                f_debug  &&  println( "Breaking..." )
-                break;
-            end;
-            f_debug  &&  println( "ddd = ", d );
-            f_debug  &&  println( "after" );
+            m = frechet_mono_via_refinement(P, Q, t_approx)[1]
+            d = m.leash  #        frechet_ve_r_compute_dist( P, Q )
+            f_debug && println("d : ", d)
+            if (fp_equal(d, 0.0))
+                f_debug && println("Breaking...")
+                break
+            end
+            f_debug && println("ddd = ", d)
+            f_debug && println("after")
 
             # d - 2r: Lower bound on the real Frechet distance.
-            if  f_debug
-                println( "d: ", d, "  r: ", r, "    #P: ",
-                    cardin( P ),
-                    " Q: ", cardin( Q ) )
+            if f_debug
+                println("d: ", d, "  r: ", r, "    #P: ", cardin(P), " Q: ", cardin(Q))
             end
-            f_do_one_round = false;
+            f_do_one_round = false
         end
 
         #mm = Morphing_monotonize( m );
-#        println( "mono a" );
+        #        println( "mono a" );
         #m_p = frechet_ve_r_mono_compute( poly_a, P )
         #m_p = frechet_ve_r_mono_compute( poly_a, P )
-        f_debug  &&  println( "=== f_c_dist( poly_a, P )" );
-        m_p = frechet_c_mono_approx_subcurve( poly_a, P, p_indices )[ 1 ];
-#        println( "mono b" );
+        f_debug && println("=== f_c_dist( poly_a, P )")
+        m_p = frechet_c_mono_approx_subcurve(poly_a, P, p_indices)[1]
+        #        println( "mono b" );
 
         #m_q = frechet_ve_r_mono_compute( Q, poly_b )
-        f_debug  &&  println( "f_c_dist( poly_b, Q )" );
-        m_q = frechet_c_mono_approx_subcurve( poly_b, Q, q_indices )[ 1 ];
-        Morphing_swap_sides!( m_q );
+        f_debug && println("f_c_dist( poly_b, Q )")
+        m_q = frechet_c_mono_approx_subcurve(poly_b, Q, q_indices)[1]
+        Morphing_swap_sides!(m_q)
 
         #err = max( m_p.leash, m_q.leash );
         #println( "Error: ", err );
 
         # m = m_p * mm * m_q
-        f_debug && println( "Combine m_p, m" );
-        mmu = Morphing_monotonize( Morphing_combine( m_p, m ) );
-        f_debug && println( "Combine mmu,m_q" );
-        mm_out = Morphing_combine( mmu, m_q );
+        f_debug && println("Combine m_p, m")
+        mmu = Morphing_monotonize(Morphing_combine(m_p, m))
+        f_debug && println("Combine mmu,m_q")
+        mm_out = Morphing_combine(mmu, m_q)
 
-        f_debug && println( "Verification..." );
-        f_debug && Morphing_verify_valid( m_p );
-        f_debug && Morphing_verify_valid( m );
-        f_debug && Morphing_verify_valid( m_q );
-        f_debug && Morphing_verify_valid( mmu );
+        f_debug && println("Verification...")
+        f_debug && Morphing_verify_valid(m_p)
+        f_debug && Morphing_verify_valid(m)
+        f_debug && Morphing_verify_valid(m_q)
+        f_debug && Morphing_verify_valid(mmu)
 
-        total_err = m_p.leash + m_q.leash;
-        lbx = (m.leash / t_approx) - total_err;
-        if  f_debug
-            println( "total_error : ", total_err );
-            println( "lbx         : ", lbx );
+        total_err = m_p.leash + m_q.leash
+        lbx = (m.leash / t_approx) - total_err
+        if f_debug
+            println("total_error : ", total_err)
+            println("lbx         : ", lbx)
         end
-        if  ( total_err == 0.0 )   && ( m.leash == 0.0 )
+        if (total_err == 0.0) && (m.leash == 0.0)
             ratio = 1.0
         else
-            if  ( lbx <= 0.0 )
-                ratio = 2.0 + approx; # Very bad.
+            if (lbx <= 0.0)
+                ratio = 2.0 + approx # Very bad.
             else
-                ratio = mm_out.leash / lbx;
+                ratio = mm_out.leash / lbx
             end
         end
-        f_debug &&  println( "Ratio :", ratio );
-        if  ratio <=  approx
+        f_debug && println("Ratio :", ratio)
+        if ratio <= approx
             if f_debug
-                println( "-----------------------------------" );
-                println( "Leash out: ", mm_out.leash );
-                println( "Leash lower bound: ", d - 2r );
-                println( "approx ratio          : ",ratio  );
-                println( "Required approximation: ", 1.0 + approx );
-                println( "||P||: ", fp_geom_length( poly_a ),
+                println("-----------------------------------")
+                println("Leash out: ", mm_out.leash)
+                println("Leash lower bound: ", d - 2r)
+                println("approx ratio          : ", ratio)
+                println("Required approximation: ", 1.0 + approx)
+                println(
+                    "||P||: ",
+                    fp_geom_length(poly_a),
                     "  ||Q||: ",
-                    fp_geom_length( poly_b ) );
+                    fp_geom_length(poly_b),
+                )
             end
-            mm_out.ratio = ratio;
-            mm_out.lower_bound = m.leash / ratio;
-            return  mm_out;
+            mm_out.ratio = ratio
+            mm_out.lower_bound = m.leash / ratio
+            return mm_out
 
             #            break;
         end
-        f_do_one_round = true;
-        if  f_debug
-            println( "Another final round? ", ratio );
+        f_do_one_round = true
+        if f_debug
+            println("Another final round? ", ratio)
         end
     end
 end
 
 
-function  count_below_zero( arr )
-    count = 0;
-    for  x in arr
-        if  x <= 0.0
-            count = count + 1;
+function count_below_zero(arr)
+    count = 0
+    for x in arr
+        if x <= 0.0
+            count = count + 1
         end
     end
-    return  count;
+    return count
 end
 
 
-function  Polygon_simplify_radii_ext( P::PntSeq{N,T}, r::Vector{T}
-                                      ) where {N,T}
-    f_exact::Bool = false;
+function Polygon_simplify_radii_ext(P::PntSeq{N,T}, r::Vector{T}) where {N,T}
+    f_exact::Bool = false
     #f_debug  &&  println( "#P :", cardin( P ) );
     #f_debug  &&  println( "#r :", length( r ) );
 
-    PS, p_indices = Polygon_simplify_radii( P, r );
+    PS, p_indices = Polygon_simplify_radii(P, r)
     #println( "@!@! |PS|: ", cardin( PS ) );
-    @assert( length( p_indices ) == cardin( PS ) );
-    if   ( cardin( PS ) <= ( cardin( P ) / 2 ) )
-        @assert( cardin( PS ) == length( p_indices ) );
-        return  PS, p_indices, false
+    @assert(length(p_indices) == cardin(PS))
+    if (cardin(PS) <= (cardin(P) / 2))
+        @assert(cardin(PS) == length(p_indices))
+        return PS, p_indices, false
     end
 
-    p_indices = Vector{Int64}();
-    for  i in 1:cardin( P )
-        push!( p_indices, i )
+    p_indices = Vector{Int64}()
+    for i = 1:cardin(P)
+        push!(p_indices, i)
     end
     #println( "______________________________" );
-    @assert( cardin( P ) == length( p_indices ) );
-    return  P, p_indices, true
+    @assert(cardin(P) == length(p_indices))
+    return P, p_indices, true
 end
 
 
-function  propogate_mins( qz, rounds::Int64 = 1 )
-    a = deepcopy( qz );
-    for  r  in 1:rounds
-        for  i  in  eachindex( a )
-            if  ( i == 1 )  ||  ( i == length( qz ) )
-                continue;
+function propogate_mins(qz, rounds::Int64 = 1)
+    a = deepcopy(qz)
+    for r = 1:rounds
+        for i in eachindex(a)
+            if (i == 1) || (i == length(qz))
+                continue
             end
 
-            a[ i ] = min( qz[ i - 1 ], qz[ i ], qz[ i + 1 ] );
+            a[i] = min(qz[i-1], qz[i], qz[i+1])
         end
 
-        for  i  in  eachindex( a )
-            qz[ i ] = a[ i ];
+        for i in eachindex(a)
+            qz[i] = a[i]
         end
     end
 end
 
-function  eq( a::Float64, b::Float64, tolerance::Float64 )::Bool
-    if   a == b
-        return  true;
+function eq(a::Float64, b::Float64, tolerance::Float64)::Bool
+    if a == b
+        return true
     end
-    return  abs( a - b ) <= (tolerance* (abs( a)  + abs(b) ))
+    return abs(a - b) <= (tolerance * (abs(a) + abs(b)))
 end
 
 
-function  get_refinement_map( PSR::PntSeq{N,T}, PS::PntSeq{N,T} ) where {N,T}
-    @assert( cardin( PSR ) >= cardin( PS ) );
+function get_refinement_map(PSR::PntSeq{N,T}, PS::PntSeq{N,T}) where {N,T}
+    @assert(cardin(PSR) >= cardin(PS))
 
-    len = cardin( PSR );
-    lenPS = cardin( PS );
-    mp = zeros(Int64, len );
+    len = cardin(PSR)
+    lenPS = cardin(PS)
+    mp = zeros(Int64, len)
 
     curr = 1
     i = 1
-    while  ( curr <= len )
-        if  ( i < lenPS )  &&  ( PSR[ curr ] == PS[ i + 1 ]  )
-            i = i + 1;
+    while (curr <= len)
+        if (i < lenPS) && (PSR[curr] == PS[i+1])
+            i = i + 1
         end
-        mp[ curr ] = i;
-        curr = curr + 1 ;
+        mp[curr] = i
+        curr = curr + 1
     end
 
-    return  mp;
+    return mp
 end
 
 
-function    offsets_copy_map( map_PS, offsets )
-    offs = zeros( Float64, length( map_PS ) );
-    for  i in eachindex( map_PS )
-        offs[ i ] = offsets[ map_PS[ i ] ];
+function offsets_copy_map(map_PS, offsets)
+    offs = zeros(Float64, length(map_PS))
+    for i in eachindex(map_PS)
+        offs[i] = offsets[map_PS[i]]
     end
-    return  offs;
+    return offs
 end
 
 
-function  simplify_morphing_sensitive( m::Morphing{D,T},
-                                       factor::Float64 ) where {D,T}
-    pl, ql = Morphing_extract_vertex_radii( m );
+function simplify_morphing_sensitive(m::Morphing{D,T}, factor::Float64) where {D,T}
+    pl, ql = Morphing_extract_vertex_radii(m)
 
-    lower_bound = m.lower_bound;
+    lower_bound = m.lower_bound
 
-    println( "LLLlower_bound: ", lower_bound );
-    pz = ( ( lower_bound * ones( length( pl ) ) ) - pl ) / factor
-    qz = ( ( lower_bound * ones( length( ql ) ) ) - ql ) / factor
+    println("LLLlower_bound: ", lower_bound)
+    pz = ((lower_bound * ones(length(pl))) - pl) / factor
+    qz = ((lower_bound * ones(length(ql))) - ql) / factor
 
-    propogate_mins( pz, 1 );
-    propogate_mins( qz, 1 );
+    propogate_mins(pz, 1)
+    propogate_mins(qz, 1)
 
     #println( pz );
 
-    PS, p_indices, f_PS_exact = Polygon_simplify_radii_ext( m.P, pz );
-    QS, q_indices, f_QS_exact = Polygon_simplify_radii_ext( m.Q, qz );
+    PS, p_indices, f_PS_exact = Polygon_simplify_radii_ext(m.P, pz)
+    QS, q_indices, f_QS_exact = Polygon_simplify_radii_ext(m.Q, qz)
 
-    return PS, QS;
+    return PS, QS
 end
 
 
@@ -1580,195 +1587,207 @@ simplification is computed using refinement, so tha the ve_r distance
   But floating point issues require us to pick some value.
 
 """
-function  frechet_c_compute( P::PntSeq{N,T},
-                             Q::PntSeq{N,T},
-                             f_accept_approx::Bool = true,
-                             tolerance::Float64  = 0.00001
-                             )  where {N,T}
-    f_debug = false;
+function frechet_c_compute(
+    P::PntSeq{N,T},
+    Q::PntSeq{N,T},
+    f_accept_approx::Bool = true,
+    tolerance::Float64 = 0.00001,
+) where {N,T}
+    f_debug = false
 
     # The parameters that can be fine-tuned....
-    aprx_refinement::Float64 = 2.0;
-    factor::Float64          = 4.0
-    factor_scale::Float64    = 1.3;
-    approx_scale::Float64    = 10.0;
+    aprx_refinement::Float64 = 2.0
+    factor::Float64 = 4.0
+    factor_scale::Float64 = 1.3
+    approx_scale::Float64 = 10.0
 
-    min_approx::Float64 = 1.00000000001;
+    min_approx::Float64 = 1.00000000001
 
-    f_debug  &&  println( "P#", cardin( P ) )
-    f_debug  &&  println( "Q#", cardin( Q ) )
+    f_debug && println("P#", cardin(P))
+    f_debug && println("Q#", cardin(Q))
 
-    m_rough = frechet_c_approx( P, Q, aprx_refinement );
-    if  ( m_rough.leash == 0.0 )  return  m_rough  end
-
-    ratio_2 = m_rough.ratio;
-    if  f_debug
-        println( "RATIO 2: ", m_rough.ratio, "\nleash: ", m_rough.leash );
+    m_rough = frechet_c_approx(P, Q, aprx_refinement)
+    if (m_rough.leash == 0.0)
+        return m_rough
     end
 
-    len_a = fp_geom_length( P );
-    len_b = fp_geom_length( Q );
-    f_debug  &&  println( "#", cardin( P ) )
-    
-    approx = min( 1.0 + (len_a + len_b ) / (100.0 * m_rough.leash ), 1.1 );
-    if   f_debug
-        println( "\n\nRatio         : ", ratio_2,
-                 "\n\nlen_a         : ", len_a,
-                 "\nlen_b         : ", len_b,
-                 "\n2approx_leash : ", m_rough.leash, "\n\n",
-                 approx, " approximation..." );
-    end 
+    ratio_2 = m_rough.ratio
+    if f_debug
+        println("RATIO 2: ", m_rough.ratio, "\nleash: ", m_rough.leash)
+    end
 
-    m = m_rough;
-    if  m_rough.ratio > approx
-        m = frechet_c_approx( P, Q, approx );
+    len_a = fp_geom_length(P)
+    len_b = fp_geom_length(Q)
+    f_debug && println("#", cardin(P))
+
+    approx = min(1.0 + (len_a + len_b) / (100.0 * m_rough.leash), 1.1)
+    if f_debug
+        println(
+            "\n\nRatio         : ",
+            ratio_2,
+            "\n\nlen_a         : ",
+            len_a,
+            "\nlen_b         : ",
+            len_b,
+            "\n2approx_leash : ",
+            m_rough.leash,
+            "\n\n",
+            approx,
+            " approximation...",
+        )
+    end
+
+    m = m_rough
+    if m_rough.ratio > approx
+        m = frechet_c_approx(P, Q, approx)
     end
     ratio = m.ratio
 
-    if  ( f_debug )
-        println( "Approximation computed..." );
-        println( "m.leash : ", m.leash );
+    if (f_debug)
+        println("Approximation computed...")
+        println("m.leash : ", m.leash)
     end
 
     # Okay - we computed a good enough approximation. 
     # We next extract the leases distances at the vertices...
-    pl, ql = Morphing_extract_vertex_radii( m );
+    pl, ql = Morphing_extract_vertex_radii(m)
 
-    lower_bound = m.leash / ratio;
-    if  f_debug
-        println( "Before while loop..." );
-        println( "LOWER BOUND: ", lower_bound );
-        println( "upper BOUND: ", m.leash, "\n" );
+    lower_bound = m.leash / ratio
+    if f_debug
+        println("Before while loop...")
+        println("LOWER BOUND: ", lower_bound)
+        println("upper BOUND: ", m.leash, "\n")
     end
 
     ### Now we start looping refining if we need to improve th eapproxiamtion.
-    round::Int64 = 0;
-    while  true
-        round = round + 1;
-        aprx_refinement = max( aprx_refinement, min_approx );
+    round::Int64 = 0
+    while true
+        round = round + 1
+        aprx_refinement = max(aprx_refinement, min_approx)
 
-        f_debug  &&  println( "---------------------------\nFactor: ", factor,
-                              "  Approx : ", aprx_refinement );
-        
+        f_debug && println(
+            "---------------------------\nFactor: ",
+            factor,
+            "  Approx : ",
+            aprx_refinement,
+        )
+
         # Computes the slack at the vertices. The larger tha slack the more one can move a 
         # vertex without changing the Frechet distance. Negatie slack means not to move the 
         # vertices.
-        pz = ( ( lower_bound * ones( length( pl ) ) ) - pl ) / factor
-        qz = ( ( lower_bound * ones( length( ql ) ) ) - ql ) / factor
+        pz = ((lower_bound * ones(length(pl))) - pl) / factor
+        qz = ((lower_bound * ones(length(ql))) - ql) / factor
 
         # Propogate the do not move by doing a local min convolution. The current code is 
         # not efficient.
-        propogate_mins( pz, 8 );
-        propogate_mins( qz, 8 );
+        propogate_mins(pz, 8)
+        propogate_mins(qz, 8)
 
-        if  f_debug
-            println( "pz count <0: ", count_below_zero( pz ), " / ", length( pz ) );
-            println( "qz count <0: ", count_below_zero( qz ), " / ", length( qz ) );
+        if f_debug
+            println("pz count <0: ", count_below_zero(pz), " / ", length(pz))
+            println("qz count <0: ", count_below_zero(qz), " / ", length(qz))
         end
-        f_PS_exact::Bool = false;
-        f_QS_exact::Bool = false;
+        f_PS_exact::Bool = false
+        f_QS_exact::Bool = false
 
         # Simplify the polygons using the slack computed above per vertex.
-        PS, p_indices, f_PS_exact = Polygon_simplify_radii_ext( P, pz );
-        QS, q_indices, f_QS_exact = Polygon_simplify_radii_ext( Q, qz );
+        PS, p_indices, f_PS_exact = Polygon_simplify_radii_ext(P, pz)
+        QS, q_indices, f_QS_exact = Polygon_simplify_radii_ext(Q, qz)
 
-        if  f_debug
-            println( "|PS| = ", cardin( PS ), "  |P| = ", cardin( P ) );
-            println( "|QS| = ", cardin( QS ), "  |Q| = ", cardin( Q ) );
+        if f_debug
+            println("|PS| = ", cardin(PS), "  |P| = ", cardin(P))
+            println("|QS| = ", cardin(QS), "  |Q| = ", cardin(Q))
         end
 
         # If the PS and QS are really large, this is a waste of
         # time. Just compute the Frechet distance using
         # monotonization.
-        if  ( ( 2 * cardin( PS ) > cardin( P ) )
-            &&  ( 2 * cardin( QS ) > cardin( Q ) ) )
-            f_debug  &&  println( "Simpl. not profitable, doing mono" );
-            return   frechet_mono_via_refinement( P, Q )[ 1 ];
+        if ((2 * cardin(PS) > cardin(P)) && (2 * cardin(QS) > cardin(Q)))
+            f_debug && println("Simpl. not profitable, doing mono")
+            return frechet_mono_via_refinement(P, Q)[1]
         end
 
-        t_aprx = max( tolerance + 1.0, aprx_refinement ) ;
-        f_debug  &&  println(  "f_m_via_refine( PS, QS )\nt_aprx : ", t_aprx );
+        t_aprx = max(tolerance + 1.0, aprx_refinement)
+        f_debug && println("f_m_via_refine( PS, QS )\nt_aprx : ", t_aprx)
 
-        m_mid, _f_exact, PSR, QSR = frechet_mono_via_refinement( PS, QS,
-                 t_aprx );
+        m_mid, _f_exact, PSR, QSR = frechet_mono_via_refinement(PS, QS, t_aprx)
 
-        f_debug  &&  println( "frechet mono via refinement computed" );
+        f_debug && println("frechet mono via refinement computed")
 
         # BUG FIX: Used the mono computation instead of the subcurve code,
         # which is much faster...
         #println( "_#PS: ", cardin( PS ) );
-        m_a, offsets_a = frechet_c_mono_approx_subcurve( P, PS, p_indices );
-        mmu = Morphing_combine( m_a, m_mid );
-        m_b, offsets_b = frechet_c_mono_approx_subcurve( Q, QS, q_indices );
+        m_a, offsets_a = frechet_c_mono_approx_subcurve(P, PS, p_indices)
+        mmu = Morphing_combine(m_a, m_mid)
+        m_b, offsets_b = frechet_c_mono_approx_subcurve(Q, QS, q_indices)
 
-        Morphing_swap_sides!( m_b );
+        Morphing_swap_sides!(m_b)
 
-        mw = Morphing_combine( mmu, m_b );
+        mw = Morphing_combine(mmu, m_b)
 
-        f_debug  &&  println( "eq?  ", m_mid.leash, " = ", mw.leash );
+        f_debug && println("eq?  ", m_mid.leash, " = ", mw.leash)
 
         # is there is NO hope we got the optimal solution?
-        if  ( ! eq( m_mid.leash, mw.leash, tolerance ) )
-            lb = mw.leash - 2.0*m_a.leash - 2.0*m_b.leash;
-            lower_bound = max( lower_bound, lb );
-            if  f_debug
-                println( "!!! Ratio        : ",
-                    fp_ratio( m_mid.leash, mw.leash ) );
-                println( "!!! m_mid.leash  : ", m_mid.leash );
-                println( "!!! mw.leash     : ", mw.leash );
-                println( "!!! Diff         : ", m_mid.leash - mw.leash );
-                println( "!!! lower_bound  : ", lower_bound );
-                println( "!!! LB           : ", lb );
+        if (! eq(m_mid.leash, mw.leash, tolerance))
+            lb = mw.leash - 2.0*m_a.leash - 2.0*m_b.leash
+            lower_bound = max(lower_bound, lb)
+            if f_debug
+                println("!!! Ratio        : ", fp_ratio(m_mid.leash, mw.leash))
+                println("!!! m_mid.leash  : ", m_mid.leash)
+                println("!!! mw.leash     : ", mw.leash)
+                println("!!! Diff         : ", m_mid.leash - mw.leash)
+                println("!!! lower_bound  : ", lower_bound)
+                println("!!! LB           : ", lb)
             end
-            factor = factor * factor_scale;
-            aprx_refinement = 1.0 + (aprx_refinement - 1.0) / approx_scale;
-            f_debug  &&  println( "1 aprx_refinement: ", aprx_refinement,
-                 "  scale :", approx_scale );
+            factor = factor * factor_scale
+            aprx_refinement = 1.0 + (aprx_refinement - 1.0) / approx_scale
+            f_debug &&
+                println("1 aprx_refinement: ", aprx_refinement, "  scale :", approx_scale)
 
-            pl, ql = Morphing_extract_vertex_radii( mw );
-            continue;
+            pl, ql = Morphing_extract_vertex_radii(mw)
+            continue
         end
 
-        f_debug  &&  println( "Extracting offsets..." );
+        f_debug && println("Extracting offsets...")
 
         # Now we compute the distance, with offsets...
         #PS_offs = offsets_a;#Morphing_extract_offsets( m_a )[2]
         #QS_offs = offsets_b;#Morphing_extract_offsets( m_b )[1]
 
-        map_PS = get_refinement_map( PSR, PS );
-        map_QS = get_refinement_map( QSR, QS );
+        map_PS = get_refinement_map(PSR, PS)
+        map_QS = get_refinement_map(QSR, QS)
 
-        PS_offs = offsets_copy_map( map_PS, offsets_a );
-        QS_offs = offsets_copy_map( map_QS, offsets_b );
-        @assert( length( PS_offs ) == cardin( PSR ) );
-        @assert( length( QS_offs ) == cardin( QSR ) );
+        PS_offs = offsets_copy_map(map_PS, offsets_a)
+        QS_offs = offsets_copy_map(map_QS, offsets_b)
+        @assert(length(PS_offs) == cardin(PSR))
+        @assert(length(QS_offs) == cardin(QSR))
 
         # very important! We have to use the refined curves PSR/QSR to monotonicity 
         # copies...
-        m_final = frechet_ve_r_compute_ext( PSR, QSR, PS_offs, QS_offs, true );
-        f_debug && println( "*** lower_bound.leash  : ", m_final.leash );
-        f_debug && println( "*** mw     .leash      : ", mw.leash );
+        m_final = frechet_ve_r_compute_ext(PSR, QSR, PS_offs, QS_offs, true)
+        f_debug && println("*** lower_bound.leash  : ", m_final.leash)
+        f_debug && println("*** mw     .leash      : ", mw.leash)
 
-        if  ( eq( m_final.leash,  mw.leash, tolerance ) )
-            f_debug && println( "Return from frechet_c_compute" );
-            return  mw
+        if (eq(m_final.leash, mw.leash, tolerance))
+            f_debug && println("Return from frechet_c_compute")
+            return mw
         end
 
         # WE have to try harder - making slack at vertices smaller, and approximation smaller...
-        factor = factor * factor_scale;
-        aprx_refinement = 1.0 + ( (aprx_refinement - 1.0) /  approx_scale );
+        factor = factor * factor_scale
+        aprx_refinement = 1.0 + ((aprx_refinement - 1.0) / approx_scale)
         if f_debug
-            println( "m_a.leash      : ", m_a.leash );
-            println( "m_b.leash      : ", m_b.leash );
-            println( "m_mid.leash    : ", m_mid.leash );
-            println( "MW Leash length: ", mw.leash );
-            println( "m_final.leash  : ", m_final.leash );
+            println("m_a.leash      : ", m_a.leash)
+            println("m_b.leash      : ", m_b.leash)
+            println("m_mid.leash    : ", m_mid.leash)
+            println("MW Leash length: ", mw.leash)
+            println("m_final.leash  : ", m_final.leash)
         end
-        if  f_accept_approx  &&  ( 1.00001 * m_final.leash > mw.leash )
-            f_debug && println( "MW Leash length: ", mw.leash );
-            f_debug && println( "m_final.leash  : ", m_final.leash );
-            f_debug && println( "Return (2) from frechet_c_compute" );
-            return  mw
+        if f_accept_approx && (1.00001 * m_final.leash > mw.leash)
+            f_debug && println("MW Leash length: ", mw.leash)
+            f_debug && println("m_final.leash  : ", m_final.leash)
+            f_debug && println("Return (2) from frechet_c_compute")
+            return mw
         end
     end  # While loop end
 end
@@ -1779,100 +1798,104 @@ end
 # Greedy simplification
 
 
-function  find_frechet_prefix_inner( P::PntSeq{D,T},
-    strt::Int64, i::Int64, j::Int64, w::T ) where {D,T}
-    if  ( i >= j )  ||  ( (strt + 1) == j )
-        return  j; # the width is zero, nothing to do.
+function find_frechet_prefix_inner(
+    P::PntSeq{D,T},
+    strt::Int64,
+    i::Int64,
+    j::Int64,
+    w::T,
+) where {D,T}
+    if (i >= j) || ((strt + 1) == j)
+        return j # the width is zero, nothing to do.
     end
-    r = frechet_width_approx( P, strt:j )
-    if  ( r <= w )
-        return  j;
+    r = frechet_width_approx(P, strt:j)
+    if (r <= w)
+        return j
     end
     if (i+1) == j
-        return  i;
+        return i
     end
-    j = j - 1;
-    mid = ( i + j ) >> 1;
-    r_m = frechet_width_approx( P, strt:mid )
-    if  ( r_m > w )
-        return   find_frechet_prefix_inner( P, strt, i, mid - 1, w );
+    j = j - 1
+    mid = (i + j) >> 1
+    r_m = frechet_width_approx(P, strt:mid)
+    if (r_m > w)
+        return find_frechet_prefix_inner(P, strt, i, mid - 1, w)
     end
 
     # No reason to waste time?
-    if  (j - mid) <= ((j - strt) ÷ 10)
+    if (j - mid) <= ((j - strt) ÷ 10)
         #println( "FLOGI" );
-        return  mid;
+        return mid
     end
 
-    return  find_frechet_prefix_inner( P, strt, mid, j, w );
+    return find_frechet_prefix_inner(P, strt, mid, j, w)
 end
 
-function  find_frechet_prefix( P::PntSeq{D,T}, i::Int64,
-    j::Int64, w::T )  where {D,T}
-    r = frechet_width_approx( P, i:j )
-    if  ( r <= w )
-        return  j;
+function find_frechet_prefix(P::PntSeq{D,T}, i::Int64, j::Int64, w::T) where {D,T}
+    r = frechet_width_approx(P, i:j)
+    if (r <= w)
+        return j
     end
-    return  find_frechet_prefix_inner( P, i, i, j, w );
+    return find_frechet_prefix_inner(P, i, i, j, w)
 end
 
-function  frechet_simplify_to_width( P::PntSeq{D,T}, w::T ) where {D,T}
-    pout = PntSeq{D,T}();
-    pindices = Vector{Int64}();
+function frechet_simplify_to_width(P::PntSeq{D,T}, w::T) where {D,T}
+    pout = PntSeq{D,T}()
+    pindices = Vector{Int64}()
 
-    len = cardin( P );
-    if  ( len == 0 )
-        return pout;
+    len = cardin(P)
+    if (len == 0)
+        return pout
     end
-    if  ( push_distinct!( pout, P[1] ) )
-        push!( pindices, 1 );
+    if (push_distinct!(pout, P[1]))
+        push!(pindices, 1)
     end
 
-    curr_ind = 1;
-    next_ind::Int64 = 1;
-    card = cardin( P );
-    while  true
-        next_ind = find_frechet_prefix( P, curr_ind, card, w )
+    curr_ind = 1
+    next_ind::Int64 = 1
+    card = cardin(P)
+    while true
+        next_ind = find_frechet_prefix(P, curr_ind, card, w)
         #println( "next_ind: ", next_ind );
-        @assert( next_ind > curr_ind );
-        push!( pindices, next_ind );
-        push!( pout,  P[ next_ind ] );
-        if  next_ind == card
-            return  pout, pindices;
+        @assert(next_ind > curr_ind)
+        push!(pindices, next_ind)
+        push!(pout, P[next_ind])
+        if next_ind == card
+            return pout, pindices
         end
-        curr_ind = next_ind;
+        curr_ind = next_ind
     end
 end
 
 
-function  frechet_simplify_to_cardin( P::PntSeq{D,T}, sz::Int64 ) where {D,T}
-    pout = PntSeq{D,T}();
-    pindices = Vector{Int64}();
+function frechet_simplify_to_cardin(P::PntSeq{D,T}, sz::Int64) where {D,T}
+    pout = PntSeq{D,T}()
+    pindices = Vector{Int64}()
 
-    @assert( cardin( P ) >= 2 );
-    if  sz <= 2
-        push!( pindices, 1, cardin( P ) );
-        return  spine( P ), pindices;
+    @assert(cardin(P) >= 2)
+    if sz <= 2
+        push!(pindices, 1, cardin(P))
+        return spine(P), pindices
     end
-    w = frechet_width_approx( P );
-    ratio = 0.8;
+    w = frechet_width_approx(P)
+    ratio = 0.8
 
-    count::Int64 = 1;
-    while  true
-        count = count + 1;
-        w = w * ratio;
-        if  count > 5
-            w = w / count;
+    count::Int64 = 1
+    while true
+        count = count + 1
+        w = w * ratio
+        if count > 5
+            w = w / count
         end
-        Q, q_indices = Polygon_simplify_ext( P, w )
-        m = frechet_c_mono_approx_subcurve( P, Q, q_indices )[ 1 ];
-        R, R_indices = frechet_simplify_to_width( P, m.leash );
-        if  ( ( cardin( R ) >= sz + 2 )  ||  ( 2*cardin( R ) >= cardin( P ) ) )
-            println( " RRR :", cardin(R), " / ", sz );
-            return  R, R_indices;
+        Q, q_indices = Polygon_simplify_ext(P, w)
+        m = frechet_c_mono_approx_subcurve(P, Q, q_indices)[1]
+        R, R_indices = frechet_simplify_to_width(P, m.leash)
+        if ((cardin(R) >= sz + 2) || (2*cardin(R) >= cardin(P)))
+            println(" RRR :", cardin(R), " / ", sz)
+            return R, R_indices
         end
-        m = frechet_c_mono_approx_subcurve( P, R, R_indices )[ 1 ];
-        w = m.leash;
+        m = frechet_c_mono_approx_subcurve(P, R, R_indices)[1]
+        w = m.leash
     end
 end
 
@@ -1881,47 +1904,45 @@ end
 
 
 
-function  exp_search_width_prefix( P::PntSeq{N,T},
-                                   start::Int64,
-                                   w::Float64 ) where {N,T}
-    len = cardin( P );
-    hi::Int64 = min( start + 2, len );
+function exp_search_width_prefix(P::PntSeq{N,T}, start::Int64, w::Float64) where {N,T}
+    len = cardin(P)
+    hi::Int64 = min(start + 2, len)
 
-    ( hi >= len )  &&  return  hi;
-    while  hi < len
-        r = frechet_width_approx( P, start:hi )
-        ( r > w )  &&  return  min( hi + 5, len );
-        hi = start + 2 * ( hi - start )
+    (hi >= len) && return hi
+    while hi < len
+        r = frechet_width_approx(P, start:hi)
+        (r > w) && return min(hi + 5, len)
+        hi = start + 2 * (hi - start)
     end
 
-    return  len;
+    return len
 end
 
 
-function  frechet_simplify_w_exp( P::PntSeq{D,T}, w::T ) where {D,T}
-    pout = PntSeq{D,T}();
-    pindices = Vector{Int64}();
+function frechet_simplify_w_exp(P::PntSeq{D,T}, w::T) where {D,T}
+    pout = PntSeq{D,T}()
+    pindices = Vector{Int64}()
 
-    card = cardin( P );
-    if  ( card == 0 )
-        return pout, pindices;
+    card = cardin(P)
+    if (card == 0)
+        return pout, pindices
     end
-    if  ( push_distinct!( pout, P[1] ) )
-        push!( pindices, 1 );
+    if (push_distinct!(pout, P[1]))
+        push!(pindices, 1)
     end
 
-    curr_ind = 1;
-    next_ind::Int64 = 1;
-    while  true
-        hi = exp_search_width_prefix( P, curr_ind, w );
-        next_ind = find_frechet_prefix( P, curr_ind, hi, w )
-        @assert( next_ind > curr_ind );
-        push!( pindices, next_ind );
-        push!( pout,  P[ next_ind ] );
-        if  next_ind == card
-            return  pout, pindices;
+    curr_ind = 1
+    next_ind::Int64 = 1
+    while true
+        hi = exp_search_width_prefix(P, curr_ind, w)
+        next_ind = find_frechet_prefix(P, curr_ind, hi, w)
+        @assert(next_ind > curr_ind)
+        push!(pindices, next_ind)
+        push!(pout, P[next_ind])
+        if next_ind == card
+            return pout, pindices
         end
-        curr_ind = next_ind;
+        curr_ind = next_ind
     end
 end
 

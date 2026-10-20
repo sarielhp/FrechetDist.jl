@@ -14,8 +14,9 @@ midpoint splitting rule.
 const frechet_measure = PH.HierarchyMeasure(
     frechet_width_approx,
     frechet_simplify_w_exp,
-    ( P, R, indices ) -> frechet_c_mono_approx_subcurve( P, R, indices )[ 1 ].leash,
-    PH.MidpointSplit() );
+    (P, R, indices) -> frechet_c_mono_approx_subcurve(P, R, indices)[1].leash,
+    PH.MidpointSplit(),
+);
 
 const PolygonHierarchy = PH.SimplificationHierarchy
 
@@ -24,9 +25,9 @@ const ph_print = PH.hierarchy_print
 const ph_approx = PH.hierarchy_approx
 const ph_compute_hierarchy = PH.hierarchy_build!
 
-function ph_init( P::PntSeq{D,T}, ph_lock ) where  {D,T}
-    ph = PH.hierarchy_init( P, frechet_measure; lock = ph_lock );
-    ph.len = fp_geom_length( P );
+function ph_init(P::PntSeq{D,T}, ph_lock) where {D,T}
+    ph = PH.hierarchy_init(P, frechet_measure; lock = ph_lock)
+    ph.len = fp_geom_length(P)
 
-    return  ph;
+    return ph
 end

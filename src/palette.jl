@@ -16,8 +16,8 @@ const PH = BasicCompGeometry.PntSeqHierarchy
 
 The palette of `P`, as a vector with one entry per vertex.
 """
-frechet_palette( P::PntSeq{N,T} ) where {N,T} =
-    PH.palette( P, frechet_width_approx ).err::Vector{T}
+frechet_palette(P::PntSeq{N,T}) where {N,T} =
+    PH.palette(P, frechet_width_approx).err::Vector{T}
 
 """
     frechet_palette_approx
@@ -31,8 +31,8 @@ the nubmer of vertices of Q, but the approximation might be of low
 quality.
 
 """
-frechet_palette_approx( P::PntSeq{N,T}, plt::Vector{T}, w::T ) where {N,T} =
-    PH.palette_extract( P, plt, w )
+frechet_palette_approx(P::PntSeq{N,T}, plt::Vector{T}, w::T) where {N,T} =
+    PH.palette_extract(P, plt, w)
 
 """
     frechet_palette_level
@@ -41,9 +41,8 @@ Extract the approximate polygon by specifying a level of the
 approximation.
 
 """
-function frechet_palette_level( P::PntSeq{N,T}, plt::Vector{T},
-                                level::Int64 ) where {N,T}
-    pout, pout_is = PH.palette_level( P, plt, level );
-    println( "|pout|: ", cardin( pout ) );
-    return  pout, pout_is;
+function frechet_palette_level(P::PntSeq{N,T}, plt::Vector{T}, level::Int64) where {N,T}
+    pout, pout_is = PH.palette_level(P, plt, level)
+    println("|pout|: ", cardin(pout))
+    return pout, pout_is
 end
