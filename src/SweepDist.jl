@@ -183,7 +183,6 @@ end
 ##########################################################################
 function SweepDist_compute(P::PntSeq{N,T}, Q::PntSeq{N,T}) where {N,T}
     check_curves(P, Q, "SweepDist_compute"; min_vertices = 2)
-    f_debug::Bool = false
     c::SDContext{N,T} = SDContext(P, Q)
 
     start_id = EID(1, true, 1, true)
@@ -211,14 +210,6 @@ function SweepDist_compute(P::PntSeq{N,T}, Q::PntSeq{N,T}) where {N,T}
         c.prev_map[id] = ev.id_prev
         iters = iters + 1
 
-        if f_debug && ((iters % 1000000) == 0)
-            print("Iters :")
-            print_int_w_commas(iters)
-            print("  ", length(pq))
-            print("  ")
-            print_int_w_commas(c.n_p * c.n_q * 2)
-            println("")
-        end
 
         i = EID_i(id)
         j = EID_j(id)
