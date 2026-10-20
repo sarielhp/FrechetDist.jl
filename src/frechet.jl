@@ -1593,6 +1593,12 @@ function frechet_c_compute(
 ) where {N,T}
     f_debug = false
 
+    # Repeated consecutive vertices describe the same curve. The refinement below
+    # drops them, which breaks the vertex correspondence it relies on
+    # (get_refinement_map), so they are removed up front.
+    P = remove_consecutive_duplicates(P)
+    Q = remove_consecutive_duplicates(Q)
+
     # The parameters that can be fine-tuned....
     aprx_refinement::Float64 = 2.0
     factor::Float64 = 4.0

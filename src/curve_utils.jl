@@ -109,6 +109,22 @@ function Polygon_sample_uniformly(P::PntSeq{D,T}, n::Int64) where {D,T}
 end
 
 """
+    remove_consecutive_duplicates( P )
+
+The curve `P` without consecutive repeated vertices. Returns `P` itself when there
+are none, or when fewer than two distinct vertices would remain (a curve needs two
+vertices).
+"""
+function remove_consecutive_duplicates(P::PntSeq{D,T}) where {D,T}
+    Q = PntSeq{D,T}()
+    for p in P
+        push_distinct!(Q, p)
+    end
+    (cardin(Q) < 2 || cardin(Q) == cardin(P)) && return P
+    return Q
+end
+
+"""
     spine
 
 The curve made out of the first and last vertex of `P`.
