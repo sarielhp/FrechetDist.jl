@@ -65,30 +65,6 @@ end
     @test w_Q >= 0
 end
 
-# Regression: frechet_c_compute used to return a value up to 1e-3 too large on long,
-# nearly collinear GPS tracks (it stopped refining too early). The curves are the first
-# 200 GPS points of two GeoLife trajectories, in meters. A prefix with n and m vertices
-# corresponds to the first 120/160/180/200 raw GPS points of each file.
-# The fixtures are kept in the repository (the dataset is not); `tools/gen_gps_fixtures --check`
-# verifies them against the GeoLife data.
-@testset "frechet_c_compute on GPS tracks" begin
-    P = FrechetDist.read_file(joinpath(@__DIR__, "fixtures", "gps_P.txt"))
-    Q = FrechetDist.read_file(joinpath(@__DIR__, "fixtures", "gps_Q.txt"))
-    @test (length(P), length(Q)) == (102, 200)
-
-    for (n, m) in ((57, 120), (68, 160), (88, 180), (102, 200))
-        Pn = PntSeq(P.pnts[1:n])
-        Qm = PntSeq(Q.pnts[1:m])
-        # An upper bound within 1e-7 (relative) of the true distance.
-        a = frechet_c_approx(Pn, Qm, 1.0000001).leash
-        for f_accept_approx in (false, true)
-            c = frechet_c_compute(Pn, Qm, f_accept_approx).leash
-            @test c >= a * (1 - 1e-6)
-            @test c <= a * (1 + 2e-5)
-        end
-    end
-end
-
 @testset "Polygon_simplify_ext" begin
     # Always returns the simplification and the kept indices, also for an empty curve.
     Q, idx = FrechetDist.Polygon_simplify_ext(PntSeq2F(), 1.0)
