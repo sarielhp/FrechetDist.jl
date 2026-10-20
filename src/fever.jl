@@ -47,6 +47,15 @@ end
     return ID_val_inner(i, j, r, e.nP)
 end
 
+# A cell of the free-space diagram: vertex i (or edge i) of P against vertex j (or
+# edge j) of Q.
+struct FeverCell
+    i::Int64
+    i_is_vert::Bool
+    j::Int64
+    j_is_vert::Bool
+end
+
 mutable struct FeverCoords
     i::Int64
     i_is_vert::Bool
@@ -211,11 +220,9 @@ end
 @inline function fever_is_schedule_event(
     c::FEVERContext{N,T},
     id::Int64,
-    i::Int64,
-    i_is_vert::Bool,
-    j::Int64,
-    j_is_vert::Bool,
+    cell::FeverCell,
 )::Bool where {N,T}
+    (; i, i_is_vert, j, j_is_vert) = cell
     if ((id > length(c.prev)) || (c.prev[id] != 0))
         return false
     end
@@ -241,12 +248,10 @@ end
 
 @inline function fever_event_value(
     c::FEVERContext{N,T},
-    i::Int64,
-    i_is_vert::Bool,
-    j::Int64,
-    j_is_vert::Bool,
+    cell::FeverCell,
     id::Int64,
 ) where {N,T}
+    (; i, i_is_vert, j, j_is_vert) = cell
 
     if (c.vals[id] >= 0)
         return c.vals[id]
@@ -276,17 +281,14 @@ end
 
 @inline function fever_schedule_event(
     c::FEVERContext{N,T},
-    i::Int64,
-    i_is_vert::Bool,
-    j::Int64,
-    j_is_vert::Bool,
+    cell::FeverCell,
     prev_id::Int64,
 ) where {N,T}
-    id = ID_get(c.eid, i, i_is_vert, j, j_is_vert)
-    if ! fever_is_schedule_event(c, id, i, i_is_vert, j, j_is_vert)
+    id = ID_get(c.eid, cell.i, cell.i_is_vert, cell.j, cell.j_is_vert)
+    if ! fever_is_schedule_event(c, id, cell)
         return
     end
-    new_val = fever_event_value(c, i, i_is_vert, j, j_is_vert, id)
+    new_val = fever_event_value(c, cell, id)
     if (c.f_upper_bound && (c.upper_bound < new_val))
         return
     end
@@ -499,8 +501,8 @@ function FEVER_compute_range(P::PntSeq{N,T}, Q::PntSeq{N,T}, upper_bound::T) whe
         id = pop!(heap)
 
         if id == ID_START
-            fever_schedule_event(c, 1, false, 1, true, id)
-            fever_schedule_event(c, 1, true, 1, false, id)
+            fever_schedule_event(c, FeverCell(1, false, 1, true), id)
+            fever_schedule_event(c, FeverCell(1, true, 1, false), id)
             continue
         end
 
@@ -524,8 +526,8 @@ function FEVER_compute_range(P::PntSeq{N,T}, Q::PntSeq{N,T}, upper_bound::T) whe
                 continue
             end
         end
-        fever_schedule_event(c, fc.i+1, true, fc.j, false, id)
-        fever_schedule_event(c, fc.i, false, fc.j+1, true, id)
+        fever_schedule_event(c, FeverCell(fc.i+1, true, fc.j, false), id)
+        fever_schedule_event(c, FeverCell(fc.i, false, fc.j+1, true), id)
     end
 
     if (! f_reached_end)
@@ -579,8 +581,8 @@ function FEVER_compute(P::PntSeq{N,T}, Q::PntSeq{N,T}) where {N,T}
         id = pop!(heap)
 
         if id == ID_START
-            fever_schedule_event(c, 1, false, 1, true, id)
-            fever_schedule_event(c, 1, true, 1, false, id)
+            fever_schedule_event(c, FeverCell(1, false, 1, true), id)
+            fever_schedule_event(c, FeverCell(1, true, 1, false), id)
             continue
         end
 
@@ -597,8 +599,8 @@ function FEVER_compute(P::PntSeq{N,T}, Q::PntSeq{N,T}) where {N,T}
                 continue
             end
         end
-        fever_schedule_event(c, fc.i+1, true, fc.j, false, id)
-        fever_schedule_event(c, fc.i, false, fc.j+1, true, id)
+        fever_schedule_event(c, FeverCell(fc.i+1, true, fc.j, false), id)
+        fever_schedule_event(c, FeverCell(fc.i, false, fc.j+1, true), id)
     end
     out_arr = fever_extract_sol_ids(P, Q, c.prev)
 

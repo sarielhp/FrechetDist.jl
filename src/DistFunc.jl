@@ -24,15 +24,8 @@ mutable struct DistFunction{T}
     root::T
 end
 
-function DFunction(
-    _a::T = 0.0,
-    _b::T = 0.0,
-    _c::T = 0.0,
-    _disc::T = 0.0,
-    _f_linear::Bool = false,
-    _root::T = 0.0,
-) where {T}
-    return DistFunction(_a, _b, _c, _disc, _f_linear, _root)
+function DFunction(_a::T = 0.0, _b::T = 0.0, _c::T = 0.0) where {T}
+    return DistFunction(_a, _b, _c, zero(T), false, zero(T))
 end
 
 function normalize(f::DistFunction{T}) where {T}
