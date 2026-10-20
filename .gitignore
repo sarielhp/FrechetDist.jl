@@ -16,3 +16,11 @@ webpage
 data_old
 
 # DEL_THIS_LINE 31843
+
+# Local scratch data and results
+/combine_last_case.txt
+/data_t
+/geolife_old
+/results
+/snapshot
+/vers
