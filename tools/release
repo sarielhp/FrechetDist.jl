@@ -1,49 +1,37 @@
 #!/usr/bin/env ruby
 # frozen_string_literal: true
 
-# Usage: tools/release [--minor | --major] [--no-register] [--dry-run] <release notes>
-# Commits pending work (after the quality gate), bumps the version, pushes, and
-# asks JuliaRegistrator to register the pushed commit, with the message as the
-# release notes. Stops at the first failure; never repeat the bump after a
-# failure past that step - inspect the local state first.
+# Usage: tools/release [--minor | --major] [--dry-run] <message>
+# Commits pending work (after the quality gate), bumps the version, and pushes.
+# Registration is a separate step: see tools/publish. Stops at the first failure;
+# never repeat the bump after a failure past that step - inspect the local state
+# first.
 
-require 'open3'
 require 'optparse'
 
 Dir.chdir(File.expand_path('..', __dir__))
 bump_args = []
-register = true
 dry_run = false
 parser = OptionParser.new do |o|
-  o.banner = 'Usage: tools/release [--minor | --major] [--no-register] [--dry-run] <release notes>'
+  o.banner = 'Usage: tools/release [--minor | --major] [--dry-run] <message>'
   o.on('--minor') { bump_args << '--minor' }
   o.on('--major') { bump_args << '--major' }
-  o.on('--no-register') { register = false }
   o.on('--dry-run') { dry_run = true }
 end
 parser.parse!
-notes = ARGV.join(' ').strip
-abort parser.to_s if notes.empty?
+message = ARGV.join(' ').strip
+abort parser.to_s if message.empty?
 
 branch = `git symbolic-ref --quiet --short HEAD`.strip
 abort "Release from main (currently on #{branch.inspect})." unless branch == 'main'
 
 if dry_run
   system('./tools/bump', '--dry-run', *bump_args) or abort 'bump failed'
-  puts "Would register with notes: #{notes}" if register
   exit
 end
 
 dirty = !`git status --porcelain`.strip.empty?
-abort 'Release stopped at commit.' if dirty && !system('./tools/commit', notes)
+abort 'Release stopped at commit.' if dirty && !system('./tools/commit', message)
 abort 'Release stopped at bump/push.' unless system('./tools/bump', *bump_args)
 
-sha = `git rev-parse HEAD`.strip
-repo = `git remote get-url origin`.strip[%r{github.com[:/](.+?)(\.git)?$}, 1] or abort 'Cannot find the GitHub repo.'
-if register
-  body = "@JuliaRegistrator register\n\nRelease notes:\n#{notes}"
-  url, err, status = Open3.capture3('gh', 'api', "repos/#{repo}/commits/#{sha}/comments", '-f', "body=#{body}", '--jq', '.html_url')
-  abort "Pushed #{sha} but registration failed:\n#{err}" unless status.success?
-  puts "Registration requested: #{url.strip}"
-end
-puts "Released #{sha}"
+puts "Released #{`git rev-parse HEAD`.strip}; run tools/publish to register it"
