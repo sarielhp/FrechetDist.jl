@@ -38,3 +38,11 @@ end
         @test isapprox(frechet_c_compute(P, Q).leash, 0.3; rtol = 1e-9)
     end
 end
+
+@testset "SweepDist of antiparallel segments" begin
+    P = PntSeq([Point(0.0, 0.0), Point(1.0, 0.0)])
+    Q = PntSeq([Point(1.0, 0.0), Point(0.0, 0.0)])
+    @test FrechetDist.SweepDist_segs(P[1], P[2], Q[1], Q[2]) ≈ 1.0
+    R = PntSeq([Point(1.0, 0.0), Point(0.0, 0.0)])
+    @test FrechetDist.SweepDist_segs(P[1], P[2], R[1], R[2]) ≈ 1.0
+end

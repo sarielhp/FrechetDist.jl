@@ -104,7 +104,7 @@ function ve_event_value(c::FRContext{N,T}, id::Int64) where {N,T}
             d = fp_dist(P[i], Q[j])
             # Old code: Bug? Missing if check
             if c.f_offsets
-                penalty = c.p_offs[i] - c.q_offs[j]
+                penalty = c.p_offs[i] + c.q_offs[j]
                 return d - penalty, penalty
             else
                 return fp_dist(P[i], Q[j]), 0.0

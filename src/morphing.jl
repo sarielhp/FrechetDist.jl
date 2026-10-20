@@ -351,7 +351,7 @@ function Morphing_recompute_leash(m::Morphing{N,T}) where {N,T}
     @assert(length(m.pes) == length(m.qes))
     r = 0
     for i in eachindex(m.pes)
-        ell = (fp_dist(m.pes[i].p, m.qes[i].p) - m.pes[i].penalty - m.pes[i].penalty)
+        ell = (fp_dist(m.pes[i].p, m.qes[i].p) - m.pes[i].penalty)
         if ell > r
             r = ell
         end
