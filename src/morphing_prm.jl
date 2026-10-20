@@ -105,7 +105,7 @@ end
 
 
 # Emits the output point for a matched pair of vertices (f[idf], g[idg]) with
-# equal y coordinate yf == yg, and advances the indices. Returns the new
+# equal y coordinate (f[idf][1] == g[idg][2]), and advances the indices. Returns the new
 # (idf, idg) and whether the end of both curves was reached.
 function combine_step_equal!(
     out::PntSeq2F,
@@ -113,9 +113,9 @@ function combine_step_equal!(
     g::PntSeq2F,
     idf::Int64,
     idg::Int64,
-    yf::Float64,
-    yg::Float64,
 )
+    yf = f[idf][1]
+    yg = g[idg][2]
     l_f = cardin(f)
     l_g = cardin(g)
     push!(out, point(g[idg][1], f[idf][2]))
@@ -215,7 +215,7 @@ function parameterization_combine(f::PntSeq2F, g::PntSeq2F)::PntSeq2F
         yf = f[idf][1]
         yg = g[idg][2]
         if fp_equal(yf, yg)
-            idf, idg, done = combine_step_equal!(out, f, g, idf, idg, yf, yg)
+            idf, idg, done = combine_step_equal!(out, f, g, idf, idg)
             done && break
         elseif (yf < yg)
             push!(out, combine_point_f_first(g, f, idf, idg, yf))
