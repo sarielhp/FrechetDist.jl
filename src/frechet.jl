@@ -7,7 +7,7 @@
 # A library to compute various versions of the Frechet distance.
 #-------------------------------------------------------------
 
-DictVERType = Dict{Int64,Int64};
+const DictVERType = Dict{Int64,Int64};
 #DictHandledType = Dict{Int64, Bool};
 
 
@@ -53,7 +53,7 @@ end
 #DictVERType = Dict{Int64, TreeVertex};
 #HeapVERType = BinaryMinHeap{TreeVertex};
 
-HeapVerticesType = BinaryMinHeap{Tuple{Float64,Int64}};
+const HeapVerticesType = BinaryMinHeap{Tuple{Float64,Int64}};
 
 
 #@with_kw

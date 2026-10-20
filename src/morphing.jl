@@ -55,7 +55,14 @@ end
 """
     Morphing
 
-Encoding of a morphing (i.e., matching) between two polygonal cuves.
+Encoding of a morphing (i.e., matching) between two polygonal curves.
+
+`P` and `Q` are the curves the morphing was computed for (for `frechet_c_compute` and
+`frechet_c_approx`, their refinements). They are shared with the inputs, not copied:
+copy them before modifying them. `pes` and `qes` list the matched event points on `P`
+and `Q`, and `leash` is the largest distance between matched points. Fields that an
+algorithm does not compute stay at their defaults (`ratio`, `lower_bound`,
+`monotone_err`, `sol_value`).
 
 """
 @with_kw mutable struct Morphing{N,T}
@@ -588,8 +595,8 @@ end
 
 function check_no_nan(V::Vector{EventPoint{N,T}}) where {N,T}
     for ev in V
-        @assert(! isnan(ev.p[1]))
-        @assert(! isnan(ev.p[2]))
+        any(isnan, ev.p) &&
+            throw(ArgumentError("morphing event has a NaN coordinate: $(ev.p)"))
     end
 end
 
@@ -1094,7 +1101,7 @@ function morphing_profile(m::Morphing{D,T}, n::Int64) where {D,T}
 end
 
 
-Morphing2F = Morphing{2,Float64};
+const Morphing2F = Morphing{2,Float64};
 
 #
 # End of file

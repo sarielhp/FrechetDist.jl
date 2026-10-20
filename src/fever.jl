@@ -470,6 +470,7 @@ end
 
 function FEVER_compute_range(P::PntSeq{N,T}, Q::PntSeq{N,T}, upper_bound::T) where {N,T}
     check_curves(P, Q, "FEVER_compute_range"; min_vertices = 2)
+    check_quadratic_size(cardin(P), cardin(Q), 33, "FEVER_compute_range")
     check_nonnegative(upper_bound, "FEVER_compute_range", "upper_bound")
     #global fever_comp_count += 1;
     #println( fever_comp_count );
@@ -570,6 +571,7 @@ reasonably well for small curves (say of size at most 200).
 """
 function FEVER_compute(P::PntSeq{N,T}, Q::PntSeq{N,T}) where {N,T}
     check_curves(P, Q, "FEVER_compute"; min_vertices = 2)
+    check_quadratic_size(cardin(P), cardin(Q), 33, "FEVER_compute")
 
     f_debug::Bool = false
     c::FEVERContext{N,T} = FEVER_Context(P, Q)

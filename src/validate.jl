@@ -92,6 +92,25 @@ function check_nonnegative(x::Real, who::AbstractString, what::AbstractString)
 end
 
 """
+    check_quadratic_size( n, m, bytes_per_cell, who )
+
+Throws an `ArgumentError` when an algorithm that allocates `bytes_per_cell` bytes for each
+of the `n * m` vertex pairs needs more than the total memory of the machine, instead of
+failing with an out-of-memory error after a long allocation.
+"""
+function check_quadratic_size(n::Int, m::Int, bytes_per_cell::Real, who::AbstractString)
+    needed = Float64(n) * Float64(m) * bytes_per_cell
+    available = Float64(Sys.total_memory())
+    needed <= available || throw(
+        ArgumentError(
+            "$who needs about $(round(needed / 2^30; digits = 1)) GiB for curves of " *
+            "$n and $m vertices, but this machine has $(round(available / 2^30; digits = 1)) GiB",
+        ),
+    )
+    return nothing
+end
+
+"""
     check_indices( indices, n, who )
 
 Throws an `ArgumentError` unless `indices` are vertex indices in `1:n` in non-decreasing

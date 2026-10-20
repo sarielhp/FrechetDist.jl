@@ -119,6 +119,7 @@ sequence of points.
 """
 function frechet_d_compute(P::PntSeq{D,T}, Q::PntSeq{D,T}) where {D,T}
     check_curves(P, Q, "frechet_d_compute"; min_vertices = 1)
+    check_quadratic_size(cardin(P), cardin(Q), 8.5, "frechet_d_compute")
     n_p::Int64 = cardin(P)
     n_q::Int64 = cardin(Q)
 
@@ -152,6 +153,7 @@ future versions.
 """
 function frechet_d_r_compute(P::PntSeq{D,T}, Q::PntSeq{D,T}) where {D,T}
     check_curves(P, Q, "frechet_d_r_compute"; min_vertices = 1)
+    check_quadratic_size(cardin(P), cardin(Q), 8.5, "frechet_d_r_compute")
     n_p = cardin(P)
     n_q = cardin(Q)
 
@@ -246,6 +248,7 @@ end
 """
 function DTW_d_compute(P::PntSeq{D,T}, Q::PntSeq{D,T}) where {D,T}
     check_curves(P, Q, "DTW_d_compute"; min_vertices = 1)
+    check_quadratic_size(cardin(P), cardin(Q), 8.5, "DTW_d_compute")
 
     pq = PriorityQueue{Tuple{Int64,Int64},Float64}()
 

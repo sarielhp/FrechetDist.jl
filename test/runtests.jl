@@ -106,6 +106,7 @@ include("test_duplicates.jl")
 include("test_contract.jl")
 include("test_range.jl")
 include("test_silence.jl")
+include("test_hygiene.jl")
 include("agreement.jl")
 
 @testset "Oracles" begin

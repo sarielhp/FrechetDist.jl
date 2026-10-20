@@ -44,8 +44,8 @@ end
 
 
 
-DictVerticesType = Dict{Int64,TreeVertex};
-DictHandledType = Dict{Int64,Bool};
+const DictVerticesType = Dict{Int64,TreeVertex};
+const DictHandledType = Dict{Int64,Bool};
 
 @with_kw mutable struct SDContext{N,T}
     P::PntSeq{N,T}
