@@ -36,3 +36,6 @@ data_old
 /geolife.txt
 /geolife_err_*
 /tests.txt
+
+# Julia --track-allocation output
+*.jl.*.mem
