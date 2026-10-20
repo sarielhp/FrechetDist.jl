@@ -270,9 +270,7 @@ end
         return d
     end
 
-    println("Error: This kind of event is not handled yet...")
-    exit(-1)
-    return 0.0
+    error("fever_event_value: edge-edge events are not supported (event id $id)")
 end
 
 

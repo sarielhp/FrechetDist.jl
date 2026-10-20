@@ -135,9 +135,7 @@ function ve_event_value(c::FRContext{N,T}, id::Int64) where {N,T}
         end
     end
 
-    println("Error: This kind of event is not handled yet...")
-    exit(-1)
-    return 0.0, 0.0
+    error("ve_event_value: edge-edge events are not supported (event id $id)")
 end
 
 

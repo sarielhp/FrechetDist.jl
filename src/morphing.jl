@@ -350,9 +350,9 @@ function Morphing_recompute_leash(m::Morphing{N,T}) where {N,T}
         end
     end
     if (m.leash != r) && (m.leash != 0)
-        println("ERROR old leash:", m.leash)
-        println("ERROR new leash:", r)
-        exit(-1)
+        error(
+            "Morphing_recompute_leash: stored leash $(m.leash) differs from the recomputed leash $r",
+        )
     end
     m.leash = r
 end
@@ -586,8 +586,7 @@ end
 function check_times(V::Vector{EventPoint{N,T}}) where {N,T}
     for ev in V
         if (ev.t < 0.0) || (ev.t > 1.0)
-            println("Event time is wrong? ", ev.t)
-            exit(-1)
+            throw(ArgumentError("morphing event time $(ev.t) is outside [0, 1]"))
         end
     end
 end
@@ -710,15 +709,12 @@ function check_monotone_top(out::PntSeq2F)
     q = out[l]
     factor::Float64 = 1.0001
     if (p[1] > factor*q[1]) || (p[2] > factor*q[2])
-        println(p[1], "  >  ", q[1])
-        println(p[2], "  >  ", q[2])
-        println("Error (not monotone top): ")
-        for i = 1:l
-            println(i, " : ", out[i])
-        end
-        #println( out );
-        println("Error (not monotone top): ")
-        exit(-1)
+        throw(
+            ArgumentError(
+                "parameterizations are not monotone ($(p[1]) > $(q[1]) or $(p[2]) > $(q[2])); " *
+                "Morphing_combine needs monotone morphings",
+            ),
+        )
     end
 end
 

@@ -100,6 +100,7 @@ end
 end
 
 include("test_primitives.jl")
+include("test_errors.jl")
 include("agreement.jl")
 
 @testset "Oracles" begin
