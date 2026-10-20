@@ -106,9 +106,8 @@ function ve_event_value(c::FRContext{N,T}, id::Int64) where {N,T}
             if c.f_offsets
                 penalty = c.p_offs[i] + c.q_offs[j]
                 return d - penalty, penalty
-            else
-                return fp_dist(P[i], Q[j]), 0.0
             end
+            return fp_dist(P[i], Q[j]), 0.0
         end
         d = fp_dist_point_segment(c.P[i], Q[j], Q[j+1])
         if c.f_offsets
@@ -120,9 +119,8 @@ function ve_event_value(c::FRContext{N,T}, id::Int64) where {N,T}
             #            return  d - c.q_offs[ j ];
             penalty = max(c.q_offs[j], c.q_offs[j+1]) + c.p_offs[i]
             return d - penalty, penalty
-        else
-            return d, 0.0
         end
+        return d, 0.0
     end
 
     if EID_j_is_vert(id)
@@ -130,9 +128,8 @@ function ve_event_value(c::FRContext{N,T}, id::Int64) where {N,T}
         if c.f_offsets
             penalty = max(c.p_offs[i], c.p_offs[i+1]) + c.q_offs[j]
             return d - penalty, penalty
-        else
-            return d, 0.0
         end
+        return d, 0.0
     end
 
     error("ve_event_value: edge-edge events are not supported (event id $id)")

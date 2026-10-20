@@ -70,7 +70,8 @@ end
         fc.i_is_vert = true
         fc.j_is_vert = true
         return 0
-    elseif (id == ID_END)
+    end
+    if (id == ID_END)
         fc.i = e.nP
         fc.j = e.nQ
         fc.i_is_vert = true
