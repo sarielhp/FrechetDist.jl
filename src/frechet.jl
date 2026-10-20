@@ -362,16 +362,10 @@ function f_r_extract_solution_ids(
     while (curr != start_event_id)
         push!(out_arr, curr)
         prev = curr
-        if ! haskey(dict, prev)
-            println("start_event_id: ", start_event_id)
-            println("end_event_id: ", end_event_id)
-            println("|P|: ", cardin(P))
-            println("|Q|: ", cardin(Q))
-            println(P)
-            println("----------------------------------")
-            println(Q)
-            println("----------------------------------")
-        end
+        haskey(dict, prev) || error(
+            "f_r_extract_solution_ids: event $prev has no predecessor; the search did " *
+            "not reach the end event (an upper bound below the VE distance?)",
+        )
         curr = dict[prev]
     end
     push!(out_arr, curr)
@@ -571,6 +565,14 @@ function frechet_ve_r_compute_range(
         f_r_schedule_event(EID(i, false, j+1, true), id, c)
     end
 
+    if ! haskey(c.dict, end_id)
+        # The bound is below the VE distance (or equal to it up to rounding), so the
+        # search was pruned before reaching the end. Compute the range without a bound,
+        # as FEVER_compute_range does.
+        m = frechet_ve_r_compute(P, Q)
+        return m.leash, Morphing_monotonize(m).leash
+    end
+
     out_arr = f_r_extract_solution_ids(P, Q, end_id, start_id, c.dict)
 
     l_min, l_max = compute_leash_from_arr(P, Q, out_arr)
@@ -741,6 +743,7 @@ subcurve. Thus, providing a fast estimates of the offsets.
 
 """
 function frechet_offsets(P::PntSeq{N,T}, p_indices::Vector{Int64}) where {N,T}
+    check_indices(p_indices, cardin(P), "frechet_offsets")
     offs = Vector{Float64}()
 
     for i in eachindexButLast(p_indices)
@@ -818,11 +821,14 @@ function frechet_c_mono_approx_subcurve(
     p_indices::Vector{Int64},
 ) where {N,T}
 
+    cardin(Q) == length(p_indices) || throw(
+        ArgumentError(
+            "frechet_c_mono_approx_subcurve: Q has $(cardin(Q)) vertices but " *
+            "$(length(p_indices)) indices were given",
+        ),
+    )
+    check_indices(p_indices, cardin(P), "frechet_c_mono_approx_subcurve")
     offsets = zeros(T, length(p_indices))
-    #println( "#P: ", cardin( P ), "#Q: ", cardin( Q ), "  #qind: ",
-    #         length( p_indices ) );
-
-    @assert(cardin(Q) == length(p_indices))
 
     pes = Vector{EventPoint{N,T}}()
     qes = Vector{EventPoint{N,T}}()
@@ -1092,7 +1098,10 @@ function frechet_mono_via_refinement_ext(
     Q = Qa
     f_debug && println("fmvr before while...")
     f_debug && println("APPROX : ", approx)
+    rounds::Int = 0
     while true
+        rounds += 1
+        check_rounds(rounds, "frechet_mono_via_refinement_ext")
         f_debug && println("\n<<<<<<< ")
         f_debug && println("Before ve_r_compute( ", cardin(P), ", ", cardin(Q))
         m = frechet_ve_r_compute(P, Q)
@@ -1270,9 +1279,6 @@ function frechet_dist_upper_bound(poly_a::PntSeq{N,T}, poly_b::PntSeq{N,T}) wher
     check_curves(poly_a, poly_b, "frechet_dist_upper_bound"; min_vertices = 2)
     w_a = frechet_width_approx(poly_a)
     w_b = frechet_width_approx(poly_b)
-    if ((cardin(poly_a) < 2) || (cardin(poly_a) < 2))
-        return w_a + w_b
-    end
     w = max(fp_dist(poly_a[1], poly_b[1]), fp_dist(last(poly_a), last(poly_b)))
     return w_a + w_b + w
 end
@@ -1343,7 +1349,10 @@ function frechet_c_approx(
     q_indices = Vector{Int64}()
 
     m = Morphing_empty(poly_a, poly_b)
+    rounds::Int = 0
     while (true)
+        rounds += 1
+        check_rounds(rounds, "frechet_c_approx")
         f_debug && println("AAAAAAAAAAAAAa")
         while ((r >= (d / (approx + 4.0))) || f_do_one_round)
             r = r / 2.0
@@ -1689,6 +1698,7 @@ function frechet_c_compute(
     round::Int64 = 0
     while true
         round = round + 1
+        check_rounds(round, "frechet_c_compute")
         aprx_refinement = max(aprx_refinement, min_approx)
 
         f_debug && println(
@@ -1730,7 +1740,7 @@ function frechet_c_compute(
         # monotonization.
         if ((2 * cardin(PS) > cardin(P)) && (2 * cardin(QS) > cardin(Q)))
             f_debug && println("Simpl. not profitable, doing mono")
-            return frechet_mono_via_refinement(P, Q)[1]
+            return frechet_mono_via_refinement(P, Q, 1.0 + tolerance)[1]
         end
 
         t_aprx = max(tolerance + 1.0, aprx_refinement)

@@ -344,9 +344,14 @@ function frechet_d_r_compute_sample(
     f_lopt::Bool = true,
 ) where {D,T}
     check_curves(polya, polyb, "frechet_d_r_compute_sample"; min_vertices = 1)
-    #    polya,polyb = example_4()
+    n >= 1 ||
+        throw(ArgumentError("frechet_d_r_compute_sample: n must be at least 1 (got $n)"))
     lena = fp_geom_length(polya)
     lenb = fp_geom_length(polyb)
+    if lena + lenb == 0.0
+        # Both curves are single points: there is nothing to sample.
+        return f_lopt ? frechet_d_r_compute(polya, polyb) : frechet_d_compute(polya, polyb)
+    end
 
     #    n::Int64 = 100;
     delta = (lena + lenb) / n

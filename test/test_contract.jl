@@ -90,3 +90,49 @@ end
               FD.frechet_c_compute(a, b).leash * (1 - 1e-9)
     end
 end
+
+@testset "Sampling and subcurve functions" begin
+    # Zero-length curves used to give InexactError (ceil(NaN)); n < 1 silently returned a value.
+    point_curve = mk([(1.0, 1.0), (1.0, 1.0), (1.0, 1.0)])
+    other_point = mk([(1.0, 3.0), (1.0, 3.0)])
+    for lopt in (true, false)
+        @test FD.frechet_d_r_compute_sample(point_curve, other_point, 5, lopt).leash ≈ 2.0
+        @test FD.frechet_d_r_compute_sample(two, three, 10, lopt).leash > 0
+        @test_throws ArgumentError FD.frechet_d_r_compute_sample(two, three, 0, lopt)
+        @test_throws ArgumentError FD.frechet_d_r_compute_sample(two, three, -3, lopt)
+    end
+
+    # Vertex index lists must be in range and non-decreasing.
+    curve = mk([(0.0, 0.0), (1.0, 0.5), (2.0, 0.0), (3.0, 0.5), (4.0, 0.0)])
+    @test length(FD.frechet_offsets(curve, [1, 3, 5])) == 2
+    @test_throws ArgumentError FD.frechet_offsets(curve, [1, 6])
+    @test_throws ArgumentError FD.frechet_offsets(curve, [0, 3])
+    @test_throws ArgumentError FD.frechet_offsets(curve, [5, 3, 1])
+    simplified = mk([(0.0, 0.0), (2.0, 0.0), (4.0, 0.0)])
+    @test FD.frechet_c_mono_approx_subcurve(curve, simplified, [1, 3, 5])[1].leash >= 0
+    @test_throws ArgumentError FD.frechet_c_mono_approx_subcurve(curve, simplified, [1, 3])
+    @test_throws ArgumentError FD.frechet_c_mono_approx_subcurve(
+        curve,
+        simplified,
+        [1, 3, 9],
+    )
+    @test_throws ArgumentError FD.frechet_c_mono_approx_subcurve(
+        curve,
+        simplified,
+        [1, 5, 3],
+    )
+end
+
+
+@testset "Refinement loops give up instead of hanging" begin
+    saved = FD.MAX_REFINEMENT_ROUNDS[]
+    try
+        FD.MAX_REFINEMENT_ROUNDS[] = 0
+        @test_throws ErrorException FD.frechet_c_compute(two, three)
+        @test_throws ErrorException FD.frechet_c_approx(two, three, 1.5)
+        @test_throws ErrorException FD.frechet_mono_via_refinement(two, three)
+    finally
+        FD.MAX_REFINEMENT_ROUNDS[] = saved
+    end
+    @test FD.frechet_c_compute(two, three).leash > 0
+end

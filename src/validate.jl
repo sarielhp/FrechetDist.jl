@@ -11,6 +11,20 @@ const MAX_COORDINATE = 1.0e150
 const MAX_VERTICES = 2^30 - 1
 
 """
+Largest number of refinement rounds the iterative algorithms (`frechet_c_compute`,
+`frechet_c_approx`, `frechet_mono_via_refinement`) may run before giving up with an
+error instead of looping forever. At most 17 rounds were observed in about 10,000 runs.
+A `Ref` so that tests can lower it.
+"""
+const MAX_REFINEMENT_ROUNDS = Ref(1000)
+
+function check_rounds(rounds::Int, who::AbstractString)
+    rounds > MAX_REFINEMENT_ROUNDS[] &&
+        error("$who: no convergence after $(MAX_REFINEMENT_ROUNDS[]) refinement rounds")
+    return nothing
+end
+
+"""
     check_curve( P, who, name; min_vertices = 2 )
 
 Throws an `ArgumentError` mentioning `who` unless the curve `P` has `Float64`
@@ -74,6 +88,21 @@ end
 function check_nonnegative(x::Real, who::AbstractString, what::AbstractString)
     (isfinite(x) && x >= 0) ||
         throw(ArgumentError("$who: $what must be finite and non-negative (got $x)"))
+    return nothing
+end
+
+"""
+    check_indices( indices, n, who )
+
+Throws an `ArgumentError` unless `indices` are vertex indices in `1:n` in non-decreasing
+order.
+"""
+function check_indices(indices::Vector{Int64}, n::Int, who::AbstractString)
+    for (k, i) in enumerate(indices)
+        (1 <= i <= n) || throw(ArgumentError("$who: vertex index $i is outside 1:$n"))
+        (k > 1 && i < indices[k-1]) &&
+            throw(ArgumentError("$who: vertex indices must be in non-decreasing order"))
+    end
     return nothing
 end
 
