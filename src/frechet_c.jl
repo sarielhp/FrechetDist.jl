@@ -275,9 +275,6 @@ const FC_SLACK_DIVISOR = 4.0          # vertex slack = (bound - vertex radius) /
 const FC_SLACK_GROWTH = 1.3           # after a failed round the divisor grows by this
 const FC_APPROX_SHRINK = 10.0         # ... and (approx - 1) shrinks by this
 const FC_SLACK_ROUNDS = 8             # smoothing rounds of propagate_mins!
-# With f_accept_approx, a result is accepted once its leash is within this factor of
-# the certified lower bound. It predates the `tolerance` argument and ignores it.
-const FC_ACCEPT_GAP = 1.00001
 
 # How far each vertex may move in the simplification: (bound - radius) / divisor,
 # where `radii` are the leash lengths at the vertices. Smoothed so that the
@@ -362,7 +359,10 @@ computed by refinement (`frechet_mono_via_refinement`), so that it approaches th
 VE-retractable distance.
 
 # Arguments
-- f_accept_approx: accept a good enough approximation as good enough...
+- f_accept_approx: return once the leash is within a factor `1 + tolerance` of
+  the certified lower bound. The test for agreement up to `tolerance` runs first
+  and accepts slightly more, so this flag matters only when rounding puts the
+  lower bound above the leash. It is kept for compatibility.
 
 - Tolerance: If |a-b| <= tolerance*( |a| + |b| ) then we consider
   numbers to be equal. In a perfect world tolerance would be zero.
@@ -450,7 +450,8 @@ function frechet_c_compute(
         # Not certified yet: smaller slack and a finer approximation.
         divisor = divisor * FC_SLACK_GROWTH
         aprx_refinement = 1.0 + ((aprx_refinement - 1.0) / FC_APPROX_SHRINK)
-        if f_accept_approx && (FC_ACCEPT_GAP * m_final.leash > mw.leash)
+        # Close enough: the leash is within a factor 1 + tolerance of the lower bound.
+        if f_accept_approx && ((1.0 + tolerance) * m_final.leash > mw.leash)
             return set_bounds!(mw, certified_lb)
         end
     end
