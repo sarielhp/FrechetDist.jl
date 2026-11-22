@@ -235,9 +235,10 @@ end
 """
     DTW_d_compute
 
-    Compute the Dynamic Time Wrapping distance between two
-    polygons. Here the price is the of lengths of leashes throughtout
-    the discrete morphing.
+    Compute the Dynamic Time Warping distance between two polygons: the
+    minimum, over single-step discrete couplings (one index advances at a
+    time), of the sum of the leash lengths. The price is returned in
+    `m.sol_value`; `m.leash` is the longest leash of the optimal coupling.
 
 """
 function DTW_d_compute(P::PntSeq{D,T}, Q::PntSeq{D,T}) where {D,T}
@@ -302,8 +303,8 @@ function DTW_d_compute(P::PntSeq{D,T}, Q::PntSeq{D,T}) where {D,T}
 
     m = d_frechet_extract_solution(P, Q, dp_dec_i, n_p, n_q)
     m.iters = iters
+    m.sol_value = dp[n_p, n_q]
 
-    #exit( -1 );
     return m
 end
 

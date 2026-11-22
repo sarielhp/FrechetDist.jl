@@ -174,11 +174,14 @@ end
 
 
 
-##########################################################################
-# Compute Sweeping Distance. Essentially Prim/Dijkstra algorithm
-#
-# Returns a Morphing that encodes the solution
-##########################################################################
+"""
+    SweepDist_compute( P, Q )
+
+A morphing between `P` and `Q` minimizing the approximate sweep price (the sum of
+`fp_match_price` over matched edges), computed by a Dijkstra search over the
+vertex-edge events. The minimum price is returned in `m.sol_value`; `m.leash` is
+the longest leash of that morphing. The morphing need not be monotone.
+"""
 function SweepDist_compute(P::PntSeq{N,T}, Q::PntSeq{N,T}) where {N,T}
     check_curves(P, Q, "SweepDist_compute"; min_vertices = 2)
     c::SDContext{N,T} = SDContext(P, Q)
@@ -237,6 +240,7 @@ function SweepDist_compute(P::PntSeq{N,T}, Q::PntSeq{N,T}) where {N,T}
 
     morph::Morphing{N,T} = Morphing_init(P, Q, pes, qes)
     morph.iters = iters
+    morph.sol_value = end_event.val
 
     Morphing_verify_valid(morph)
 

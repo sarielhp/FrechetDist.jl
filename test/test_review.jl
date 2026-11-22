@@ -47,3 +47,14 @@ mkc(coords) = PntSeq([point(c...) for c in coords])
     @test outcome(() -> FD.Morphing_sample_uniformly(m, 1)) isa ArgumentError
     @test size(FD.Morphing_sample_uniformly(m, 3)) == (3, 4)
 end
+
+@testset "DTW and sweep distance report their objective in sol_value" begin
+    rng = MersenneTwister(5)
+    A = PntSeq([point(x...) for x in eachcol(cumsum(randn(rng, 2, 30), dims = 2))])
+    B = PntSeq([point(x...) for x in eachcol(cumsum(randn(rng, 2, 25), dims = 2))])
+    m = FD.DTW_d_compute(A, B)
+    price = sum(FD.fp_dist(a.p, b.p) for (a, b) in zip(m.pes, m.qes))
+    @test m.sol_value ≈ price rtol = 1e-12
+    s = FD.SweepDist_compute(A, B)
+    @test s.sol_value ≈ FD.Morphing_SweepDist_approx_price(s) rtol = 1e-9
+end

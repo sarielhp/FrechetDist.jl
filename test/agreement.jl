@@ -291,6 +291,10 @@ function check_dtw!(fails, P, Q, Pv, Qv, scale)
         fails,
         "DTW_d_compute price $price differs from the optimal single-step warping price $best",
     )
+    isapprox(m.sol_value, best; rtol = 1e-9, atol = 1e-12 * scale) || push!(
+        fails,
+        "DTW_d_compute sol_value $(m.sol_value) differs from the optimal price $best",
+    )
 end
 
 "Width approximation of random subranges, against the exact distance to the chord."
