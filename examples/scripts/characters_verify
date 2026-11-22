@@ -2,7 +2,7 @@
 
 export JULIA_NUM_THREADS=auto
 
-TDIR=/tmp/frechet_dist
+TDIR="${TMPDIR:-/tmp}/$USER/FrechetDist/queries"
 mkdir -p $TDIR >& /dev/null
 TFL=$TDIR/characters_list.txt
 

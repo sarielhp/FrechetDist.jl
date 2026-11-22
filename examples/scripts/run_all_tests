@@ -38,7 +38,7 @@ function  julia_check() {
 }
 
 function  kill_grep() {
-    TDIR=/tmp/sariel/kill_grep
+    TDIR="${TMPDIR:-/tmp}/$USER/FrechetDist/kill_grep"
     mkdir -p $TDIR >& /dev/null
     TFL=$TDIR/kill_grep.txt
 
