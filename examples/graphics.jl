@@ -1,5 +1,7 @@
 # Graphics.jl
 
+include("tmp_space.jl")
+
 using Parameters
 using Distributions;
 using Cairo
@@ -850,7 +852,7 @@ function output_frechet_movie_mp4(
     f_show_vertices::Bool = false,
 ) where {N,T}
     f_debug::Bool = false
-    cm = ContextMovie(BBox2F(), BBox2F(), 0, 0, 0, "/tmp/r_draw/", f_show_vertices)
+    cm = ContextMovie(BBox2F(), BBox2F(), 0, 0, 0, example_tmp("r_draw"), f_show_vertices)
     cm.bb, cm.bbo = compute_bounding_boxes([m.P, m.Q])
     cm.iheight, cm.iwidth = get_image_dims(cm.bbo)
 
@@ -927,13 +929,22 @@ function output_frechet_movie_mp4(
     #    println( "ffmpeg $options" );
     f_debug && println("Encoding movie with ffmpeg...")
     options = ["-r", "10", "-i", cm.dir * "/" * "%06d.png", "-c:v", "libx264", tmp_filename]
-    output = read(pipeline(`ffmpeg $options`, stderr = "/tmp/errs.txt"), String)
+    output = read(
+        pipeline(`ffmpeg $options`, stderr = joinpath(example_tmp("encode"), "errs.txt")),
+        String,
+    )
 
     f_debug && println("Rencoding with handbrake...")
 
     # HandBrakeCLI -Z  -i movie.mp4  -o movie_2.mp4
     options_2 = ["-Z", "Android 1080p30", "-i", tmp_filename, "-o", filename]
-    output_2 = read(pipeline(`HandBrakeCLI $options_2`, stderr = "/tmp/errs_2.txt"), String)
+    output_2 = read(
+        pipeline(
+            `HandBrakeCLI $options_2`,
+            stderr = joinpath(example_tmp("encode"), "errs_2.txt"),
+        ),
+        String,
+    )
     rmx(tmp_filename)
     if isfile(filename)
         println("Created: ", filename)
@@ -962,7 +973,10 @@ function encode_to_mp4(dir, filename)
     rmx(tmp_filename)
     #println( "Encoding movie with ffmpeg..." );
     options = ["-r", "10", "-i", dir * "/" * "%06d.png", "-c:v", "libx264", tmp_filename]
-    output = read(pipeline(`ffmpeg $options`, stderr = "/tmp/errs.txt"), String)
+    output = read(
+        pipeline(`ffmpeg $options`, stderr = joinpath(example_tmp("encode"), "errs.txt")),
+        String,
+    )
 
 
     #println( "\n\n\n\n\n\n" );
@@ -972,7 +986,13 @@ function encode_to_mp4(dir, filename)
 
     # HandBrakeCLI -Z  -i movie.mp4  -o movie_2.mp4
     options_2 = ["-Z", "Android 1080p30", "-i", tmp_filename, "-o", filename]
-    output_2 = read(pipeline(`HandBrakeCLI $options_2`, stderr = "/tmp/errs_2.txt"), String)
+    output_2 = read(
+        pipeline(
+            `HandBrakeCLI $options_2`,
+            stderr = joinpath(example_tmp("encode"), "errs_2.txt"),
+        ),
+        String,
+    )
     rmx(tmp_filename)
     if isfile(filename)
         println("Created: ", filename)
@@ -1035,7 +1055,7 @@ function output_ortho_frechet_movie_mp4(
     filename::String,
     total_frames::Int64 = 200,
 ) where {N,T}
-    cm = ContextMovie(BBox2F(), BBox2F(), 0, 0, 0, "/tmp/r_draw/", false)
+    cm = ContextMovie(BBox2F(), BBox2F(), 0, 0, 0, example_tmp("r_draw"), false)
     cm.bb, cm.bbo = compute_bounding_boxes([m.P, m.Q])
     cm.iheight, cm.iwidth = get_image_dims(cm.bbo)
 

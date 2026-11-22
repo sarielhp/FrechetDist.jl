@@ -722,7 +722,13 @@ function create_demo(
     output_polygons_to_file([poly_a, poly_b], filename_curves, true)
 
     options_svg = [prefix*"curves.pdf", prefix*"curves.svg"]
-    output = read(pipeline(`pdf2svg $options_svg`, stderr = "/tmp/errs.txt"), String)
+    output = read(
+        pipeline(
+            `pdf2svg $options_svg`,
+            stderr = joinpath(example_tmp("convert"), "errs.txt"),
+        ),
+        String,
+    )
 
     println("Created: ", filename_curves)
 
@@ -920,7 +926,13 @@ function create_demo(
         println("Generating gif...")
 
         options = ["-delay", "50", "-loop", "0", dir * "*.png", prefix * "refinements.gif"]
-        outx = read(pipeline(`convert $options`, stderr = "/tmp/errs.txt"), String)
+        outx = read(
+            pipeline(
+                `convert $options`,
+                stderr = joinpath(example_tmp("convert"), "errs.txt"),
+            ),
+            String,
+        )
     end
 
     f_graph_drawn::Bool = false
