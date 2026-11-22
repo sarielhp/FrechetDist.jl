@@ -344,6 +344,10 @@ function frechet_c_compute(
     len_b = geom_length(Q)
 
     approx = min(1.0 + (len_a + len_b) / (100.0 * m_rough.leash), 1.1)
+    # Curves far apart relative to their length round this to exactly 1.
+    if approx <= 1.0
+        approx = min_approx
+    end
 
     m = m_rough
     if m_rough.ratio > approx

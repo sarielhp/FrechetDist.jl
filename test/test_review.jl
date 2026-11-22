@@ -353,3 +353,16 @@ end
     @test isempty(bad)
     isempty(bad) || println(join(first(bad, 5), "\n"))
 end
+
+@testset "frechet_c_compute on curves far apart relative to their length" begin
+    # approx = 1 + length / (100 leash) rounded to exactly 1.0 and was rejected.
+    for sh in (1.0e15, 1.0e16)
+        rng = MersenneTwister(1)
+        A = PntSeq([point(x...) for x in eachcol(cumsum(randn(rng, 2, 5), dims = 2))])
+        B = PntSeq([
+            point((x .+ [sh, 0.0])...) for x in eachcol(cumsum(randn(rng, 2, 5), dims = 2))
+        ])
+        r = outcome(() -> FD.frechet_c_compute(A, B).leash)
+        @test r isa Real && abs(r - sh) <= 1.0e-3 * sh
+    end
+end
