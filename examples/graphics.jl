@@ -65,7 +65,7 @@ end
 
 function draw_polygon_w_offs(cr, P::PntSeq2F, offs::VecFloat)
     nv::Int64 = cardin(P)
-    for i = 2:nv
+    for i in 2:nv
         p = P.pnts[i-1]
         #p = po.x;
         q = P.pnts[i]
@@ -103,7 +103,7 @@ end
 
 function draw_polygon(cr, P, f_close::Bool = false)
     nv::Int64 = cardin(P)
-    for i = 2:nv
+    for i in 2:nv
         p = P.pnts[i-1]
         #p = po.x;
         q = P.pnts[i]
@@ -124,7 +124,7 @@ function draw_points(cr, P::Vector{Point2F}, rad::Float64 = 0.005)
     nv::Int64 = length(P)
     #rad::Float64 = 0.005
     #println( "nv:", nv );
-    for i = 1:nv
+    for i in 1:nv
         p = P[i]
         move_to(cr, p[1] - rad, p[2])
 
@@ -138,7 +138,7 @@ end
 function draw_polygon_vertices(cr, P, r::Float64)
     nv::Int64 = cardin(P)
     #r = total_length( P ) / (100.0*cardin( P ));
-    for i = 1:nv
+    for i in 1:nv
         p = P.pnts[i]
         #        set_line_width(cr, 2.00);
         #        Cairo.set_source_rgb( cr, 0, 0, 0);
@@ -195,18 +195,18 @@ function fill_bbox(cr, bb, scale)
 end
 
 function draw_bboxes(cr, boxes, scale = 1.0)
-    for bb ∈ boxes
+    for bb in boxes
         draw_bbox(cr, bb, scale)
     end
 end
 function fill_bboxes(cr, boxes, scale = 1.0)
-    for bb ∈ boxes
+    for bb in boxes
         fill_bbox(cr, bb, scale)
     end
 end
 function fill_bboxes_cycle_colors(cr, boxes, α = 1.0, scale = 1.0)
     count = 0
-    for bb ∈ boxes
+    for bb in boxes
         count += 1
         set_source_rgba(cr, get_color_rgb(count)..., α)
 
@@ -343,7 +343,7 @@ function output_polygons(
         Q = list[2]
         set_line_width(cr, 0.5*u_width)
         set_source_rgb(cr, 1.0, 0.0, 1.0)
-        for i = 1:cardin(P)
+        for i in 1:cardin(P)
             p = P[i]
             q = Q[i]
 
@@ -419,7 +419,7 @@ function output_polygons_to_file(
         Q = list[2]
         set_line_width(cr, 0.5*u_width)
         set_source_rgb(cr, 1.0, 0.0, 1.0)
-        for i = 1:cardin(P)
+        for i in 1:cardin(P)
             p = P[i]
             q = Q[i]
 
@@ -510,7 +510,7 @@ function output_polygons_to_file_with_offsets(
         Q = list[2]
         set_line_width(cr, 1.5*u_width)
         set_source_rgb(cr, 1.0, 0.0, 1.0)
-        for i = 1:cardin(P)
+        for i in 1:cardin(P)
             p = P[i]
             q = Q[i]
 
@@ -556,7 +556,7 @@ function output_morphing(m::Morphing{N,T}, filename) where {N,T}
     set_source_rgb(cr, 1.0, 0.0, 0.0)
 
     nv::Int64 = cardin(PS)
-    for i = 1:nv
+    for i in 1:nv
         #loc::Point2I  = sol.pnts[ i ];
 
         po::Point{N,T} = PS[i]
@@ -594,7 +594,7 @@ function draw_frames(
     delta::Float64 = 1.0 / (frames - 1)
     t::Float64 = 0.0
 
-    for i = 1:frames
+    for i in 1:frames
         set_line_width(cr, 3.5)
         set_source_rgb(cr, 0.0, 0.8, 0.0)
         draw_polygon(cr, P)
@@ -634,7 +634,7 @@ function compute_frames(pout, qout, total_frames)
     # compute how many frames for each leg...
     #    frames::Vector{Int64} = zeros( Int64, steps );
     acc = 0
-    for i = 1:steps
+    for i in 1:steps
         leg_len = lens[i+1] - lens[i]
         if (leg_len <= 0)
             continue
@@ -709,7 +709,7 @@ function output_frechet_movie(
     skip::Int64 = max(1, floor(total_output_frames / total_frames))
     f_do_skip::Bool = true
 
-    for i = 1:steps
+    for i in 1:steps
         count = 0
         if frames[i] == 0
             continue
@@ -813,7 +813,7 @@ function draw_frames_images(
     delta::Float64 = 1.0 / (frames - 1)
     t::Float64 = 0.0
 
-    for i = 1:frames
+    for i in 1:frames
         p::Point2F = at(sp, t)
         q::Point2F = at(sq, t)
 
@@ -885,7 +885,7 @@ function output_frechet_movie_mp4(
     frame_count::Int64 = 0
 
     # We first calculate the frames we need... into vec_rf...
-    for i = 1:steps
+    for i in 1:steps
         count = 0
         if frames[i] == 0
             continue
@@ -1056,7 +1056,7 @@ function output_ortho_frechet_movie_mp4(
     t::Float64 = 1.0
 
     # We first calculate the frames we need... into vec_rf...
-    for i = 1:total_frames
+    for i in 1:total_frames
         R = PntSeq([convex_comb(p, q, t) for (p, q) in zip(pout, qout)])
 
         ofr = ORecFrame(i, t, R)
@@ -1114,7 +1114,7 @@ function output_frechet_diagram(m::Morphing{N,T}, filename) where {N,T}
 
     len = length(P_coords)
     poly = PntSeq2F()
-    for i = 1:len
+    for i in 1:len
         push_distinct!(poly, point(P_coords[i], Q_coords[i]))
     end
 
@@ -1132,13 +1132,13 @@ function output_frechet_diagram(m::Morphing{N,T}, filename) where {N,T}
     ymax = last(qsum)
     xmax = last(psum)
 
-    for i = 1:plen
+    for i in 1:plen
         move_to(cr, psum[i], 0)
         line_to(cr, psum[i], ymax)
         Cairo.stroke(cr)
     end
 
-    for i = 1:qlen
+    for i in 1:qlen
         move_to(cr, 0, qsum[i])
         line_to(cr, xmax, qsum[i])
         Cairo.stroke(cr)

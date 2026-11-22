@@ -33,7 +33,7 @@ end
 
 function draw_polygon(cr, P, T::Affine2d)
     nv::Int64 = cardin(P)
-    for i = 2:nv
+    for i in 2:nv
         #println( T * P[ i ] );
         po = T * P.pnts[i-1]
         qo = T * P.pnts[i]
@@ -47,7 +47,7 @@ end
 function draw_polygon_vertices(cr, P, r::Float64)
     nv::Int64 = cardin(P)
     #r = total_length( P ) / (100.0*cardin( P ));
-    for i = 1:nv
+    for i in 1:nv
         p = P.pnts[i]
         #        set_line_width(cr, 2.00);
         #        Cairo.set_source_rgb( cr, 0, 0, 0);
@@ -192,7 +192,7 @@ function output_polygons_hierarchy_to_file(
         delta = round(Int64, lg / limit)
         lvl::Int64 = lg
         println("\n\n\n")
-        for i = limit:-1:0
+        for i in limit:-1:0
             set_line_width(cr, 25.0 / (1 + limit - i + 1))
             (i == 0) && set_source_rgb(cr, 0.0, 0.0, 1.0)
             (i == 1) && set_source_rgb(cr, 1.0, 0.0, 0.0)
@@ -214,7 +214,7 @@ function output_polygons_hierarchy_to_file(
         Q = list[2]
         set_line_width(cr, 1.5*u_width)
         set_source_rgb(cr, 1.0, 0.0, 1.0)
-        for i = 1:cardin(P)
+        for i in 1:cardin(P)
             p = P[i]
             q = Q[i]
 
@@ -246,7 +246,7 @@ function plt_show_ph(ARGS)
 
     list = Vector{PntSeq2F}()
     bb = BBox2F()
-    for i = 1:num_args
+    for i in 1:num_args
         println("Reading: ", ARGS[i])
         poly_a = read_file(ARGS[i])
         push!(list, poly_a)

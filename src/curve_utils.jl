@@ -23,7 +23,7 @@ function Polygon_simplify_ext(P::PntSeq{D,T}, r::T) where {D,T}
     end
 
     curr = P[1]
-    for i = 2:len
+    for i in 2:len
         if (fp_dist(P[i], curr) > r)
             curr = P[i]
             if (push_distinct!(pout, P[i]))
@@ -61,7 +61,7 @@ function Polygon_simplify_radii(P::PntSeq{D,T}, r::Vector{T}) where {D,T}
 
     curr = P[1]
     curr_r = r[1]
-    for i = 2:len
+    for i in 2:len
         curr_r = min(curr_r, r[i])
         if (fp_dist(P[i], curr) > curr_r)
             curr = P[i]
@@ -97,11 +97,11 @@ function Polygon_sample_uniformly(P::PntSeq{D,T}, n::Int64) where {D,T}
     new_P = PntSeq{D,T}()
     push_distinct!(new_P, first(P))
 
-    for i = 1:(cardin(P)-1)
+    for i in 1:(cardin(P)-1)
         s = Segment{D,T}(P[i], P[i+1])
 
         ns::Int64 = floor(Int64, fp_dist(P[i], P[i+1]) / delta)
-        for j = 1:ns
+        for j in 1:ns
             push_distinct!(new_P, fp_at(s, j / (ns + 1)))
         end
         push_distinct!(new_P, P[i+1])

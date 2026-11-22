@@ -102,9 +102,9 @@ function frechet_d_compute_inner(
 
     iters::Int64 = 0
     dp[1, 1] = fp_dist(P[1], Q[1])
-    for i::Int64 = 1:n_p
+    for i::Int64 in 1:n_p
         ip = max(i - 1, 1)
-        for j = 1:n_q
+        for j in 1:n_q
             iters = iters + 1
             d = fp_dist(P[i], Q[j])
             jp = max(j - 1, 1)

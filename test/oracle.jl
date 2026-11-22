@@ -15,7 +15,7 @@ is the variant FrechetDist's discrete routines compute.
 function oracle_discrete(P, Q; diagonal = true)
     n, m = length(P), length(Q)
     c = fill(Inf, n, m)
-    for i = 1:n, j = 1:m
+    for i in 1:n, j in 1:m
         best = 0.0
         if i > 1 || j > 1
             best = min(
@@ -39,7 +39,7 @@ restricts the matching to single steps, as FrechetDist's `DTW_d_compute` does.
 function oracle_dtw(P, Q; diagonal = true)
     n, m = length(P), length(Q)
     c = fill(Inf, n, m)
-    for i = 1:n, j = 1:m
+    for i in 1:n, j in 1:m
         best = 0.0
         if i > 1 || j > 1
             best = min(
@@ -96,13 +96,13 @@ function oracle_decide(P, Q, eps)
 
     # LF[i][j]: free part of segment Q[j]Q[j+1] seen from P[i]; BF[i][j]: free part of
     # segment P[i]P[i+1] seen from Q[j].
-    LF = [free_interval(Q[j], Q[j+1], P[i], eps) for i = 1:n, j = 1:(m-1)]
-    BF = [free_interval(P[i], P[i+1], Q[j], eps) for i = 1:(n-1), j = 1:m]
+    LF = [free_interval(Q[j], Q[j+1], P[i], eps) for i in 1:n, j in 1:(m-1)]
+    BF = [free_interval(P[i], P[i+1], Q[j], eps) for i in 1:(n-1), j in 1:m]
     LR = Matrix{Any}(nothing, n, m - 1)   # reachable parts of the left edges
     BR = Matrix{Any}(nothing, n - 1, m)   # reachable parts of the bottom edges
     LR[1, 1] = LF[1, 1]
     BR[1, 1] = BF[1, 1]
-    for j = 2:(m-1)
+    for j in 2:(m-1)
         prev = LR[1, j-1]
         LR[1, j] =
             (
@@ -112,7 +112,7 @@ function oracle_decide(P, Q, eps)
                 LF[1, j][1] == 0.0
             ) ? LF[1, j] : nothing
     end
-    for i = 2:(n-1)
+    for i in 2:(n-1)
         prev = BR[i-1, 1]
         BR[i, 1] =
             (
@@ -122,7 +122,7 @@ function oracle_decide(P, Q, eps)
                 BF[i, 1][1] == 0.0
             ) ? BF[i, 1] : nothing
     end
-    for i = 1:(n-1), j = 1:(m-1)
+    for i in 1:(n-1), j in 1:(m-1)
         left, bottom = LR[i, j], BR[i, j]
         LR[i+1, j] = exit_interval(bottom, left, LF[i+1, j])
         BR[i, j+1] = exit_interval(left, bottom, BF[i, j+1])

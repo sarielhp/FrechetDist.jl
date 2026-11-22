@@ -285,7 +285,7 @@ function SweepDist_compute_split(
     push!(out, deepcopy(m))
     P = m.P
     Q = m.Q
-    for i = 1:iters
+    for i in 1:iters
         P = split_edges(P)
         Q = split_edges(Q)
         mi = SweepDist_compute(P, Q)

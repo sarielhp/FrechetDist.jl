@@ -52,11 +52,11 @@ end
 function split_single_edge(P::PntSeq{D,T}, i::Int64) where {D,T}
     i = clamp(i, 1, cardin(P) - 1)
     Q = PntSeq{D,T}()
-    for t = 1:i
+    for t in 1:i
         push_distinct!(Q, P[t])
     end
     push_distinct!(Q, (P[i] + P[i+1]) / 2.0)
-    for t = (i+1):cardin(P)
+    for t in (i+1):cardin(P)
         push_distinct!(Q, P[t])
     end
     return Q
@@ -289,8 +289,8 @@ function plot_curves_diagram(
         ys = Float64[]
         vx = Float64[]
         vy = Float64[]
-        for i = 1:p_last
-            for j = 1:q_last
+        for i in 1:p_last
+            for j in 1:q_last
                 s_a = diagram_get_ev_loc(P, Q, pl, ql, i, j)
                 s_b = diagram_get_ve_loc(P, Q, pl, ql, i, j)
 
@@ -2015,7 +2015,7 @@ end
 function SW_test()
     P, Q = example_3()
 
-    for i = 1:80
+    for i in 1:80
         m = SweepDist_compute_refine_mono(P, Q)
         reportIt(m)
 

@@ -36,7 +36,7 @@ mrp = frechet_c_compute(P, Q);
 
 M = Morphing_sample_uniformly(mrp, 200);
 
-anim = @animate for i = 1:size(M, 1)
+anim = @animate for i in 1:size(M, 1)
     default(
         grid = :false,
         legend = false,

@@ -121,7 +121,7 @@ end
 # pairs. FRECHET_STRESS_SEEDS raises the number of seeds per family (default 3).
 @testset "Agreement with independent oracles" begin
     seeds = parse(Int, get(ENV, "FRECHET_STRESS_SEEDS", "3"))
-    for dim in (2, 3), (family, generate) in pair_families(; dim), seed = 1:seeds
+    for dim in (2, 3), (family, generate) in pair_families(; dim), seed in 1:seeds
         rng = MersenneTwister(hash((family, dim, seed)))
         Pv, Qv = generate(rng)
         failures = agreement_failures(Pv, Qv, rng)

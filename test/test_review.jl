@@ -30,7 +30,7 @@ mkc(coords) = PntSeq([point(c...) for c in coords])
 
     # Continuous morphings of these walks have repeated event times.
     fails = 0
-    for seed = 1:60
+    for seed in 1:60
         rng = MersenneTwister(seed)
         A = PntSeq([point(x...) for x in eachcol(cumsum(randn(rng, 3, 30), dims = 2))])
         B = PntSeq([point(x...) for x in eachcol(cumsum(randn(rng, 3, 25), dims = 2))])
@@ -162,11 +162,11 @@ end
         FD.fp_dist_segment_segment
     rng = MersenneTwister(21)
     mism = 0
-    for k = 1:20_000, D in (2, 3)
+    for k in 1:20_000, D in (2, 3)
         sc = 2.0^rand(rng, -60:60)
-        pts = [Point{D,Float64}(randn(rng, D) .* sc) for _ = 1:4]
+        pts = [Point{D,Float64}(randn(rng, D) .* sc) for _ in 1:4]
         if k % 5 == 0                       # lattice: exact ties, parallel, shared points
-            pts = [Point{D,Float64}(rand(rng, -2:2, D)) for _ = 1:4]
+            pts = [Point{D,Float64}(rand(rng, -2:2, D)) for _ in 1:4]
         end
         r1 = FD.fp_dist_segment_segment(pts...)
         r2 = ref(pts...)
@@ -185,7 +185,7 @@ end
     rng = MersenneTwister(13)
     A = PntSeq([point(x...) for x in eachcol(cumsum(randn(rng, 2, 200), dims = 2))])
     bad = 0
-    for _ = 1:3000
+    for _ in 1:3000
         i = rand(rng, 1:200)
         j = rand(rng, i:200)
         w = FD.frechet_width_approx(A, i:j)
@@ -206,7 +206,7 @@ end
     )
     rng = MersenneTwister(17)
     same = true
-    for k = 1:40
+    for k in 1:40
         D = 2 + k % 2
         A = PntSeq([
             Point{D,Float64}(x) for
@@ -239,9 +239,9 @@ end
 
     rng = MersenneTwister(4)
     viol = 0
-    for _ = 1:300
-        A = mkc([(rand(rng, 0:3) * 1.0, rand(rng, 0:3) * 1.0) for _ = 1:rand(rng, 2:6)])
-        B = mkc([(rand(rng, 0:3) * 1.0, rand(rng, 0:3) * 1.0) for _ = 1:rand(rng, 2:6)])
+    for _ in 1:300
+        A = mkc([(rand(rng, 0:3) * 1.0, rand(rng, 0:3) * 1.0) for _ in 1:rand(rng, 2:6)])
+        B = mkc([(rand(rng, 0:3) * 1.0, rand(rng, 0:3) * 1.0) for _ in 1:rand(rng, 2:6)])
         lb = FD.SweepDist_lb_compute(A, B).sol_value
         pr = FD.Morphing_SweepDist_price(FD.SweepDist_compute_refine_mono(A, B))
         lb <= pr * (1 + 1e-9) + 1e-12 || (viol += 1)
@@ -268,7 +268,7 @@ end
     # Points on a segment still give exactly zero.
     rng = MersenneTwister(2)
     nonzero = 0
-    for _ = 1:10_000
+    for _ in 1:10_000
         sc = 10.0^rand(rng, -6:8)
         a, b =
             point(randn(rng) * sc, randn(rng) * sc), point(randn(rng) * sc, randn(rng) * sc)
@@ -304,7 +304,7 @@ end
 
     # Random walks at large coordinates used to throw DomainError in sqrt.
     fails = 0
-    for seed = 1:40
+    for seed in 1:40
         rng = MersenneTwister(seed)
         A = PntSeq([
             point(x...) for x in eachcol(1.0e4 .* cumsum(randn(rng, 2, 20), dims = 2))
@@ -325,7 +325,7 @@ end
     # exact distance (e.g. subsample, seed 15: 0.333226589 > 0.333225697), the main
     # path a value other than leash / ratio, and frechet_c_compute left ratio = 0.
     bad = String[]
-    for (fname, gen) in pair_families(; dim = 2), seed = 1:15
+    for (fname, gen) in pair_families(; dim = 2), seed in 1:15
         Pv, Qv = gen(MersenneTwister(seed))
         P, Q = mkseq(Pv), mkseq(Qv)
         exact = oracle_continuous(Pv, Qv)

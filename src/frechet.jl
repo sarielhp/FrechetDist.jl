@@ -747,7 +747,7 @@ function width_leash_sq(P::PntSeq{N,T}, rng::UnitRange{Int64}, w::Float64) where
     t::Float64 = 0
     curr::Point{N,T} = s_p
     leash::Float64 = 0
-    for i = (first(rng)+1):(last(rng)-1)
+    for i in (first(rng)+1):(last(rng)-1)
         q, new_t = fp_nn_point_ext_ext(s_p, s_q, P[i], seg_len_sq, s_vec)
         if (new_t > t)
             t = new_t

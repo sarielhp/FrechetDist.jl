@@ -38,7 +38,7 @@ function frechet_c_mono_approx_subcurve(
         max_d::Float64 = 0
         max_t::Float64 = 0
         seg = Segment(Q[i], Q[i+1])
-        for j = (pind+1):(pind_next-1)
+        for j in (pind+1):(pind_next-1)
             p = P[j]
             q = fp_nn_point(seg, p)
             new_t = fp_convex_coef(seg, q)
@@ -80,11 +80,11 @@ function seg_candidate_times(times::Vector{Float64}, n_mid_points::Int64)
         push_time(times[1] / 2.0)
     end
 
-    for i = 1:length(times)
+    for i in 1:length(times)
         push_time(times[i])
         if (i < times_length) && (n_mid_points > 0)
             K = n_mid_points + 1
-            for pos = 1:(K-1)
+            for pos in 1:(K-1)
                 coef::Float64 = pos / K
                 push_time(times[i] * (1.0 - coef) + times[i+1] * coef)
             end
@@ -159,7 +159,7 @@ function is_monotone_inc(nums::Vector{Float64})
     if (len <= 1)
         return true
     end
-    for i = 1:(len-1)
+    for i in 1:(len-1)
         if nums[i] > nums[i+1]
             return false
         end
@@ -186,7 +186,7 @@ end
 function run_distinct_times(s::Vector{EventPoint{N,T}}, i::Int64, j::Int64) where {N,T}
     times = Vector{Float64}()
     push!(times, s[i].t)
-    for k = (i+1):j
+    for k in (i+1):j
         if s[k].t != last(times)
             push!(times, s[k].t)
         end
@@ -239,7 +239,7 @@ function extract_refined_polygon(
         lnx = fp_dist(poly[loc], poly[loc+1])
 
         if (is_monotone_inc(times) || (lnx < (delta / 2.0)))
-            for k = i:j
+            for k in i:j
                 push_distinct!(pout, s[k].p)
             end
         else
@@ -354,7 +354,7 @@ function frechet_mono_via_refinement_delta(
     P = Pa
     Q = Qa
     local m, mm
-    for _ = 0:64
+    for _ in 0:64
         m = FEVER_compute(P, Q)
 
         mm = Morphing_monotonize(m)

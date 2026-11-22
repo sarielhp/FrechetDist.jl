@@ -92,7 +92,7 @@ function PID_init_simp_hierarchy(PID::PolygonsInDir, f_parallel::Bool)
     println("\nInitialize simplification hierarchies...")
 
     phx = ph_init(PID.polys[1], PID.ph_lock)
-    for i = 1:length(PID.polys)
+    for i in 1:length(PID.polys)
         lock(PID.lock)
         push!(PID.PHA, phx)
         unlock(PID.lock)
@@ -102,7 +102,7 @@ function PID_init_simp_hierarchy(PID::PolygonsInDir, f_parallel::Bool)
 
     if f_parallel
         println("Doing this in parallel...")
-        Threads.@threads for i = 1:length(PID.polys)
+        Threads.@threads for i in 1:length(PID.polys)
             #println( i )
             poly = PID.polys[i]
             ph = ph_init(poly, PID.ph_lock)
@@ -118,7 +118,7 @@ function PID_init_simp_hierarchy(PID::PolygonsInDir, f_parallel::Bool)
         return
     end
 
-    for i = 1:length(PID.polys)
+    for i in 1:length(PID.polys)
         poly = PID.polys[i]
         ph = ph_init(poly, PID.ph_lock)
 
@@ -213,7 +213,7 @@ function frechet_decider_PID_slow(PID, i, j, r)::Int64
     end
 
     ratio = 4.0
-    for i = 1:100
+    for i in 1:100
         f_debug && (i > 5) && println("ratio: ", ratio)
         m = frechet_c_approx(P, Q, ratio)
         if m.leash < r
@@ -293,7 +293,7 @@ function frechet_decider_PID(PID::PolygonsInDir, i::Int64, j::Int64, r::Float64)
     f_monotone::Bool = false
     f_orig::Bool = false
 
-    for iters::Int64 = 1:20
+    for iters::Int64 in 1:20
         w_trg = delta / max(2.0, 1.0 + iters)
         if f_debug_PID
             println("-------------------------- r: ", r)
@@ -427,7 +427,7 @@ function frechet_decider_PID_new(PID, i, j, r)::Int64
 
     ratio::Float64 = 5.0
     delta = min(abs(r - lb), abs(r - ub), wP, wQ) / 10.0
-    for iters::Int64 = 1:200
+    for iters::Int64 in 1:200
         @assert(iters < 20)
         w_trg = delta / 3.0 #1.5 # / 2.0
         PA, wP = ph_approx(P_ph, w_trg)
@@ -556,7 +556,7 @@ function frechet_decider(
 
     ratio::Float64 = 5.0
 
-    for i = 1:10
+    for i in 1:10
         println("Iter: ", i)
         f_debug && (i > 5) && println("ratio: ", ratio)
         m = frechet_c_approx(P, Q, ratio)
@@ -716,7 +716,7 @@ function read_query_file(base_dir, queries_file, tests, PID)
 
     nr = nrow(df)
 
-    for i = 1:nr
+    for i in 1:nr
         s_a = df[i, 1]
         s_b = df[i, 2]
 

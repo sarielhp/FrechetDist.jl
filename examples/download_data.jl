@@ -145,7 +145,7 @@ end
 function print_headers(df)
     nmx = names(df)
     cols = length(nmx)
-    for i = 1:cols
+    for i in 1:cols
         println("[", i, "] ", nmx[i], ": ", df[1, i])
     end
 end
@@ -163,7 +163,7 @@ function splice(df, base_dir, id_col)
         end
         poly_id = df[pos, id_col]
         poly = PntSeq2F()
-        for i = pos:fin
+        for i in pos:fin
             x::Float64 = df[i, 4]
             y::Float64 = df[i, 5]
             #y = parse( Float64, df[ i, 4 ] )
@@ -191,7 +191,7 @@ end
 
 function print_columns(df)
     cols = ncol(df)
-    for i = 1:cols
+    for i in 1:cols
         println(i, ": ", names(df)[i])
     end
 end

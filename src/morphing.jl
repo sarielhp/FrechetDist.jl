@@ -122,7 +122,7 @@ function Morphing_get_max_edges_err(m::Morphing{D,T}) where {D,T}
     l_q = cardin(Q)
 
     len = length(m.pes)
-    for ind = 1:len
+    for ind in 1:len
         i = m.pes[ind].i
         j = m.qes[ind].i
 
@@ -161,7 +161,7 @@ function extract_vertex_leash(
     P_len = cardin(P)
     len = length(pes)
     vl = zeros(Float64, P_len)
-    for i = 1:len
+    for i in 1:len
         ev = pes[i]
         evx = qes[i]
         # BUG: If should not have been there... We are being very
@@ -234,7 +234,7 @@ function events_seq_is_monotone(s::Vector{EventPoint{N,T}}) where {N,T}
         end
 
         # i:j is the sequence of edge-vertex events
-        for k = i:(j-1)
+        for k in i:(j-1)
             if s[k+1].t < s[k].t
                 return false
             end
@@ -403,7 +403,7 @@ function Morphing_as_polygons_w_times(m::Morphing{N,T}) where {N,T}
     end
     c_z::Int64 = 0
     min_delta::Float64 = len
-    for i = 1:(length(P)-1)
+    for i in 1:(length(P)-1)
         delta = (fp_dist(P[i], P[i+1]) + fp_dist(Q[i], Q[i+1]))
         if (delta == 0.0)
             c_z = c_z + 1
@@ -415,7 +415,7 @@ function Morphing_as_polygons_w_times(m::Morphing{N,T}) where {N,T}
     len = len + fake_delta * c_z
 
     push!(t, 0.0)
-    for i = 1:(length(P)-1)
+    for i in 1:(length(P)-1)
         delta = (fp_dist(P[i], P[i+1]) + fp_dist(Q[i], Q[i+1]))
         if (delta == 0.0)
             delta = fake_delta
@@ -442,14 +442,14 @@ function Morphing_as_function_w_times(m::Morphing{N,T}) where {N,T}
     push!(t, 0.0)
     c_z = 0
     fake_delta = len / (4 + length(P))
-    for i = 1:(length(P)-1)
+    for i in 1:(length(P)-1)
         delta = fp_dist(P[i], P[i+1]) / len
         if (delta == 0.0)
             c_z = c_z + 1
             len = len + fake_delta
         end
     end
-    for i = 1:(length(P)-1)
+    for i in 1:(length(P)-1)
         if (fp_dist(P[i], P[i+1]) == 0.0)
             delta = fake_delta / len
         else
@@ -495,7 +495,7 @@ function Morphing_sample_uniformly(m::Morphing{N,T}, n::Int64) where {N,T}
     P, Q, times = Morphing_as_polygons_w_times(m)
 
     out = zeros(n, 2*N)
-    for i = 0:(n-1)
+    for i in 0:(n-1)
         t = i/(n-1)
         p, q = polygons_get_loc_at_time(P, Q, times, t)
         out[i+1, 1:N] .= p
@@ -673,7 +673,7 @@ function Morphing_SweepDist_approx_price(m::Morphing{N,T}) where {N,T}
     @assert(length(P) == length(Q))
     len = cardin(P)
     price::Float64 = 0
-    for i = 1:(len-1)
+    for i in 1:(len-1)
         price = price + fp_match_price(P[i], P[i+1], Q[i], Q[i+1])
     end
 
@@ -689,7 +689,7 @@ function Morphing_SweepDist_price(m::Morphing{N,T}) where {N,T}
     @assert(length(P) == length(Q))
     len = cardin(P)
     price::Float64 = 0.0
-    for i = 1:(len-1)
+    for i in 1:(len-1)
         delta::Float64 = SweepDist_segs(P[i], P[i+1], Q[i], Q[i+1])
         price = price + delta
     end

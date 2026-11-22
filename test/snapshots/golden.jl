@@ -6,7 +6,7 @@ using BasicCompGeometry
 import BasicCompGeometry: cardin, Points
 const FD = FrechetDist
 mk(D, pts) = PntSeq{D,Float64}([Point{D,Float64}(p...) for p in pts])
-mat(P) = [Points(P)[i][d] for d = 1:length(Points(P)[1]), i = 1:cardin(P)]
+mat(P) = [Points(P)[i][d] for d in 1:length(Points(P)[1]), i in 1:cardin(P)]
 conv(x::Union{FD.Morphing}) = (
     x.leash,
     mat(x.P),
@@ -25,7 +25,7 @@ function walk(D, n, seed)
     rng = MersenneTwister(seed)
     cur = zeros(D)
     pts = Vector{Vector{Float64}}()
-    for _ = 1:n
+    for _ in 1:n
         cur = cur .+ (rand(rng, D) .- 0.5) .* (1 + 3 * rand(rng))
         push!(pts, copy(cur))
     end
@@ -60,7 +60,7 @@ for (D, n, seed) in [(2, 3, 1), (2, 5, 2), (2, 60, 3), (2, 400, 4), (3, 120, 5),
     end
     rec(
         "$id/radii",
-        () -> FD.Polygon_simplify_radii(P, [0.1 + 0.05 * (i % 7) for i = 1:cardin(P)]),
+        () -> FD.Polygon_simplify_radii(P, [0.1 + 0.05 * (i % 7) for i in 1:cardin(P)]),
     )
     rec("$id/split_edges", () -> FD.split_edges(P))
     rec("$id/sample_unif", () -> FD.Polygon_sample_uniformly(P, 17))

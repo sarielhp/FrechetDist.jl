@@ -17,14 +17,14 @@ function do_profiles(polys::Vector{PntSeq{D,T}}) where {D,T}
     ratio::Float64 = 5.0
 
     M = Vector{Morphing{D,T}}()
-    for i = 2:length(polys)
+    for i in 2:length(polys)
         push!(M, frechet_c_compute(polys[1], polys[i]))
     end
 
     profiles = Vector{Vector{Float64}}()
 
     n = 400
-    for i = 1:length(M)
+    for i in 1:length(M)
         X, Y = morphing_profile(M[i], n)
         (i == 1) && push!(profiles, X)
         push!(profiles, Y)
@@ -51,7 +51,7 @@ num_args = length(ARGS);
 polys = Vector{PntSeq2F}()
 
 if num_args > 1
-    for i = 1:num_args
+    for i in 1:num_args
         println(i)
         P = read_file(ARGS[i])
         (length(P) < 10) && continue

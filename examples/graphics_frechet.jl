@@ -28,7 +28,7 @@ function output_morphing(m::Morphing{N,T}, filename) where {N,T}
     set_source_rgb(cr, 1.0, 0.0, 0.0)
 
     nv::Int64 = cardin(PS)
-    for i = 1:nv
+    for i in 1:nv
         #loc::Point2I  = sol.pnts[ i ];
 
         po::Point{N,T} = PS[i]
@@ -100,7 +100,7 @@ function output_frechet_movie(
     skip::Int64 = max(1, floor(total_output_frames / total_frames))
     f_do_skip::Bool = true
 
-    for i = 1:steps
+    for i in 1:steps
         count = 0
         if frames[i] == 0
             continue
@@ -171,7 +171,7 @@ function output_frechet_movie_mp4(
     frame_count::Int64 = 0
 
     # We first calculate the frames we need... into vec_rf...
-    for i = 1:steps
+    for i in 1:steps
         count = 0
         if frames[i] == 0
             continue
@@ -262,7 +262,7 @@ function output_ortho_frechet_movie_mp4(
     t::Float64 = 1.0
 
     # We first calculate the frames we need... into vec_rf...
-    for i = 1:total_frames
+    for i in 1:total_frames
         R = PntSeq([convex_comb(p, q, t) for (p, q) in zip(pout, qout)])
 
         ofr = ORecFrame(i, t, R)
@@ -292,7 +292,7 @@ function output_frechet_diagram(m::Morphing{N,T}, filename) where {N,T}
 
     len = length(P_coords)
     poly = PntSeq2F()
-    for i = 1:len
+    for i in 1:len
         push_distinct!(poly, point(P_coords[i], Q_coords[i]))
     end
 
@@ -310,13 +310,13 @@ function output_frechet_diagram(m::Morphing{N,T}, filename) where {N,T}
     ymax = last(qsum)
     xmax = last(psum)
 
-    for i = 1:plen
+    for i in 1:plen
         move_to(cr, psum[i], 0)
         line_to(cr, psum[i], ymax)
         Cairo.stroke(cr)
     end
 
-    for i = 1:qlen
+    for i in 1:qlen
         move_to(cr, 0, qsum[i])
         line_to(cr, xmax, qsum[i])
         Cairo.stroke(cr)

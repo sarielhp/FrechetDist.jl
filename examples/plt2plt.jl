@@ -31,7 +31,7 @@ end
 
 function plt_convert_in_file(filename)
     lines = readlines(filename)
-    for i = 1:length(lines)
+    for i in 1:length(lines)
         plt_convert(lines[i])
     end
 end
@@ -44,7 +44,7 @@ if num_args == 0
     exit(-1)
 end
 
-for i = 1:num_args
+for i in 1:num_args
     println("--- ", ARGS[i])
     plt_convert(ARGS[i])
 end

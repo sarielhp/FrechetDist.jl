@@ -30,8 +30,8 @@ function SFM_compute_costs(M::SubFrechetMatcher{N,T}) where {N,T}
     nX = M.nX
     nY = M.nY
     costs = Vector{Float64}()
-    for x = 1:nX
-        for y = 1:nY
+    for x in 1:nX
+        for y in 1:nY
             push!(costs, dist(M.X[x], M.Y[y]))
         end
     end
@@ -51,8 +51,8 @@ function SFM_build_graph(M::SubFrechetMatcher{N,T}, t::T) where {N,T}
     nX = M.nX
     nY = M.nY
     Delta = M.Delta
-    for x::Int64 = 1:nX
-        for y::Int64 = 1:nY
+    for x::Int64 in 1:nX
+        for y::Int64 in 1:nY
             # (x,y,1) ==> (x+1, y,1)
             if (x + 1) <= nX
                 c = max(dM(M, x, y), dM(M, x+1, y))
@@ -77,8 +77,8 @@ function SFM_build_graph(M::SubFrechetMatcher{N,T}, t::T) where {N,T}
     end
 
     low = 1-Delta
-    for x::Int64 = low:nX
-        for y::Int64 = 1:nY
+    for x::Int64 in low:nX
+        for y::Int64 in 1:nY
             # (x,y,2) ==> (x-1, y,2)
             if (x-1) >= low
                 add_edge!(G, M:(x, y, 2), M:(x-1, y, 2))
@@ -148,7 +148,7 @@ function frechet_comp(P::PntSeq{D,T}, Q::PntSeq{D,T})::Int64 where {D,T}
 
     println("|P|:", cardin(P), "  |Q| :", cardin(Q))
 
-    for i = 1:10
+    for i in 1:10
         println("approx( #", cardin(P), ", ", cardin(Q), ")   approx: ", ratio)
         m = frechet_c_approx(P, Q, ratio)
         if (m.ratio == 1.0)

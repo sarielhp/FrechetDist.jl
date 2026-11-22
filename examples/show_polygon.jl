@@ -16,7 +16,7 @@ function plt_show(ARGS)
 
     list = Vector{PntSeq2F}()
     bb = BBox2F()
-    for i = 1:num_args
+    for i in 1:num_args
         println("Reading: ", ARGS[i])
         poly_a = read_file(ARGS[i])
         push!(list, poly_a)

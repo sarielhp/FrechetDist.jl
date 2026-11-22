@@ -7,7 +7,7 @@ using Random, Serialization
 include(joinpath(@__DIR__, "..", "agreement.jl"))
 import BasicCompGeometry: cardin, Points
 const out = Dict{String,Any}()
-mat(P) = [Points(P)[i][d] for d = 1:length(Points(P)[1]), i = 1:cardin(P)]
+mat(P) = [Points(P)[i][d] for d in 1:length(Points(P)[1]), i in 1:cardin(P)]
 ev(e) = (Vector(e.p), e.i, Int(e.type), e.t, e.penalty)
 conv(m::FD.Morphing) = (
     m.leash,
@@ -34,7 +34,7 @@ function rec(k, f)
     end
 end
 rng = MersenneTwister(2024)
-for (fam, gen) in pair_families(), c = 1:4
+for (fam, gen) in pair_families(), c in 1:4
     Pv, Qv = gen(rng)
     P = mkseq(Pv)
     Q = mkseq(Qv)

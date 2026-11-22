@@ -14,7 +14,7 @@ function convert(filename, out)
 
     P = PntSeq2F()
     #@assert( length(x) == length(y) )
-    for i ∈ 1:nrow(df)
+    for i in 1:nrow(df)
         if ismissing(df.latitude[i])
             continue
         end
@@ -32,7 +32,7 @@ end
 
 function (@main)(ARGS)
     count = 0
-    for i ∈ 2:length(ARGS)
+    for i in 2:length(ARGS)
         count = count + 1
         outname = ARGS[1]*@sprintf("out_%03d.plt", count)
 

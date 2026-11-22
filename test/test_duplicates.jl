@@ -24,10 +24,10 @@ vecs(P) = [Vector{Float64}(p) for p in P.pnts]
 
     # Random lattice curves with repeated vertices (6 of 600 used to throw).
     function lattice(rng, n)
-        pts = [Float64.(rand(rng, 0:3, 2)) for _ = 1:n]
+        pts = [Float64.(rand(rng, 0:3, 2)) for _ in 1:n]
         return reduce(vcat, [rand(rng) < 0.3 ? [p, p] : [p] for p in pts])
     end
-    for seed = 1:300
+    for seed in 1:300
         rng = MersenneTwister(seed)
         A, B = lattice(rng, rand(rng, 3:14)), lattice(rng, rand(rng, 3:14))
         exact = oracle_continuous(A, B)

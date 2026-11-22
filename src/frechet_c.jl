@@ -179,7 +179,7 @@ function Polygon_simplify_radii_ext(P::PntSeq{N,T}, r::Vector{T}) where {N,T}
     end
 
     p_indices = Vector{Int64}()
-    for i = 1:cardin(P)
+    for i in 1:cardin(P)
         push!(p_indices, i)
     end
     @assert(cardin(P) == length(p_indices))
@@ -189,7 +189,7 @@ end
 
 function propogate_mins(qz, rounds::Int64 = 1)
     a = deepcopy(qz)
-    for r = 1:rounds
+    for r in 1:rounds
         for i in eachindex(a)
             if (i == 1) || (i == length(qz))
                 continue

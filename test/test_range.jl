@@ -11,7 +11,7 @@ include(joinpath(@__DIR__, "agreement.jl"))
     # frechet_ve_r_compute_range threw a KeyError (and printed both curves) when the
     # bound was below the VE distance, or equal to it up to rounding; FEVER_compute_range
     # falls back to a full computation. Both must now agree for every bound.
-    for seed = 1:25
+    for seed in 1:25
         rng = MersenneTwister(seed)
         P = mkseq(gen_walk(rng, rand(rng, 4:30)))
         Q = mkseq(gen_walk(rng, rand(rng, 4:30); step = 2.0))

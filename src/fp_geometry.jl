@@ -14,7 +14,7 @@
 
 @inline function fp_dot(p::Point{D,T}, q::Point{D,T}) where {D,T}
     s = zero(T)
-    @inbounds for i = 1:D
+    @inbounds for i in 1:D
         s += p[i] * q[i]
     end
     return s
@@ -22,7 +22,7 @@ end
 
 @inline function fp_dist_sq(p::Point{D,T}, q::Point{D,T})::T where {D,T}
     sum = zero(T)
-    @inbounds for i = 1:D
+    @inbounds for i in 1:D
         @fastmath sum += (p[i] - q[i])^2 # julia-audit: allow-fastmath (bit-identical to the original numerics)
     end
     return sum
@@ -30,7 +30,7 @@ end
 
 @inline function fp_dist(p::Point{D,T}, q::Point{D,T}) where {D,T}
     sum = 0.0
-    @inbounds for i = 1:D
+    @inbounds for i in 1:D
         @fastmath sum += (p[i] - q[i])^2 # julia-audit: allow-fastmath (bit-identical to the original numerics)
     end
     return sqrt(sum)
@@ -48,7 +48,7 @@ length, which distorts long edges.
     (t == 1.0) && return q
 
     o = MVector{D,T}(undef)
-    @inbounds for i = 1:D
+    @inbounds for i in 1:D
         @fastmath o[i] = p[i] + (q[i] - p[i]) * t # julia-audit: allow-fastmath (bit-identical to the original numerics)
         @assert(! isnan(o[i]))
     end

@@ -58,18 +58,18 @@ function find_closest_in_directory(path::String, threshold, si::Int64, sj::Int64
     len = length(files)
     widths = zeros(Float64, len)
 
-    for i = 1:len
+    for i in 1:len
         widths[i] = frechet_width_approx(polygons[i])
     end
 
     dists_lb = zeros(Float64, len, len)
     dists_ub = zeros(Float64, len, len)
 
-    for i = 1:len
+    for i in 1:len
         dists_ub[i, i] = Inf
     end
-    for i = 1:(len-1)
-        for j = (i+1):len
+    for i in 1:(len-1)
+        for j in (i+1):len
             P = polygons[i]
             Q = polygons[j]
             #            - widths[ i ] - widths[ j ];
@@ -88,8 +88,8 @@ function find_closest_in_directory(path::String, threshold, si::Int64, sj::Int64
     up_val = dists_ub[pos]
     println("pos :", pos)
     println("up_val: ", up_val)
-    for i = 1:(len-1)
-        for j = (i+1):len
+    for i in 1:(len-1)
+        for j in (i+1):len
             if dists_lb[i, j] > up_val
                 continue
             end

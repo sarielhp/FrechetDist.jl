@@ -175,7 +175,7 @@ end
 # Should really just get rid of tiny flatting point jitters.
 function parameterization_monotonize!(out::PntSeq2F)
     curr::Point2F = deepcopy(out[1])
-    for i = 2:cardin(out)
+    for i in 2:cardin(out)
         curr = point_max(out[i], curr)
         out[i] = curr
     end
@@ -291,7 +291,7 @@ function event_sequences_extract(prm::PntSeq2F, P::PntSeq{N,T}, Q::PntSeq{N,T}) 
     lp::Vector{Float64} = prefix_lengths(P)
     lq::Vector{Float64} = prefix_lengths(Q)
 
-    for i = 1:(cardin(prm)-1)
+    for i in 1:(cardin(prm)-1)
         curr = prm[i]
         p_loc = curr[1]
 

@@ -20,7 +20,7 @@ function wiggle_seg(O::PntSeq{D,T}, p, q, n, rate) where {D,T}
     delta = dir / (n + 1)
     curr = p
     push_distinct!(O, p)
-    for i = 1:n
+    for i in 1:n
         curr = curr + delta
         push_distinct!(O, curr + vec)
         vec = -1.0 * vec
@@ -34,7 +34,7 @@ function wiggle(P::PntSeq{D,T}, n::Int64, wave_size::Float64) where {D,T}
     O = PntSeq{D,T}()
     (geom_length(P) == 0.0) && return O
 
-    for i ∈ 1:(length(P)-1)
+    for i in 1:(length(P)-1)
         wiggle_seg(O, P[i], P[i+1], n, wave_size)
     end
 
@@ -156,7 +156,7 @@ end
 function zig_zag_x(poly::PntSeq2F, delta_x, delta_y, n::Int64, shrink::Float64 = 0.95)
 
     #    println( "n: ", n );
-    for i = 1:n
+    for i in 1:n
         p::Point2F = last(poly)
         q::Point2F = point(p[1] + delta_x, p[2] + delta_y)
         push!(poly, q)
@@ -418,7 +418,7 @@ function example_10(zigs_a::Int64, zigs_b::Int64)
 
     f_down = false
     y::Float64 = 0.0
-    for i = 1:zigs_a
+    for i in 1:zigs_a
         f_down = !f_down
         if f_down
             y = 0.0
@@ -431,7 +431,7 @@ function example_10(zigs_a::Int64, zigs_b::Int64)
 
     f_left = false
     x::Float64 = 0.0
-    for i = 1:zigs_b
+    for i in 1:zigs_b
         f_left = !f_left
         if f_left
             x = 0.0
@@ -503,7 +503,7 @@ function spiral_ext(
 )::PntSeq2F
     delta = range / k
 
-    for i = 0:k
+    for i in 0:k
         alpha = start_range + delta * i
         x = r * sin(alpha)
         y = r * cos(alpha)
@@ -658,14 +658,14 @@ function dragon_curve(k)
     P = PntSeq2F()
     P |> (0.0, 0.0) |> (0.8, 0.0) |> (1.0, 0.2) |> (1.0, 1.0)
 
-    for i = 1:k
+    for i in 1:k
         Q = deepcopy(P)
         t_a = translation(-last(Q))
         t_b = rotation(pi/2.0)
         t_c = translation(last(Q))
         u = t_c * t_b * t_a
         len = length(Q)
-        for i ∈ len:-1:1
+        for i in len:-1:1
             push!(P, apply_transform(u, Q[i]))
         end
     end

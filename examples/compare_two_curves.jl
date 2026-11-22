@@ -77,7 +77,7 @@ function frechet_comp(P::PntSeq{D,T}, Q::PntSeq{D,T})::Int64 where {D,T}
     =#
     exit(-1)
 
-    for i = 1:10
+    for i in 1:10
         println("approx( #", cardin(P), ", ", cardin(Q), ")   approx: ", ratio)
         m = frechet_c_approx(P, Q, ratio)
         exit(-1)

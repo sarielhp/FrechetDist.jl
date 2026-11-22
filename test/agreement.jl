@@ -19,7 +19,7 @@ mkseq(v) = PntSeq{length(v[1]),Float64}([Point{length(v[1]),Float64}(p...) for p
 function gen_walk(rng, n; dim = 2, step = 1.0)
     cur = zeros(dim)
     pts = Vector{Vector{Float64}}()
-    for _ = 1:n
+    for _ in 1:n
         cur = cur .+ (rand(rng, dim) .- 0.5) .* step
         push!(pts, copy(cur))
     end
@@ -30,7 +30,7 @@ end
 function gen_track(rng, n; dim = 2, noise = 1e-3)
     pts = Vector{Vector{Float64}}()
     pos, dir = zeros(dim), normalize_dir(randn(rng, dim))
-    for _ = 1:n
+    for _ in 1:n
         rand(rng) < 0.03 && (dir = normalize_dir(dir .+ 0.8 .* randn(rng, dim)))
         pos = pos .+ dir .* (0.5 + rand(rng))
         push!(pts, pos .+ noise .* randn(rng, dim))
@@ -45,7 +45,7 @@ function gen_collinear(rng, n; dim = 2)
     dir = normalize_dir(randn(rng, dim))
     t = 0.0
     pts = Vector{Vector{Float64}}()
-    for _ = 1:n
+    for _ in 1:n
         t += rand(rng) < 0.25 ? -rand(rng) : 2rand(rng)
         push!(pts, t .* dir)
     end
@@ -59,13 +59,13 @@ function gen_zigzag(rng, n; dim = 2, amplitude = 0.3)
             i * 0.2,
             (isodd(i) ? amplitude : -amplitude) * (0.5 + rand(rng)),
             zeros(dim - 2),
-        ) for i = 1:n
+        ) for i in 1:n
     ]
 end
 
-gen_grid(rng, n; dim = 2) = [Float64.(rand(rng, 0:3, dim)) for _ = 1:n]
+gen_grid(rng, n; dim = 2) = [Float64.(rand(rng, 0:3, dim)) for _ in 1:n]
 gen_circle(rng, n; dim = 2) =
-    [(a = 2pi * i / n; vcat(cos(a), sin(a), zeros(dim - 2))) for i = 0:(n-1)]
+    [(a = 2pi * i / n; vcat(cos(a), sin(a), zeros(dim - 2))) for i in 0:(n-1)]
 
 with_duplicates(rng, pts) = reduce(vcat, [rand(rng) < 0.3 ? [p, p] : [p] for p in pts])
 jitter(rng, pts, s) = [p .+ s .* randn(rng, length(p)) for p in pts]
@@ -300,7 +300,7 @@ end
 "Width approximation of random subranges, against the exact distance to the chord."
 function check_width!(fails, rng, P, Pv, scale)
     length(Pv) >= 3 || return
-    for _ = 1:3
+    for _ in 1:3
         i = rand(rng, 1:(length(Pv)-2))
         j = rand(rng, (i+2):length(Pv))
         w, err = run_case("frechet_width_approx", () -> FD.frechet_width_approx(P, i:j))
@@ -319,7 +319,7 @@ end
 "Simplifications must stay within their requested width of the original curve."
 function check_simplifications!(fails, rng, P, Pv, scale)
     length(Pv) >= 3 || return
-    total = sum(oracle_dist(Pv[i], Pv[i+1]) for i = 1:(length(Pv)-1))
+    total = sum(oracle_dist(Pv[i], Pv[i+1]) for i in 1:(length(Pv)-1))
     for frac in (0.02, 0.1, 0.4)
         w = frac * total / max(1, length(Pv) - 1) * 3
         w > 0 || continue

@@ -18,7 +18,7 @@ function plt_convert(filename, target)
     df=CSV.read(filename, DataFrame)
 
     poly = PntSeq2F()
-    for i = 1:nrow(df)
+    for i in 1:nrow(df)
         #println( typeof( df[i,1] ) );
         #println( typeof( df[i,2] ) );
 
@@ -39,7 +39,7 @@ function (@main)(ARGS)
         exit(-1)
     end
 
-    for i = 1:num_args
+    for i in 1:num_args
         target = replace(ARGS[i], ".csv" => ".plt")
 
         println("--- ", ARGS[i])
