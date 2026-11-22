@@ -188,6 +188,18 @@ end
     @test checked == 40 && waits > 0
 end
 
+@testset "Per-edge functions reject non-finite vertices (P10)" begin
+    P = mkc([(0.0, 0.0), (1.0, NaN), (2.0, 0.0), (3.0, 5.0)])
+    Q = mkc([(0.0, 0.0), (3.0, 5.0)])
+    @test outcome(() -> FD.frechet_width_approx(P)) isa ArgumentError
+    @test outcome(() -> FD.frechet_width_exceeds(P, 1:4, 1.0)) isa ArgumentError
+    @test outcome(() -> FD.frechet_offsets(P, [1, 4])) isa ArgumentError
+    @test outcome(() -> FD.frechet_palette(P)) isa ArgumentError
+    @test outcome(() -> FD.frechet_c_mono_approx_subcurve(P, Q, [1, 4])) isa ArgumentError
+    Pinf = mkc([(0.0, 0.0), (1.0, Inf), (2.0, 0.0), (3.0, 5.0)])
+    @test outcome(() -> FD.frechet_width_approx(Pinf)) isa ArgumentError
+end
+
 @testset "DTW and sweep distance report their objective in sol_value" begin
     rng = MersenneTwister(5)
     A = PntSeq([point(x...) for x in eachcol(cumsum(randn(rng, 2, 30), dims = 2))])

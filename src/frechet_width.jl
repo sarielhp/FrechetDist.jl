@@ -62,6 +62,15 @@ function width_leash_sq(P::PntSeq{N,T}, rng::UnitRange{Int64}, w::Float64) where
         leash = max(leash, fp_dist_sq(curr, P[i]))
         (sqrt(leash) > w) && return leash
     end
+    # A NaN or infinite coordinate in P[rng] makes the maximum NaN or Inf, and NaN
+    # never returns early: detected here at no extra cost, instead of checking every
+    # vertex on every call, which would make the callers quadratic.
+    isfinite(leash) || throw(
+        ArgumentError(
+            "frechet_width_approx: a vertex in $rng has a non-finite coordinate " *
+            "(or the width overflows)",
+        ),
+    )
     return leash
 end
 
