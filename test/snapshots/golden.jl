@@ -111,7 +111,7 @@ mktempdir() do dir
         g,
         "h1\nh2\nh3\nh4\nh5\nh6\n39.9,116.3,0,492,39744.12,2008-10-23,02:53:04\n39.9,116.3,0,492,39744.12,2008-10-23,02:53:05\n39.95,116.4,0,492,39744.13,2008-10-23,02:53:06\n",
     )
-    rec("read_geolife", () -> FD.read_geolife_plt(g))
+    rec("read_geolife", () -> BasicCompGeometry.ReadWrite.read_geolife_plt(g))
 end
 serialize(ARGS[1], out)
 println("wrote ", length(out), " entries")
