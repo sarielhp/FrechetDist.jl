@@ -1,6 +1,32 @@
 # Change log
     What had changed...
 
+Unreleased
+==========
+
+Fixed (results change, see `docs/review-2026-11.md`):
+* `Morphing_combine` (and so the stitching in `frechet_c_compute`) on long curves: breakpoints on the middle curve were merged when within a relative 1e-6 of their arc-length position, 2 units at position 1e6, giving leashes up to 159 times too large. `fp_equal` now uses 1e-12 (M15).
+* `Polygon_simplify_ext` no longer ends with a zero-length edge when the last vertex was already kept (M14); `frechet_c_approx` keeps its leash and bounds, its morphings lose one event pair.
+* `Morphing_from_prm` and `Morphing_combine` give each repeated vertex its own event (M13); before, all but the last copy had none, and their radius was 0.
+* `morphing_profile`: `X` runs to the distance both points travel, `|P| + |Q|` of the morphing, matching the times it samples (before: to `|P|`) (M16).
+* `Morphing_as_polygons_w_times`, `Morphing_sample_uniformly`, `morphing_profile` and `Morphing_as_function_w_times`: steps where nothing moves (or `P` does not move) take no time; they got made-up durations before, which shifted the samples.
+* `frechet_c_compute` with `f_accept_approx` accepts within a factor `1 + tolerance`, not a fixed 1.00001 that ignored a smaller `tolerance`; same results with the default tolerance.
+* `DTW_d_compute`: same price, bit for bit; between couplings of equal price it can return another one, and `iters` is now the number of cells.
+* `frechet_width_approx`, `frechet_width_exceeds`, `frechet_offsets`, `frechet_palette` and `frechet_c_mono_approx_subcurve` reject NaN or infinite vertices with an `ArgumentError`; they returned NaN, `false` or a meaningless leash.
+
+Faster (same results):
+* `DTW_d_compute` by dynamic programming: 66x faster on random walks at n = 2000, 1/36 of the memory.
+* `SweepDist_compute`: 1.9x faster on unrelated curves at n = 1000, a quarter of the allocation.
+* `FEVER_compute(_range)`: 4x faster on similar curves at n = 1000 (the event arrays are no longer filled on every call).
+
+Documentation:
+* Every export has a docstring and is in the manual (new pages: Simplification, Sweep distance, Low level); the docs build fails on a missing one; the site has a `stable` link again.
+* Docstrings and comments: typos and wording; `Morphing_combine` returns `v(u(.))`; `Morphing_monotonize` may return its input.
+
+Other:
+* One search loop each for VE and FEVER (`ve_search!`, `fever_search!`).
+* The example shell scripts keep temporary files under `${TMPDIR:-/tmp}/$USER/FrechetDist/`.
+
 v3.0.0 Release Notes
 ====================
 (November 22, 2026)
