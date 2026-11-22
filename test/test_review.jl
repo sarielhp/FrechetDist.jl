@@ -154,7 +154,7 @@ end
     @test outcome(() -> FD.Morphing_verify_valid(bad)) isa AE
 end
 
-@testset "fp_dist_segment_segment: no allocation, same values as the LAPACK solve" begin
+@testset "fp_dist_segment_segment: no allocation, agrees with the LAPACK solve" begin
     a, b, c, d = point(0.0, 0.0), point(1.0, 0.2), point(0.3, 1.0), point(0.5, -1.0)
     FD.fp_dist_segment_segment(a, b, c, d)
     # Coverage counters allocate (CI runs the tests with coverage on).
@@ -174,7 +174,14 @@ end
         end
         r1 = FD.fp_dist_segment_segment(pts...)
         r2 = ref(pts...)
-        r1 === r2 || (mism += 1)
+        # LAPACK results depend on the CPU kernel (OpenBLAS), so bits can differ
+        # across machines; the values must agree to rounding.
+        isapprox(
+            r1,
+            r2;
+            rtol = 1.0e-9,
+            atol = 1.0e-10 * maximum(p -> maximum(abs, p), pts),
+        ) || (mism += 1)
     end
     @test mism == 0
 end
