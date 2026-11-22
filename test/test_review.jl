@@ -248,3 +248,9 @@ end
     end
     @test viol == 0
 end
+
+@testset "fp_dist_point_segment beyond the far end of a long segment" begin
+    s_p, s_q = point(0.0, 0.0), point(1.0e6, 0.0)
+    qr = point(1.0e6 + 2.0^-10, 2.0^-10)   # exactly representable
+    @test FD.fp_dist_point_segment(qr, s_p, s_q) ≈ sqrt(2.0) * 2.0^-10 rtol = 1e-12
+end

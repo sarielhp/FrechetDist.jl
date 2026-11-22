@@ -171,7 +171,9 @@ Distance from `qr` to the segment `s_p`-`s_q`, computed from the quadratic
         if (t < 0)
             val = c
         elseif (t > 1)
-            val = a + b + c
+            # |s_q - qr|^2 directly: a + b + c cancels when qr is near the end of a
+            # long segment.
+            val = fp_dist_sq(qr, s_q)
         else
             val = a*t^2 + b*t + c
             if (val < 1.0e-8 * c)
