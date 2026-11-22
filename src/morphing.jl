@@ -665,17 +665,18 @@ end
 
 
 ###########################################################################
-# Compute the morphing src(v) -> trg(u): That is u(v(t))
+# Compute the morphing src(u) -> trg(v): that is, v(u(t))
 ###########################################################################
 
 """
-    Morphing_combine
+    Morphing_combine( u, v )
 
 Takes two morphings u, v (i.e., two parameterizations) and combines them
-into a single morphing u(v(.)).
+into a single morphing v(u(⋅)): first u, then v.
 
 For example, if u: γ → δ  and  v: δ → ξ, then the returned morphing is
-u(v(⋅)): γ → ξ.
+v(u(⋅)): γ → ξ, from `u.P` to `v.Q`. The middle curves `u.Q` and `v.P` must
+have the same length (they are normally the same curve).
 
 """
 function Morphing_combine(u::Morphing{N,T}, v::Morphing{N,T}) where {N,T}
