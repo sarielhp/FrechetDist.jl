@@ -44,3 +44,6 @@ data_old
 \#*#
 .#*
 *~
+
+# Claude Code agent worktrees
+/.claude/worktrees/
