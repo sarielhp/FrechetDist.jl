@@ -318,16 +318,14 @@ end
 Computes the discrete Frechet distance between the two curves by
 sampling them.
 
-It first samples the two curves roughly uniformly. n is supposed to
-be the number of vertices, but the output might be a sample that is
-slightly bigger, as the code tries to ensure the vertices are being
-picked.
+It first samples the two curves uniformly: about `n` points in total, split between
+the curves in proportion to their lengths. Each sample also keeps every vertex
+of its curve, so it can have up to that many more points.
 
 # Arguments
 
-- `n`: number of vertices to add when "refining" the two curves. The
-  number of vertices computed might be larger (but hopefully not much
-  larger).
+- `n`: about the number of sample points to place on the two curves together,
+  besides their vertices.
 
 - f_lopt
      true: Use the retractable Frechet distance version

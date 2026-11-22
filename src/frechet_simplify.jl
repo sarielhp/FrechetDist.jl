@@ -26,7 +26,9 @@ function find_frechet_prefix_inner(
         return find_frechet_prefix_inner(P, strt, i, mid - 1, w)
     end
 
-    # No reason to waste time?
+    # P[strt:mid] is within w. If the rest of the range could extend this prefix
+    # by at most a tenth, accept it instead of searching on: a slightly shorter
+    # prefix only costs the simplification an extra vertex now and then.
     if (j - mid) <= ((j - strt) ÷ 10)
         return mid
     end

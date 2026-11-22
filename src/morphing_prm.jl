@@ -48,7 +48,8 @@ function Morphing_extract_prm(m::Morphing{N,T})::PntSeq2F where {N,T}
 
     check_times(m.qes)
 
-    # pps and qps are two
+    # pps[k] and qps[k] are the arc-length positions of the k-th event on P and
+    # on Q; the pairs (pps[k], qps[k]) are the vertices of the parameterization.
     pps::Vector{Float64} = extract_param_inner(P, peout)
     qps::Vector{Float64} = extract_param_inner(Q, qeout)
 

@@ -2,8 +2,9 @@
 # fever.jl
 #
 # An attempt to implement a faster version of the VE Retractable
-# Fréchet distance. The idea is to use static arrays to minimize
-# dynamic algorithms.
+# Fréchet distance. The idea is to keep the value and the predecessor of
+# every event in arrays allocated once and indexed by event id, instead of
+# the dictionaries that grow during the search in frechet.jl.
 ##################################################################3
 
 const ID_START::Int64 = 1
