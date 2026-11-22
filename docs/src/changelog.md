@@ -1,8 +1,10 @@
 # Change log
     What had changed...
 
-Unreleased (since v2.2.2)
-=========================
+v3.0.0 Release Notes
+====================
+(November 22, 2026)
+
 Breaking:
 * `SweepDist_compute_split` and `frechet_mono_via_refinement_ext` are renamed `SweepDist_compute_split!` and `frechet_mono_via_refinement_ext!`, and take the `out` vector first: `SweepDist_compute_split!(out, P, Q, iters, max_vertices)`, `frechet_mono_via_refinement_ext!(out, P, Q, f_snapshots, approx)`.
 * Only `Float64` curves are accepted; other element types raise `ArgumentError` at the entry point (before, a `MethodError` or `InexactError` from inside).
@@ -19,6 +21,7 @@ Fixed (results change, see `docs/review-2026-11.md`):
 Other:
 * Widths, bounds and times accept any real number (for example an `Int` width).
 * Faster: `fp_dist_segment_segment` no longer allocates (`SweepDist_lb_compute` 13x faster), concrete queue types, linear width scans in the simplifiers.
+* `frechet_c_compute` restructured (named tuning constants, helper functions); same results.
 * Uses BasicCompGeometry for points, curves, `norm`, `geom_length` and `prefix_lengths`.
 * Follows the Julia standards: the lifecycle tools in `tools/`, explicit imports, one standalone module per test file, Aqua in the test suite, formatting with `always_for_in = true`.
 
