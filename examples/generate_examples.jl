@@ -792,7 +792,7 @@ function create_demo(
 
         f_debug && println("A8...")
 
-        SweepDist_compute_split(poly_a, poly_b, m_SweepDist_vec, 7, 2000)
+        SweepDist_compute_split!(m_SweepDist_vec, poly_a, poly_b, 7, 2000)
 
         for i in eachindex(m_SweepDist_vec)
             mr = m_SweepDist_vec[i]
@@ -811,7 +811,7 @@ function create_demo(
     #println( "BOGI!\n\n\n\n" );
     if f_refinements
         m_refinements = Vector{Morphing2F}()
-        frechet_mono_via_refinement_ext(poly_a, poly_b, m_refinements, true, 1.000000001)
+        frechet_mono_via_refinement_ext!(m_refinements, poly_a, poly_b, true, 1.000000001)
         f_debug && println("m_refinements.len: ", length(m_refinements))
     end
 

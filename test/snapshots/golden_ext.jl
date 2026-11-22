@@ -7,6 +7,11 @@ using Random, Serialization
 include(joinpath(@__DIR__, "..", "agreement.jl"))
 import BasicCompGeometry: cardin, Points
 const out = Dict{String,Any}()
+# compare.rb runs this script against older revisions too, from before the rename.
+mono_ref_ext!(o, P, Q, snaps, approx) =
+    isdefined(FD, :frechet_mono_via_refinement_ext!) ?
+    FD.frechet_mono_via_refinement_ext!(o, P, Q, snaps, approx) :
+    getfield(FD, :frechet_mono_via_refinement_ext)(P, Q, o, snaps, approx)
 mat(P) = [Points(P)[i][d] for d in 1:length(Points(P)[1]), i in 1:cardin(P)]
 ev(e) = (Vector(e.p), e.i, Int(e.type), e.t, e.penalty)
 conv(m::FD.Morphing) = (
@@ -57,7 +62,7 @@ for (fam, gen) in pair_families(), c in 1:4
         "$id/mono_ref_ext",
         () -> (
             o = Vector{FD.Morphing2F}();
-            r = FD.frechet_mono_via_refinement_ext(P, Q, o, true, 1.001);
+            r = mono_ref_ext!(o, P, Q, true, 1.001);
             (r[1], r[2], r[3], r[4], Tuple(o))
         ),
     )

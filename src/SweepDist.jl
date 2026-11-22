@@ -270,14 +270,14 @@ function SweepDist_compute_refine_mono(poly_a::PntSeq{N,T}, poly_b::PntSeq{N,T})
     return m_new
 end
 
-function SweepDist_compute_split(
+function SweepDist_compute_split!(
+    out::Vector{Morphing{N,T}},
     poly_a::PntSeq{N,T},
     poly_b::PntSeq{N,T},
-    out::Vector{Morphing{N,T}},
     iters::Int64,
     max_vertices::Int64 = 1000000,
 ) where {N,T}
-    check_curves(poly_a, poly_b, "SweepDist_compute_split"; min_vertices = 2)
+    check_curves(poly_a, poly_b, "SweepDist_compute_split!"; min_vertices = 2)
 
     m = SweepDist_compute_refine_mono(poly_a, poly_b)
     Morphing_verify_valid(m)

@@ -268,15 +268,15 @@ function frechet_refinement(P::PntSeq{N,T}, Q::PntSeq{N,T}, m::Morphing{N,T}) wh
 end
 
 
-function frechet_mono_via_refinement_ext(
+function frechet_mono_via_refinement_ext!(
+    out::Vector{Morphing{N,T}},
     Pa::PntSeq{N,T},
     Qa::PntSeq{N,T},
-    out::Vector{Morphing{N,T}},
     f_snapshots::Bool,
     approx::Real = 1.00001,
 ) where {N,T}
-    check_curves(Pa, Qa, "frechet_mono_via_refinement_ext"; min_vertices = 2)
-    approx = check_approx(approx, "frechet_mono_via_refinement_ext"; exceed_one = false)
+    check_curves(Pa, Qa, "frechet_mono_via_refinement_ext!"; min_vertices = 2)
+    approx = check_approx(approx, "frechet_mono_via_refinement_ext!"; exceed_one = false)
     if (approx <= 1.0)
         approx = 1.0000001
     end
@@ -290,7 +290,7 @@ function frechet_mono_via_refinement_ext(
     rounds::Int = 0
     while true
         rounds += 1
-        check_rounds(rounds, "frechet_mono_via_refinement_ext")
+        check_rounds(rounds, "frechet_mono_via_refinement_ext!")
         m = frechet_ve_r_compute(P, Q)
         mm = Morphing_monotonize(m)
 
@@ -423,5 +423,5 @@ function frechet_mono_via_refinement(
     check_curves(Pa, Qa, "frechet_mono_via_refinement"; min_vertices = 2)
     approx = check_approx(approx, "frechet_mono_via_refinement"; exceed_one = false)
     ot::Vector{Morphing{N,T}} = Vector{Morphing{N,T}}()
-    return frechet_mono_via_refinement_ext(Pa, Qa, ot, false, approx)
+    return frechet_mono_via_refinement_ext!(ot, Pa, Qa, false, approx)
 end

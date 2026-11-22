@@ -77,7 +77,7 @@ export frechet_ve_r_compute_range
 export FEVER_compute_range, FEVER_compute
 
 
-export frechet_mono_via_refinement, frechet_mono_via_refinement_ext
+export frechet_mono_via_refinement, frechet_mono_via_refinement_ext!
 
 export frechet_ve_r_compute_ext
 
@@ -98,7 +98,7 @@ export DTW_d_compute
 export SweepDist_compute
 export SweepDist_lb_compute
 export SweepDist_compute_refine_mono
-export SweepDist_compute_split
+export SweepDist_compute_split!
 
 #########################################################################
 # Palette: Is an array of floats that encodes approximation info about
