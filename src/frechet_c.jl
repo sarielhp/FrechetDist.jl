@@ -106,8 +106,6 @@ function frechet_c_approx(
 
 
     t_approx::Float64 = approx
-    @assert((cardin(poly_a) > 1) && (cardin(poly_b) > 1))
-    @assert(approx > 1.0)
 
     f_do_one_round::Bool = true
     d = frechet_dist_upper_bound(poly_a, poly_b)
@@ -174,7 +172,6 @@ function Polygon_simplify_radii_ext(P::PntSeq{N,T}, r::Vector{T}) where {N,T}
     PS, p_indices = Polygon_simplify_radii(P, r)
     @assert(length(p_indices) == cardin(PS))
     if (cardin(PS) <= (cardin(P) / 2))
-        @assert(cardin(PS) == length(p_indices))
         return PS, p_indices, false
     end
 
@@ -182,7 +179,6 @@ function Polygon_simplify_radii_ext(P::PntSeq{N,T}, r::Vector{T}) where {N,T}
     for i in 1:cardin(P)
         push!(p_indices, i)
     end
-    @assert(cardin(P) == length(p_indices))
     return P, p_indices, true
 end
 

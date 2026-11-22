@@ -95,7 +95,6 @@ function frechet_simplify_to_cardin(P::PntSeq{D,T}, sz::Int64) where {D,T}
     pout = PntSeq{D,T}()
     pindices = Vector{Int64}()
 
-    @assert(cardin(P) >= 2)
     if sz <= 2
         push!(pindices, 1, cardin(P))
         return spine(P), pindices

@@ -279,7 +279,6 @@ function frechet_mono_via_refinement_ext(
     approx = check_approx(approx, "frechet_mono_via_refinement_ext"; exceed_one = false)
     if (approx <= 1.0)
         approx = 1.0000001
-        @assert(approx > 1.0)
     end
 
     mm::Morphing{N,T} = Morphing_empty(Pa, Qa)
