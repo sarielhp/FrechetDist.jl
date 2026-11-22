@@ -90,3 +90,35 @@ end
     m = FD.frechet_c_compute(B, B)
     @test outcome(() -> FD.Morphing_SweepDist_price(m)) == 0.0
 end
+
+@testset "Invalid arguments raise ArgumentError" begin
+    P = mkc([(0.0, 0.0), (1.0, 1.0), (2.0, 0.0)])
+    Q = mkc([(0.0, 1.0), (1.0, 2.0), (2.0, 1.0)])
+    AE = ArgumentError
+    for bad in (NaN, -1.0, Inf)
+        offs = [0.0, bad, 0.0]
+        @test outcome(() -> FD.frechet_ve_r_compute_ext(P, Q, offs, zeros(3), true)) isa AE
+    end
+    R = mkc([(1.0, 1.0), (2.0, 0.0)])
+    @test outcome(() -> FD.frechet_c_mono_approx_subcurve(P, R, [2, 3])) isa AE
+    @test outcome(() -> FD.frechet_c_mono_approx_subcurve(P, R, [1, 2])) isa AE
+    @test outcome(() -> FD.frechet_width_approx(P, 2:7)) isa AE
+    plt = FD.frechet_palette(P)
+    @test outcome(() -> FD.frechet_palette_approx(P, plt[1:2], 1.0)) isa AE
+    @test outcome(() -> FD.frechet_palette_level(P, plt[1:2], 1)) isa AE
+    m = FD.frechet_ve_r_compute(P, Q)
+    @test outcome(() -> FD.Morphing_combine(FD.Morphing_empty(P, Q), m)) isa AE
+    @test outcome(() -> FD.simplify_morphing_sensitive(m, 0.0)) isa AE
+    @test outcome(() -> FD.frechet_simplify_to_cardin(P, -5)) isa AE
+
+    # Wrong extra arguments are a MethodError, not a claimed dimension mismatch.
+    @test outcome(() -> FD.frechet_c_compute(P, Q, 1e-3)) isa MethodError
+    @test outcome(() -> FD.frechet_c_approx(P, Q)) isa MethodError
+    P3 = mkc([(0.0, 0.0, 0.0), (1.0, 1.0, 1.0)])
+    @test outcome(() -> FD.frechet_c_compute(P, P3)) isa AE
+
+    # Event ids must still decode when j == n_q + 1 for the largest allowed n_q.
+    j = FD.MAX_VERTICES + 1
+    @test FD.EID_j(FD.EID(3, false, j, true)) == j
+    @test FD.EID_i(FD.EID(3, false, j, true)) == 3
+end

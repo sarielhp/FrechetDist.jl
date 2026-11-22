@@ -7,8 +7,11 @@
 "Largest coordinate magnitude accepted: squared distances must not overflow."
 const MAX_COORDINATE = 1.0e150
 
-"Largest number of vertices: event ids pack a vertex index into 30 bits."
-const MAX_VERTICES = 2^30 - 1
+"""
+Largest number of vertices: event ids pack a vertex index into 30 bits, and the search
+forms ids for index `n + 1` (one past the last vertex), which must still fit.
+"""
+const MAX_VERTICES = 2^30 - 2
 
 """
 Largest number of refinement rounds the iterative algorithms (`frechet_c_compute`,
@@ -84,6 +87,22 @@ function check_tolerance(tolerance::Real, who::AbstractString)
     return t
 end
 
+"""
+    check_offsets( offs, who, what )
+
+Throws unless every entry of `offs` is finite and non-negative.
+"""
+function check_offsets(offs::Vector{Float64}, who::AbstractString, what::AbstractString)
+    for x in offs
+        (isfinite(x) && x >= 0) || throw(
+            ArgumentError(
+                "$who: the entries of $what must be finite and non-negative (got $x)",
+            ),
+        )
+    end
+    return nothing
+end
+
 "Throws unless `x` (a width, bound, or radius) is finite and non-negative."
 function check_nonnegative(x::Real, who::AbstractString, what::AbstractString)
     (isfinite(x) && x >= 0) ||
@@ -126,7 +145,8 @@ function check_indices(indices::Vector{Int64}, n::Int, who::AbstractString)
 end
 
 # Curves of different dimension or coordinate type do not match the typed methods;
-# say so instead of reporting a MethodError listing every method.
+# say so instead of reporting a MethodError listing every method. Matching curves with
+# wrong further arguments are a plain MethodError.
 for f in (
     :frechet_c_compute,
     :frechet_c_approx,
@@ -140,7 +160,13 @@ for f in (
     :frechet_mono_via_refinement,
     :frechet_dist_upper_bound,
 )
-    @eval function $f(P::PntSeq, Q::PntSeq, args...; kwargs...)
+    @eval function $f(
+        P::PntSeq{D1,T1},
+        Q::PntSeq{D2,T2},
+        args...;
+        kwargs...,
+    ) where {D1,T1,D2,T2}
+        (D1 == D2 && T1 === T2) && throw(MethodError($f, (P, Q, args...)))
         throw(
             ArgumentError(
                 $(string(f)) *

@@ -576,6 +576,10 @@ function frechet_ve_r_compute_ext(
             ),
         )
     end
+    if f_use_offsets
+        check_offsets(p_offs, "frechet_ve_r_compute_ext", "p_offs")
+        check_offsets(q_offs, "frechet_ve_r_compute_ext", "q_offs")
+    end
     c = FR_Context(P, Q)
 
     if f_use_offsets
@@ -662,6 +666,9 @@ function frechet_width_approx(P::PntSeq{N,T}, rng::UnitRange{Int64} = 0:0)::T wh
     if (rng == 0:0)
         rng = 1:card
     end
+    (isempty(rng) || (1 <= first(rng) && last(rng) <= card)) || throw(
+        ArgumentError("frechet_width_approx: range $rng is outside the vertices 1:$card"),
+    )
 
     if (length(rng) <= 2)
         return 0

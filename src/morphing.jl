@@ -613,8 +613,8 @@ function Morphing_combine(u::Morphing{N,T}, v::Morphing{N,T}) where {N,T}
     u_prm = Morphing_extract_prm(u)
     v_prm = Morphing_extract_prm(v)
 
-    @assert(cardin(u_prm) > 1)
-    @assert(cardin(v_prm) > 1)
+    (cardin(u_prm) > 1 && cardin(v_prm) > 1) ||
+        throw(ArgumentError("Morphing_combine: both morphings need at least two events"))
 
     #println( "b5678" );
     prm = parameterization_combine(v_prm, u_prm)

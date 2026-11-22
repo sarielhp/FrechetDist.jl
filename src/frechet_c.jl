@@ -250,6 +250,11 @@ end
 
 
 function simplify_morphing_sensitive(m::Morphing{D,T}, factor::Float64) where {D,T}
+    (isfinite(factor) && factor > 0.0) || throw(
+        ArgumentError(
+            "simplify_morphing_sensitive: factor must be finite and positive (got $factor)",
+        ),
+    )
     pl, ql = Morphing_extract_vertex_radii(m)
 
     lower_bound = m.lower_bound

@@ -93,6 +93,9 @@ returned even if it has fewer than `sz + 2` vertices.
 """
 function frechet_simplify_to_cardin(P::PntSeq{D,T}, sz::Int64) where {D,T}
     check_curve(P, "frechet_simplify_to_cardin", "the curve")
+    sz >= 0 || throw(
+        ArgumentError("frechet_simplify_to_cardin: sz must be non-negative (got $sz)"),
+    )
     pout = PntSeq{D,T}()
     pindices = Vector{Int64}()
 

@@ -31,8 +31,19 @@ the nubmer of vertices of Q, but the approximation might be of low
 quality.
 
 """
-frechet_palette_approx(P::PntSeq{N,T}, plt::Vector{T}, w::T) where {N,T} =
-    PH.palette_extract(P, plt, w)
+function frechet_palette_approx(P::PntSeq{N,T}, plt::Vector{T}, w::T) where {N,T}
+    check_palette(P, plt, "frechet_palette_approx")
+    return PH.palette_extract(P, plt, w)
+end
+
+function check_palette(P::PntSeq, plt::Vector, who::AbstractString)
+    length(plt) == cardin(P) || throw(
+        ArgumentError(
+            "$who: the palette has $(length(plt)) entries; the curve has $(cardin(P)) vertices",
+        ),
+    )
+    return nothing
+end
 
 """
     frechet_palette_level
@@ -42,6 +53,7 @@ approximation.
 
 """
 function frechet_palette_level(P::PntSeq{N,T}, plt::Vector{T}, level::Int64) where {N,T}
+    check_palette(P, plt, "frechet_palette_level")
     pout, pout_is = PH.palette_level(P, plt, level)
     return pout, pout_is
 end

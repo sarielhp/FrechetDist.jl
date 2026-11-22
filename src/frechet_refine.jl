@@ -72,6 +72,11 @@ function frechet_c_mono_approx_subcurve(
         ),
     )
     check_indices(p_indices, cardin(P), "frechet_c_mono_approx_subcurve")
+    (first(p_indices) == 1 && last(p_indices) == cardin(P)) || throw(
+        ArgumentError(
+            "frechet_c_mono_approx_subcurve: the indices must start at 1 and end at $(cardin(P))",
+        ),
+    )
     offsets = zeros(T, length(p_indices))
 
     pes = Vector{EventPoint{N,T}}()
