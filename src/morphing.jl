@@ -402,7 +402,9 @@ function Morphing_as_polygons_w_times(m::Morphing{N,T}) where {N,T}
 
     len = geom_length(P) + geom_length(Q)
     if len == 0.0
-        return P, Q, zeros(length(P))
+        # Nothing moves: spread the events uniformly so that every time in [0, 1]
+        # falls between two of them.
+        return P, Q, collect(range(0.0, 1.0, length = length(P)))
     end
     c_z::Int64 = 0
     min_delta::Float64 = len
@@ -482,51 +484,29 @@ function polygons_get_loc_at_time(
     (1 < pos <= length(P)) ||
         error("polygons_get_loc_at_time: time $t is outside the event times")
 
-    #=
-    println( "POS : ", pos );
-    (pos > 1 )  &&  println( "t[pos-1]: ", times[ pos - 1 ] )
-    println( "t[pos]: ", times[ pos ] )
-    println( "qeury: ", t );
-    =#
+    # searchsortedfirst gives times[pos-1] < t <= times[pos], so the denominator is
+    # positive. Repeated times (zero-duration steps of the morphing) need no special
+    # case: the bracket never straddles them.
     prev = pos - 1
-
-    while (prev > 1) && (times[prev-1] == times[prev])
-        prev = prev - 1
-    end
-    while (pos < length(times)) && (times[pos] == times[pos+1])
-        pos = pos + 1
-    end
-    @assert(times[prev] <= t <= times[pos])
-
-    if ((prev + 1) == pos)
-        delta = (t - times[prev]) / (times[pos] - times[prev])
-        p = fp_convex_comb(P[prev], P[pos], delta)
-        q = fp_convex_comb(Q[prev], Q[pos], delta)
-        #println( "DDD: ", fp_dist( P[prev], Q[prev ] ), " PREV ", prev,
-        #         "times: ", times[prev ] );
-        return p, q
-    end
-
-    # The morphing had stopped at this point, and we should return the
-    # maximum in this duration...
-    @assert(false)
-
-
+    delta = (t - times[prev]) / (times[pos] - times[prev])
+    p = fp_convex_comb(P[prev], P[pos], delta)
+    q = fp_convex_comb(Q[prev], Q[pos], delta)
     return p, q
 end
 
 function Morphing_sample_uniformly(m::Morphing{N,T}, n::Int64) where {N,T}
+    n >= 2 ||
+        throw(ArgumentError("Morphing_sample_uniformly: need at least 2 samples (got $n)"))
     P, Q, times = Morphing_as_polygons_w_times(m)
 
-    m = zeros(n, 2*N)
+    out = zeros(n, 2*N)
     for i = 0:(n-1)
         t = i/(n-1)
         p, q = polygons_get_loc_at_time(P, Q, times, t)
-        m[i+1, :] = [p...; q...]
-        #        m[ i, : ] = [ p... ; p... ];
+        out[i+1, :] = [p...; q...]
     end
 
-    return m
+    return out
 end
 
 function Morphing_is_monotone(m::Morphing{N,T}) where {N,T}
@@ -685,9 +665,9 @@ function morphing_profile(m::Morphing{D,T}, n::Int64) where {D,T}
     X = range(0, lP, length = n)
 
     Y = Vector{Float64}()
-    for x ∈ X
-        pos = x / lP
-        #println( " pos : ", pos );
+    for (k, x) in enumerate(X)
+        # A zero-length P gives x / lP = NaN; sample the times uniformly instead.
+        pos = (lP == 0.0) ? (n == 1 ? 0.0 : (k - 1) / (n - 1)) : x / lP
         p, q = polygons_get_loc_at_time(PB, QB, times, pos)
         push!(Y, fp_dist(p, q))
     end

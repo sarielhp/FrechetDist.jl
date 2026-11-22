@@ -86,6 +86,7 @@ include("test_range.jl")
 include("test_silence.jl")
 include("test_hygiene.jl")
 include("agreement.jl")
+include("test_review.jl")
 
 @testset "Oracles" begin
     # Two parallel unit segments, one at distance 1.
