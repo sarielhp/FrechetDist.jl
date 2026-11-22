@@ -6,8 +6,6 @@
 # dynamic algorithms.
 ##################################################################3
 
-using DataStructures
-
 const ID_START::Int64 = 1
 const ID_END::Int64 = 2
 
@@ -95,7 +93,6 @@ mutable struct EventsOrder{T} <: Base.Order.Ordering
     values::Vector{T}
 end
 
-import Base.Order.lt
 function lt(o::EventsOrder, a::Int64, b::Int64)
     return isless(o.values[a], o.values[b])
 end

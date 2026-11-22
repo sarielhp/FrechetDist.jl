@@ -8,9 +8,6 @@
 # the Frechet distance.
 #---------------------------------------------------------
 
-using Parameters
-using DataStructures
-
 include("DistFunc.jl");
 
 

@@ -3,14 +3,18 @@
 
 module FrechetDist
 
-using Parameters
-using LinearAlgebra
-using DataStructures
+using BasicCompGeometry: BasicCompGeometry, PntSeq, PntSeq2F, Point, Point2F, Segment
+using BasicCompGeometry: cardin, geom_length, point, point_max, prefix_lengths
+using BasicCompGeometry: push_distinct!, split_edges
+using BasicCompGeometry.ReadWrite: ReadWrite, read_plt
+using DataStructures: DataStructures, BinaryHeap, BinaryMinHeap, PriorityQueue
+using DataStructures: dequeue!, enqueue!
+using LinearAlgebra: LinearAlgebra, lq, norm, qr, rank
+using Parameters: Parameters, @with_kw
+using StaticArrays: StaticArrays, MVector
 
-using StaticArrays
-using BasicCompGeometry
-import BasicCompGeometry: cardin, push_distinct!, split_edges, prefix_lengths
-using BasicCompGeometry.ReadWrite
+# Extended for the event ordering of FEVER (fever.jl).
+import Base.Order: lt
 
 include("fp_geometry.jl")
 include("curve_utils.jl")
