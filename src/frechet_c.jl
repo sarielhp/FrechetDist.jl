@@ -183,7 +183,7 @@ function Polygon_simplify_radii_ext(P::PntSeq{N,T}, r::Vector{T}) where {N,T}
 end
 
 
-function propogate_mins(qz, rounds::Int64 = 1)
+function propagate_mins!(qz, rounds::Int64 = 1)
     a = deepcopy(qz)
     for r in 1:rounds
         for i in eachindex(a)
@@ -251,8 +251,8 @@ function simplify_morphing_sensitive(m::Morphing{D,T}, factor::Float64) where {D
     pz = ((lower_bound * ones(length(pl))) - pl) / factor
     qz = ((lower_bound * ones(length(ql))) - ql) / factor
 
-    propogate_mins(pz, 1)
-    propogate_mins(qz, 1)
+    propagate_mins!(pz, 1)
+    propagate_mins!(qz, 1)
 
 
     PS, p_indices, f_PS_exact = Polygon_simplify_radii_ext(m.P, pz)
@@ -377,8 +377,8 @@ function frechet_c_compute(
 
         # Propogate the do not move by doing a local min convolution. The current code is 
         # not efficient.
-        propogate_mins(pz, 8)
-        propogate_mins(qz, 8)
+        propagate_mins!(pz, 8)
+        propagate_mins!(qz, 8)
 
         f_PS_exact::Bool = false
         f_QS_exact::Bool = false

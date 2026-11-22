@@ -14,7 +14,7 @@ FrechetDist.frechet_c_mono_approx_subcurve
 FrechetDist.frechet_mono_via_refinement
 FrechetDist.frechet_ve_r_mono_compute
 FrechetDist.Morphing_from_prm
-FrechetDist.add_points_along_seg
+FrechetDist.add_points_along_seg!
 FrechetDist.EID
 FrechetDist.SweepDist_segs
 FrechetDist.frechet_offsets

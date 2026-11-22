@@ -267,10 +267,10 @@ end
     return true
 end
 
-@inline function f_r_schedule_event(
+@inline function f_r_schedule_event!(
+    c::FRContext{N,T},
     id::Int64,
     prev_id::Int64,
-    c::FRContext{N,T},
 ) where {N,T}
     if ! is_schedule_event(c.dict, id, c.n_p, c.n_q)
         return
@@ -564,7 +564,7 @@ function frechet_ve_r_compute_range(
     start_id = EID(1, true, 1, true)
 
     end_id = EID(c.n_p, true, c.n_q, true)
-    f_r_schedule_event(start_id, start_id, c)
+    f_r_schedule_event!(c, start_id, start_id)
 
     heapAlt = c.heapAlt
     while ! isempty(heapAlt)
@@ -576,8 +576,8 @@ function frechet_ve_r_compute_range(
         j = EID_j(id)
 
         if id == start_id
-            f_r_schedule_event(EID(1, false, 1, true), id, c)
-            f_r_schedule_event(EID(1, true, 1, false), id, c)
+            f_r_schedule_event!(c, EID(1, false, 1, true), id)
+            f_r_schedule_event!(c, EID(1, true, 1, false), id)
             continue
         end
 
@@ -587,12 +587,12 @@ function frechet_ve_r_compute_range(
                 break
             end
             if is_final_cell(id, c.n_p, c.n_q)
-                f_r_schedule_event(end_id, id, c)
+                f_r_schedule_event!(c, end_id, id)
                 continue
             end
         end
-        f_r_schedule_event(EID(i+1, true, j, false), id, c)
-        f_r_schedule_event(EID(i, false, j+1, true), id, c)
+        f_r_schedule_event!(c, EID(i+1, true, j, false), id)
+        f_r_schedule_event!(c, EID(i, false, j+1, true), id)
     end
 
     if ! haskey(c.dict, end_id)
@@ -648,7 +648,7 @@ function frechet_ve_r_compute_ext(
     start_id = EID(1, true, 1, true)
 
     end_id = EID(c.n_p, true, c.n_q, true)
-    f_r_schedule_event(start_id, start_id, c)
+    f_r_schedule_event!(c, start_id, start_id)
 
     #end_event_i::TreeVertex = start_event;
     iters = 0
@@ -663,8 +663,8 @@ function frechet_ve_r_compute_ext(
         j = EID_j(id)
 
         if id == start_id #is_start_event( id )
-            f_r_schedule_event(EID(1, false, 1, true), id, c)
-            f_r_schedule_event(EID(1, true, 1, false), id, c)
+            f_r_schedule_event!(c, EID(1, false, 1, true), id)
+            f_r_schedule_event!(c, EID(1, true, 1, false), id)
             continue
         end
 
@@ -675,11 +675,11 @@ function frechet_ve_r_compute_ext(
 
         # Is it on the boundary of the final cell?
         if is_final_cell(id, c.n_p, c.n_q)
-            f_r_schedule_event(end_id, id, c)
+            f_r_schedule_event!(c, end_id, id)
             continue
         end
-        f_r_schedule_event(EID(i+1, true, j, false), id, c)
-        f_r_schedule_event(EID(i, false, j+1, true), id, c)
+        f_r_schedule_event!(c, EID(i+1, true, j, false), id)
+        f_r_schedule_event!(c, EID(i, false, j+1, true), id)
     end
 
     #@time

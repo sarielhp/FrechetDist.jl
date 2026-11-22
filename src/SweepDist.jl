@@ -134,7 +134,7 @@ function is_sw_schedule_event(
 end
 
 
-function SW_schedule_event(id::Int64, id_prev::Int64, c::SDContext{N,T}) where {N,T}
+function SW_schedule_event!(c::SDContext{N,T}, id::Int64, id_prev::Int64) where {N,T}
     if ! is_sw_schedule_event(c.handled, id, c.n_p, c.n_q)
         return
     end
@@ -204,8 +204,8 @@ function SweepDist_compute(P::PntSeq{N,T}, Q::PntSeq{N,T}) where {N,T}
         j = EID_j(id)
 
         if id == start_id
-            SW_schedule_event(EID(1, false, 1, true), id, c)
-            SW_schedule_event(EID(1, true, 1, false), id, c)
+            SW_schedule_event!(c, EID(1, false, 1, true), id)
+            SW_schedule_event!(c, EID(1, true, 1, false), id)
             continue
         end
 
@@ -217,11 +217,11 @@ function SweepDist_compute(P::PntSeq{N,T}, Q::PntSeq{N,T}) where {N,T}
 
         # Is it on the boundary of the final cell?
         if is_final_cell(ev.id, c.n_p, c.n_q)
-            SW_schedule_event(id_end, ev.id, c)
+            SW_schedule_event!(c, id_end, ev.id)
             continue
         end
-        SW_schedule_event(EID(i+1, true, j, false), id, c)
-        SW_schedule_event(EID(i, false, j+1, true), id, c)
+        SW_schedule_event!(c, EID(i+1, true, j, false), id)
+        SW_schedule_event!(c, EID(i, false, j+1, true), id)
     end
 
     pes, qes = f_r_extract_solution_basic(P, Q, id_end, c.prev_map)

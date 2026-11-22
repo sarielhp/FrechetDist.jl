@@ -61,7 +61,7 @@ mutable struct FeverCoords
     j_is_vert::Bool
 end
 
-@inline function ID_get_fields(e::EIDCalc, id::Int64, fc::FeverCoords)::Int64
+@inline function ID_get_fields!(fc::FeverCoords, e::EIDCalc, id::Int64)::Int64
     if (id == ID_START)
         fc.i = 1
         fc.j = 1
@@ -217,7 +217,7 @@ end
 end
 
 
-@inline function fever_schedule_event(
+@inline function fever_schedule_event!(
     c::FEVERContext{N,T},
     cell::FeverCell,
     prev_id::Int64,
@@ -301,7 +301,7 @@ function fever_comp_leash(
     while curr <= len
         id_curr::Int64 = arr[curr]
 
-        ID_get_fields(eid, id_curr, fc)
+        ID_get_fields!(fc, eid, id_curr)
         l_min = max(l_min, c.vals[id_curr])
 
         if (fc.i_is_vert && fc.j_is_vert)
@@ -315,7 +315,7 @@ function fever_comp_leash(
             curr = curr + 1
             continue
         end
-        ID_get_fields(eid, arr[hi], fe)
+        ID_get_fields!(fe, eid, arr[hi])
         if (fc.i_is_vert && (! fc.j_is_vert))
             q_a = Q[fc.j]
             q_b = Q[fc.j+1]
@@ -360,7 +360,7 @@ function fever_extract_morphing(
     while curr <= len
         id_curr::Int64 = arr[curr]
 
-        ID_get_fields(eid, id_curr, fc)
+        ID_get_fields!(fc, eid, id_curr)
         leash = c.vals[id_curr]
 
         pe::EventPoint = f_r_create_event(P, fc.i, fc.i_is_vert, Q[fc.j])
@@ -409,12 +409,12 @@ function FEVER_compute_range(P::PntSeq{N,T}, Q::PntSeq{N,T}, upper_bound::Real) 
         id = pop!(heap)
 
         if id == ID_START
-            fever_schedule_event(c, FeverCell(1, false, 1, true), id)
-            fever_schedule_event(c, FeverCell(1, true, 1, false), id)
+            fever_schedule_event!(c, FeverCell(1, false, 1, true), id)
+            fever_schedule_event!(c, FeverCell(1, true, 1, false), id)
             continue
         end
 
-        ID_get_fields(eid, id, fc)
+        ID_get_fields!(fc, eid, id)
 
         if (fc.i >= n_pm) && (fc.j >= n_qm)
             # Is it the *final* event?
@@ -434,8 +434,8 @@ function FEVER_compute_range(P::PntSeq{N,T}, Q::PntSeq{N,T}, upper_bound::Real) 
                 continue
             end
         end
-        fever_schedule_event(c, FeverCell(fc.i+1, true, fc.j, false), id)
-        fever_schedule_event(c, FeverCell(fc.i, false, fc.j+1, true), id)
+        fever_schedule_event!(c, FeverCell(fc.i+1, true, fc.j, false), id)
+        fever_schedule_event!(c, FeverCell(fc.i, false, fc.j+1, true), id)
     end
 
     if (! f_reached_end)
@@ -484,12 +484,12 @@ function FEVER_compute(P::PntSeq{N,T}, Q::PntSeq{N,T}) where {N,T}
         id = pop!(heap)
 
         if id == ID_START
-            fever_schedule_event(c, FeverCell(1, false, 1, true), id)
-            fever_schedule_event(c, FeverCell(1, true, 1, false), id)
+            fever_schedule_event!(c, FeverCell(1, false, 1, true), id)
+            fever_schedule_event!(c, FeverCell(1, true, 1, false), id)
             continue
         end
 
-        ID_get_fields(eid, id, fc)
+        ID_get_fields!(fc, eid, id)
 
         if (fc.i >= n_pm) && (fc.j >= n_qm)
             # Is it the *final* event?
@@ -502,8 +502,8 @@ function FEVER_compute(P::PntSeq{N,T}, Q::PntSeq{N,T}) where {N,T}
                 continue
             end
         end
-        fever_schedule_event(c, FeverCell(fc.i+1, true, fc.j, false), id)
-        fever_schedule_event(c, FeverCell(fc.i, false, fc.j+1, true), id)
+        fever_schedule_event!(c, FeverCell(fc.i+1, true, fc.j, false), id)
+        fever_schedule_event!(c, FeverCell(fc.i, false, fc.j+1, true), id)
     end
     out_arr = fever_extract_sol_ids(P, Q, c.prev)
 

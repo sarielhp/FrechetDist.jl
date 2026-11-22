@@ -101,7 +101,7 @@ function Morphing_init(
         false,
         0.0, # lower_bound
     )
-    Morphing_recompute_leash(m)
+    Morphing_recompute_leash!(m)
 
     return m
 end
@@ -344,7 +344,7 @@ function events_seq_get_monotone_leash(
 end
 
 
-function Morphing_recompute_leash(m::Morphing{N,T}) where {N,T}
+function Morphing_recompute_leash!(m::Morphing{N,T}) where {N,T}
     @assert(length(m.pes) == length(m.qes))
     r = 0.0
     for i in eachindex(m.pes)

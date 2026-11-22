@@ -87,11 +87,11 @@ end
 end
 
 
-function frechet_d_compute_inner(
-    P::PntSeq{D,T},
-    Q::PntSeq{D,T},
+function frechet_d_compute_inner!(
     dp::Array{Float64,2},
     dp_dec_i,
+    P::PntSeq{D,T},
+    Q::PntSeq{D,T},
 ) where {D,T}
     d::Float64 = 0
     jp::Int64 = 0
@@ -141,7 +141,7 @@ function frechet_d_compute(P::PntSeq{D,T}, Q::PntSeq{D,T}) where {D,T}
     dp::Array{Float64,2} = Array{Float64,2}(undef, n_p, n_q)
     dp_dec_i = falses(n_p, n_q)
 
-    iters = frechet_d_compute_inner(P, Q, dp, dp_dec_i)
+    iters = frechet_d_compute_inner!(dp, dp_dec_i, P, Q)
 
     m = d_frechet_extract_solution(P, Q, dp_dec_i, n_p, n_q)
     m.iters = iters

@@ -100,7 +100,7 @@ end
 
 
 """
-    add_points_along_seg
+    add_points_along_seg!( pout, times, seg, n_mid_points = 1 )
 
 # Arguments
 
@@ -112,7 +112,7 @@ seg: t[1], t[2], .... , t[end]
 
 Add points along seg at time stamps specified by t, and add points in
 the middle between them (i.e., refining segment). These new points are
-added the output polygon pout.
+added the output polygon pout. `times` is sorted and deduplicated in place.
 
 Note, that one can set n_mid_points to be larger than 1, but it does
 not seem to be necessary/benefitial from the experimentation we did.
@@ -120,10 +120,10 @@ not seem to be necessary/benefitial from the experimentation we did.
 Output:
      Sorted( t[1]/2, t[1], (t[1]+t[2])/2, t[2],...)
 """
-function add_points_along_seg(
+function add_points_along_seg!(
     pout::PntSeq{N,T},
-    seg::Segment{N,T},
     times::Vector{Float64},
+    seg::Segment{N,T},
     n_mid_points::Int64 = 1,
 ) where {N,T}
     sort!(times)
@@ -251,7 +251,7 @@ function extract_refined_polygon(
                 n_times = round(Int64, clamp(lnx / delta, 1.0, 3.0))
             end
             seg = Segment(poly[loc], poly[loc+1])
-            add_points_along_seg(pout, seg, times, n_times)
+            add_points_along_seg!(pout, times, seg, n_times)
         end
         i = j + 1
     end
