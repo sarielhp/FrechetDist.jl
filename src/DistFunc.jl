@@ -1,195 +1,51 @@
+# The sweep distance between two segments: the integral of the leash length while
+# a point moves along one segment and its partner along the other, both at
+# proportional speeds.
 #
-# DistFunction is (informally) a function encoding the distance of a
-# point moving on a line, to its nearest point on another line.
-#•
-# More formally, it is a function of the form:
+# With the leash v(s) = vs + s w, s in [0, 1] (vs = q_a - p_a, w = (q_b - p_b) - vs),
 #
-# f(x) = sqrt( a*x^2 + b*x + c ) where a,b,c are constants, and the
-# function is well defined for all x.
+#     |v(s)|^2 = a (s - t0)^2 + h^2,   a = |w|^2,  t0 = -<vs, w> / a,  h = |v(t0)|,
 #
-#
-using Parameters
-using StaticArrays
-using LinearAlgebra
+# so the integral is sqrt(a) * the integral of sqrt(u^2 + k^2), k = h / sqrt(a), over
+# u in [-t0, 1 - t0], which has a closed form. Computing h from the vector v(t0)
+# (rather than from the discriminant 4ac - b^2) and evaluating the closed form
+# without subtracting nearly equal terms keeps the result accurate to a few ulps at
+# every scale.
 
+"""
+    sqrt_quad_integral( u1, u2, k )
 
-#@with_kw
-mutable struct DistFunction{T}
-    a::T
-    b::T
-    c::T
-
-    disc::T  # discriminant
-    f_linear::Bool
-    root::T
-end
-
-function DFunction(_a::T = 0.0, _b::T = 0.0, _c::T = 0.0) where {T}
-    return DistFunction(_a, _b, _c, zero(T), false, zero(T))
-end
-
-function normalize(f::DistFunction{T}) where {T}
-    f.disc = f.b*f.b - 4.0*f.a*f.c
-    if (abs(f.disc) < 1e-13)
-        f.f_linear = true
-        f.root = -f.b/(2.0*f.a)
+The integral of `sqrt(u^2 + k^2)` over `u` in `[u1, u2]`, for `k >= 0` and an
+interval of width one (`u2 - u1 == 1` is used exactly). The antiderivative is
+`(u s + k^2 asinh(u / k)) / 2` with `s = sqrt(u^2 + k^2)`; it is odd, so an interval
+around 0 adds two positive terms, and an interval on one side is rewritten so that
+no two nearly equal terms are subtracted.
+"""
+function sqrt_quad_integral(u1::Float64, u2::Float64, k::Float64)
+    k2 = k * k
+    if u1 < 0.0 < u2
+        F(u) = (u * sqrt(u * u + k2) + (k2 == 0.0 ? 0.0 : k2 * asinh(u / k))) / 2
+        return F(u2) - F(u1)
     end
-    return f
-end
-
-function dist_func(_a, _b, _c)
-    f = DFunction(_a, _b, _c)
-
-    return normalize(f)
-end
-
-
-
-
-function d_eval(f::DistFunction{T}, x::T) where {T}
-    v = f.a*x*x + f.b*x + f.c
-    if (v < 1e-16)
-        return 0.0
+    if u2 <= 0.0                 # mirror to 0 <= u1 < u2
+        u1, u2 = -u2, -u1
     end
-    return sqrt(v)
+    s1 = sqrt(u1 * u1 + k2)
+    s2 = sqrt(u2 * u2 + k2)
+    # u2 s2 - u1 s1, using u2 - u1 = 1.
+    d1 = (u2 + u1) * (u2 * u2 + u1 * u1 + k2) / (u2 * s2 + u1 * s1)
+    # k^2 (asinh(u2 / k) - asinh(u1 / k)) = k^2 log((u2 + s2) / (u1 + s1)).
+    d2 = (k2 == 0.0) ? 0.0 : k2 * log1p((1.0 + (u2 + u1) / (s2 + s1)) / (u1 + s1))
+    return (d1 + d2) / 2
 end
 
 """
-    intgral_alpha
+    SweepDist_segs_p( p_a, p_b, q_a, q_b )
 
-returns the integral of the function f, for the value x. This integral
-was computed by woflram alpha. It seems to be wrong(?).
-
-"""
-
-function integral_alpha(f::DistFunction{T}, x::T) where {T}
-    f_x = d_eval(f, x)
-    sqrt_f_x = sqrt(f_x)
-    sqrt_a = sqrt(f.a)
-
-    bax = f.b + 2.0 * f.a * x
-    b_sq = f.b*f.b
-
-    un = b_sq - 4.0 * f.a * f.c
-
-    A = (bax * sqrt_f_x) / (4.0 * f.a)
-
-    ll = un * log(bax + 2.0 * sqrt_a * sqrt_f_x)
-
-    B = - ll / (8.0 * sqrt_a * f.a)
-
-    return A + B
-end
-
-"""
-    intgral
-
-returns the integral of the function f, for the value x. This integral
-was computed by sage math.
-
-"""
-function integral(f::DistFunction{T}, x::T) where {T}
-    v = d_eval(f, x)
-
-    tmp_a = 4.0 * f.a * f.c
-    tmp_b = f.b*f.b
-
-    val::Float64 = tmp_a - tmp_b
-    if (abs(val) < 1e-10)
-        val = 0.0
-    end
-
-    local as
-    if (val == 0.0)
-        as = 64
-    else
-        t = (2.0*f.a*x + f.b) / sqrt(val)
-        as = asinh(t)
-    end
-    A = f.c * as / (2.0*sqrt(f.a))
-    B = - (f.b^2 / (8.0*f.a^(3/2))) * as
-    C = (x/2.0) * v
-    D = (f.b/(4.0 * f.a)) * v
-
-    return A + B + C + D
-end
-
-
-"""
-    DistFunc_verify_integral
-
-Verifies the intergral function presented above.  Since we got the
-integral of the function f from software (i.e., sagemath), and I was
-too lazy to verify it by hand, I did a numerical verification.
-
-"""
-function DistFunc_verify_integral(a, b, c, x)
-    f = DFunction(a, b, c)
-
-    delta = x/2.0
-    local v, diff
-    for i = 1:14
-        l = x - delta
-        h = x + delta
-        diff = (integral(f, h) - integral(f, l)) / (2.0*delta)
-        v = d_eval(f, x)
-        delta = delta / 2.0
-    end
-    print("f (", x, "): ", v, "        ")
-    println("f - F' ", v - diff)
-end
-
-function DistFunc_verify_integral_2(a, b, c)
-    DistFunc_verify_integral(a, b, c, 0.354)
-    DistFunc_verify_integral(a, b, c, 0.1354)
-    DistFunc_verify_integral(a, b, c, 1.1354)
-    DistFunc_verify_integral(a, b, c, 5.1354)
-    DistFunc_verify_integral(a, b, c, 7.1354)
-    DistFunc_verify_integral(a, b, c, 17.254)
-    DistFunc_verify_integral(a, b, c, 15.254)
-end
-
-function DistFunc_verify_integral_ext()
-    DistFunc_verify_integral_2(1.0, 1.0, 1.0)
-
-    DistFunc_verify_integral_2(1.0, 1.0, 10.0)
-    DistFunc_verify_integral_2(1.0, 1.0, 100.0)
-    DistFunc_verify_integral_2(1.0, 2.0, 100.0)
-end
-
-"""
-    inegral_interval
-
-    Return the integral of f over an interval.
-"""
-function integral_interval(f::DistFunction{T}, low, high) where {T}
-    @assert(low <= high)
-
-    if (low == high)
-        return 0
-    end
-    if (f.f_linear)
-        if ((f.root <= low) || (f.root >= high))
-            val = (high - low) * (d_eval(f, low) + d_eval(f, high)) / 2.0
-            return val
-        end
-        v_l = (f.root - low) * d_eval(f, low) / 2.0
-        v_r = (high - f.root) * d_eval(f, high) / 2.0
-        return v_l + v_r
-    end
-    return integral(f, high) - integral(f, low)
-    #ymin::Float64 = integral( f, 0.0 );
-
-end
-
-
-"""
-    SweepDist_segs_p
-
-Return the oriented Sweep distance (i.e., continuous dynamic time wrapping)
-distance between two oriented segments. To this end, we compute the
-distance function, and then compute its integrval.
-
+The oriented sweep distance (continuous dynamic time warping) between the oriented
+segments `p_a p_b` and `q_a q_b`: the integral, over the arc length of `p_a p_b`, of
+the distance between the point on `p_a p_b` and the corresponding point (at the same
+fraction of the way) on `q_a q_b`.
 """
 function SweepDist_segs_p(
     p_a::Point{D,T},
@@ -197,57 +53,25 @@ function SweepDist_segs_p(
     q_a::Point{D,T},
     q_b::Point{D,T},
 ) where {D,T}
+    L = fp_dist(p_a, p_b)
+    L == 0.0 && return 0.0
 
-    len_edge_p = fp_dist(p_a, p_b)
-    if fp_equal(p_a, p_b) || (len_edge_p == 0.0)
-        return 0.0
-    end
+    vs = q_a - p_a
+    w = (q_b - p_b) - vs
+    a = fp_dot(w, w)
+    a == 0.0 && return L * norm(vs)    # a translation (or identical segments)
 
-    @assert(len_edge_p > 0.0)
-
-    v_start = q_a - p_a
-    v_end = q_b - p_b
-
-    # `<=`: for identical segments both sides are 0, and the general formula
-    # below would divide 0 by 0.
-    if fp_dist(v_start, v_end) <= 0.0000001 * norm(v_start)
-        return len_edge_p * norm(v_start)
-    end
-
-    diff::Point{D,T} = v_end - v_start
-
-    p_diff::Point{D,T} = (1.0 / len_edge_p) * diff
-    # Location of the point at time t along the edge p.
-    # p(t) := (t / len_edge_p) * diff + v_start;
-    # p(t) := t  * p_diff + v_start;
-    #
-    # f(t) := ||p(t)|| = <p(t), p(t)>
-    #       = t^2 * ||p_diff||^2 + 2*<p_diff,v_start> + <v_start,v_start>
-    a = fp_dot(p_diff, p_diff)
-    b = 2.0 * fp_dot(p_diff, v_start)
-    c = fp_dot(v_start, v_start)
-
-    f = dist_func(a, b, c)
-
-    vl = integral_interval(f, 0.0, len_edge_p)
-
-    #ymax::Float64 = integral( f, len_edge_p );
-    #ymin::Float64 = integral( f, 0.0 );
-    #vl::Float64 = ymax - ymin;
-
-    isnan(vl) && error("SweepDist_segs_p: the integral of the leash length is NaN")
-
-    return vl
+    t0 = -fp_dot(vs, w) / a            # parameter of the shortest leash
+    h = norm(vs + t0 * w)              # its length
+    ra = sqrt(a)
+    return L * ra * sqrt_quad_integral(-t0, 1.0 - t0, h / ra)
 end
 
-
 """
-    SweepDist_segs
+    SweepDist_segs( p_a, p_b, q_a, q_b )
 
-Finally, compute the CDTW between two (oriented) segmets ``p_a p_b``
-and ``q_a q_b``. Its simply the sum of teh two oriented integrals of
-the distance.
-
+The sweep distance (continuous dynamic time warping) between the segments
+``p_a p_b`` and ``q_a q_b``: the sum of the two oriented integrals of the distance.
 """
 function SweepDist_segs(
     p_a::Point{D,T},

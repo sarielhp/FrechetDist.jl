@@ -278,3 +278,42 @@ end
     end
     @test nonzero == 0
 end
+
+@testset "Sweep price: accurate at every scale, no spurious errors" begin
+    # Near-translation: the leash stays about 1 long (was classified as |linear|, got 1.0).
+    p_a, p_b = point(0.0, 0.0), point(1.0, 0.0)
+    q_a, q_b = point(0.0, 1.0), point(1.0 + 1.2e-7, 1.0 - 7.2e-15)
+    @test FD.SweepDist_segs(p_a, p_b, q_a, q_b) ≈ 2.0 rtol = 1e-6
+
+    # Parallel 1 m segments 100 m apart at UTM-like coordinates (was 0: fp_equal).
+    for O in (0.0, 1.0e6, 4.0e6)
+        @test FD.SweepDist_segs(
+            point(O, O),
+            point(O + 1, O),
+            point(O, O + 100),
+            point(O + 1, O + 100),
+        ) ≈ 200.0 rtol = 1e-9
+    end
+
+    # Scale invariance: price(s x) = s^2 price(x).
+    pts = (point(0.3, -0.2), point(1.1, 0.9), point(-0.4, 0.5), point(0.8, -1.3))
+    base = FD.SweepDist_segs(pts...)
+    for s in (1.0e-9, 1.0e-6, 1.0e4, 1.0e8)
+        @test FD.SweepDist_segs((s .* p for p in pts)...) / s^2 ≈ base rtol = 1e-12
+    end
+
+    # Random walks at large coordinates used to throw DomainError in sqrt.
+    fails = 0
+    for seed = 1:40
+        rng = MersenneTwister(seed)
+        A = PntSeq([
+            point(x...) for x in eachcol(1.0e4 .* cumsum(randn(rng, 2, 20), dims = 2))
+        ])
+        B = PntSeq([
+            point(x...) for x in eachcol(1.0e4 .* cumsum(randn(rng, 2, 20), dims = 2))
+        ])
+        r = outcome(() -> FD.Morphing_SweepDist_price(FD.frechet_ve_r_compute(A, B)))
+        (r isa Real && isfinite(r)) || (fails += 1)
+    end
+    @test fails == 0
+end
