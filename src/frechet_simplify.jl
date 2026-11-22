@@ -14,8 +14,7 @@ function find_frechet_prefix_inner(
     if (i >= j) || ((strt + 1) == j)
         return j # the width is zero, nothing to do.
     end
-    r = frechet_width_approx(P, strt:j)
-    if (r <= w)
+    if !frechet_width_exceeds(P, strt:j, w)
         return j
     end
     if (i+1) == j
@@ -23,8 +22,7 @@ function find_frechet_prefix_inner(
     end
     j = j - 1
     mid = (i + j) >> 1
-    r_m = frechet_width_approx(P, strt:mid)
-    if (r_m > w)
+    if frechet_width_exceeds(P, strt:mid, w)
         return find_frechet_prefix_inner(P, strt, i, mid - 1, w)
     end
 
@@ -38,8 +36,7 @@ function find_frechet_prefix_inner(
 end
 
 function find_frechet_prefix(P::PntSeq{D,T}, i::Int64, j::Int64, w::T) where {D,T}
-    r = frechet_width_approx(P, i:j)
-    if (r <= w)
+    if !frechet_width_exceeds(P, i:j, w)
         return j
     end
     return find_frechet_prefix_inner(P, i, i, j, w)
@@ -139,8 +136,7 @@ function exp_search_width_prefix(P::PntSeq{N,T}, start::Int64, w::Float64) where
 
     (hi >= len) && return hi
     while hi < len
-        r = frechet_width_approx(P, start:hi)
-        (r > w) && return min(hi + 5, len)
+        frechet_width_exceeds(P, start:hi, w) && return min(hi + 5, len)
         hi = start + 2 * (hi - start)
     end
 

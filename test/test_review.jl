@@ -180,3 +180,19 @@ end
         @test all(isconcretetype, fieldtypes(T))
     end
 end
+
+@testset "frechet_width_exceeds agrees with frechet_width_approx" begin
+    rng = MersenneTwister(13)
+    A = PntSeq([point(x...) for x in eachcol(cumsum(randn(rng, 2, 200), dims = 2))])
+    bad = 0
+    for _ = 1:3000
+        i = rand(rng, 1:200)
+        j = rand(rng, i:200)
+        w = FD.frechet_width_approx(A, i:j)
+        for v in (w, prevfloat(w), nextfloat(w), 0.5w, 2w, 0.0)
+            v >= 0 || continue
+            FD.frechet_width_exceeds(A, i:j, v) == (w > v) || (bad += 1)
+        end
+    end
+    @test bad == 0
+end

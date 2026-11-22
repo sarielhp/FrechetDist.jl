@@ -674,6 +674,13 @@ function frechet_width_approx(P::PntSeq{N,T}, rng::UnitRange{Int64} = 0:0)::T wh
         return 0
     end
 
+    return sqrt(width_leash_sq(P, rng, Inf))
+end
+
+# The squared greedy width of P[rng] against its spine (rng has at least 3 vertices).
+# Stops early once sqrt of the running maximum exceeds `w`: the maximum only grows and
+# sqrt is monotone, so the comparison with `w` is decided at that point.
+function width_leash_sq(P::PntSeq{N,T}, rng::UnitRange{Int64}, w::Float64) where {N,T}
     s_p = P[first(rng)]
     s_q = P[last(rng)]
 
@@ -685,15 +692,29 @@ function frechet_width_approx(P::PntSeq{N,T}, rng::UnitRange{Int64} = 0:0)::T wh
     leash::Float64 = 0
     for i = (first(rng)+1):(last(rng)-1)
         q, new_t = fp_nn_point_ext_ext(s_p, s_q, P[i], seg_len_sq, s_vec)
-        #q = fp_nn_point( seg, P[ i ] );
-        #new_t = fp_convex_coef( seg, q );
         if (new_t > t)
             t = new_t
             curr = q
         end
         leash = max(leash, fp_dist_sq(curr, P[i]))
+        (sqrt(leash) > w) && return leash
     end
-    return sqrt(leash)
+    return leash
+end
+
+"""
+    frechet_width_exceeds( P, rng, w )
+
+Whether `frechet_width_approx(P, rng) > w`, computed with the same arithmetic but
+stopping as soon as the answer is known.
+"""
+function frechet_width_exceeds(
+    P::PntSeq{N,T},
+    rng::UnitRange{Int64},
+    w::Float64,
+) where {N,T}
+    (cardin(P) <= 2 || length(rng) <= 2) && return zero(T) > w
+    return sqrt(width_leash_sq(P, rng, w)) > w
 end
 
 eachindexButLast(x) = firstindex(x):(lastindex(x)-1)
