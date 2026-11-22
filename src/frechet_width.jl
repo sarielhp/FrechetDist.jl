@@ -5,13 +5,13 @@
     frechet_width_approx
 
  2-approximation to the Frechet distance between
-   seg = P[first(rng)]-P[last(rng)] and he polygon
+   seg = P[first(rng)]-P[last(rng)] and the polygon
    P[rng]
  Here, rng is a range i:j
 
-This function implements a greedy matching alnog the segment - you
-move to the cloest point on seg to the current point, making sure
-never moving back.
+This function implements a greedy matching along the segment: you
+move to the closest point on seg to the current point, making sure
+never to move back.
 
 """
 function frechet_width_approx(P::PntSeq{N,T}, rng::UnitRange{Int64} = 0:0)::T where {N,T}

@@ -430,13 +430,13 @@ function FEVER_compute_range(P::PntSeq{N,T}, Q::PntSeq{N,T}, upper_bound::Real) 
             if (fc.i == c.n_p) && (fc.j == c.n_q)
                 break
             end
-            # ...not quite, but we arrived to final cell. Time to
+            # ...not quite, but we arrived at the final cell. Time to
             # schedule the final event.
             if ((fc.i == n_pm) && (fc.j == n_qm))
                 f_reached_end = true
                 c.prev[ID_END] = id
 
-                # We dont need anything else on the heap - so empty it!
+                # We don't need anything else on the heap - so empty it!
                 #FEVER_reset_heap( c );
 
                 push!(c.heap, ID_END)
@@ -469,7 +469,7 @@ end
 
 Computes the VE-Frechet distance between P and Q. Unlike the other
 implementation, this one does not use hashing, instead allocating
-quadratic space to perform lookups. Seems wasteful, but works
+quadratic space to perform lookups. This seems wasteful, but works
 reasonably well for small curves (say of size at most 200).
 
 """

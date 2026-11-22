@@ -3,7 +3,7 @@
 
 Takes the sequence of events (i.e., sequence of points along the
 curve), and outputs a corresponding sequence of real numbers, where
-the ith nubmer if the distance of the ith point in sequence from the
+the ith number is the distance of the ith point in sequence from the
 beginning of the curve. Here, distance means the total distance of the
 subcurve from the start point, to the current point.
 """
@@ -32,7 +32,7 @@ end
     Morphing_extract_prm
 
     A parameterization is a polygonal curve that starts at (0,0) and
-    end at (m,n).  The polygonal curve either have positive slope edge,
+    ends at (m,n).  The polygonal curve has either positive slope edges,
     or vertical or horizontal edges. It can be thought of as a
     piecewise linear function from [0,m] to [0,n]. Here m and n are the
     lengths of the two given polygons of P and Q, respectively.
@@ -171,8 +171,8 @@ function combine_point_g_first(
 end
 
 
-# We monotononize the output because of floating point error...
-# Should really just get rid of tiny flatting point jitters.
+# We monotonize the output because of floating point error...
+# Should really just get rid of tiny floating point jitters.
 function parameterization_monotonize!(out::PntSeq2F)
     curr::Point2F = deepcopy(out[1])
     for i in 2:cardin(out)
@@ -185,7 +185,7 @@ end
 
 ##############################################################3
 # parameterization_combine
-# Given two parameterization f, g, compute f(g( . ))
+# Given two parameterizations f, g, compute f(g( . ))
 ###############################################################
 function parameterization_combine(f::PntSeq2F, g::PntSeq2F)::PntSeq2F
     fp_equal(last(g)[2], last(f)[1]) || throw(
@@ -233,10 +233,10 @@ end
 """
     get_point
 
-Returns the point along P that is in distance pos from the begining of
-P ( lenfgth. This is the inner function, where we also provide the
+Returns the point along P that is at distance pos from the beginning of
+P. This is the inner function, where we also provide the
 edge it lies on, and the prefix sums (lens) of the lengths of the
-edgss of P.
+edges of P.
 
 """
 function get_point(
@@ -334,7 +334,7 @@ end
 """
     Morphing_from_prm( prm, P, Q )
 
-    Construct a morphing from a parameterization of the two polygons P
+    Constructs a morphing from a parameterization of the two polygons P
     and Q.
 
 """

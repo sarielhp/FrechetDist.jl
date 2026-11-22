@@ -1,9 +1,9 @@
 """
     frechet_c_mono_approx_subcurve
 
-Approximates the Frechet distance between a curve (P) and subcurbe (Q). Here,
-Q vertices are the vertices of P specifieid by p_indices. That is
-Q[ i ] =P[ p_indices[ i ]].
+Approximates the Frechet distance between a curve (P) and a subcurve (Q). Here,
+Q vertices are the vertices of P specified by p_indices. That is,
+Q[ i ] = P[ p_indices[ i ]].
 
 """
 function frechet_c_mono_approx_subcurve(
@@ -112,10 +112,10 @@ seg: t[1], t[2], .... , t[end]
 
 Add points along seg at time stamps specified by t, and add points in
 the middle between them (i.e., refining segment). These new points are
-added the output polygon pout. `times` is sorted and deduplicated in place.
+added to the output polygon pout. `times` is sorted and deduplicated in place.
 
-Note, that one can set n_mid_points to be larger than 1, but it does
-not seem to be necessary/benefitial from the experimentation we did.
+Note that one can set n_mid_points to be larger than 1, but it does
+not seem to be necessary or beneficial in the experiments we did.
 
 Output:
      Sorted( t[1]/2, t[1], (t[1]+t[2])/2, t[2],...)
@@ -198,22 +198,25 @@ end
 
 
 """
-    extract_refined_polygon( P, pes, num_points_to_add, delta )
+    extract_refined_polygon( poly, s, points_to_add = 1, delta = 0.0 )
 
-    Refine edges along which pes (the sequence of matching points
-    along P is not monotone, so that the returned polygon has
-    vertices, which hopefully force the Frechet morphing computed in
+    Refine edges along which s (the sequence of matching points
+    along P) is not monotone, so that the returned polygon has
+    vertices that hopefully force the Frechet morphing computed in
     the next iteration to be monotone.
 
 # Arguments
 
-  `P`  : the polygo
-  `pes`: Sequence of events long the polygon P
-  `num_points_to_add`: how many points to add between points of
+  `poly`: the polygon
+  `s`: Sequence of events along the polygon poly
+  `points_to_add`: how many points to add between points of
                        non-monotonicity. The default is 1. Having a
                        larger value speeds up the process of getting
                        rid of non-monotonicity, but the polygons grow
                        faster.
+  `delta`: if positive, edges shorter than `delta / 2` are not refined, and
+           an edge of length `l` gets `round(l / delta)` points, clamped to
+           1..3, instead of `points_to_add`.
 """
 function extract_refined_polygon(
     poly::PntSeq{N,T},
@@ -415,7 +418,7 @@ end
     VE-retractable distance, a lower bound stored in `m.lower_bound`.
     In the worst case it only approximates the Frechet distance.
 
-    Observe, that this function might be too slow if the two curves
+    Note that this function might be too slow if the two curves
     are huge, since it does not simplify them before computing the
     distance.
 

@@ -12,7 +12,7 @@
 """
     EID
 
-A function that encodes a matching "edge" betwee two polygons.
+A function that encodes a matching "edge" between two polygons.
 """
 function EID(
     i::Int64 = 0,
@@ -435,8 +435,8 @@ end
     max_leash
 
     Gets a segment on one polygon s_a s_b, and a chain P[low:hi]. Updates the
-    min/max estimates from the leash length. Lower bound is simply the distance
-    to nearest point on th esegment. The max is the result of brute force
+    min/max estimates from the leash length. The lower bound is simply the distance
+    to the nearest point on the segment. The max is the result of brute force
     monotonization.
 """
 @inline function max_leash(
@@ -620,7 +620,7 @@ end
 
 ##########################################################################
 ##########################################################################
-# Compute retractable Frechet. Essentially Prim/Dijkstra algorithm
+# Compute retractable Frechet. Essentially the Prim/Dijkstra algorithm
 #
 # Returns a Morphing that encodes the solution
 ##########################################################################

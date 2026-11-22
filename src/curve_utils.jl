@@ -5,10 +5,11 @@
 """
     Polygon_simplify_ext
 
-Simplify the input curve P, where every vertex in distance larger than
-r is added to the simplification. Maybe the cheapest and simplest
-simplification algorithm. Works for all measures. Returns the
-simplification and the indices of the vertices kept (both empty for an empty curve).
+Simplify the input curve P: every vertex at distance larger than
+r from the last kept vertex is added to the simplification. Perhaps the
+cheapest and simplest simplification algorithm. Works for all measures.
+Returns the simplification and the indices of the vertices kept (both empty
+for an empty curve).
 """
 function Polygon_simplify_ext(P::PntSeq{D,T}, r::T) where {D,T}
     pout = PntSeq{D,T}()
@@ -32,8 +33,8 @@ function Polygon_simplify_ext(P::PntSeq{D,T}, r::T) where {D,T}
         end
     end
 
-    # We push the last vertex in event if it is a repetition, for
-    # example if the curve is close, for example...
+    # We push the last vertex even if it is a repetition, for
+    # example if the curve is closed.
     push!(pout, P[len])
     push!(pindices, len)
 
@@ -41,8 +42,8 @@ function Polygon_simplify_ext(P::PntSeq{D,T}, r::T) where {D,T}
 end
 
 ####################################################################
-# We specify for each vertex how much error it is willing to accept
-# What we do here is pretty Conservative and silly. Should be enough
+# We specify for each vertex how much error it is willing to accept.
+# What we do here is conservative and simple. It should be enough
 # as a first try.
 ####################################################################
 function Polygon_simplify_radii(P::PntSeq{D,T}, r::Vector{T}) where {D,T}
@@ -129,7 +130,7 @@ end
 """
     spine
 
-The curve made out of the first and last vertex of `P`.
+The curve made of the first and last vertex of `P`.
 """
 function spine(P::PntSeq{D,T}) where {D,T}
     pout = PntSeq{D,T}()
@@ -147,7 +148,7 @@ end
 
 Reads a curve from a text file with one point per line (see
 `BasicCompGeometry.ReadWrite.read_plt`). A curve with at most one point is
-completed to a two point curve by repeating that point.
+completed to a two-point curve by repeating that point.
 """
 function read_file(filename, dchar = ",")
     P = read_plt(filename)

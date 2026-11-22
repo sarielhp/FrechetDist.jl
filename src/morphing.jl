@@ -4,7 +4,7 @@
 #---------------------------------------------------------
 # Morphing
 #
-# A morphing is the matching between two polygons as computed by by
+# A morphing is the matching between two polygons as computed by
 # the Frechet distance.
 #---------------------------------------------------------
 
@@ -174,7 +174,7 @@ function extract_vertex_leash(
     for i in 1:len
         ev = pes[i]
         evx = qes[i]
-        # BUG: If should not have been there... We are being very
+        # BUG: The if should not have been there... We are being very
         # conservative about vertices that should not be simplified.
 
         # if ( ev.type == PT_VERTEX )
@@ -190,7 +190,7 @@ end
     Morphing_extract_vertex_radii
 
     Computes for each polygon vertex, the length of the longest edge
-    in the matching attached ot it. It is a cheap upper bound on the
+    in the matching attached to it. It is a cheap upper bound on the
     local Frechet distance for each vertex (and implicitly the
     attached edge).
 """
@@ -211,7 +211,7 @@ end
 """
     Morphing_empty
 
-Returns an empty morhping (i.e., a constructor).
+Returns an empty morphing (i.e., a constructor).
 """
 function Morphing_empty(P::PntSeq{N,T}, Q::PntSeq{N,T}) where {N,T}
     check_coordinate_type(P, "Morphing_empty", "P")
@@ -224,7 +224,7 @@ end
 
 
 ###################################################################
-# Check if the matching is monotone. That is the endpoints of the
+# Check if the matching is monotone. That is, the endpoints of the
 # matching on each curve are sorted, in the same order as the
 # matching.
 ##################################################################
@@ -311,8 +311,8 @@ end
 
 
 ##############################################################################
-# Make the matching (which might be potentially not monotone) into a monotone
-# one.
+# The leash of the matching after it is made monotone (as by
+# events_seq_make_monotone), without building the monotone matching.
 ##############################################################################
 function events_seq_get_monotone_leash(
     P::PntSeq{N,T},
@@ -379,8 +379,8 @@ end
     Morphing_as_polygons
 
 Turns the morphing matching into a "true" matching, by creating two
-polygons that their edges are directly matched.  The output polygons P
-and Q will definitely have reapeated points.
+polygons whose edges are directly matched.  The output polygons P
+and Q will definitely have repeated points.
 
 """
 function Morphing_as_polygons(m::Morphing{N,T}) where {N,T}
@@ -445,7 +445,7 @@ function Morphing_as_function_w_times(m::Morphing{N,T}) where {N,T}
     fake_delta = len / (4 + length(P))
     for i in 1:(length(P)-1)
         delta = fp_dist(P[i], P[i+1]) / len
-        if (delta == 0.0)  # exact: a step where neither curve moves
+        if (delta == 0.0)  # exact: a step where P does not move
             c_z = c_z + 1
             len = len + fake_delta
         end
@@ -532,7 +532,7 @@ function Morphing_is_monotone(m::Morphing{N,T}) where {N,T}
 end
 
 ##########################################################3
-# Turn the morphing into monotone morphing...
+# Turn the morphing into a monotone morphing...
 ##########################################################3
 """
     Morphing_monotonize(m)
@@ -671,7 +671,7 @@ end
 """
     Morphing_combine
 
-Gets two morphings u, v (i.e., two parameterizations) and combine them
+Takes two morphings u, v (i.e., two parameterizations) and combines them
 into a single morphing u(v(.)).
 
 For example, if u: γ → δ  and  v: δ → ξ, then the returned morphing is

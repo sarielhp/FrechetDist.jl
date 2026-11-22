@@ -6,7 +6,7 @@
     frechet_dist_upper_bound
 
 Returns a rough upper bound on the Frechet distance between the two
-curves. This upper bound is on the continuous distance. No guarenteee
+curves. This upper bound is on the continuous distance. There is no guarantee
 on how bad the approximation is. This is used as a starting point for
 real approximation of the Frechet distance, and should not be used
 otherwise.
@@ -24,8 +24,8 @@ end
 """
     frechet_ve_r_mono_compute
 
-Computing the ver frechet distance, and then monotonize it. No
-guarentee as far as the quality of the distance this realizes...
+Computes the VE-retractable Frechet distance, and then monotonizes it. No
+guarantee on the quality of the distance this realizes.
 
 """
 function frechet_ve_r_mono_compute(poly_a::PntSeq{D,T}, poly_b::PntSeq{D,T}) where {D,T}
@@ -86,7 +86,7 @@ curves. Returns a monotone morphing realizing it.
 
 # Arguments
 
-- `approx` : The output morhing has Frechet distance <= approx*optimal.
+- `approx` : The output morphing has Frechet distance <= approx*optimal.
 
 Importantly, approx can be larger than 2, if you want a rough
 approximation.
@@ -339,14 +339,14 @@ The result also carries a certified lower bound, `m.lower_bound`, and
 # Details
 
 This works by first computing a very rough approximation, followed by
-distance senstiave simplification of the curves. It then compute the
-monotone fr_ve_r distance between the simplified curves, and it
-combine it to get a distance between the two original cuves. It makre
-sure the answers are the same, otherwise, it repeates with a finer
-simplification/approximation till they are equal.
+distance-sensitive simplification of the curves. It then computes the
+monotone fr_ve_r distance between the simplified curves, and
+combines it to get a distance between the two original curves. It makes
+sure the answers are the same, otherwise, it repeats with a finer
+simplification/approximation until they are equal.
 
-Finally, the algorithm uses the fr_ve_r_with_offests distance between
-the two simplified curves to comptue a lower bound, and make sure this
+Finally, the algorithm uses the fr_ve_r_with_offsets distance between
+the two simplified curves to compute a lower bound, and makes sure this
 is equal to the Frechet distance computed. If they are equal, then the
 upper/lower bounds on the Frechet distance of the two curves are the
 same, which implies that the computed distance is indeed the desired
@@ -431,7 +431,7 @@ function frechet_c_compute(
         # m_mid.lower_bound <= d(PS, QS) <= d(P, Q) + m_a.leash + m_b.leash.
         certified_lb = max(certified_lb, m_mid.lower_bound - m_a.leash - m_b.leash)
 
-        # The simplification cost leash: simplify less and retry.
+        # The simplification increased the leash: simplify less and retry.
         if (!eq(m_mid.leash, mw.leash, tolerance))
             slack_bound = max(slack_bound, mw.leash - 2.0*m_a.leash - 2.0*m_b.leash)
             divisor = divisor * FC_SLACK_GROWTH

@@ -1,24 +1,24 @@
 ###########################################################################
 # SweepDist.jl
 #
-# Implementation of code to compute the sweeping distance. This is a
-# similar entity to the continuous dynamic time warping distance, except
+# Code to compute the sweeping distance. This is similar to the
+# continuous dynamic time warping distance, except
 # that the price of matching two edges is approximated (fp_match_price:
 # the average leash length times the length moved), and of course, we
 # use our ve-r framework to compute/approximate it, together with the
 # regular refinement for monotonicity, and refinement to get
-# convergences.
+# convergence.
 ###########################################################################
 
 ############################################################
 # TreeVertex:
-#    Encoding for a vertex in the VE Diagram how the search
-#    procedure arrived ot it. I.e., encoding the reverse tree
+#    Encoding for a vertex in the VE Diagram and how the search
+#    procedure arrived at it. I.e., encoding the reverse tree
 #    that the algorithm computes.
 #
 # id: Vertex of the diagram
 # val: The value associated with this vertex.
-# id_prev: The vertex we arrvied from.
+# id_prev: The vertex we arrived from.
 ############################################################
 @with_kw mutable struct TreeVertex
     id::Int64
@@ -143,7 +143,7 @@ function SW_schedule_event!(c::SDContext{N,T}, id::Int64, id_prev::Int64) where 
     local ev
     if haskey(c.vertices, id)
         ev = c.vertices[id]
-        if (ev.val < new_val)  # already better event scheduled.
+        if (ev.val < new_val)  # A better event is already scheduled.
             return
         end
         ev.val = new_val
@@ -322,7 +322,7 @@ end
     SweepDist_lb_compute
 
 Compute a lower bound on the Sweep distance between the two curves P
-and Q. Current implementation is silly, and very similar to the
+and Q. The current implementation is naive, and very similar to the
 discrete Frechet calculation.
 
 """

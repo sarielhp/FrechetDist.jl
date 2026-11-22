@@ -2,9 +2,9 @@
 #
 # A palette of a polygon P[1..n] is an array A[1..n], where A[i] is the
 # Frechet error introduced by the ith vertex. The array is filled in a
-# binary search hierarchical way, so that all the vertices with error
+# hierarchical binary-search way, so that all the vertices with error
 # above a certain threshold can be extracted in time linear in their
-# number, instead of linear time in the number of vertices of the
+# number, instead of time linear in the number of vertices of the
 # curve. The construction and extraction are generic, and live in
 # BasicCompGeometry.PntSeqHierarchy. Here we only supply the Frechet
 # error of a subcurve, and the midpoint splitting rule.
@@ -25,11 +25,11 @@ end
     frechet_palette_approx
 
 Extract an approximation to P using the palette, and a width
-parameter. The output polygon Q has the property the Frechet distance
-betwwen P and Q is at most w (might be smaller).
+parameter. The output polygon Q has the property that the Frechet distance
+between P and Q is at most w (it might be smaller).
 
 The approximation provided is fast (i.e., running time proportional to
-the nubmer of vertices of Q, but the approximation might be of low
+the number of vertices of Q), but the approximation might be of low
 quality.
 
 """

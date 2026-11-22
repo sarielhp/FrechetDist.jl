@@ -1,7 +1,7 @@
 # Originally contributed by S. Har-Peled
 # under MIT License
 
-### Functions try to deal with floating point issues.
+### Functions that deal with floating-point issues.
 
 
 function fp_equal(a, b)::Bool

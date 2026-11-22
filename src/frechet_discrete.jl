@@ -3,16 +3,16 @@
 
 #---------------------------------------------------------------
 # Code to compute discrete Frechet. Both the standard type,
-# and the retractable type. Note, that the retractable version
-# still allocates the quadratic size table (unlike the ve version
+# and the retractable type. Note that the retractable version
+# still allocates the quadratic-size table (unlike the ve version
 # which uses hashing to avoid this).
 #---------------------------------------------------------------
 
 """
     d_frechet_extract_solution
 
-Extracting the morphing computd realizing the discrete Frechet
-distnace.
+Extracts the computed morphing that realizes the discrete Frechet
+distance.
 
 """
 function d_frechet_extract_solution(
@@ -156,13 +156,13 @@ end
 """
     frechet_d_r_compute
 
-Compute discrete frechet distance that is locally optimal
-Frechet. Essentially discrete frechet + Prim/Dijkstra algorithm For
-the discrete case, that is modified to be retractable -- that is
-minimize the maximum bottleneck edge being computed.
+Compute the locally optimal discrete Frechet distance. Essentially
+the discrete Frechet distance plus a Prim/Dijkstra algorithm, for
+the discrete case, modified to be retractable -- that is,
+to minimize the maximum bottleneck edge being computed.
 
 Note, the function still allocates quadratic space for the lookup
-tables. Doesn't seem to matter, but this might be worth fixing in
+tables. This does not seem to matter, but it might be worth fixing in
 future versions.
 
 """
@@ -315,11 +315,11 @@ end
 """
     frechet_d_r_compute_sample( polya, polyb, n, f_lopt = true )
 
-Computes the discrete Frechet distance between the two curves.by
-sampling them
+Computes the discrete Frechet distance between the two curves by
+sampling them.
 
-It first sapmles the two curves rougly uniformly. n is supposed to
-be the nubmer of vertices, by the optput might be a sample that is
+It first samples the two curves roughly uniformly. n is supposed to
+be the number of vertices, but the output might be a sample that is
 slightly bigger, as the code tries to ensure the vertices are being
 picked.
 
@@ -330,7 +330,7 @@ picked.
   larger).
 
 - f_lopt
-     true: Use the rectractable Frechet distance version
+     true: Use the retractable Frechet distance version
      false: Use the standard discrete Frechet version.
 """
 function frechet_d_r_compute_sample(

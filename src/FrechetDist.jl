@@ -101,7 +101,7 @@ export SweepDist_compute_refine_mono
 export SweepDist_compute_split!
 
 #########################################################################
-# Palette: Is an array of floats that encodes approximation info about
+# Palette: an array of floats that encodes approximation info about
 # a polygon. Using such a precomputed palette, one can quickly extract
 # a simplification.
 

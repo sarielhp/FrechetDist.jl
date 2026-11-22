@@ -17,7 +17,7 @@ const MAX_VERTICES = 2^30 - 2
 Largest number of refinement rounds the iterative algorithms (`frechet_c_compute`,
 `frechet_c_approx`, `frechet_mono_via_refinement`) may run before giving up with an
 error instead of looping forever. At most 17 rounds were observed in about 10,000 runs.
-A `Ref` so that tests can lower it.
+It is a `Ref` so that tests can lower it.
 """
 const MAX_REFINEMENT_ROUNDS = Ref(1000)
 
@@ -161,8 +161,8 @@ function check_indices(indices::Vector{Int64}, n::Int, who::AbstractString)
 end
 
 # Curves of different dimension or coordinate type do not match the typed methods;
-# say so instead of reporting a MethodError listing every method. Matching curves with
-# wrong further arguments are a plain MethodError.
+# the error says so instead of reporting a MethodError listing every method. Matching
+# curves with wrong further arguments give a plain MethodError.
 for f in (
     :frechet_c_compute,
     :frechet_c_approx,
