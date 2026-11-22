@@ -580,18 +580,64 @@ function check_no_nan(V::Vector{EventPoint{N,T}}) where {N,T}
 end
 
 
-"""
-    Morphing_verify_valid
+"Whether `p` and `q` agree up to a rounding tolerance relative to the coordinates."
+function event_close(p::Point{N,T}, q::Point{N,T}) where {N,T}
+    scale = max(maximum(abs, p), maximum(abs, q))
+    return fp_dist(p, q) <= 1.0e-9 * (1.0 + scale)
+end
 
-Does some minimal checks that the morphing is valid. Speciifcally,
-check the times stemps of the events are valid.
+"""
+    check_events( C, V, name )
+
+Throws an `ArgumentError` unless the event sequence `V` runs from the first to the
+last vertex of the curve `C`, every index is a vertex (or, for an edge event, the
+start of an edge) of `C`, and every location agrees with its index and coefficient.
+"""
+function check_events(C::PntSeq{N,T}, V::Vector{EventPoint{N,T}}, name) where {N,T}
+    n = cardin(C)
+    isempty(V) && throw(ArgumentError("morphing: the $name event sequence is empty"))
+    (event_close(first(V).p, C[1]) && event_close(last(V).p, C[n])) || throw(
+        ArgumentError(
+            "morphing: the $name events do not run from the first to the last vertex",
+        ),
+    )
+    for ev in V
+        last_ok = (ev.type == PT_VERTEX) ? n : n - 1
+        (1 <= ev.i <= last_ok) || throw(
+            ArgumentError("morphing: $name event index $(ev.i) is outside 1:$last_ok"),
+        )
+        loc = (ev.type == PT_VERTEX) ? C[ev.i] : fp_convex_comb(C[ev.i], C[ev.i+1], ev.t)
+        event_close(ev.p, loc) || throw(
+            ArgumentError(
+                "morphing: $name event at $(ev.p) does not lie at index $(ev.i), t = $(ev.t)",
+            ),
+        )
+    end
+    return nothing
+end
+
+"""
+    Morphing_verify_valid( m )
+
+Throws an `ArgumentError` unless `m` is structurally valid: `pes` and `qes` have the
+same length; each runs from the first to the last vertex of its curve; every event has
+a coefficient in [0, 1], no NaN, an index within its curve, and a location that agrees
+with its index and coefficient. Monotonicity is not required (see
+`Morphing_is_monotone`).
 """
 function Morphing_verify_valid(m::Morphing{N,T}) where {N,T}
+    length(m.pes) == length(m.qes) || throw(
+        ArgumentError("morphing: $(length(m.pes)) events on P but $(length(m.qes)) on Q"),
+    )
     check_times(m.pes)
     check_times(m.qes)
 
     check_no_nan(m.pes)
     check_no_nan(m.qes)
+
+    check_events(m.P, m.pes, "P")
+    check_events(m.Q, m.qes, "Q")
+    return nothing
 end
 
 

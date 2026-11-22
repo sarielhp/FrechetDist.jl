@@ -122,3 +122,32 @@ end
     @test FD.EID_j(FD.EID(3, false, j, true)) == j
     @test FD.EID_i(FD.EID(3, false, j, true)) == 3
 end
+
+@testset "Morphing_verify_valid checks the structure of a morphing" begin
+    rng = MersenneTwister(9)
+    A = PntSeq([point(x...) for x in eachcol(cumsum(randn(rng, 2, 30), dims = 2))])
+    B = PntSeq([point(x...) for x in eachcol(cumsum(randn(rng, 2, 25), dims = 2))])
+    m = FD.frechet_ve_r_compute(A, B)
+    @test outcome(() -> FD.Morphing_verify_valid(m)) === nothing
+    AE = ArgumentError
+
+    bad = deepcopy(m)
+    pop!(bad.pes)                                          # length mismatch
+    @test outcome(() -> FD.Morphing_verify_valid(bad)) isa AE
+
+    bad = deepcopy(m)
+    e = bad.pes[2]
+    bad.pes[2] = FD.EventPoint(e.p, 999, e.type, e.t, e.penalty)  # index out of range
+    @test outcome(() -> FD.Morphing_verify_valid(bad)) isa AE
+
+    bad = deepcopy(m)
+    k = findfirst(e -> e.type == FD.PT_ON_EDGE, bad.pes)
+    e = bad.pes[k]
+    bad.pes[k] = FD.EventPoint(e.p .+ 1.0, e.i, e.type, e.t, e.penalty)  # moved point
+    @test outcome(() -> FD.Morphing_verify_valid(bad)) isa AE
+
+    bad = deepcopy(m)
+    reverse!(bad.pes)                                      # does not start at P[1]
+    reverse!(bad.qes)
+    @test outcome(() -> FD.Morphing_verify_valid(bad)) isa AE
+end
