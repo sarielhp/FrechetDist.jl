@@ -1,5 +1,5 @@
 # Supplemental snapshot for functions the parent golden.jl does NOT cover (found by audit of golden.jl):
-# FEVER_compute(_range), frechet_ve_r_compute_range, frechet_d_r_compute, SweepDist_lb_compute,
+# FEVER_compute(_range), frechet_ve_r_compute_range, frechet_d_r_compute, DTW_d_compute, SweepDist_lb_compute,
 # SweepDist_compute_refine_mono, frechet_c_approx (several ratios), frechet_mono_via_refinement(_ext/_delta),
 # extract_refined_polygon(delta), Morphing_combine/prm round-trip, frechet_c_compute(f_accept_approx=false).
 # Usage: julia --project=<proj> golden_ext.jl out.jls
@@ -52,6 +52,7 @@ for (fam, gen) in pair_families(), c in 1:4
         rec("$id/fever_range/$f", () -> FD.FEVER_compute_range(P, Q, f * ve.leash))
     end
     rec("$id/d_r", () -> FD.frechet_d_r_compute(P, Q))
+    rec("$id/dtw", () -> FD.DTW_d_compute(P, Q))
     rec("$id/sweep_lb", () -> FD.SweepDist_lb_compute(P, Q))
     rec("$id/sweep_refine", () -> FD.SweepDist_compute_refine_mono(P, Q))
     for a in (1.5, 3.0)
