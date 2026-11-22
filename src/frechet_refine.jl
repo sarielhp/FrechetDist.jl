@@ -82,7 +82,7 @@ function seg_candidate_times(times::Vector{Float64}, n_mid_points::Int64)
         push_time(times[1] / 2.0)
     end
 
-    for i in 1:length(times)
+    for i in eachindex(times)
         push_time(times[i])
         if (i < times_length) && (n_mid_points > 0)
             K = n_mid_points + 1

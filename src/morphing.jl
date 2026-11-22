@@ -353,6 +353,7 @@ function Morphing_recompute_leash!(m::Morphing{N,T}) where {N,T}
             r = ell
         end
     end
+    # exact: the same operations recompute the same leash; 0 means not computed yet.
     if (m.leash != r) && (m.leash != 0)
         error(
             "Morphing_recompute_leash: stored leash $(m.leash) differs from the recomputed leash $r",
@@ -404,7 +405,7 @@ function Morphing_as_polygons_w_times(m::Morphing{N,T}) where {N,T}
     min_delta::Float64 = len
     for i in 1:(length(P)-1)
         delta = (fp_dist(P[i], P[i+1]) + fp_dist(Q[i], Q[i+1]))
-        if (delta == 0.0)
+        if (delta == 0.0)  # exact: a step where neither curve moves
             c_z = c_z + 1
             continue
         end
@@ -416,13 +417,13 @@ function Morphing_as_polygons_w_times(m::Morphing{N,T}) where {N,T}
     push!(t, 0.0)
     for i in 1:(length(P)-1)
         delta = (fp_dist(P[i], P[i+1]) + fp_dist(Q[i], Q[i+1]))
-        if (delta == 0.0)
+        if (delta == 0.0)  # exact: a step where neither curve moves
             delta = fake_delta
         end
         next_t = min(last(t) + (delta / len), 1.0)
         push!(t, next_t)
     end
-    if last(t) != 1.0
+    if last(t) != 1.0  # exact: rounding can leave the last time just below 1
         pop!(t)
         push!(t, 1.0)
     end
@@ -435,7 +436,7 @@ function Morphing_as_function_w_times(m::Morphing{N,T}) where {N,T}
     t = Vector{Float64}()
 
     len = geom_length(P)
-    if len == 0.0
+    if len == 0.0  # exact: a constant curve; times are relative to its length
         return P, Q, zeros(length(P))
     end
     push!(t, 0.0)
@@ -443,13 +444,13 @@ function Morphing_as_function_w_times(m::Morphing{N,T}) where {N,T}
     fake_delta = len / (4 + length(P))
     for i in 1:(length(P)-1)
         delta = fp_dist(P[i], P[i+1]) / len
-        if (delta == 0.0)
+        if (delta == 0.0)  # exact: a step where neither curve moves
             c_z = c_z + 1
             len = len + fake_delta
         end
     end
     for i in 1:(length(P)-1)
-        if (fp_dist(P[i], P[i+1]) == 0.0)
+        if (fp_dist(P[i], P[i+1]) == 0.0)  # exact: a step that does not move
             delta = fake_delta / len
         else
             delta = fp_dist(P[i], P[i+1]) / len
@@ -457,7 +458,7 @@ function Morphing_as_function_w_times(m::Morphing{N,T}) where {N,T}
 
         push!(t, min(last(t) + delta, 1.0))
     end
-    if last(t) != 1.0
+    if last(t) != 1.0  # exact: rounding can leave the last time just below 1
         pop!(t)
         push!(t, 1.0)
     end

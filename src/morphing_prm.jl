@@ -271,6 +271,7 @@ end
 
 # Event at point pt, at parameter t along edge idx of a curve with n vertices.
 function curve_event(pt::Point{N,T}, idx::Int64, t::Real, n::Int64, ::Type{T}) where {N,T}
+    # exact: vertices carry t = 0 (or t = 1 at the last vertex) exactly.
     if (t == 0.0) || ((t == 1.0) && (idx == n))
         return EventPoint(deepcopy(pt), idx, PT_VERTEX, 0.0, 0.0)
     end

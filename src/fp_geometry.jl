@@ -14,6 +14,7 @@
 
 @inline function fp_dot(p::Point{D,T}, q::Point{D,T}) where {D,T}
     s = zero(T)
+    # In bounds: a Point{D,T} has exactly D coordinates.
     @inbounds for i in 1:D
         s += p[i] * q[i]
     end
@@ -22,6 +23,7 @@ end
 
 @inline function fp_dist_sq(p::Point{D,T}, q::Point{D,T})::T where {D,T}
     sum = zero(T)
+    # In bounds: a Point{D,T} has exactly D coordinates.
     @inbounds for i in 1:D
         @fastmath sum += (p[i] - q[i])^2 # julia-audit: allow-fastmath (bit-identical to the original numerics)
     end
@@ -30,6 +32,7 @@ end
 
 @inline function fp_dist(p::Point{D,T}, q::Point{D,T}) where {D,T}
     sum = 0.0
+    # In bounds: a Point{D,T} has exactly D coordinates.
     @inbounds for i in 1:D
         @fastmath sum += (p[i] - q[i])^2 # julia-audit: allow-fastmath (bit-identical to the original numerics)
     end
@@ -44,10 +47,11 @@ snapping band: a fixed band in `t` moves points by a distance proportional to th
 length, which distorts long edges.
 """
 @inline function fp_convex_comb(p::Point{D,T}, q::Point{D,T}, t::Float64) where {D,T}
-    (t == 0.0) && return p
-    (t == 1.0) && return q
+    (t == 0.0) && return p  # exact: the endpoints are returned unrounded
+    (t == 1.0) && return q  # exact, as above
 
     o = MVector{D,T}(undef)
+    # In bounds: a Point{D,T} has exactly D coordinates.
     @inbounds for i in 1:D
         @fastmath o[i] = p[i] + (q[i] - p[i]) * t # julia-audit: allow-fastmath (bit-identical to the original numerics)
         @assert(! isnan(o[i]))
@@ -78,7 +82,7 @@ combination coefficient. The caller must precompute
     # The minimum is achieved at  t^* = -b/(2a),  a = ||q-p||^2,
     # b = 2 <p-qr,q-p>.
     a = seg_len_sq
-    if (a == 0.0)
+    if (a == 0.0)  # exact: a zero-length segment; -b / (2a) needs a != 0
         return s_p, zero(T)
     end
     b = 2.0 * fp_dot(s_p - qr, s_vec)
@@ -114,7 +118,7 @@ Nearest point on the segment `s_p`-`s_q` to the query point `qr`.
 """
 @inline function fp_nn_point(s_p::Point{D,T}, s_q::Point{D,T}, qr::Point{D,T}) where {D,T}
     a = fp_dist_sq(s_p, s_q)
-    if (a == 0.0)
+    if (a == 0.0)  # exact: a zero-length segment; -b / (2a) needs a != 0
         return s_p
     end
     b = 2.0 * fp_dot(s_p - qr, s_q - s_p)
@@ -138,7 +142,7 @@ Coefficient `d(seg.p, p) / |seg|`, or 0 for a degenerate segment.
 """
 @inline function fp_convex_coef(s::Segment{D,T}, qr::Point{D,T}) where {D,T}
     len = fp_dist(s.p, s.q)
-    if len == 0.0
+    if len == 0.0  # exact: a zero-length segment; avoids 0 / 0
         return 0.0
     end
     return fp_dist(s.p, qr) / len

@@ -59,7 +59,7 @@ end
 # it can exceed only by rounding.
 function set_bounds!(m::Morphing, lb::Real)
     m.lower_bound = clamp(lb, 0.0, m.leash)
-    m.ratio = (m.lower_bound > 0.0) ? m.leash / m.lower_bound : (m.leash == 0.0 ? 1.0 : Inf)
+    m.ratio = (m.lower_bound > 0.0) ? m.leash / m.lower_bound : (m.leash == 0.0 ? 1.0 : Inf)  # exact: a zero leash is optimal
     return m
 end
 
@@ -68,7 +68,7 @@ end
 # total error total_err.
 function approx_ratio_bound(m_leash, t_approx, total_err, out_leash, approx)
     lbx = (m_leash / t_approx) - total_err
-    if (total_err == 0.0) && (m_leash == 0.0)
+    if (total_err == 0.0) && (m_leash == 0.0)  # exact: identical curves, ratio 1
         return 1.0
     end
     if (lbx <= 0.0)
@@ -176,9 +176,7 @@ function Polygon_simplify_radii_ext(P::PntSeq{N,T}, r::Vector{T}) where {N,T}
     end
 
     p_indices = Vector{Int64}()
-    for i in 1:cardin(P)
-        push!(p_indices, i)
-    end
+    append!(p_indices, 1:cardin(P))
     return P, p_indices, true
 end
 
@@ -331,7 +329,7 @@ function frechet_c_compute(
 
 
     m_rough = frechet_c_approx(P, Q, aprx_refinement)
-    if (m_rough.leash == 0.0)
+    if (m_rough.leash == 0.0)  # exact: the curves coincide; nothing to refine
         return m_rough
     end
 

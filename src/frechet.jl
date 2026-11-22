@@ -441,7 +441,7 @@ end
     l_min, l_max = bounds
     #seg = Segment( s_a, s_b );
     len_seg_sq::Float64 = fp_dist_sq(s_a, s_b)
-    if (len_seg_sq == 0.0)
+    if (len_seg_sq == 0.0)  # exact: a zero-length chord; its projection is undefined
         for j in idx
             l_min = max(l_min, fp_dist(s_a, P[j]))
         end
