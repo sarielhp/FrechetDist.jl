@@ -12,22 +12,27 @@ include("DistFunc.jl");
 
 
 
+"""
+    FPointType
+
+The kind of an `EventPoint`: `PT_VERTEX` (at a vertex of the curve) or `PT_ON_EDGE`
+(inside an edge).
+"""
 @enum FPointType begin
     PT_VERTEX = 1
     PT_ON_EDGE = 2
 end
 
-############################################################
-# A vertex edge event descriptor.
-#
-# p: Location of the point being matched. Not necessarily a vetex of
-#    the polygon.
-# i: Vertex number in polygon/or edge number where p lies.
-# type: PT_VERTEX or PT_ON_EDGE.
-# t: Convex combination coefficient if p is on the edge. t=0 means its
-#    the ith vertex, t=1 means it is on the i+1 vertex.
-############################################################
-#@with_kw
+"""
+    EventPoint{N,T}
+
+One end of a step of a `Morphing`: a location on a curve. `p` is the point; `i` is
+the vertex (`type == PT_VERTEX`) or the first vertex of the edge (`type ==
+PT_ON_EDGE`); `t` is the position along that edge, from 0 at vertex `i` to 1 at
+vertex `i + 1`; `penalty` is the vertex offset charged to the event by computations
+with offsets (`frechet_ve_r_compute_ext`), 0 otherwise. `EventPoint(p, i, type, t)`
+sets the penalty to 0.
+"""
 struct EventPoint{N,T}
     p::Point{N,T}
     i::Int64
@@ -107,6 +112,14 @@ function Morphing_init(
 end
 
 
+"""
+    Morphing_get_max_edges_err( m )
+
+The pair of edges matched by `m` where the matching is loosest. For each step on
+edges `P[i] P[i+1]` and `Q[j] Q[j+1]`, the error is the largest distance between
+their endpoints minus the distance between the two segments. Returns `(i, j, err)`
+for the largest error, or `(-1, -1, 0.0)` when no step has a positive one.
+"""
 function Morphing_get_max_edges_err(m::Morphing{D,T}) where {D,T}
     mx::Float64 = 0.0
 
@@ -431,6 +444,14 @@ function Morphing_as_polygons_w_times(m::Morphing{N,T}) where {N,T}
 end
 
 
+"""
+    Morphing_as_function_w_times( m )
+
+Like `Morphing_as_polygons_w_times`, but the times follow the arc length of `P`
+alone. Returns `(P, Q, t)`: the morphing as two polygons with one vertex per step,
+and a time in [0, 1] for each vertex. Steps where `P` does not move get a small
+positive duration, so `t` increases strictly; a constant `P` gets all times 0.
+"""
 function Morphing_as_function_w_times(m::Morphing{N,T}) where {N,T}
     P, Q = Morphing_as_polygons(m)
     t = Vector{Float64}()
@@ -466,6 +487,14 @@ function Morphing_as_function_w_times(m::Morphing{N,T}) where {N,T}
 end
 
 
+"""
+    polygons_get_loc_at_time( P, Q, times, t )
+
+The two locations at time `t` of a morphing given as polygons with one vertex per
+step and their `times` (as from `Morphing_as_polygons_w_times`): interpolates
+between the two vertices whose times bracket `t`. Returns `(p, q)`. Times outside
+[0, 1] give the first or the last pair.
+"""
 function polygons_get_loc_at_time(
     P::PntSeq{D,T},
     Q::PntSeq{D,T},
@@ -489,6 +518,13 @@ function polygons_get_loc_at_time(
     return p, q
 end
 
+"""
+    Morphing_sample_uniformly( m, n )
+
+Samples the morphing at `n >= 2` evenly spaced times in [0, 1] (the times of
+`Morphing_as_polygons_w_times`). Returns an `n × 2N` matrix: row `k` holds the point
+on `P` (columns `1:N`) and the matching point on `Q` (columns `N+1:2N`).
+"""
 function Morphing_sample_uniformly(m::Morphing{N,T}, n::Int64) where {N,T}
     n >= 2 ||
         throw(ArgumentError("Morphing_sample_uniformly: need at least 2 samples (got $n)"))
@@ -543,6 +579,12 @@ function Morphing_monotonize(m::Morphing{N,T}) where {N,T}
 end
 
 
+"""
+    Morphing_monotone_leash( m )
+
+The leash of `Morphing_monotonize(m)`, computed without building the monotone
+morphing; `m.leash` when `m` is already monotone.
+"""
 function Morphing_monotone_leash(m::Morphing{N,T}) where {N,T}
     if Morphing_is_monotone(m)
         return m.leash # deepcopy( m );
@@ -667,6 +709,13 @@ function Morphing_combine(u::Morphing{N,T}, v::Morphing{N,T}) where {N,T}
     return m
 end
 
+"""
+    Morphing_SweepDist_approx_price( m )
+
+A fast estimate of `Morphing_SweepDist_price(m)`: for every step of the morphing,
+the two segment lengths times the average of the leash lengths at the step's ends
+(`fp_match_price`), summed.
+"""
 function Morphing_SweepDist_approx_price(m::Morphing{N,T}) where {N,T}
     P, Q = Morphing_as_polygons(m)
 
@@ -681,6 +730,13 @@ function Morphing_SweepDist_approx_price(m::Morphing{N,T}) where {N,T}
 end
 
 
+"""
+    Morphing_SweepDist_price( m )
+
+The sweep price of the morphing `m`: the sum, over its steps, of the sweep distance
+between the two matched segments (`SweepDist_segs`). Throws an `ArgumentError` if
+`m` is not valid (`Morphing_verify_valid`).
+"""
 function Morphing_SweepDist_price(m::Morphing{N,T}) where {N,T}
     Morphing_verify_valid(m)
 
@@ -697,6 +753,14 @@ function Morphing_SweepDist_price(m::Morphing{N,T}) where {N,T}
     return price
 end
 
+"""
+    morphing_profile( m, n )
+
+The leash length along the morphing, at `n` samples. Returns `(X, Y)`: `X` runs
+evenly from 0 to the length of `P`, and `Y[k]` is the leash length at the time
+`X[k] / length(P)` of `Morphing_as_polygons_w_times`. These times weigh the arc
+length of both curves, so `X` is only an approximate position along `P`.
+"""
 function morphing_profile(m::Morphing{D,T}, n::Int64) where {D,T}
 
     PB, QB, times = Morphing_as_polygons_w_times(m)

@@ -236,6 +236,15 @@ function SweepDist_compute(P::PntSeq{N,T}, Q::PntSeq{N,T}) where {N,T}
 end
 
 
+"""
+    SweepDist_compute_refine_mono( P, Q )
+
+A monotone morphing for the sweep distance. Runs `SweepDist_compute`; while the
+result is not monotone, and monotonizing it would move the curves by 1% or more of
+their total length, refines both curves along the morphing and runs it again.
+Returns the monotone (or monotonized) morphing, whose curves can be refinements of
+`P` and `Q`. Throws an error after `MAX_REFINEMENT_ROUNDS` rounds.
+"""
 function SweepDist_compute_refine_mono(poly_a::PntSeq{N,T}, poly_b::PntSeq{N,T}) where {N,T}
     check_curves(poly_a, poly_b, "SweepDist_compute_refine_mono"; min_vertices = 2)
     ell = geom_length(poly_a) + geom_length(poly_b)
@@ -270,6 +279,15 @@ function SweepDist_compute_refine_mono(poly_a::PntSeq{N,T}, poly_b::PntSeq{N,T})
     return m_new
 end
 
+"""
+    SweepDist_compute_split!( out, P, Q, iters, max_vertices = 1000000 )
+
+Appends to `out` sweep-distance morphings at increasing resolution: first
+`SweepDist_compute_refine_mono(P, Q)`, then `SweepDist_compute` on its curves with
+the midpoint of every edge inserted (`split_edges`), repeated `iters` times or until
+the two curves have more than `max_vertices` vertices together. Every morphing is
+checked with `Morphing_verify_valid`. Returns `nothing`.
+"""
 function SweepDist_compute_split!(
     out::Vector{Morphing{N,T}},
     poly_a::PntSeq{N,T},

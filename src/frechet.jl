@@ -624,6 +624,16 @@ end
 #
 # Returns a Morphing that encodes the solution
 ##########################################################################
+"""
+    frechet_ve_r_compute_ext( P, Q, p_offs, q_offs, f_use_offsets = false )
+
+`frechet_ve_r_compute` with per-vertex offsets. With `f_use_offsets`, `p_offs` and
+`q_offs` hold one finite non-negative value per vertex of `P` and `Q`, subtracted
+from the event distances: the event of `P[i]` and `Q[j]` costs
+`d - p_offs[i] - q_offs[j]`, and a vertex-edge event subtracts the larger offset of
+the edge's two ends. `frechet_c_compute` uses this to certify a lower bound.
+Without `f_use_offsets` the two vectors are ignored.
+"""
 function frechet_ve_r_compute_ext(
     P::PntSeq{N,T},
     Q::PntSeq{N,T},
@@ -693,6 +703,14 @@ function frechet_ve_r_compute_ext(
 end
 
 
+"""
+    frechet_ve_r_compute( P, Q )
+
+The VE-retractable Frechet distance of `P` and `Q`, a lower bound on their Frechet
+distance. Returns a `Morphing` whose leash (`m.leash`) is that distance; the
+morphing may move backwards along the curves. `Morphing_monotonize` turns it into a
+monotone morphing, whose leash is an upper bound on the Frechet distance.
+"""
 function frechet_ve_r_compute(P::PntSeq{N,T}, Q::PntSeq{N,T}) where {N,T}
     check_curves(P, Q, "frechet_ve_r_compute"; min_vertices = 2)
     return frechet_ve_r_compute_ext(P, Q, Vector{Float64}(), Vector{Float64}(), false)

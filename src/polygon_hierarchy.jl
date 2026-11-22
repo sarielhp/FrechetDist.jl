@@ -18,6 +18,13 @@ const frechet_measure = PH.HierarchyMeasure(
     PH.MidpointSplit(),
 );
 
+"""
+    PolygonHierarchy
+
+A hierarchy of simplifications of a curve at decreasing widths, under
+`frechet_measure`. It is `BasicCompGeometry.PntSeqHierarchy.SimplificationHierarchy`;
+build one with `ph_init` and query it with `ph_approx`.
+"""
 const PolygonHierarchy = PH.SimplificationHierarchy
 
 const ph_push! = PH.hierarchy_push!

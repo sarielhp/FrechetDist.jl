@@ -260,6 +260,13 @@ function extract_refined_polygon(
 end
 
 
+"""
+    frechet_refinement( P, Q, m )
+
+Refines `P` and `Q` along the morphing `m`: each curve gets the points where `m`'s
+events lie on its edges, and points between them (`extract_refined_polygon`).
+Returns the two refined curves.
+"""
 function frechet_refinement(P::PntSeq{N,T}, Q::PntSeq{N,T}, m::Morphing{N,T}) where {N,T}
     poly_a_2 = extract_refined_polygon(P, m.pes, 1)
     poly_b_2 = extract_refined_polygon(Q, m.qes, 1)
@@ -268,6 +275,13 @@ function frechet_refinement(P::PntSeq{N,T}, Q::PntSeq{N,T}, m::Morphing{N,T}) wh
 end
 
 
+"""
+    frechet_mono_via_refinement_ext!( out, P, Q, f_snapshots, approx = 1.00001 )
+
+`frechet_mono_via_refinement(P, Q, approx)`, which also records its rounds: with
+`f_snapshots`, the VE-retractable morphing of every refinement round is appended to
+`out`. Returns the same 4-tuple `(m, f, P, Q)`.
+"""
 function frechet_mono_via_refinement_ext!(
     out::Vector{Morphing{N,T}},
     Pa::PntSeq{N,T},

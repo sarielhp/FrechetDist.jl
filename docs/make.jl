@@ -12,10 +12,15 @@ makedocs(
         "cg.md",
         "frechet_discrete.md",
         "morphing.md",
+        "simplification.md",
+        "sweep.md",
+        "low_level.md",
         "examples.md",
         "changelog.md",
     ],
-    warnonly = true,
+    # An exported name missing from the manual fails the build; other problems warn.
+    checkdocs = :exports,
+    warnonly = Documenter.except(:missing_docs),
 )
 
 deploydocs(;

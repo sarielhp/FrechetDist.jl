@@ -41,6 +41,14 @@ function find_frechet_prefix(P::PntSeq{D,T}, i::Int64, j::Int64, w::T) where {D,
     return find_frechet_prefix_inner(P, i, i, j, w)
 end
 
+"""
+    frechet_simplify_to_width( P, w )
+
+Greedy simplification of `P` with Frechet error about `w`. From the first vertex, it
+repeatedly jumps to a far vertex such that the part of `P` it skips stays within
+width `w` of the shortcut (by binary search with `frechet_width_exceeds`). Returns
+the simplification and the indices of its vertices in `P`.
+"""
 function frechet_simplify_to_width(P::PntSeq{D,T}, w_in::Real) where {D,T}
     check_curve(P, "frechet_simplify_to_width", "the curve"; min_vertices = 0)
     check_nonnegative(w_in, "frechet_simplify_to_width", "w")
@@ -142,6 +150,13 @@ function exp_search_width_prefix(P::PntSeq{N,T}, start::Int64, w::Float64) where
 end
 
 
+"""
+    frechet_simplify_w_exp( P, w )
+
+`frechet_simplify_to_width` with an exponential search ahead of each binary search,
+so the cost of a jump depends on its length rather than on the rest of `P`. Faster
+when the simplification keeps many vertices; it may choose different vertices.
+"""
 function frechet_simplify_w_exp(P::PntSeq{D,T}, w_in::Real) where {D,T}
     check_curve(P, "frechet_simplify_w_exp", "the curve"; min_vertices = 0)
     check_nonnegative(w_in, "frechet_simplify_w_exp", "w")

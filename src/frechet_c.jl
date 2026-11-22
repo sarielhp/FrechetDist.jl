@@ -236,6 +236,14 @@ function offsets_copy_map(map_PS, offsets)
 end
 
 
+"""
+    simplify_morphing_sensitive( m, factor )
+
+Simplifies both curves of `m` where the morphing leaves slack: a vertex may move by
+up to `(m.lower_bound - r) / factor`, where `r` is the leash length at the vertex;
+vertices without slack, and their neighbours, stay. Returns the simplified curves
+`(PS, QS)`. `factor` must be positive.
+"""
 function simplify_morphing_sensitive(m::Morphing{D,T}, factor::Float64) where {D,T}
     (isfinite(factor) && factor > 0.0) || throw(
         ArgumentError(

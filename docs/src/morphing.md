@@ -7,6 +7,8 @@ package uses the geometric types of BasicCompGeometry (`Point`, `Segment`, `PntS
 ## Types
 ```@docs
 Morphing
+EventPoint
+FPointType
 ```
 
 ## Functions
@@ -19,7 +21,16 @@ Morphing_extract_prm
 Morphing_as_polygons
 Morphing_extract_vertex_radii
 Morphing_extract_offsets
+Morphing_monotone_leash
+Morphing_get_max_edges_err
 ```
 
+## Morphings as functions of time
 
+```@docs
+FrechetDist.Morphing_as_polygons_w_times
+Morphing_as_function_w_times
+polygons_get_loc_at_time
+Morphing_sample_uniformly
+morphing_profile
 ```
