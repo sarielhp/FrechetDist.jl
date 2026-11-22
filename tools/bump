@@ -1,57 +1,36 @@
 #!/usr/bin/env ruby
 # frozen_string_literal: true
 
-# Usage: tools/bump [--minor | --major] [--dry-run]
-# Bumps the version in Project.toml (patch by default), commits it, pushes the
-# current branch, and verifies that the remote has the commit. Refuses to run
-# with uncommitted changes. Does not register the package (see tools/release).
+require_relative 'tooling'
 
-require 'open3'
-require 'optparse'
+HELP = <<~TEXT
+  Usage: tools/bump [major|minor|patch|--resume|--abandon]
 
-ROOT = File.expand_path('..', __dir__)
-Dir.chdir(ROOT)
-PROJECT = 'Project.toml'
-VERSION_LINE = /^version = "(\d+)\.(\d+)\.(\d+)"$/
+  Release the committed tree. The working tree must be clean.
 
-def git(*args)
-  out, err, status = Open3.capture3('git', *args)
-  abort "git #{args.join(' ')} failed:\n#{err}" unless status.success?
-  out.strip
-end
+    1. Raise the version in Project.toml (patch by default) and run
+       VERSION_UPDATE.
+    2. Run the full gate, commit "chore: bump version to X.Y.Z", and push the
+       branch, verified. The vX.Y.Z tag is pushed with it only when
+       RELEASE_TAG is set; a registered package is tagged by TagBot instead.
 
-def next_version(current, level)
-  major, minor, patch = current
-  case level
-  when :major then [major + 1, 0, 0]
-  when :minor then [major, minor + 1, 0]
-  else [major, minor, patch + 1]
+  This changes the remote repository. It neither installs nor registers.
+
+  Options:
+    major, minor, patch  Which part of the version to raise.
+    --resume    Finish a bump that stopped partway, without bumping the
+                version again.
+    --abandon   Drop a stopped bump that published nothing: remove its
+                unpushed commit and tag, or restore the version file.
+    -h, --help  Show this help; nothing is run.
+TEXT
+
+Tooling.entry(HELP) do
+  usage = 'Usage: tools/bump [major|minor|patch|--resume|--abandon]'
+  abort usage unless ARGV.length <= 1 && (ARGV.empty? || %w[major minor patch --resume --abandon].include?(ARGV.first))
+  case ARGV.first
+  when '--resume' then Tooling.resume
+  when '--abandon' then Tooling.abandon
+  else Tooling.bump(ARGV.first || 'patch')
   end
 end
-
-level = :patch
-dry_run = false
-OptionParser.new do |o|
-  o.banner = 'Usage: tools/bump [--minor | --major] [--dry-run]'
-  o.on('--minor') { level = :minor }
-  o.on('--major') { level = :major }
-  o.on('--dry-run') { dry_run = true }
-end.parse!
-
-abort "Cannot bump: uncommitted changes:\n#{git('status', '--porcelain')}" unless git('status', '--porcelain').empty?
-branch = git('symbolic-ref', '--quiet', '--short', 'HEAD')
-text = File.read(PROJECT)
-match = text.match(VERSION_LINE) or abort "No version line in #{PROJECT}"
-current = match.captures.map(&:to_i)
-target = next_version(current, level).join('.')
-puts "Bump #{current.join('.')} -> #{target} on #{branch}"
-exit if dry_run
-
-File.write(PROJECT, text.sub(VERSION_LINE, "version = \"#{target}\""))
-git('add', PROJECT)
-git('commit', '-q', '-m', "Bump version to #{target}")
-sha = git('rev-parse', 'HEAD')
-git('push', 'origin', "#{sha}:refs/heads/#{branch}")
-remote = git('ls-remote', 'origin', "refs/heads/#{branch}").split.first
-abort "Remote #{branch} is at #{remote}, expected #{sha}." unless remote == sha
-puts "Pushed #{target} (#{sha})"

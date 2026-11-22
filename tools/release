@@ -1,37 +1,39 @@
 #!/usr/bin/env ruby
 # frozen_string_literal: true
 
-# Usage: tools/release [--minor | --major] [--dry-run] <message>
-# Commits pending work (after the quality gate), bumps the version, and pushes.
-# Registration is a separate step: see tools/publish. Stops at the first failure;
-# never repeat the bump after a failure past that step - inspect the local state
-# first.
+require_relative 'tooling'
 
-require 'optparse'
+HELP = <<~TEXT
+  Usage: tools/release [--no-install] <message>
 
-Dir.chdir(File.expand_path('..', __dir__))
-bump_args = []
-dry_run = false
-parser = OptionParser.new do |o|
-  o.banner = 'Usage: tools/release [--minor | --major] [--dry-run] <message>'
-  o.on('--minor') { bump_args << '--minor' }
-  o.on('--major') { bump_args << '--major' }
-  o.on('--dry-run') { dry_run = true }
+  Release: commit, bump the patch version, push, and install.
+
+    1. Commit the pending work as <message>, after the fast gate (tools/commit);
+       skipped when there is nothing to commit.
+    2. Bump the patch version in Project.toml, run the full gate, commit
+       "chore: bump version to X.Y.Z" and push the branch, verified
+       (tools/bump). The vX.Y.Z tag is pushed too only when RELEASE_TAG is set.
+       Skipped when HEAD is already the pushed release commit.
+    3. Install the declared scripts to INSTALL_TARGETS (tools/install);
+       skipped, with a notice, with --no-install or when no targets are declared;
+       a target that already matches the build is left alone.
+
+  A release does not register the package; that is tools/publish, run rarely
+  and only on request. Rerunning after a success does nothing but confirm it.
+  Steps 1 and 2 change the remote repository and are not
+  undone by rerunning. If a step fails, the message says what was published;
+  an interrupted bump is finished with tools/bump --resume, or dropped
+  with tools/bump --abandon when nothing was published.
+
+  Options:
+    --no-install  Skip step 3; the release is still published.
+    --install     Accepted for compatibility; installation is the default.
+    -h, --help    Show this help; nothing is run.
+TEXT
+
+Tooling.entry(HELP) do
+  install = ARGV.first != '--no-install'
+  ARGV.shift if %w[--install --no-install].include?(ARGV.first)
+  abort 'Usage: tools/release [--no-install] <message>' unless ARGV.length == 1
+  Tooling.release(Tooling.commit_message(ARGV.first), install: install)
 end
-parser.parse!
-message = ARGV.join(' ').strip
-abort parser.to_s if message.empty?
-
-branch = `git symbolic-ref --quiet --short HEAD`.strip
-abort "Release from main (currently on #{branch.inspect})." unless branch == 'main'
-
-if dry_run
-  system('./tools/bump', '--dry-run', *bump_args) or abort 'bump failed'
-  exit
-end
-
-dirty = !`git status --porcelain`.strip.empty?
-abort 'Release stopped at commit.' if dirty && !system('./tools/commit', message)
-abort 'Release stopped at bump/push.' unless system('./tools/bump', *bump_args)
-
-puts "Released #{`git rev-parse HEAD`.strip}; run tools/publish to register it"
