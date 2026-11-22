@@ -40,6 +40,13 @@ function frechet_width_approx(P::PntSeq{N,T}, rng::UnitRange{Int64} = 0:0)::T wh
     return sqrt(width_leash_sq(P, rng, Inf))
 end
 
+@inline width_check_finite(p::Point, rng::UnitRange{Int64}) =
+    all(isfinite, p) || width_nonfinite(rng)
+
+@noinline width_nonfinite(rng::UnitRange{Int64}) = throw(
+    ArgumentError("frechet_width_approx: a vertex in $rng has a non-finite coordinate"),
+)
+
 # The squared greedy width of P[rng] against its spine (rng has at least 3 vertices).
 # Stops early once sqrt of the running maximum exceeds `w`: the maximum only grows and
 # sqrt is monotone, so the comparison with `w` is decided at that point.
@@ -50,10 +57,16 @@ function width_leash_sq(P::PntSeq{N,T}, rng::UnitRange{Int64}, w::Float64) where
     seg_len_sq = fp_dist_sq(s_p, s_q)
     s_vec = s_q - s_p
 
+    # Checked vertex by vertex, as the loop reaches them: the same order of work as
+    # the loop, unlike checking all of P on every call. The arithmetic cannot be
+    # relied on to carry a NaN to the result (fp_dist_sq is @fastmath).
+    width_check_finite(s_p, rng)
+    width_check_finite(s_q, rng)
     t::Float64 = 0
     curr::Point{N,T} = s_p
     leash::Float64 = 0
     for i in (first(rng)+1):(last(rng)-1)
+        width_check_finite(P[i], rng)
         q, new_t = fp_nn_point_ext_ext(s_p, s_q, P[i], seg_len_sq, s_vec)
         if (new_t > t)
             t = new_t
@@ -62,15 +75,6 @@ function width_leash_sq(P::PntSeq{N,T}, rng::UnitRange{Int64}, w::Float64) where
         leash = max(leash, fp_dist_sq(curr, P[i]))
         (sqrt(leash) > w) && return leash
     end
-    # A NaN or infinite coordinate in P[rng] makes the maximum NaN or Inf, and NaN
-    # never returns early: detected here at no extra cost, instead of checking every
-    # vertex on every call, which would make the callers quadratic.
-    isfinite(leash) || throw(
-        ArgumentError(
-            "frechet_width_approx: a vertex in $rng has a non-finite coordinate " *
-            "(or the width overflows)",
-        ),
-    )
     return leash
 end
 
