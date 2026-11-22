@@ -79,6 +79,15 @@ end
     Q, idx = FrechetDist.Polygon_simplify_ext(P, 1.0)
     @test idx == [1, 3, 4] && length(Q) == 3
 
+    # The last vertex is kept once, also when the loop keeps it (M14).
+    P = PntSeq([point(0.0, 0.0), point(2.0, 0.0), point(4.0, 0.0), point(9.0, 0.0)])
+    Q, idx = FrechetDist.Polygon_simplify_ext(P, 1.0)
+    @test idx == [1, 2, 3, 4] && length(Q) == 4
+    # A closed curve keeps its last vertex, and a single vertex becomes two.
+    C = PntSeq([point(0.0, 0.0), point(3.0, 0.0), point(3.0, 3.0), point(0.0, 0.0)])
+    @test FrechetDist.Polygon_simplify_ext(C, 1.0)[2] == [1, 2, 3, 4]
+    @test FrechetDist.Polygon_simplify_ext(PntSeq([point(1.0, 1.0)]), 1.0)[2] == [1, 1]
+
     Q, idx = FrechetDist.frechet_simplify_to_width(PntSeq2F(), 1.0)
     @test length(Q) == 0 && isempty(idx)
 end

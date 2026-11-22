@@ -33,10 +33,13 @@ function Polygon_simplify_ext(P::PntSeq{D,T}, r::T) where {D,T}
         end
     end
 
-    # We push the last vertex even if it is a repetition, for
-    # example if the curve is closed.
-    push!(pout, P[len])
-    push!(pindices, len)
+    # The last vertex is always kept, even if it repeats an earlier point (a closed
+    # curve), but only once: the loop may have kept it already. A one-vertex curve
+    # still becomes a two-vertex curve.
+    if (last(pindices) != len) || (len == 1)
+        push!(pout, P[len])
+        push!(pindices, len)
+    end
 
     return pout, pindices
 end
