@@ -54,6 +54,16 @@ function combine_via_simplified(
 end
 
 
+# Records a certified lower bound `lb` on the Frechet distance in `m`, and the
+# ratio between the leash (an upper bound) and it. `lb` is clamped to the leash, which
+# it can exceed only by rounding.
+function set_bounds!(m::Morphing, lb::Real)
+    m.lower_bound = clamp(lb, 0.0, m.leash)
+    m.ratio = (m.lower_bound > 0.0) ? m.leash / m.lower_bound : (m.leash == 0.0 ? 1.0 : Inf)
+    return m
+end
+
+
 # Upper/lower ratio certified for a morphing built from simplifications with
 # total error total_err.
 function approx_ratio_bound(m_leash, t_approx, total_err, out_leash, approx)
@@ -81,9 +91,9 @@ curves. Returns a monotone morphing realizing it.
 Importantly, approx can be larger than 2, if you want a rough
 approximation.
 
-The quality of approximation is available at ret.ratio. Thus,
-ret.leash/ret.ratio is a lower bound on the Frechet distance, while
-ret.leash is an upper bound.
+The quality of approximation is available at ret.ratio: ret.lower_bound
+(= ret.leash/ret.ratio) is a certified lower bound on the Frechet distance,
+while ret.leash is an upper bound.
 
 """
 function frechet_c_approx(
@@ -123,10 +133,9 @@ function frechet_c_approx(
             Q, q_indices = Polygon_simplify_ext(poly_b, r)
 
             if ((2 * cardin(P) > cardin(poly_a)) && (2 * cardin(Q) > cardin(poly_b)))
-                m = frechet_mono_via_refinement(poly_a, poly_b)[1]
-                m.ratio = 1.0
-                m.lower_bound = m.leash
-                return m
+                # Its lower bound is the VE-retractable distance, not the leash.
+                m = frechet_mono_via_refinement(poly_a, poly_b, min(approx, 1.00001))[1]
+                return set_bounds!(m, m.lower_bound)
             end
 
             @assert((cardin(P) > 1) && (cardin(Q) > 1))
@@ -150,9 +159,8 @@ function frechet_c_approx(
         )
         ratio = approx_ratio_bound(m.leash, t_approx, total_err, mm_out.leash, approx)
         if ratio <= approx
-            mm_out.ratio = ratio
-            mm_out.lower_bound = m.leash / ratio
-            return mm_out
+            # m.leash <= t_approx d(P, Q) and d(P, Q) <= d(poly_a, poly_b) + total_err.
+            return set_bounds!(mm_out, m.leash / t_approx - total_err)
         end
         f_do_one_round = true
     end
@@ -267,7 +275,10 @@ two polygons. It should be reasonably fast.
 
 This function is somewhat slower than the approximate versions. Use it
 only if you really want the exact answer. Consider using
-frechet_continous_approx instead.
+`frechet_c_approx` instead.
+
+The result also carries a certified lower bound, `m.lower_bound`, and
+`m.ratio = m.leash / m.lower_bound` (1 when the distance is exact).
 
 # Details
 
@@ -327,7 +338,6 @@ function frechet_c_compute(
         return m_rough
     end
 
-    ratio_2 = m_rough.ratio
 
     len_a = geom_length(P)
     len_b = geom_length(Q)
@@ -346,6 +356,9 @@ function frechet_c_compute(
     pl, ql = Morphing_extract_vertex_radii(m)
 
     lower_bound = m.leash / ratio
+    # A certified lower bound, reported in the result; lower_bound above only steers
+    # the simplification.
+    certified_lb = m.lower_bound
 
     ### Now we start looping refining if we need to improve th eapproxiamtion.
     round::Int64 = 0
@@ -378,7 +391,8 @@ function frechet_c_compute(
         # time. Just compute the Frechet distance using
         # monotonization.
         if ((2 * cardin(PS) > cardin(P)) && (2 * cardin(QS) > cardin(Q)))
-            return frechet_mono_via_refinement(P, Q, 1.0 + tolerance)[1]
+            m = frechet_mono_via_refinement(P, Q, 1.0 + tolerance)[1]
+            return set_bounds!(m, max(certified_lb, m.lower_bound))
         end
 
         t_aprx = max(tolerance + 1.0, aprx_refinement)
@@ -395,6 +409,8 @@ function frechet_c_compute(
         Morphing_swap_sides!(m_b)
 
         mw = Morphing_combine(mmu, m_b)
+        # m_mid.lower_bound <= d(PS, QS) <= d(P, Q) + m_a.leash + m_b.leash.
+        certified_lb = max(certified_lb, m_mid.lower_bound - m_a.leash - m_b.leash)
 
 
         # is there is NO hope we got the optimal solution?
@@ -425,15 +441,17 @@ function frechet_c_compute(
         # copies...
         m_final = frechet_ve_r_compute_ext(PSR, QSR, PS_offs, QS_offs, true)
 
+        # The VE-retractable distance with offsets is a lower bound on d(P, Q).
+        certified_lb = max(certified_lb, m_final.leash)
         if (eq(m_final.leash, mw.leash, tolerance))
-            return mw
+            return set_bounds!(mw, certified_lb)
         end
 
         # WE have to try harder - making slack at vertices smaller, and approximation smaller...
         factor = factor * factor_scale
         aprx_refinement = 1.0 + ((aprx_refinement - 1.0) / approx_scale)
         if f_accept_approx && (1.00001 * m_final.leash > mw.leash)
-            return mw
+            return set_bounds!(mw, certified_lb)
         end
     end  # While loop end
 end

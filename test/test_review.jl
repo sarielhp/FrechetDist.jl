@@ -317,3 +317,39 @@ end
     end
     @test fails == 0
 end
+
+@isdefined(pair_families) || include(joinpath(@__DIR__, "agreement.jl"))
+
+@testset "frechet_c_approx / frechet_c_compute report certified bounds" begin
+    # The shortcut path of frechet_c_approx reported lower_bound = leash, above the
+    # exact distance (e.g. subsample, seed 15: 0.333226589 > 0.333225697), the main
+    # path a value other than leash / ratio, and frechet_c_compute left ratio = 0.
+    bad = String[]
+    for (fname, gen) in pair_families(; dim = 2), seed = 1:15
+        Pv, Qv = gen(MersenneTwister(seed))
+        P, Q = mkseq(Pv), mkseq(Qv)
+        exact = oracle_continuous(Pv, Qv)
+        slack = 1e-9 * max(exact, 1e-300)
+        ms = [("approx($ap)", FD.frechet_c_approx(P, Q, ap)) for ap in (1.0001, 1.1, 2.0)]
+        append!(
+            ms,
+            [("compute($acc)", FD.frechet_c_compute(P, Q, acc)) for acc in (true, false)],
+        )
+        for (nm, m) in ms
+            ok =
+                m.lower_bound <= exact + slack &&
+                exact <= m.leash + slack &&
+                (exact == 0 || m.lower_bound > 0) &&
+                (
+                    m.lower_bound == 0 ||
+                    isapprox(m.ratio, m.leash / m.lower_bound; rtol = 1e-12)
+                )
+            ok || push!(
+                bad,
+                "$fname/$seed $nm: lb=$(m.lower_bound) leash=$(m.leash) ratio=$(m.ratio) exact=$exact",
+            )
+        end
+    end
+    @test isempty(bad)
+    isempty(bad) || println(join(first(bad, 5), "\n"))
+end

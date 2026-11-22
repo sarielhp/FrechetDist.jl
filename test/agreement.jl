@@ -230,9 +230,9 @@ function check_continuous!(fails, P, Q, Pv, Qv, exact, scale)
         err === nothing || (push!(fails, err); continue)
         lower = m.leash / m.ratio
         slack = 1e-9 * scale
-        # `ratio == 1` means equal up to frechet_c_compute's tolerance of 1e-5.
+        # leash / ratio is a certified lower bound.
         (
-            lower <= exact * (1 + 2e-5) + slack &&
+            lower <= exact * (1 + 1e-9) + slack &&
             exact <= m.leash + slack &&
             m.leash <= approx * exact + slack
         ) || push!(
