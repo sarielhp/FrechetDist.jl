@@ -196,3 +196,36 @@ end
     end
     @test bad == 0
 end
+
+@testset "VE search: dense and Dict predecessor maps give identical results" begin
+    conv(m) = (
+        m.leash,
+        m.iters,
+        [(e.p, e.i, e.type, e.t) for e in m.pes],
+        [(e.p, e.i, e.type, e.t) for e in m.qes],
+    )
+    rng = MersenneTwister(17)
+    same = true
+    for k = 1:40
+        D = 2 + k % 2
+        A = PntSeq([
+            Point{D,Float64}(x) for
+            x in eachcol(cumsum(randn(rng, D, rand(rng, 3:40)), dims = 2))
+        ])
+        B = PntSeq([
+            Point{D,Float64}(x) for
+            x in eachcol(cumsum(randn(rng, D, rand(rng, 3:40)), dims = 2))
+        ])
+        a = conv(FD.frechet_ve_r_compute(A, B))
+        r = FD.frechet_ve_r_compute_range(A, B, 0.01)
+        old = FD.PREVMAP_MIN_DENSE[]
+        FD.PREVMAP_MIN_DENSE[] = 0
+        try
+            same &= (a == conv(FD.frechet_ve_r_compute(A, B)))
+            same &= (r == FD.frechet_ve_r_compute_range(A, B, 0.01))
+        finally
+            FD.PREVMAP_MIN_DENSE[] = old
+        end
+    end
+    @test same
+end

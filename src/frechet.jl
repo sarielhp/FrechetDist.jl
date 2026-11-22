@@ -51,13 +51,79 @@ end
 
 
 
-#@with_kw
+"""
+    PrevMap
+
+The predecessor map of the VE search: event id => id of the event it was reached
+from. It starts as a `Dict`, which is cheap when the search explores few events
+(similar curves), and moves once to a dense array indexed by (i, j, status) when it
+holds more than `limit` entries, which is faster and smaller when the search explores
+most of the 4 n_p n_q events. Only lookups are used, so the representation does not
+affect results.
+"""
+mutable struct PrevMap
+    dict::Dict{Int64,Int64}
+    dense::Vector{Int64}   # empty until the move; 0 marks a missing entry
+    n_p::Int64
+    n_q::Int64
+    limit::Int64
+end
+
+"Smallest number of entries before a `PrevMap` turns dense. A `Ref` so tests can lower it."
+const PREVMAP_MIN_DENSE = Ref(1024)
+
+function PrevMap(n_p::Int64, n_q::Int64)
+    # Stay a Dict when the dense array would need more than a quarter of the memory.
+    dense_ok = 32.0 * n_p * n_q <= Sys.total_memory() / 4
+    limit = dense_ok ? max(PREVMAP_MIN_DENSE[], (n_p * n_q) >> 4) : typemax(Int64)
+    return PrevMap(Dict{Int64,Int64}(), Int64[], n_p, n_q, limit)
+end
+
+@inline pm_slot(m::PrevMap, id::Int64) =
+    ((EID_j(id) - 1) * m.n_p + (EID_i(id) - 1)) * 4 + EID_ij_status(id) + 1
+@inline pm_in_range(m::PrevMap, id::Int64) =
+    (1 <= EID_i(id) <= m.n_p) && (1 <= EID_j(id) <= m.n_q)
+
+@inline function Base.haskey(m::PrevMap, id::Int64)
+    isempty(m.dense) && return haskey(m.dict, id)
+    return pm_in_range(m, id) && (m.dense[pm_slot(m, id)] != 0)
+end
+
+@inline function Base.getindex(m::PrevMap, id::Int64)
+    isempty(m.dense) && return m.dict[id]
+    v = pm_in_range(m, id) ? m.dense[pm_slot(m, id)] : 0
+    v == 0 && throw(KeyError(id))
+    return v
+end
+
+function Base.setindex!(m::PrevMap, v::Int64, id::Int64)
+    if !isempty(m.dense)
+        m.dense[pm_slot(m, id)] = v
+        return m
+    end
+    m.dict[id] = v
+    length(m.dict) > m.limit && pm_make_dense!(m)
+    return m
+end
+
+function pm_make_dense!(m::PrevMap)
+    m.dense = zeros(Int64, 4 * m.n_p * m.n_q)
+    for (k, v) in m.dict
+        m.dense[pm_slot(m, k)] = v
+    end
+    m.dict = Dict{Int64,Int64}()
+    return m
+end
+
+"A predecessor map: the VE search uses a `PrevMap`, the sweep search a `Dict`."
+const PrevLookup = Union{Dict{Int64,Int64},PrevMap}
+
 mutable struct FRContext{N,T}
     P::PntSeq{N,T}
     Q::PntSeq{N,T}
     p_offs::Vector{Float64}
     q_offs::Vector{Float64}
-    dict::Dict{Int64,Int64}
+    dict::PrevMap
     heapAlt::BinaryMinHeap{Tuple{Float64,Int64}}
     f_offsets::Bool
     n_p::Int64 #0
@@ -67,7 +133,7 @@ mutable struct FRContext{N,T}
 end
 
 function FR_Context(P::PntSeq{N,T}, Q::PntSeq{N,T}) where {N,T}
-    d_ver = Dict{Int64,Int64}()
+    d_ver = PrevMap(Int64(cardin(P)), Int64(cardin(Q)))
     h = BinaryMinHeap{Tuple{Float64,Int64}}()
     return FRContext(
         P,
@@ -187,7 +253,7 @@ end
 
 
 @inline function is_schedule_event(
-    dict::Dict{Int64,Int64},
+    dict::PrevLookup,
     id::Int64,
     n_p::Int64,
     n_q::Int64,
@@ -232,7 +298,7 @@ function f_r_extract_solution_basic(
     P::PntSeq{N,T},
     Q::PntSeq{N,T},
     end_event_id::Int64,
-    dict::Dict{Int64,Int64},
+    dict::PrevLookup,
 ) where {N,T}
     #############################################################3
     # Extracting the solution
@@ -274,7 +340,7 @@ function f_r_extract_solution(
     P::PntSeq{N,T},
     Q::PntSeq{N,T},
     end_event_id::Int64,
-    dict::Dict{Int64,Int64},
+    dict::PrevLookup,
     c::FRContext{N,T},
 ) where {N,T}
     #############################################################3
