@@ -232,6 +232,23 @@ function frechet_d_r_compute(P::PntSeq{D,T}, Q::PntSeq{D,T}) where {D,T}
     return m
 end
 
+# dp[i, j] of DTW_d_compute, from `col` (dp[i-1, j] in col[i-1], dp[i, j-1] in col[i])
+# and d = fp_dist(P[i], Q[j]); records the choice in `dec_i`.
+@inline function dtw_cell!(
+    dec_i::BitMatrix,
+    col::Vector{Float64},
+    i::Int64,
+    j::Int64,
+    d::Float64,
+)
+    (i == 1) && (j == 1) && return d
+    if (j == 1) || ((i > 1) && (col[i-1] < col[i]))
+        dec_i[i, j] = true
+        return col[i-1] + d
+    end
+    return col[i] + d
+end
+
 """
     DTW_d_compute
 
@@ -239,69 +256,34 @@ end
     minimum, over single-step discrete couplings (one index advances at a
     time), of the sum of the leash lengths. The price is returned in
     `m.sol_value`; `m.leash` is the longest leash of the optimal coupling.
+    Ties between couplings of equal price are broken in a fixed way: at each cell,
+    a step along `Q` is preferred to an equally cheap step along `P`.
 
 """
 function DTW_d_compute(P::PntSeq{D,T}, Q::PntSeq{D,T}) where {D,T}
     check_curves(P, Q, "DTW_d_compute"; min_vertices = 1)
-    check_quadratic_size(cardin(P), cardin(Q), 8.5, "DTW_d_compute")
-
-    pq = PriorityQueue{Tuple{Int64,Int64},Float64}()
+    # Only the direction bits are quadratic (1/8 byte per cell).
+    check_quadratic_size(cardin(P), cardin(Q), 0.125, "DTW_d_compute")
 
     n_p = cardin(P)
     n_q = cardin(Q)
 
-    # Inf marks a cell not reached yet (0 is a legitimate value).
-    dp = fill(Inf, n_p, n_q)
-    dp_dec_i = falses(n_p, n_q)
-    handled = falses(n_p, n_q)
-
-    function push_value(ia, ja, val, i)
-        new_val = val + fp_dist(P[ia], Q[ja])
-
-        if dp[ia, ja] <= new_val
-            return
-        end
-        dp[ia, ja] = new_val
-        pq[ia, ja] = new_val  # Push to queue
-        dp_dec_i[ia, ja] = (i < ia)
-    end
-
-    dp[1, 1] = fp_dist(P[1], Q[1])
-    #handled[ 1, 1 ] = true;
-
-    enqueue!(pq, (1, 1), dp[1, 1])
-
-    iters::Int64 = 0
-    while ! isempty(pq)
-        iters = iters + 1
-
-        ele = peek(pq)
-        i, j = ele[1]
-        value = ele[2]
-
-
-        dequeue!(pq)
-        if handled[i, j]
-            continue
-        end
-
-        handled[i, j] = true
-        if ((i == n_p) && (j == n_q))
-            break
-        end
-
-        # Now we need to schedule the next two adjacent entries..
-        if (i < n_p)
-            push_value(i + 1, j, value, i)
-        end
-        if (j < n_q)
-            push_value(i, j+1, value, i)
+    # Dynamic programming over the cells in column order. dp[i, j] is the cheapest
+    # coupling of P[1:i] and Q[1:j]: fp_dist(P[i], Q[j]) plus the cheaper of
+    # dp[i-1, j] and dp[i, j-1]. `col` holds column j: entries below i are already
+    # dp[., j], the others still dp[., j-1].
+    dp_dec_i = falses(n_p, n_q)  # whether dp[i, j] comes from dp[i-1, j]
+    col = Vector{Float64}(undef, n_p)
+    for j in 1:n_q
+        for i in 1:n_p
+            col[i] = dtw_cell!(dp_dec_i, col, i, j, fp_dist(P[i], Q[j]))
         end
     end
+    iters = n_p * n_q
 
     m = d_frechet_extract_solution(P, Q, dp_dec_i, n_p, n_q)
     m.iters = iters
-    m.sol_value = dp[n_p, n_q]
+    m.sol_value = col[n_p]
 
     return m
 end
