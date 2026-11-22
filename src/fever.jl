@@ -103,7 +103,12 @@ struct FEVERContext{N,T}
     Q::PntSeq{N,T}
 
     eid::EIDCalc
-    vals::Vector{T}   # An array containing all the event values.
+    # Indexed by event id, allocated without initialization: only the entries that
+    # `known` and `reached` mark are ever read, and clearing two bit vectors is 64
+    # times cheaper than filling `vals` and `prev`.
+    vals::Vector{T}   # the value of each event, once `known`
+    known::BitVector  # whether the event's value has been computed
+    reached::BitVector  # whether the event has been scheduled (`prev` is set)
     events_queue::Vector{Int64}  # an array containing the IDs of all
     # the events in the heap
     comparator::EventsOrder{T}
@@ -131,11 +136,14 @@ function FEVER_Context(
     eid = ID_init(cardin(P), cardin(Q))
     mx = ID_get_max(eid)
 
-    vals = fill(T(-1.0), mx)
-    prev = zeros(Int64, mx)
+    vals = Vector{T}(undef, mx)
+    known = falses(mx)
+    reached = falses(mx)
+    prev = Vector{Int64}(undef, mx)
 
     vals[ID_START] = fp_dist(first(P), first(Q))
     vals[ID_END] = fp_dist(last(P), last(Q))
+    known[ID_START] = known[ID_END] = true
 
     comparator = EventsOrder{T}(vals)
 
@@ -148,6 +156,8 @@ function FEVER_Context(
         Q,
         eid,
         vals,
+        known,
+        reached,
         events_queue,
         comparator,
         heap,
@@ -167,7 +177,7 @@ end
     cell::FeverCell,
 )::Bool where {N,T}
     (; i, i_is_vert, j, j_is_vert) = cell
-    if ((id > length(c.prev)) || (c.prev[id] != 0))
+    if ((id > length(c.prev)) || c.reached[id])
         return false
     end
 
@@ -197,7 +207,7 @@ end
 ) where {N,T}
     (; i, i_is_vert, j, j_is_vert) = cell
 
-    if (c.vals[id] >= 0)
+    if c.known[id]
         return c.vals[id]
     end
 
@@ -210,12 +220,14 @@ end
             d = fp_dist_point_segment(c.P[i], Q[j], Q[j+1])
         end
         c.vals[id] = d
+        c.known[id] = true
         return d
     end
 
     if j_is_vert
         d = fp_dist_point_segment(Q[j], P[i], P[i+1])
         c.vals[id] = d
+        c.known[id] = true
         return d
     end
 
@@ -239,6 +251,7 @@ end
 
     ### Also... Blocks the event from being considered again...
     c.prev[id] = prev_id
+    c.reached[id] = true
     push!(c.heap, id)
 end
 
@@ -419,6 +432,7 @@ function fever_search!(c::FEVERContext{N,T}) where {N,T}
             if ((fc.i == n_pm) && (fc.j == n_qm))
                 f_reached_end = true
                 c.prev[ID_END] = id
+                c.reached[ID_END] = true
                 push!(c.heap, ID_END)
                 continue
             end
