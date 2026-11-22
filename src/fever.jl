@@ -89,7 +89,7 @@ end
 end
 
 
-mutable struct EventsOrder{T} <: Base.Order.Ordering
+struct EventsOrder{T} <: Base.Order.Ordering
     values::Vector{T}
 end
 
@@ -97,7 +97,7 @@ function lt(o::EventsOrder, a::Int64, b::Int64)
     return isless(o.values[a], o.values[b])
 end
 
-mutable struct FEVERContext{N,T}
+struct FEVERContext{N,T}
     P::PntSeq{N,T}
     Q::PntSeq{N,T}
 
@@ -118,7 +118,12 @@ mutable struct FEVERContext{N,T}
 end
 
 
-function FEVER_Context(P::PntSeq{N,T}, Q::PntSeq{N,T}) where {N,T}
+# `upper_bound` (if given) prunes events above it.
+function FEVER_Context(
+    P::PntSeq{N,T},
+    Q::PntSeq{N,T};
+    upper_bound::Union{Nothing,Real} = nothing,
+) where {N,T}
 
     @assert((cardin(P) > 1) && (cardin(Q) > 1))
 
@@ -148,8 +153,8 @@ function FEVER_Context(P::PntSeq{N,T}, Q::PntSeq{N,T}) where {N,T}
         prev,
         cardin(P),
         cardin(Q),
-        false,
-        zero(T),
+        upper_bound !== nothing,
+        T(something(upper_bound, zero(T))),
     )
     return fr
 end
@@ -388,13 +393,8 @@ function FEVER_compute_range(P::PntSeq{N,T}, Q::PntSeq{N,T}, upper_bound::Real) 
     #global fever_comp_count += 1;
 
 
-    c::FEVERContext{N,T} = FEVER_Context(P, Q)
+    c::FEVERContext{N,T} = FEVER_Context(P, Q; upper_bound)
     fc = FeverCoords(0, false, 0, false)
-
-    ## DEBUG code
-
-    c.f_upper_bound = true
-    c.upper_bound = upper_bound
 
     n_pm::Int64 = c.n_p - 1
     n_qm::Int64 = c.n_q - 1
@@ -470,8 +470,6 @@ function FEVER_compute(P::PntSeq{N,T}, Q::PntSeq{N,T}) where {N,T}
 
     c::FEVERContext{N,T} = FEVER_Context(P, Q)
     fc = FeverCoords(0, false, 0, false)
-
-    c.f_upper_bound = false
 
     n_pm::Int64 = c.n_p - 1
     n_qm::Int64 = c.n_q - 1

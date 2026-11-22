@@ -118,7 +118,7 @@ end
 "A predecessor map: the VE search uses a `PrevMap`, the sweep search a `Dict`."
 const PrevLookup = Union{Dict{Int64,Int64},PrevMap}
 
-mutable struct FRContext{N,T}
+struct FRContext{N,T}
     P::PntSeq{N,T}
     Q::PntSeq{N,T}
     p_offs::Vector{Float64}
@@ -132,21 +132,29 @@ mutable struct FRContext{N,T}
     upper_bound::T
 end
 
-function FR_Context(P::PntSeq{N,T}, Q::PntSeq{N,T}) where {N,T}
+# The search context. `upper_bound` (if given) prunes events above it; `offsets`
+# (if given) is the pair (p_offs, q_offs) of per-vertex offsets.
+function FR_Context(
+    P::PntSeq{N,T},
+    Q::PntSeq{N,T};
+    upper_bound::Union{Nothing,Real} = nothing,
+    offsets::Union{Nothing,Tuple{Vector{Float64},Vector{Float64}}} = nothing,
+) where {N,T}
     d_ver = PrevMap(Int64(cardin(P)), Int64(cardin(Q)))
     h = BinaryMinHeap{Tuple{Float64,Int64}}()
+    p_offs, q_offs = something(offsets, (Vector{Float64}(), Vector{Float64}()))
     return FRContext(
         P,
         Q,
-        Vector{Float64}(),
-        Vector{Float64}(),
+        p_offs,
+        q_offs,
         d_ver,
         h,
-        false,
+        offsets !== nothing,
         Int64(cardin(P)),
         Int64(cardin(Q)),
-        false,
-        zero(T),  # Upper bound
+        upper_bound !== nothing,
+        T(something(upper_bound, zero(T))),
     )
 end
 
@@ -554,9 +562,7 @@ function frechet_ve_r_compute_range(
 ) where {N,T}
     check_curves(P, Q, "frechet_ve_r_compute_range"; min_vertices = 2)
     check_nonnegative(upper_bound, "frechet_ve_r_compute_range", "upper_bound")
-    c::FRContext{N,T} = FR_Context(P, Q)
-    c.f_upper_bound = true
-    c.upper_bound = upper_bound
+    c::FRContext{N,T} = FR_Context(P, Q; upper_bound)
 
     n_pm::Int64 = c.n_p - 1
     n_qm::Int64 = c.n_q - 1
@@ -637,13 +643,7 @@ function frechet_ve_r_compute_ext(
         check_offsets(p_offs, "frechet_ve_r_compute_ext", "p_offs")
         check_offsets(q_offs, "frechet_ve_r_compute_ext", "q_offs")
     end
-    c = FR_Context(P, Q)
-
-    if f_use_offsets
-        c.p_offs = p_offs
-        c.q_offs = q_offs
-        c.f_offsets = true
-    end
+    c = FR_Context(P, Q; offsets = f_use_offsets ? (p_offs, q_offs) : nothing)
 
     start_id = EID(1, true, 1, true)
 

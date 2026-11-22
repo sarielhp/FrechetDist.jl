@@ -35,7 +35,7 @@ end
 
 
 
-@with_kw mutable struct SDContext{N,T}
+@with_kw struct SDContext{N,T}
     P::PntSeq{N,T}
     Q::PntSeq{N,T}
     vertices::Dict{Int64,TreeVertex}
