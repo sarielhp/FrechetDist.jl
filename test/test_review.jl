@@ -151,3 +151,26 @@ end
     reverse!(bad.qes)
     @test outcome(() -> FD.Morphing_verify_valid(bad)) isa AE
 end
+
+@testset "fp_dist_segment_segment: no allocation, same values as the LAPACK solve" begin
+    a, b, c, d = point(0.0, 0.0), point(1.0, 0.2), point(0.3, 1.0), point(0.5, -1.0)
+    FD.fp_dist_segment_segment(a, b, c, d)
+    @test (@allocated FD.fp_dist_segment_segment(a, b, c, d)) == 0
+
+    ref =
+        isdefined(FD, :fp_dist_segment_segment_lapack) ? FD.fp_dist_segment_segment_lapack :
+        FD.fp_dist_segment_segment
+    rng = MersenneTwister(21)
+    mism = 0
+    for k = 1:20_000, D in (2, 3)
+        sc = 2.0^rand(rng, -60:60)
+        pts = [Point{D,Float64}(randn(rng, D) .* sc) for _ = 1:4]
+        if k % 5 == 0                       # lattice: exact ties, parallel, shared points
+            pts = [Point{D,Float64}(rand(rng, -2:2, D)) for _ = 1:4]
+        end
+        r1 = FD.fp_dist_segment_segment(pts...)
+        r2 = ref(pts...)
+        r1 === r2 || (mism += 1)
+    end
+    @test mism == 0
+end
