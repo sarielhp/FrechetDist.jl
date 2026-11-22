@@ -260,6 +260,63 @@ function simplify_morphing_sensitive(m::Morphing{D,T}, factor::Float64) where {D
 end
 
 
+# Tuning parameters of frechet_c_compute.
+const FC_ROUGH_APPROX = 2.0           # factor of the first, rough approximation
+const FC_MIN_APPROX = 1.00000000001   # smallest approximation factor ever requested
+const FC_SLACK_DIVISOR = 4.0          # vertex slack = (bound - vertex radius) / divisor
+const FC_SLACK_GROWTH = 1.3           # after a failed round the divisor grows by this
+const FC_APPROX_SHRINK = 10.0         # ... and (approx - 1) shrinks by this
+const FC_SLACK_ROUNDS = 8             # smoothing rounds of propagate_mins!
+# With f_accept_approx, a result is accepted once its leash is within this factor of
+# the certified lower bound. It predates the `tolerance` argument and ignores it.
+const FC_ACCEPT_GAP = 1.00001
+
+# How far each vertex may move in the simplification: (bound - radius) / divisor,
+# where `radii` are the leash lengths at the vertices. Smoothed so that the
+# neighbours of a vertex that must not move (negative slack) do not move either.
+function vertex_slack(radii::Vector{Float64}, bound::Float64, divisor::Float64)
+    slack = ((bound * ones(length(radii))) - radii) / divisor
+    propagate_mins!(slack, FC_SLACK_ROUNDS)
+    return slack
+end
+
+# Turns a morphing `m_mid` between the simplifications PS and QS into a morphing
+# between P and Q, through P -> PS -> QS -> Q. Each side is (curve, simplification,
+# indices of the simplification's vertices in the curve). Also returns the two
+# simplification morphings and their offsets.
+function stitch_simplified(
+    m_mid::Morphing{N,T},
+    p_side::Tuple{PntSeq{N,T},PntSeq{N,T},Vector{Int64}},
+    q_side::Tuple{PntSeq{N,T},PntSeq{N,T},Vector{Int64}},
+) where {N,T}
+    P, PS, p_indices = p_side
+    Q, QS, q_indices = q_side
+    m_a, offsets_a = frechet_c_mono_approx_subcurve(P, PS, p_indices)
+    m_pq = Morphing_combine(m_a, m_mid)
+    m_b, offsets_b = frechet_c_mono_approx_subcurve(Q, QS, q_indices)
+    Morphing_swap_sides!(m_b)
+    return Morphing_combine(m_pq, m_b), m_a, m_b, offsets_a, offsets_b
+end
+
+# The VE-retractable distance with offsets between the refined simplifications PSR
+# and QSR, a lower bound on d(P, Q). Each side is (refined simplification,
+# simplification, offsets at the simplification's vertices); the offsets are carried
+# over to the refinement. The refined curves must be used here, so that the distance
+# is a monotone one.
+function offsets_lower_bound(
+    p_side::Tuple{PntSeq{N,T},PntSeq{N,T},Vector{Float64}},
+    q_side::Tuple{PntSeq{N,T},PntSeq{N,T},Vector{Float64}},
+) where {N,T}
+    PSR, PS, offsets_a = p_side
+    QSR, QS, offsets_b = q_side
+    PS_offs = offsets_copy_map(get_refinement_map(PSR, PS), offsets_a)
+    QS_offs = offsets_copy_map(get_refinement_map(QSR, QS), offsets_b)
+    @assert(length(PS_offs) == cardin(PSR))
+    @assert(length(QS_offs) == cardin(QSR))
+    return frechet_ve_r_compute_ext(PSR, QSR, PS_offs, QS_offs, true)
+end
+
+###########################################################################
 ###########################################################################
 """
     frechet_c_compute
@@ -319,138 +376,74 @@ function frechet_c_compute(
     P = remove_consecutive_duplicates(P)
     Q = remove_consecutive_duplicates(Q)
 
-    # The parameters that can be fine-tuned....
-    aprx_refinement::Float64 = 2.0
-    factor::Float64 = 4.0
-    factor_scale::Float64 = 1.3
-    approx_scale::Float64 = 10.0
-
-    min_approx::Float64 = 1.00000000001
-
+    aprx_refinement::Float64 = FC_ROUGH_APPROX
+    divisor::Float64 = FC_SLACK_DIVISOR
 
     m_rough = frechet_c_approx(P, Q, aprx_refinement)
     if (m_rough.leash == 0.0)  # exact: the curves coincide; nothing to refine
         return m_rough
     end
 
-
-    len_a = geom_length(P)
-    len_b = geom_length(Q)
-
-    approx = min(1.0 + (len_a + len_b) / (100.0 * m_rough.leash), 1.1)
-    # Curves far apart relative to their length round this to exactly 1.
+    # A good approximation, at most 1.1, finer when the curves are long compared to
+    # their distance. Curves far apart relative to their length round it to 1.
+    approx = min(1.0 + (geom_length(P) + geom_length(Q)) / (100.0 * m_rough.leash), 1.1)
     if approx <= 1.0
-        approx = min_approx
+        approx = FC_MIN_APPROX
     end
+    m = (m_rough.ratio > approx) ? frechet_c_approx(P, Q, approx) : m_rough
 
-    m = m_rough
-    if m_rough.ratio > approx
-        m = frechet_c_approx(P, Q, approx)
-    end
-    ratio = m.ratio
-
-
-    # Okay - we computed a good enough approximation. 
-    # We next extract the leases distances at the vertices...
+    # Leash lengths at the vertices, which decide how far each may move.
     pl, ql = Morphing_extract_vertex_radii(m)
-
-    lower_bound = m.leash / ratio
-    # A certified lower bound, reported in the result; lower_bound above only steers
-    # the simplification.
+    # Only steers the simplification; certified_lb is the bound that is reported.
+    slack_bound = m.leash / m.ratio
     certified_lb = m.lower_bound
 
-    ### Now we start looping refining if we need to improve th eapproxiamtion.
     round::Int64 = 0
     while true
         round = round + 1
         check_rounds(round, "frechet_c_compute")
-        aprx_refinement = max(aprx_refinement, min_approx)
+        aprx_refinement = max(aprx_refinement, FC_MIN_APPROX)
 
+        # Simplify both curves, moving each vertex at most by its slack.
+        PS, p_indices, _ =
+            Polygon_simplify_radii_ext(P, vertex_slack(pl, slack_bound, divisor))
+        QS, q_indices, _ =
+            Polygon_simplify_radii_ext(Q, vertex_slack(ql, slack_bound, divisor))
 
-        # Computes the slack at the vertices. The larger tha slack the more one can move a 
-        # vertex without changing the Frechet distance. Negatie slack means not to move the 
-        # vertices.
-        pz = ((lower_bound * ones(length(pl))) - pl) / factor
-        qz = ((lower_bound * ones(length(ql))) - ql) / factor
-
-        # Propogate the do not move by doing a local min convolution. The current code is 
-        # not efficient.
-        propagate_mins!(pz, 8)
-        propagate_mins!(qz, 8)
-
-        f_PS_exact::Bool = false
-        f_QS_exact::Bool = false
-
-        # Simplify the polygons using the slack computed above per vertex.
-        PS, p_indices, f_PS_exact = Polygon_simplify_radii_ext(P, pz)
-        QS, q_indices, f_QS_exact = Polygon_simplify_radii_ext(Q, qz)
-
-
-        # If the PS and QS are really large, this is a waste of
-        # time. Just compute the Frechet distance using
-        # monotonization.
+        # Simplifications this large save nothing: compute the distance directly.
         if ((2 * cardin(PS) > cardin(P)) && (2 * cardin(QS) > cardin(Q)))
             m = frechet_mono_via_refinement(P, Q, 1.0 + tolerance)[1]
             return set_bounds!(m, max(certified_lb, m.lower_bound))
         end
 
         t_aprx = max(tolerance + 1.0, aprx_refinement)
-
-        m_mid, _f_exact, PSR, QSR = frechet_mono_via_refinement(PS, QS, t_aprx)
-
-
-        # BUG FIX: Used the mono computation instead of the subcurve code,
-        # which is much faster...
-        m_a, offsets_a = frechet_c_mono_approx_subcurve(P, PS, p_indices)
-        mmu = Morphing_combine(m_a, m_mid)
-        m_b, offsets_b = frechet_c_mono_approx_subcurve(Q, QS, q_indices)
-
-        Morphing_swap_sides!(m_b)
-
-        mw = Morphing_combine(mmu, m_b)
+        m_mid, _, PSR, QSR = frechet_mono_via_refinement(PS, QS, t_aprx)
+        mw, m_a, m_b, offsets_a, offsets_b =
+            stitch_simplified(m_mid, (P, PS, p_indices), (Q, QS, q_indices))
         # m_mid.lower_bound <= d(PS, QS) <= d(P, Q) + m_a.leash + m_b.leash.
         certified_lb = max(certified_lb, m_mid.lower_bound - m_a.leash - m_b.leash)
 
-
-        # is there is NO hope we got the optimal solution?
-        if (! eq(m_mid.leash, mw.leash, tolerance))
-            lb = mw.leash - 2.0*m_a.leash - 2.0*m_b.leash
-            lower_bound = max(lower_bound, lb)
-            factor = factor * factor_scale
-            aprx_refinement = 1.0 + (aprx_refinement - 1.0) / approx_scale
-
+        # The simplification cost leash: simplify less and retry.
+        if (!eq(m_mid.leash, mw.leash, tolerance))
+            slack_bound = max(slack_bound, mw.leash - 2.0*m_a.leash - 2.0*m_b.leash)
+            divisor = divisor * FC_SLACK_GROWTH
+            aprx_refinement = 1.0 + (aprx_refinement - 1.0) / FC_APPROX_SHRINK
             pl, ql = Morphing_extract_vertex_radii(mw)
             continue
         end
 
-
-        # Now we compute the distance, with offsets...
-        #PS_offs = offsets_a;#Morphing_extract_offsets( m_a )[2]
-        #QS_offs = offsets_b;#Morphing_extract_offsets( m_b )[1]
-
-        map_PS = get_refinement_map(PSR, PS)
-        map_QS = get_refinement_map(QSR, QS)
-
-        PS_offs = offsets_copy_map(map_PS, offsets_a)
-        QS_offs = offsets_copy_map(map_QS, offsets_b)
-        @assert(length(PS_offs) == cardin(PSR))
-        @assert(length(QS_offs) == cardin(QSR))
-
-        # very important! We have to use the refined curves PSR/QSR to monotonicity 
-        # copies...
-        m_final = frechet_ve_r_compute_ext(PSR, QSR, PS_offs, QS_offs, true)
-
-        # The VE-retractable distance with offsets is a lower bound on d(P, Q).
+        m_final = offsets_lower_bound((PSR, PS, offsets_a), (QSR, QS, offsets_b))
         certified_lb = max(certified_lb, m_final.leash)
+        # Upper and lower bounds agree: mw is optimal.
         if (eq(m_final.leash, mw.leash, tolerance))
             return set_bounds!(mw, certified_lb)
         end
 
-        # WE have to try harder - making slack at vertices smaller, and approximation smaller...
-        factor = factor * factor_scale
-        aprx_refinement = 1.0 + ((aprx_refinement - 1.0) / approx_scale)
-        if f_accept_approx && (1.00001 * m_final.leash > mw.leash)
+        # Not certified yet: smaller slack and a finer approximation.
+        divisor = divisor * FC_SLACK_GROWTH
+        aprx_refinement = 1.0 + ((aprx_refinement - 1.0) / FC_APPROX_SHRINK)
+        if f_accept_approx && (FC_ACCEPT_GAP * m_final.leash > mw.leash)
             return set_bounds!(mw, certified_lb)
         end
-    end  # While loop end
+    end
 end
