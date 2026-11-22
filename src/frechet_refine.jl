@@ -331,6 +331,17 @@ function frechet_mono_via_refinement_ext(
 end
 
 
+"""
+    frechet_mono_via_refinement_delta( Pa, Qa, delta, f_fix_prm = false )
+
+A monotone morphing `mm` between `Pa` and `Qa`, refined until its leash is within
+`delta` of the VE-retractable distance (a lower bound on the Fréchet distance), which
+is stored in `mm.lower_bound`. Returns `(mm, P, Q)` with the refined curves `P` and
+`Q`. Refinement stops after 65 rounds even when the gap is larger (the curves grow
+with every round, so `delta = 0` may never be met); check
+`mm.leash - mm.lower_bound <= delta` when it matters. With `f_fix_prm`, `mm` is
+mapped back to the original curves.
+"""
 function frechet_mono_via_refinement_delta(
     Pa::PntSeq{N,T},
     Qa::PntSeq{N,T},
@@ -343,11 +354,7 @@ function frechet_mono_via_refinement_delta(
     P = Pa
     Q = Qa
     local m, mm
-    count::Int64 = 0
-    for count = 0:64
-        #( count > 0 )  &&  println( "FVER round: ", count );
-
-        #@time m_old = frechet_ve_r_compute( P, Q )
+    for _ = 0:64
         m = FEVER_compute(P, Q)
 
         mm = Morphing_monotonize(m)
@@ -358,15 +365,10 @@ function frechet_mono_via_refinement_delta(
             if (gap > 0.0)
                 res = 1 + (max(1, round(Int64, (log(gap)/log(2)))))^2
             end
-        else
-            gap = delta
         end
 
         ((mm.leash - m.leash) <= delta) && break
 
-        #times::Int64 = 4;# min( round(Int64,
-        #   (mm.leash - m.leash) / delta ), 7 );;
-        # res was 3
         poly_a_2 = extract_refined_polygon(P, m.pes, res, delta/11)
         poly_b_2 = extract_refined_polygon(Q, m.qes, res, delta/11)
 

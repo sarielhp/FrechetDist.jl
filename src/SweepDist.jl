@@ -245,7 +245,10 @@ function SweepDist_compute_refine_mono(poly_a::PntSeq{N,T}, poly_b::PntSeq{N,T})
 
 
     local m_new
+    rounds::Int = 0
     while true
+        rounds += 1
+        check_rounds(rounds, "SweepDist_compute_refine_mono")
         m = SweepDist_compute(P, Q)
         if (Morphing_is_monotone(m))
             return m
