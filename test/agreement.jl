@@ -194,7 +194,18 @@ function run_case(name, f)
     end
 end
 
-function check_discrete!(fails, P, Q, Pv, Qv, scale)
+"A curve pair under test: the curves as `PntSeq`s and as vectors, the exact distance and the scale of the input."
+struct AgreementCase{S,V}
+    P::S
+    Q::S
+    Pv::V
+    Qv::V
+    exact::Float64
+    scale::Float64
+end
+
+function check_discrete!(fails, c::AgreementCase)
+    (; P, Q, Pv, Qv, scale) = c
     # FrechetDist's discrete routines use single-step couplings (no diagonal moves).
     disc = oracle_discrete(Pv, Qv; diagonal = false)
     standard = oracle_discrete(Pv, Qv)
@@ -212,7 +223,8 @@ function check_discrete!(fails, P, Q, Pv, Qv, scale)
     err === nothing || push!(fails, err)
 end
 
-function check_continuous!(fails, P, Q, Pv, Qv, exact, scale)
+function check_continuous!(fails, c::AgreementCase)
+    (; P, Q, Pv, Qv, exact, scale) = c
     for accept in (false, true)
         m, err =
             run_case("frechet_c_compute($accept)", () -> FD.frechet_c_compute(P, Q, accept))
@@ -243,7 +255,8 @@ function check_continuous!(fails, P, Q, Pv, Qv, exact, scale)
     end
 end
 
-function check_relaxations!(fails, P, Q, Pv, Qv, exact, scale)
+function check_relaxations!(fails, c::AgreementCase)
+    (; P, Q, Pv, Qv, exact, scale) = c
     ve, err = run_case("frechet_ve_r_compute", () -> FD.frechet_ve_r_compute(P, Q))
     err === nothing || push!(fails, err)
     if err === nothing
@@ -282,7 +295,8 @@ function check_relaxations!(fails, P, Q, Pv, Qv, exact, scale)
     end
 end
 
-function check_dtw!(fails, P, Q, Pv, Qv, scale)
+function check_dtw!(fails, c::AgreementCase)
+    (; P, Q, Pv, Qv, scale) = c
     m, err = run_case("DTW_d_compute", () -> FD.DTW_d_compute(P, Q))
     err === nothing || return push!(fails, err)
     price = sum(oracle_dist(a.p, b.p) for (a, b) in zip(m.pes, m.qes))
@@ -353,10 +367,11 @@ function agreement_failures(Pv, Qv, rng)
     P, Q = mkseq(Pv), mkseq(Qv)
     exact = oracle_continuous(Pv, Qv)
     scale = max(exact, maximum(oracle_dist(p, Pv[1]) for p in Pv), 1e-300)
-    check_discrete!(fails, P, Q, Pv, Qv, scale)
-    check_continuous!(fails, P, Q, Pv, Qv, exact, scale)
-    check_relaxations!(fails, P, Q, Pv, Qv, exact, scale)
-    check_dtw!(fails, P, Q, Pv, Qv, scale)
+    c = AgreementCase(P, Q, Pv, Qv, exact, scale)
+    check_discrete!(fails, c)
+    check_continuous!(fails, c)
+    check_relaxations!(fails, c)
+    check_dtw!(fails, c)
     check_width!(fails, rng, P, Pv, scale)
     check_simplifications!(fails, rng, P, Pv, scale)
     return fails

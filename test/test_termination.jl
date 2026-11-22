@@ -1,3 +1,5 @@
+module TestTermination
+
 using FrechetDist
 using BasicCompGeometry
 using Test
@@ -56,3 +58,5 @@ const PRELUDE = "using FrechetDist, BasicCompGeometry; const FD = FrechetDist; "
         """
     @test finishes(spiral, 120)
 end
+
+end # module

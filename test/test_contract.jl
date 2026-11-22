@@ -1,3 +1,5 @@
+module TestContract
+
 using FrechetDist
 using BasicCompGeometry
 using Test
@@ -5,13 +7,13 @@ using Test
 const FD = FrechetDist
 
 mk(coords) = PntSeq([point(c...) for c in coords])
-two = mk([(0.0, 0.0), (1.0, 0.0)])
-three = mk([(0.0, 1.0), (1.0, 1.5), (2.0, 1.0)])
-one = mk([(0.0, 0.0)])
-empty = PntSeq2F()
+const two = mk([(0.0, 0.0), (1.0, 0.0)])
+const three = mk([(0.0, 1.0), (1.0, 1.5), (2.0, 1.0)])
+const one = mk([(0.0, 0.0)])
+const empty = PntSeq2F()
 
 # name => (function of two curves, minimum number of vertices)
-entry_points = Dict(
+const entry_points = Dict(
     "frechet_d_compute" => (FD.frechet_d_compute, 1),
     "frechet_d_r_compute" => (FD.frechet_d_r_compute, 1),
     "DTW_d_compute" => (FD.DTW_d_compute, 1),
@@ -136,3 +138,5 @@ end
     end
     @test FD.frechet_c_compute(two, three).leash > 0
 end
+
+end # module

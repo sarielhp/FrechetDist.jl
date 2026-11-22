@@ -1,3 +1,5 @@
+module TestHygiene
+
 using FrechetDist
 using BasicCompGeometry
 using Random
@@ -59,3 +61,5 @@ end
     @test err isa ArgumentError
     @test occursin("GiB", err.msg) && occursin("frechet_d_compute", err.msg)
 end
+
+end # module

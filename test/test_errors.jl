@@ -1,3 +1,5 @@
+module TestErrors
+
 using FrechetDist
 using BasicCompGeometry
 using Test
@@ -35,3 +37,5 @@ curve(coords...) = PntSeq([point(c...) for c in coords])
     v = FD.frechet_ve_r_compute(B, C)
     @test_throws ArgumentError FD.Morphing_combine(u, v)
 end
+
+end # module

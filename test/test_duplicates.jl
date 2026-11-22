@@ -1,3 +1,5 @@
+module TestDuplicates
+
 using FrechetDist
 using BasicCompGeometry
 using Random
@@ -44,3 +46,5 @@ vecs(P) = [Vector{Float64}(p) for p in P.pnts]
     @test FD.frechet_c_compute(same, other).leash ≈
           oracle_continuous(vecs(same), vecs(other)) rtol = 2e-5
 end
+
+end # module

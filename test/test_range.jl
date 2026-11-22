@@ -1,3 +1,5 @@
+module TestRange
+
 using FrechetDist
 using BasicCompGeometry
 using Random
@@ -39,3 +41,5 @@ end
         @test exact * (1 - 1e-9) <= leash <= exact * (1 + 1e-9)
     end
 end
+
+end # module

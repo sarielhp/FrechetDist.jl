@@ -1,3 +1,5 @@
+module TestReview
+
 # Regression tests for the defects found by the code review of 2026-11.
 using FrechetDist
 using BasicCompGeometry
@@ -318,7 +320,7 @@ end
     @test fails == 0
 end
 
-@isdefined(pair_families) || include(joinpath(@__DIR__, "agreement.jl"))
+include(joinpath(@__DIR__, "agreement.jl"))
 
 @testset "frechet_c_approx / frechet_c_compute report certified bounds" begin
     # The shortcut path of frechet_c_approx reported lower_bound = leash, above the
@@ -366,3 +368,5 @@ end
         @test r isa Real && abs(r - sh) <= 1.0e-3 * sh
     end
 end
+
+end # module

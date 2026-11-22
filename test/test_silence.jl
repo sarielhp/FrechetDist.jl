@@ -1,3 +1,5 @@
+module TestSilence
+
 using FrechetDist
 using BasicCompGeometry
 using Random
@@ -13,7 +15,9 @@ function stdout_of(f)
         redirect_stdout(io) do
             try
                 f()
-            catch
+            catch err
+                # Rejected input still must not print; anything else is a failure.
+                err isa ArgumentError || rethrow()
             end
         end
         flush(io)
@@ -58,3 +62,5 @@ end
         @test (seed, stdout_of(() -> FD.frechet_c_compute(P, Q))) == (seed, "")
     end
 end
+
+end # module

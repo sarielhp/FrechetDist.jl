@@ -1,3 +1,5 @@
+module TestPrimitives
+
 using FrechetDist
 using BasicCompGeometry
 using Test
@@ -57,3 +59,5 @@ end
         @test d ≈ 0.25s rtol = 1e-9
     end
 end
+
+end # module

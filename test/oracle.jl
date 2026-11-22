@@ -87,6 +87,13 @@ function exit_interval(entry, other, free)
     return lo <= free[2] ? (lo, free[2]) : nothing
 end
 
+# Reachable part of the next edge along the outer boundary of the free space: reachable
+# only if the previous edge is reachable to its far end and `free` starts at 0.
+function continues_boundary(prev, free)
+    (prev === nothing || free === nothing) && return nothing
+    return (prev[2] == 1.0 && free[1] == 0.0) ? free : nothing
+end
+
 "Is the continuous Frechet distance at most eps? (Alt-Godau free-space decision.)"
 function oracle_decide(P, Q, eps)
     n, m = length(P), length(Q)
@@ -103,24 +110,10 @@ function oracle_decide(P, Q, eps)
     LR[1, 1] = LF[1, 1]
     BR[1, 1] = BF[1, 1]
     for j in 2:(m-1)
-        prev = LR[1, j-1]
-        LR[1, j] =
-            (
-                prev !== nothing &&
-                prev[2] == 1.0 &&
-                LF[1, j] !== nothing &&
-                LF[1, j][1] == 0.0
-            ) ? LF[1, j] : nothing
+        LR[1, j] = continues_boundary(LR[1, j-1], LF[1, j])
     end
     for i in 2:(n-1)
-        prev = BR[i-1, 1]
-        BR[i, 1] =
-            (
-                prev !== nothing &&
-                prev[2] == 1.0 &&
-                BF[i, 1] !== nothing &&
-                BF[i, 1][1] == 0.0
-            ) ? BF[i, 1] : nothing
+        BR[i, 1] = continues_boundary(BR[i-1, 1], BF[i, 1])
     end
     for i in 1:(n-1), j in 1:(m-1)
         left, bottom = LR[i, j], BR[i, j]

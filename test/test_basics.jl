@@ -1,0 +1,86 @@
+module TestBasics
+
+# Smoke tests on small fixed inputs.
+
+using FrechetDist
+using BasicCompGeometry
+using Random
+using Test
+
+function example_01()
+    P = PntSeq2F()
+    Q = PntSeq2F()
+
+    push!(P, point(0.0, 0), point(1.0, 0.0))
+    push!(Q, point(0.0, 1.0), point(1.0, 1.0))
+    return P, Q
+end
+
+
+function example_02()
+    Random.seed!(1)   # rand_pnt_seq draws from the global RNG
+    P = rand_pnt_seq(3, Float64, 100)
+    Q = rand_pnt_seq(3, Float64, 80)
+
+    return P, Q
+end
+
+#@testset "FrechetDist.jl" begin
+@testset "Frechet Dist.jl" begin
+
+    # Write your tests here.
+    P, Q = example_01()
+
+    @test FrechetDist.frechet_c_compute(P, Q).leash == 1.0
+
+    P, Q = example_02()
+
+    # Code generation - forcing to generate all different distance
+    # calculations
+    m_d = frechet_d_compute(P, Q)
+    @test m_d.leash > 0.0
+
+    m_d_r = frechet_d_r_compute(P, Q)
+    @test m_d_r.leash > 0.0
+    @test m_d.leash == m_d_r.leash
+
+    m_ve = frechet_ve_r_compute(P, Q)
+    @test m_ve.leash > 0.0
+
+    m_e = frechet_c_compute(P, Q)
+    @test m_e.leash > 0.0
+
+    @test (1.000001 * m_e.leash) >= m_ve.leash
+
+    m_a_2 = frechet_c_approx(P, Q, 2.0)
+
+    @test (m_a_2.leash > 0.0)
+
+    @test ((m_e.leash <= m_a_2.leash) && (m_a_2.leash <= 2.0*m_e.leash))
+
+    d = frechet_dist_upper_bound(P, Q)
+    @test m_e.leash <= d
+
+    m_mono, f, P_r, Q_r = frechet_mono_via_refinement(P, Q, 1.01)
+    @test 1.000001*m_mono.leash >= m_ve.leash
+
+    w_P = frechet_width_approx(P)
+
+    w_Q = frechet_width_approx(Q)
+    @test w_P >= 0
+    @test w_Q >= 0
+end
+
+@testset "Polygon_simplify_ext" begin
+    # Always returns the simplification and the kept indices, also for an empty curve.
+    Q, idx = FrechetDist.Polygon_simplify_ext(PntSeq2F(), 1.0)
+    @test length(Q) == 0 && isempty(idx)
+    P = PntSeq([point(0.0, 0.0), point(0.1, 0.0), point(5.0, 0.0), point(5.1, 0.0)])
+    Q, idx = FrechetDist.Polygon_simplify_ext(P, 1.0)
+    @test idx == [1, 3, 4] && length(Q) == 3
+
+    Q, idx = FrechetDist.frechet_simplify_to_width(PntSeq2F(), 1.0)
+    @test length(Q) == 0 && isempty(idx)
+end
+
+end # module
