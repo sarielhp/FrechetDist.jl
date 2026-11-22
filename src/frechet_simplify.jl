@@ -58,6 +58,8 @@ function frechet_simplify_to_width(P::PntSeq{D,T}, w::T) where {D,T}
     if (push_distinct!(pout, P[1]))
         push!(pindices, 1)
     end
+    # A single vertex is its own simplification.
+    cardin(P) == 1 && return pout, pindices
 
     curr_ind = 1
     next_ind::Int64 = 1
@@ -156,6 +158,8 @@ function frechet_simplify_w_exp(P::PntSeq{D,T}, w::T) where {D,T}
     if (push_distinct!(pout, P[1]))
         push!(pindices, 1)
     end
+    # A single vertex is its own simplification.
+    cardin(P) == 1 && return pout, pindices
 
     curr_ind = 1
     next_ind::Int64 = 1

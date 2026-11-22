@@ -58,3 +58,35 @@ end
     s = FD.SweepDist_compute(A, B)
     @test s.sol_value ≈ FD.Morphing_SweepDist_approx_price(s) rtol = 1e-9
 end
+
+@testset "Degenerate but valid inputs do not crash" begin
+    A = mkc([(1.0, 1.0), (1.0, 1.0)])          # a curve of length zero
+    B = mkc([(0.0, 0.0), (2.0, 0.0), (2.0, 2.0)])
+    for lopt in (true, false)
+        @test outcome(() -> FD.frechet_d_r_compute_sample(A, B, 10, lopt).leash) ≈ sqrt(2.0)
+        @test outcome(() -> FD.frechet_d_r_compute_sample(B, A, 10, lopt).leash) ≈ sqrt(2.0)
+    end
+
+    # A tiny delta used to overflow round(Int64, length / delta).
+    P = mkc([(0.0, 0.0), (2.0, 0.0)])
+    Q = mkc([(0.0, 0.0), (1.0, 0.0), (0.5, 0.0), (2.0, 0.0)])
+    for delta in (1e-18, 1e-20)
+        @test outcome(() -> FD.frechet_mono_via_refinement_delta(P, Q, delta)[1].leash) ≈
+              0.25
+    end
+
+    # One-vertex curves are accepted by the simplifiers.
+    one = mkc([(3.0, 4.0)])
+    for f in (FD.frechet_simplify_to_width, FD.frechet_simplify_w_exp)
+        r = outcome(() -> f(one, 1.0))
+        @test r isa Tuple && length(r[1]) == 1 && r[2] == [1]
+    end
+
+    # Identical segments have sweep price zero (used to be NaN, then an error).
+    for p in (point(0.0, 0.0), point(1.0, 2.0, 3.0))
+        q = p + p .+ 1.0
+        @test outcome(() -> FD.SweepDist_segs(p, q, p, q)) == 0.0
+    end
+    m = FD.frechet_c_compute(B, B)
+    @test outcome(() -> FD.Morphing_SweepDist_price(m)) == 0.0
+end

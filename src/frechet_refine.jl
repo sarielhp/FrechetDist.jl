@@ -293,8 +293,8 @@ function extract_refined_polygon(
         else
             n_times::Int64 = points_to_add
             if (delta > 0.0)
-                n_times = round(Int64, lnx / delta)
-                n_times = max(min(n_times, 3), 1)
+                # Clamp before rounding: lnx / delta can exceed typemax(Int64).
+                n_times = round(Int64, clamp(lnx / delta, 1.0, 3.0))
             end
             seg = Segment(poly[loc], poly[loc+1])
             add_points_along_seg(pout, seg, times, n_times)

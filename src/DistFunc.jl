@@ -209,7 +209,9 @@ function SweepDist_segs_p(
     v_start = q_a - p_a
     v_end = q_b - p_b
 
-    if fp_dist(v_start, v_end) < 0.0000001 * norm(v_start)
+    # `<=`: for identical segments both sides are 0, and the general formula
+    # below would divide 0 by 0.
+    if fp_dist(v_start, v_end) <= 0.0000001 * norm(v_start)
         return len_edge_p * norm(v_start)
     end
 

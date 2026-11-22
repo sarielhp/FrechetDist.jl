@@ -90,6 +90,8 @@ end
 ############################################################################
 function Polygon_sample_uniformly(P::PntSeq{D,T}, n::Int64) where {D,T}
     len = geom_length(P)
+    # A curve of length zero is a single point (and delta below would be 0).
+    len == 0.0 && return PntSeq{D,T}([first(P)])
     delta = len / (n-1)
 
     new_P = PntSeq{D,T}()
