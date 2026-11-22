@@ -48,3 +48,13 @@ end
         @test (name, stdout_of(f)) == (name, "")
     end
 end
+
+@testset "frechet_c_compute is silent on random walks" begin
+    # A single input misses branches; seeds 25 and 32 used to reach a debug print.
+    for seed = 1:40
+        rng = MersenneTwister(seed)
+        P = mkseq(gen_walk(rng, rand(rng, 4:60)))
+        Q = mkseq(gen_walk(rng, rand(rng, 4:60); step = 2.0))
+        @test (seed, stdout_of(() -> FD.frechet_c_compute(P, Q))) == (seed, "")
+    end
+end

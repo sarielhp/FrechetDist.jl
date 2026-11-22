@@ -415,7 +415,6 @@ function frechet_c_compute(
             lower_bound = max(lower_bound, lb)
             factor = factor * factor_scale
             aprx_refinement = 1.0 + (aprx_refinement - 1.0) / approx_scale
-            println("1 aprx_refinement: ", aprx_refinement, "  scale :", approx_scale)
 
             pl, ql = Morphing_extract_vertex_radii(mw)
             continue
