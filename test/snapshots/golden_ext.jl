@@ -15,6 +15,7 @@ conv(m::FD.Morphing) = (
     m.ratio,
     m.lower_bound,
     m.monotone_err,
+    m.sol_value,
     mat(m.P),
     mat(m.Q),
     ev.(m.pes),
@@ -81,6 +82,7 @@ for (fam, gen) in pair_families(), c = 1:4
         ),
     )
     rec("$id/offsets", () -> FD.Morphing_extract_offsets(ve))
+    rec("$id/max_edges_err", () -> FD.Morphing_get_max_edges_err(ve))
 end
 serialize(ARGS[1], out);
 println("wrote ", length(out), " entries; errors: ", count(v -> v isa String, values(out)))
