@@ -547,6 +547,44 @@ function compute_leash_from_arr(
 end
 
 
+# The VE search: Dijkstra over the events, from `start_id` until `end_id` is popped.
+# Afterwards `c.dict` holds the predecessor of every event reached; `end_id` is among
+# them unless the context's upper bound pruned the search first. Returns the number
+# of events popped.
+function ve_search!(c::FRContext{N,T}, start_id::Int64, end_id::Int64) where {N,T}
+    f_r_schedule_event!(c, start_id, start_id)
+    iters = 0
+    heapAlt = c.heapAlt
+    while ! isempty(heapAlt)
+        id = last(pop!(heapAlt))
+        iters = iters + 1
+
+        i = EID_i(id)
+        j = EID_j(id)
+
+        if id == start_id
+            f_r_schedule_event!(c, EID(1, false, 1, true), id)
+            f_r_schedule_event!(c, EID(1, true, 1, false), id)
+            continue
+        end
+
+        # Is it the *final* event?
+        if (i == c.n_p) && (j == c.n_q)
+            break
+        end
+
+        # Is it on the boundary of the final cell?
+        if is_final_cell(id, c.n_p, c.n_q)
+            f_r_schedule_event!(c, end_id, id)
+            continue
+        end
+        f_r_schedule_event!(c, EID(i+1, true, j, false), id)
+        f_r_schedule_event!(c, EID(i, false, j+1, true), id)
+    end
+    return iters
+end
+
+
 """
     frechet_ve_r_compute_range
 
@@ -564,42 +602,9 @@ function frechet_ve_r_compute_range(
     check_nonnegative(upper_bound, "frechet_ve_r_compute_range", "upper_bound")
     c::FRContext{N,T} = FR_Context(P, Q; upper_bound)
 
-    n_pm::Int64 = c.n_p - 1
-    n_qm::Int64 = c.n_q - 1
-
     start_id = EID(1, true, 1, true)
-
     end_id = EID(c.n_p, true, c.n_q, true)
-    f_r_schedule_event!(c, start_id, start_id)
-
-    heapAlt = c.heapAlt
-    while ! isempty(heapAlt)
-        tp = pop!(heapAlt)
-        id = last(tp)
-        value = first(tp)
-
-        i = EID_i(id)
-        j = EID_j(id)
-
-        if id == start_id
-            f_r_schedule_event!(c, EID(1, false, 1, true), id)
-            f_r_schedule_event!(c, EID(1, true, 1, false), id)
-            continue
-        end
-
-        if (i >= n_pm) && (j >= n_qm)
-            # Is it the *final* event?
-            if (i == c.n_p) && (j == c.n_q)
-                break
-            end
-            if is_final_cell(id, c.n_p, c.n_q)
-                f_r_schedule_event!(c, end_id, id)
-                continue
-            end
-        end
-        f_r_schedule_event!(c, EID(i+1, true, j, false), id)
-        f_r_schedule_event!(c, EID(i, false, j+1, true), id)
-    end
+    ve_search!(c, start_id, end_id)
 
     if ! haskey(c.dict, end_id)
         # The bound is below the VE distance (or equal to it up to rounding), so the
@@ -656,44 +661,9 @@ function frechet_ve_r_compute_ext(
     c = FR_Context(P, Q; offsets = f_use_offsets ? (p_offs, q_offs) : nothing)
 
     start_id = EID(1, true, 1, true)
-
     end_id = EID(c.n_p, true, c.n_q, true)
-    f_r_schedule_event!(c, start_id, start_id)
+    iters = ve_search!(c, start_id, end_id)
 
-    #end_event_i::TreeVertex = start_event;
-    iters = 0
-    heapAlt = c.heapAlt
-    while ! isempty(heapAlt)
-        tp = pop!(heapAlt)
-        id = last(tp)
-        value = first(tp)
-        iters = iters + 1
-
-        i = EID_i(id)
-        j = EID_j(id)
-
-        if id == start_id #is_start_event( id )
-            f_r_schedule_event!(c, EID(1, false, 1, true), id)
-            f_r_schedule_event!(c, EID(1, true, 1, false), id)
-            continue
-        end
-
-        # Is it the *final* event?
-        if (i == c.n_p) && (j == c.n_q)
-            break
-        end
-
-        # Is it on the boundary of the final cell?
-        if is_final_cell(id, c.n_p, c.n_q)
-            f_r_schedule_event!(c, end_id, id)
-            continue
-        end
-        f_r_schedule_event!(c, EID(i+1, true, j, false), id)
-        f_r_schedule_event!(c, EID(i, false, j+1, true), id)
-    end
-
-    #@time
-    #XXX
     pes, qes = f_r_extract_solution(P, Q, end_id, c.dict, c)
 
     morph::Morphing{N,T} = Morphing_init(P, Q, pes, qes)

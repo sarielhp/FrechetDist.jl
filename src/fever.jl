@@ -387,35 +387,18 @@ end
 
 #global fever_comp_count = 0;
 
-"""
-    FEVER_compute_range( P, Q, upper_bound )
-
-`frechet_ve_r_compute_range` with the quadratic-space search of `FEVER_compute`.
-Returns `(lo, hi)`: `lo` is the VE-Frechet distance of `P` and `Q`, and `hi` the
-leash of its monotonized morphing, an upper bound on the Frechet distance.
-`upper_bound` prunes the search; if the pruned search does not reach the end, the
-range is computed without it.
-"""
-function FEVER_compute_range(P::PntSeq{N,T}, Q::PntSeq{N,T}, upper_bound::Real) where {N,T}
-    check_curves(P, Q, "FEVER_compute_range"; min_vertices = 2)
-    check_quadratic_size(cardin(P), cardin(Q), 33, "FEVER_compute_range")
-    check_nonnegative(upper_bound, "FEVER_compute_range", "upper_bound")
-    #global fever_comp_count += 1;
-
-
-    c::FEVERContext{N,T} = FEVER_Context(P, Q; upper_bound)
+# The FEVER search: Dijkstra over the events, from ID_START until ID_END is popped.
+# Afterwards `c.prev` holds the predecessor of every event reached. Returns whether
+# the search reached the final cell, which it always does unless the context's upper
+# bound pruned it.
+function fever_search!(c::FEVERContext{N,T}) where {N,T}
     fc = FeverCoords(0, false, 0, false)
-
     n_pm::Int64 = c.n_p - 1
     n_qm::Int64 = c.n_q - 1
     heap = c.heap
-    vals = c.vals
     eid = c.eid
-    iters = 0
-    id::Int64 = 0
     f_reached_end::Bool = false
     while ! isempty(heap)
-        iters = iters + 1
         id = pop!(heap)
 
         if id == ID_START
@@ -436,10 +419,6 @@ function FEVER_compute_range(P::PntSeq{N,T}, Q::PntSeq{N,T}, upper_bound::Real) 
             if ((fc.i == n_pm) && (fc.j == n_qm))
                 f_reached_end = true
                 c.prev[ID_END] = id
-
-                # We don't need anything else on the heap - so empty it!
-                #FEVER_reset_heap( c );
-
                 push!(c.heap, ID_END)
                 continue
             end
@@ -447,14 +426,30 @@ function FEVER_compute_range(P::PntSeq{N,T}, Q::PntSeq{N,T}, upper_bound::Real) 
         fever_schedule_event!(c, FeverCell(fc.i+1, true, fc.j, false), id)
         fever_schedule_event!(c, FeverCell(fc.i, false, fc.j+1, true), id)
     end
+    return f_reached_end
+end
 
-    if (! f_reached_end)
+
+"""
+    FEVER_compute_range( P, Q, upper_bound )
+
+`frechet_ve_r_compute_range` with the quadratic-space search of `FEVER_compute`.
+Returns `(lo, hi)`: `lo` is the VE-Frechet distance of `P` and `Q`, and `hi` the
+leash of its monotonized morphing, an upper bound on the Frechet distance.
+`upper_bound` prunes the search; if the pruned search does not reach the end, the
+range is computed without it.
+"""
+function FEVER_compute_range(P::PntSeq{N,T}, Q::PntSeq{N,T}, upper_bound::Real) where {N,T}
+    check_curves(P, Q, "FEVER_compute_range"; min_vertices = 2)
+    check_quadratic_size(cardin(P), cardin(Q), 33, "FEVER_compute_range")
+    check_nonnegative(upper_bound, "FEVER_compute_range", "upper_bound")
+
+    c::FEVERContext{N,T} = FEVER_Context(P, Q; upper_bound)
+    if !fever_search!(c)
         m = FEVER_compute(P, Q)
         m_mono = Morphing_monotonize(m)
         return m.leash, m_mono.leash
     end
-
-    @assert(f_reached_end)
 
     out_arr = fever_extract_sol_ids(P, Q, c.prev)
 
@@ -479,40 +474,7 @@ function FEVER_compute(P::PntSeq{N,T}, Q::PntSeq{N,T}) where {N,T}
     check_quadratic_size(cardin(P), cardin(Q), 33, "FEVER_compute")
 
     c::FEVERContext{N,T} = FEVER_Context(P, Q)
-    fc = FeverCoords(0, false, 0, false)
-
-    n_pm::Int64 = c.n_p - 1
-    n_qm::Int64 = c.n_q - 1
-    heap = c.heap
-    eid = c.eid
-    iters = 0
-    id::Int64 = 0
-    while ! isempty(heap)
-        iters = iters + 1
-        id = pop!(heap)
-
-        if id == ID_START
-            fever_schedule_event!(c, FeverCell(1, false, 1, true), id)
-            fever_schedule_event!(c, FeverCell(1, true, 1, false), id)
-            continue
-        end
-
-        ID_get_fields!(fc, eid, id)
-
-        if (fc.i >= n_pm) && (fc.j >= n_qm)
-            # Is it the *final* event?
-            if (fc.i == c.n_p) && (fc.j == c.n_q)
-                break
-            end
-            if ((fc.i == n_pm) && (fc.j == n_qm))
-                c.prev[ID_END] = id
-                push!(c.heap, ID_END)
-                continue
-            end
-        end
-        fever_schedule_event!(c, FeverCell(fc.i+1, true, fc.j, false), id)
-        fever_schedule_event!(c, FeverCell(fc.i, false, fc.j+1, true), id)
-    end
+    fever_search!(c)  # without an upper bound it always reaches the end
     out_arr = fever_extract_sol_ids(P, Q, c.prev)
 
     # Now, we need to convert this into a morphing...
