@@ -10,52 +10,120 @@
 # convergence.
 ###########################################################################
 
-############################################################
-# TreeVertex:
-#    Encoding for a vertex in the VE Diagram and how the search
-#    procedure arrived at it. I.e., encoding the reverse tree
-#    that the algorithm computes.
-#
-# id: Vertex of the diagram
-# val: The value associated with this vertex.
-# id_prev: The vertex we arrived from.
-############################################################
-@with_kw mutable struct TreeVertex
-    id::Int64
-    val::Float64 = 0.0
-    #    r::Float64 = 0.0
-    id_prev::Int64
+# The events of the sweep search, by event id: the best value found so far and the
+# event it was reached from (both valid once the event is created), and whether it
+# has been popped (handled). Like PrevMap, it starts with Dicts, which are cheap when
+# the search reaches few events (similar curves), and moves once to dense arrays
+# indexed like PrevMap's when it holds more than `limit` events; the search on
+# unrelated curves reaches almost all of them, and the arrays avoid the hashing.
+mutable struct SweepStore
+    dense::Bool
+    n_p::Int64
+    n_q::Int64
+    limit::Int64
+    vals::Vector{Float64}  # dense: allocated uninitialized; read only if created
+    prev::Vector{Int64}
+    created::BitVector
+    handled::BitVector
+    dvals::Dict{Int64,Tuple{Float64,Int64}}  # sparse: (value, prev)
+    dhandled::Set{Int64}
 end
 
-function TreeVertex(_id::Int64)
-    return TreeVertex(_id, 0.0, -1)
+function SweepStore(n_p::Int64, n_q::Int64)
+    # Stay sparse when the arrays would need more than a quarter of the memory.
+    dense_ok = 64.0 * n_p * n_q <= Sys.total_memory() / 4
+    limit = dense_ok ? max(PREVMAP_MIN_DENSE[], (n_p * n_q) >> 4) : typemax(Int64)
+    return SweepStore(
+        false,
+        n_p,
+        n_q,
+        limit,
+        Float64[],
+        Int64[],
+        falses(0),
+        falses(0),
+        Dict{Int64,Tuple{Float64,Int64}}(),
+        Set{Int64}(),
+    )
+end
+
+function sw_make_dense!(st::SweepStore)
+    slots = 4 * st.n_p * st.n_q
+    st.vals = Vector{Float64}(undef, slots)
+    st.prev = Vector{Int64}(undef, slots)
+    st.created = falses(slots)
+    st.handled = falses(slots)
+    st.dense = true
+    for (id, (v, p)) in st.dvals
+        k = sw_slot(st, id)
+        st.vals[k] = v
+        st.prev[k] = p
+        st.created[k] = true
+    end
+    for id in st.dhandled
+        st.handled[sw_slot(st, id)] = true
+    end
+    st.dvals = Dict{Int64,Tuple{Float64,Int64}}()
+    st.dhandled = Set{Int64}()
+    return nothing
+end
+
+# The slot of an event with 1 <= i <= n_p and 1 <= j <= n_q (as pm_slot).
+@inline sw_slot(st::SweepStore, id::Int64) =
+    ((EID_j(id) - 1) * st.n_p + (EID_i(id) - 1)) * 4 + EID_ij_status(id) + 1
+
+# The value of a created event, or Inf (larger than every price) if there is none.
+@inline function sw_val_or_inf(st::SweepStore, id::Int64)
+    st.dense || return first(get(st.dvals, id, (Inf, 0)))
+    k = sw_slot(st, id)
+    return st.created[k] ? st.vals[k] : Inf
+end
+@inline sw_val(st::SweepStore, id::Int64) =
+    st.dense ? st.vals[sw_slot(st, id)] : first(st.dvals[id])
+@inline sw_prev(st::SweepStore, id::Int64) =
+    st.dense ? st.prev[sw_slot(st, id)] : last(st.dvals[id])
+@inline sw_handled(st::SweepStore, id::Int64) =
+    st.dense ? st.handled[sw_slot(st, id)] : (id in st.dhandled)
+
+@inline function sw_set!(st::SweepStore, id::Int64, val::Float64, prev::Int64)
+    if st.dense
+        k = sw_slot(st, id)
+        st.vals[k] = val
+        st.prev[k] = prev
+        st.created[k] = true
+    else
+        st.dvals[id] = (val, prev)
+        length(st.dvals) > st.limit && sw_make_dense!(st)
+    end
+    return nothing
+end
+
+@inline function sw_handle!(st::SweepStore, id::Int64)
+    st.dense ? (st.handled[sw_slot(st, id)] = true) : push!(st.dhandled, id)
+    return nothing
 end
 
 
-
-
-
-@with_kw struct SDContext{N,T}
+struct SDContext{N,T}
     P::PntSeq{N,T}
     Q::PntSeq{N,T}
-    vertices::Dict{Int64,TreeVertex}
-    handled::Dict{Int64,Bool}
-    prev_map::Dict{Int64,Int64}
+    store::SweepStore
+    prev_map::PrevMap
     pq::PriorityQueue{Int64,Float64,Base.Order.ForwardOrdering}
-    n_p::Int64 = 0
-    n_q::Int64 = 0
+    n_p::Int64
+    n_q::Int64
 end
 
 function SDContext(P::PntSeq{N,T}, Q::PntSeq{N,T}) where {N,T}
+    n_p, n_q = cardin(P), cardin(Q)
     return SDContext(
         P,
         Q,
-        Dict{Int64,TreeVertex}(),
-        Dict{Int64,Bool}(),
-        Dict{Int64,Int64}(),
+        SweepStore(n_p, n_q),
+        PrevMap(n_p, n_q),
         PriorityQueue{Int64,Float64}(),
-        cardin(P),
-        cardin(Q),
+        n_p,
+        n_q,
     )
 end
 
@@ -97,30 +165,8 @@ function SW_get_event_value(
 end
 
 
-function SW_new_event(
-    id::Int64,
-    id_prev::Int64,
-    value::Float64,
-    c::SDContext{N,T},
-) where {N,T}
-    ev = TreeVertex(id)
-    ev.id_prev = id_prev
-    ev.val = value
-
-    c.vertices[id] = ev
-
-    return ev
-end
-
-function is_sw_schedule_event(
-    dict::Dict{Int64,Bool},
-    id::Int64,
-    n_p::Int64,
-    n_q::Int64,
-)::Bool
-    if haskey(dict, id)
-        return false
-    end
+function is_sw_schedule_event(c::SDContext{N,T}, id::Int64)::Bool where {N,T}
+    n_p, n_q = c.n_p, c.n_q
     if (EID_i(id) > n_p) || (EID_j(id) > n_q)
         return false
     end
@@ -130,34 +176,26 @@ function is_sw_schedule_event(
     if (EID_j(id) >= n_q) && (! EID_j_is_vert(id))
         return false
     end
-    return true
+    return ! sw_handled(c.store, id)
 end
 
 
 function SW_schedule_event!(c::SDContext{N,T}, id::Int64, id_prev::Int64) where {N,T}
-    if ! is_sw_schedule_event(c.handled, id, c.n_p, c.n_q)
+    if ! is_sw_schedule_event(c, id)
         return
     end
-    ev_prev::TreeVertex = c.vertices[id_prev]
-    new_val = SW_get_event_value(id, id_prev, ev_prev.val, c)
-    local ev
-    if haskey(c.vertices, id)
-        ev = c.vertices[id]
-        if (ev.val < new_val)  # A better event is already scheduled.
-            return
-        end
-        ev.val = new_val
-    else
-        ev = SW_new_event(id, id_prev, new_val, c)
+    st = c.store
+    new_val = SW_get_event_value(id, id_prev, sw_val(st, id_prev), c)
+    if sw_val_or_inf(st, id) < new_val
+        return  # A better event is already scheduled.
     end
+    sw_set!(st, id, new_val, id_prev)
 
-    ev.id_prev = id_prev
     if haskey(c.pq, id)
         delete!(c.pq, id)
     end
     enqueue!(c.pq, id, new_val)
-
-    return ev
+    return nothing
 end
 
 
@@ -177,28 +215,23 @@ function SweepDist_compute(P::PntSeq{N,T}, Q::PntSeq{N,T}) where {N,T}
     start_id = EID(1, true, 1, true)
 
     id_end = EID(c.n_p, true, c.n_q, true)
-    start_event = SW_new_event(start_id, start_id, 0.0, c)
+    st = c.store
+    sw_set!(st, start_id, 0.0, start_id)
+    enqueue!(c.pq, start_id, 0.0)
 
-    enqueue!(c.pq, start_id, start_event.val)
-
-    end_event::TreeVertex = start_event
+    end_val = 0.0
     iters = 0
     pq = c.pq
     while ! isempty(pq)
-        tp = peek(pq)
-        id = tp[1]
-        value = tp[2]
-        dequeue!(pq)
+        id = dequeue!(pq)
 
-        if (haskey(c.handled, id))
+        if sw_handled(st, id)
             continue
         end
 
-        ev::TreeVertex = c.vertices[id]
-        c.handled[id] = true
-        c.prev_map[id] = ev.id_prev
+        sw_handle!(st, id)
+        c.prev_map[id] = sw_prev(st, id)
         iters = iters + 1
-
 
         i = EID_i(id)
         j = EID_j(id)
@@ -211,13 +244,13 @@ function SweepDist_compute(P::PntSeq{N,T}, Q::PntSeq{N,T}) where {N,T}
 
         # Is it the *final* event?
         if (i == c.n_p) && (j == c.n_q)
-            end_event = ev
+            end_val = sw_val(st, id)
             break
         end
 
         # Is it on the boundary of the final cell?
-        if is_final_cell(ev.id, c.n_p, c.n_q)
-            SW_schedule_event!(c, id_end, ev.id)
+        if is_final_cell(id, c.n_p, c.n_q)
+            SW_schedule_event!(c, id_end, id)
             continue
         end
         SW_schedule_event!(c, EID(i+1, true, j, false), id)
@@ -228,7 +261,7 @@ function SweepDist_compute(P::PntSeq{N,T}, Q::PntSeq{N,T}) where {N,T}
 
     morph::Morphing{N,T} = Morphing_init(P, Q, pes, qes)
     morph.iters = iters
-    morph.sol_value = end_event.val
+    morph.sol_value = end_val
 
     Morphing_verify_valid(morph)
 
