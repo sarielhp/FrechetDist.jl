@@ -142,6 +142,34 @@ end
     @test bad == 0
 end
 
+@testset "Morphing_combine on long curves keeps small features apart (M15)" begin
+    # A long first edge, then a zigzag with features of size 0.5: at arc length 1e6
+    # the old relative tolerance 1e-6 merged breakpoints 2 units apart.
+    function zigzag(rng, L, noise)
+        pts = [point(0.0, 0.0), point(L, 0.0)]
+        for i in 1:12
+            push!(
+                pts,
+                point(
+                    L + 0.5 * i + noise * randn(rng),
+                    (isodd(i) ? 0.5 : 0.0) + noise * randn(rng),
+                ),
+            )
+        end
+        return PntSeq(pts)
+    end
+    bad = 0
+    for L in (1.0e6, 1.0e7), seed in 1:20
+        rng = MersenneTwister(seed)
+        P, M, Q = zigzag(rng, L, 0.0), zigzag(rng, L, 0.01), zigzag(rng, L, 0.01)
+        u = FD.Morphing_monotonize(FD.frechet_ve_r_compute(P, M))
+        v = FD.Morphing_monotonize(FD.frechet_ve_r_compute(M, Q))
+        # The composition of u and v is a morphing from P to Q of leash at most both.
+        FD.Morphing_combine(u, v).leash <= (u.leash + v.leash) * (1 + 1.0e-9) || (bad += 1)
+    end
+    @test bad == 0
+end
+
 @testset "DTW and sweep distance report their objective in sol_value" begin
     rng = MersenneTwister(5)
     A = PntSeq([point(x...) for x in eachcol(cumsum(randn(rng, 2, 30), dims = 2))])
