@@ -555,14 +555,19 @@ end
 # Turn the morphing into monotone morphing...
 ##########################################################3
 """
-    Morphing_monotonize
+    Morphing_monotonize(m)
 
 Turns a morphing into a monotone morphing, by simply not going back,
-staying in place if necessary.
+staying in place if necessary. `monotone_err` of the result is how far a point
+had to be held back.
+
+The result may share memory with `m`: if `m` is already monotone, it is returned
+itself, not a copy; otherwise the result refers to the same curves `m.P` and
+`m.Q`. Use `deepcopy` before changing either.
 """
 function Morphing_monotonize(m::Morphing{N,T}) where {N,T}
     if Morphing_is_monotone(m)
-        return m # deepcopy( m );
+        return m  # aliased, by design: see the docstring
     end
     P = m.P
     Q = m.Q
