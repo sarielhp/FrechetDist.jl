@@ -249,14 +249,15 @@ function DTW_d_compute(P::PntSeq{D,T}, Q::PntSeq{D,T}) where {D,T}
     n_p = cardin(P)
     n_q = cardin(Q)
 
-    dp = zeros(n_p, n_q)
+    # Inf marks a cell not reached yet (0 is a legitimate value).
+    dp = fill(Inf, n_p, n_q)
     dp_dec_i = falses(n_p, n_q)
     handled = falses(n_p, n_q)
 
     function push_value(ia, ja, val, i)
         new_val = val + fp_dist(P[ia], Q[ja])
 
-        if ((dp[ia, ja] > 0.0) && (dp[ia, ja] <= new_val))
+        if dp[ia, ja] <= new_val
             return
         end
         dp[ia, ja] = new_val

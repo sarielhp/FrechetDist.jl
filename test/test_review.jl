@@ -229,3 +229,22 @@ end
     end
     @test same
 end
+
+@testset "SweepDist_lb_compute is a lower bound" begin
+    # A zero dp value used to be overwritten by a larger one (dp > 0 as "set").
+    P = mkc([(1.0, 3.0), (2.0, 0.0)])
+    Q = mkc([(2.0, 2.0), (2.0, 0.0), (3.0, 0.0), (3.0, 0.0)])
+    price = FD.Morphing_SweepDist_price(FD.SweepDist_compute_refine_mono(P, Q))
+    @test FD.SweepDist_lb_compute(P, Q).sol_value <= price * (1 + 1e-12)
+
+    rng = MersenneTwister(4)
+    viol = 0
+    for _ = 1:300
+        A = mkc([(rand(rng, 0:3) * 1.0, rand(rng, 0:3) * 1.0) for _ = 1:rand(rng, 2:6)])
+        B = mkc([(rand(rng, 0:3) * 1.0, rand(rng, 0:3) * 1.0) for _ = 1:rand(rng, 2:6)])
+        lb = FD.SweepDist_lb_compute(A, B).sol_value
+        pr = FD.Morphing_SweepDist_price(FD.SweepDist_compute_refine_mono(A, B))
+        lb <= pr * (1 + 1e-9) + 1e-12 || (viol += 1)
+    end
+    @test viol == 0
+end
