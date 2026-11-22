@@ -429,43 +429,23 @@ end
 
 Like `Morphing_as_polygons_w_times`, but the times follow the arc length of `P`
 alone. Returns `(P, Q, t)`: the morphing as two polygons with one vertex per step,
-and a time in [0, 1] for each vertex. Steps where `P` does not move get a small
-positive duration, so `t` increases strictly; a constant `P` gets all times 0.
+and a time in [0, 1] for each vertex, the distance travelled along `P` so far
+divided by the total. Steps where `P` does not move take no time, so times can
+repeat; a constant `P` gets all times 0.
 """
 function Morphing_as_function_w_times(m::Morphing{N,T}) where {N,T}
     P, Q = Morphing_as_polygons(m)
-    t = Vector{Float64}()
-
-    len = geom_length(P)
-    if len == 0.0  # exact: a constant curve; times are relative to its length
-        return P, Q, zeros(length(P))
-    end
-    push!(t, 0.0)
-    c_z = 0
-    fake_delta = len / (4 + length(P))
+    travelled = zeros(length(P))
     for i in 1:(length(P)-1)
-        delta = fp_dist(P[i], P[i+1]) / len
-        if (delta == 0.0)  # exact: a step where P does not move
-            c_z = c_z + 1
-            len = len + fake_delta
-        end
+        travelled[i+1] = travelled[i] + fp_dist(P[i], P[i+1])
     end
-    for i in 1:(length(P)-1)
-        if (fp_dist(P[i], P[i+1]) == 0.0)  # exact: a step that does not move
-            delta = fake_delta / len
-        else
-            delta = fp_dist(P[i], P[i+1]) / len
-        end
-
-        push!(t, min(last(t) + delta, 1.0))
+    total = last(travelled)
+    if total == 0.0  # exact: a constant curve; times are relative to its length
+        return P, Q, travelled
     end
-    if last(t) != 1.0  # exact: rounding can leave the last time just below 1
-        pop!(t)
-        push!(t, 1.0)
-    end
-    return P, Q, t
+    # Nondecreasing, and the last time is total / total == 1.0 exactly.
+    return P, Q, travelled ./ total
 end
-
 
 """
     polygons_get_loc_at_time( P, Q, times, t )

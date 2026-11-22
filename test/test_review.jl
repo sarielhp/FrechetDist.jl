@@ -170,6 +170,24 @@ end
     @test bad == 0
 end
 
+@testset "Morphing_as_function_w_times: times are the arc length of P" begin
+    checked = 0
+    waits = 0
+    for seed in 1:40
+        rng = MersenneTwister(seed)
+        A = PntSeq([point(x...) for x in eachcol(cumsum(randn(rng, 2, 6), dims = 2))])
+        B = PntSeq([point(x...) for x in eachcol(cumsum(randn(rng, 2, 14), dims = 2))])
+        m = FD.frechet_c_compute(A, B)
+        PB, _, t = FD.Morphing_as_function_w_times(m)
+        steps = [BasicCompGeometry.dist(PB[i], PB[i+1]) for i in 1:(length(PB)-1)]
+        any(iszero, steps) && (waits += 1)  # P waits while Q moves
+        expected = cumsum(vcat(0.0, steps)) ./ sum(steps)
+        @test isapprox(t, expected; atol = 1.0e-12) && t[end] == 1.0 && issorted(t)
+        checked += 1
+    end
+    @test checked == 40 && waits > 0
+end
+
 @testset "DTW and sweep distance report their objective in sol_value" begin
     rng = MersenneTwister(5)
     A = PntSeq([point(x...) for x in eachcol(cumsum(randn(rng, 2, 30), dims = 2))])
