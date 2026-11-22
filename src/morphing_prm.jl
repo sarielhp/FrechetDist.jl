@@ -247,7 +247,7 @@ function get_point(
 ) where {N,T}
 
     if (i == length(lens))
-        return last(P), 1
+        return last(P), 1.0
     end
     edge_len = lens[i+1] - lens[i]
     t = (pos - lens[i]) / edge_len

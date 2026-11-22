@@ -394,13 +394,11 @@ end
 """
     frechet_mono_via_refinement( P, Q, approx )
 
-    Computes the "true" monotone Frechet distance between P and Q,
-    using the ve_r algorithm. It does refinement, to add vertices if
-    needed to get monotonicity. Note, that there is an eps parameter -
-    for real inputs you can set it quite small. In any case, in the
-    worst case it only approximates the Frechet (monotone)
-    distance. It returns a morphing, and a boolean that is true if the
-    result is the true Frechet distance.
+    Computes the monotone Frechet distance between P and Q using the
+    ve_r algorithm, refining the curves (adding vertices) until the
+    monotonized morphing's leash is within a factor `approx` of the
+    VE-retractable distance, a lower bound stored in `m.lower_bound`.
+    In the worst case it only approximates the Frechet distance.
 
     Observe, that this function might be too slow if the two curves
     are huge, since it does not simplify them before computing the
@@ -410,12 +408,11 @@ end
 
 Returns a 4-tuple  ( m, f, P, Q ):
 `m`: Morphing realizing result.
-`f`: Is distance returned is the exact continuous Frechet distance.
+`f`: true if the monotone leash equals the VE-retractable distance, so that
+     the leash is the Frechet distance.
 `P`: Refined first input polygon
 `Q`: Refined second input polygon
 
-'out' if specified returns the middle morphings used in computing the
-      solution.
 """
 function frechet_mono_via_refinement(
     Pa::PntSeq{N,T},

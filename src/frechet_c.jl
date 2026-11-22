@@ -298,8 +298,9 @@ Frechet distance.
 
 # More details
 
-To really ensure converges, the monotone distance computed between the
-simplification is computed using refinement, so tha the ve_r distance
+To ensure convergence, the monotone distance between the simplified curves is
+computed by refinement (`frechet_mono_via_refinement`), so that it approaches their
+VE-retractable distance.
 
 # Arguments
 - f_accept_approx: accept a good enough approximation as good enough...

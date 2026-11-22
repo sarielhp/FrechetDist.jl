@@ -2,9 +2,9 @@
 # SweepDist.jl
 #
 # Implementation of code to compute the sweeping distance. This is a
-# similar entity to the continuous dynamic time warping distance,
-# except that we use "L_1" metric instead of "L_2" metric to compute
-# the distance (this simplifies the calculations), and of course, we
+# similar entity to the continuous dynamic time warping distance, except
+# that the price of matching two edges is approximated (fp_match_price:
+# the average leash length times the length moved), and of course, we
 # use our ve-r framework to compute/approximate it, together with the
 # regular refinement for monotonicity, and refinement to get
 # convergences.
@@ -321,15 +321,9 @@ function SweepDist_lb_compute(P::PntSeq{D,T}, Q::PntSeq{D,T}) where {D,T}
     dp_dec_i = falses(n_p, n_q)
     handled = falses(n_p, n_q)
 
-    """
-        edge_lb
-
-    The edge is (i,j) -> (i+1,j). The function returns the minimum
-    elvation fucntion, in the two adjacent cells:
-
-    min( fp_dist( PA[i, i+1], PB[ j-1, j ] ),
-         fp_dist( PA[i, i+1], PB[ j, j+1 ] ),
-    """
+    # edge_lb: for the grid edge (i, j) -> (i+1, j), the minimum of the distance
+    # between the edge PA[i] PA[i+1] and the edges PB[j-1] PB[j] and PB[j] PB[j+1]
+    # of the two adjacent cells: a lower bound on the leash along that edge.
     function edge_lb(PA::PntSeq{D,T}, i, PB::PntSeq{D,T}, j) where {D,T}
         lb::Float64 = typemax(Float64)
         if i == cardin(PA)

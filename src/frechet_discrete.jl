@@ -126,9 +126,10 @@ end
 """
     frechet_d_compute
 
-Computes the discrete Fréchet distance between the two sequences of
-points. It interpresents the vertices of the polygons and the desired
-sequence of points.
+Computes the discrete Fréchet distance between the vertex sequences of `P` and
+`Q`, over single-step couplings: one index advances at a time (no diagonal moves),
+so the result can exceed the textbook discrete Fréchet distance, which allows
+both indices to advance together. `m.leash` is the distance.
 
 """
 function frechet_d_compute(P::PntSeq{D,T}, Q::PntSeq{D,T}) where {D,T}
@@ -312,7 +313,7 @@ end
 
 
 """
-    frechet_d_compute_sample
+    frechet_d_r_compute_sample( polya, polyb, n, f_lopt = true )
 
 Computes the discrete Frechet distance between the two curves.by
 sampling them

@@ -230,7 +230,7 @@ function f_r_create_event(
     noise = 4 * eps(Float64) * max(maximum(abs, R[i]), maximum(abs, R[i+1]))
     len = fp_dist(R[i], R[i+1])
     if (0 < t) && (t * len <= noise)
-        t = 0
+        t = 0.0
         p = R[i]
     end
     if (t < 1.0) && ((1.0 - t) * len <= noise)
@@ -778,14 +778,12 @@ eachindexButLast(x) = firstindex(x):(lastindex(x)-1)
 
 #####################################################################
 """
-    frechet_offests
+    frechet_offsets( P, p_indices )
 
-Given P, and subset of indices of P defining a subpolygon, computes a
--approximation to the Frechet distance between every edge of the
-subpolygon they define, and corresponding portion of P.  A fast, and
-probably decent approximation to the optimal morhping. Finally, set
-for every vertex of the subcurve, the frechet distance of this
-subcurve. Thus, providing a fast estimates of the offsets.
+Given `P` and the increasing indices `p_indices` of a subcurve of `P`, returns, for
+every edge `p_indices[i] p_indices[i+1]` of the subcurve, a fast upper estimate
+(`frechet_width_approx`) of the Frechet distance between that edge and the portion
+of `P` it replaces: one value per edge.
 
 """
 function frechet_offsets(P::PntSeq{N,T}, p_indices::Vector{Int64}) where {N,T}

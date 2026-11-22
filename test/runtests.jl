@@ -1,5 +1,6 @@
 using FrechetDist
 using BasicCompGeometry
+using Random
 using Test
 
 function example_01()
@@ -13,6 +14,7 @@ end
 
 
 function example_02()
+    Random.seed!(1)   # rand_pnt_seq draws from the global RNG
     P = rand_pnt_seq(3, Float64, 100)
     Q = rand_pnt_seq(3, Float64, 80)
 

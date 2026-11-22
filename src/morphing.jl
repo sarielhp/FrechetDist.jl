@@ -26,7 +26,7 @@ end
 # p: Location of the point being matched. Not necessarily a vetex of
 #    the polygon.
 # i: Vertex number in polygon/or edge number where p lies.
-# type:
+# type: PT_VERTEX or PT_ON_EDGE.
 # t: Convex combination coefficient if p is on the edge. t=0 means its
 #    the ith vertex, t=1 means it is on the i+1 vertex.
 ############################################################
@@ -347,7 +347,7 @@ end
 
 function Morphing_recompute_leash(m::Morphing{N,T}) where {N,T}
     @assert(length(m.pes) == length(m.qes))
-    r = 0
+    r = 0.0
     for i in eachindex(m.pes)
         ell = (fp_dist(m.pes[i].p, m.qes[i].p) - m.pes[i].penalty)
         if ell > r
@@ -498,7 +498,8 @@ function Morphing_sample_uniformly(m::Morphing{N,T}, n::Int64) where {N,T}
     for i = 0:(n-1)
         t = i/(n-1)
         p, q = polygons_get_loc_at_time(P, Q, times, t)
-        out[i+1, :] = [p...; q...]
+        out[i+1, 1:N] .= p
+        out[i+1, (N+1):(2N)] .= q
     end
 
     return out
