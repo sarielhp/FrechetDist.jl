@@ -10,7 +10,6 @@
 
 using Parameters
 using DataStructures
-using Printf
 
 include("DistFunc.jl");
 
@@ -401,7 +400,7 @@ function Morphing_as_polygons_w_times(m::Morphing{N,T}) where {N,T}
     P, Q = Morphing_as_polygons(m)
     t = Vector{Float64}()
 
-    len = fp_geom_length(P) + fp_geom_length(Q)
+    len = geom_length(P) + geom_length(Q)
     if len == 0.0
         return P, Q, zeros(length(P))
     end
@@ -439,7 +438,7 @@ function Morphing_as_function_w_times(m::Morphing{N,T}) where {N,T}
     P, Q = Morphing_as_polygons(m)
     t = Vector{Float64}()
 
-    len = fp_geom_length(P)
+    len = geom_length(P)
     if len == 0.0
         return P, Q, zeros(length(P))
     end
@@ -682,7 +681,7 @@ function morphing_profile(m::Morphing{D,T}, n::Int64) where {D,T}
     PB, QB, times = Morphing_as_polygons_w_times(m)
     #println( times );
     #println( length( times ) );
-    lP = fp_geom_length(PB)
+    lP = geom_length(PB)
     X = range(0, lP, length = n)
 
     Y = Vector{Float64}()

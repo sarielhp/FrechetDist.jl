@@ -1,9 +1,16 @@
-# Geometric primitives with the floating-point handling the Frechet code
-# relies on. They differ from the BasicCompGeometry versions in rounding
-# (BCG uses a different formulation) and in snapping: results that are
-# within 1e-6 of an endpoint are returned as the endpoint itself, and
-# degenerate segments are treated explicitly. The Frechet code depends on
-# these exact values, so they stay local rather than using BCG's.
+# Geometric primitives whose floating-point behavior the Frechet code relies
+# on. Lengths, prefix lengths and norms come from BasicCompGeometry and
+# LinearAlgebra, which give the same results. The functions here stay local
+# because the BasicCompGeometry versions (dist, dist_sq, dot, convex_comb,
+# nn_point, convex_coef, dist_point_segment, dist_segment_segment) do not give
+# the same results inside the Frechet code: swapping any of them changes the
+# snapshots (test/snapshots/compare.rb), and the last-bit differences change
+# refinement counts and tie-breaking in the priority queues. This holds even
+# for `fp_dot`, `fp_dist` and `fp_dist_sq`, which agree with BCG on isolated
+# random inputs. Beyond rounding, `fp_convex_comb` returns the endpoints
+# exactly at t = 0 and t = 1, `fp_dist_point_segment` guards against
+# cancellation and reports tiny values as zero, and `fp_dist_segment_segment`
+# uses a rank test.
 
 @inline function fp_dot(p::Point{D,T}, q::Point{D,T}) where {D,T}
     s = zero(T)
@@ -11,14 +18,6 @@
         s += p[i] * q[i]
     end
     return s
-end
-
-@inline function fp_norm(p::Point{D,T}) where {D,T}
-    sum = zero(T)
-    @inbounds for i = 1:D
-        @fastmath sum += p[i]^2 # julia-audit: allow-fastmath (bit-identical to the original numerics)
-    end
-    return sqrt(sum)
 end
 
 @inline function fp_dist_sq(p::Point{D,T}, q::Point{D,T})::T where {D,T}
@@ -246,38 +245,6 @@ function fp_dist_segment_segment(
         fp_dist_point_segment(a_p, b_p, b_q),
         fp_dist_point_segment(a_q, b_p, b_q),
     )
-end
-
-"""
-    fp_geom_length
-
-Total length of a polygonal curve, or the length of a segment.
-"""
-function fp_geom_length(P::PntSeq{D,T}) where {D,T}
-    len::Float64 = 0.0
-    for i = firstindex(P):(lastindex(P)-1)
-        len += fp_dist(P[i], P[i+1])
-    end
-
-    return len
-end
-
-@inline fp_geom_length(seg::Segment{D,T}) where {D,T} = fp_dist(seg.p, seg.q);
-
-"""
-    fp_prefix_lengths
-
-The arc length of `P` up to each vertex.
-"""
-function fp_prefix_lengths(P::PntSeq{D,T})::Vector{Float64} where {D,T}
-    v = Vector{Float64}()
-    push!(v, zero(Float64))
-    len::Float64 = 0.0
-    for i = firstindex(P):(lastindex(P)-1)
-        len += fp_dist(P[i], P[i+1])
-        push!(v, Float64(len))
-    end
-    return v
 end
 
 """

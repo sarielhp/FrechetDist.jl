@@ -44,15 +44,13 @@ end
 
 
 
-const DictVerticesType = Dict{Int64,TreeVertex};
-const DictHandledType = Dict{Int64,Bool};
 
 @with_kw mutable struct SDContext{N,T}
     P::PntSeq{N,T}
     Q::PntSeq{N,T}
-    vertices::DictVerticesType
-    handled::DictHandledType
-    prev_map::DictVERType
+    vertices::Dict{Int64,TreeVertex}
+    handled::Dict{Int64,Bool}
+    prev_map::Dict{Int64,Int64}
     pq::PriorityQueue{Int64,Float64}
     n_p::Int64 = 0
     n_q::Int64 = 0
@@ -62,9 +60,9 @@ function SDContext(P::PntSeq{N,T}, Q::PntSeq{N,T}) where {N,T}
     return SDContext(
         P,
         Q,
-        DictVerticesType(),
-        DictHandledType(),
-        DictVERType(),
+        Dict{Int64,TreeVertex}(),
+        Dict{Int64,Bool}(),
+        Dict{Int64,Int64}(),
         PriorityQueue{Int64,Float64}(),
         cardin(P),
         cardin(Q),
@@ -127,7 +125,7 @@ function SW_new_event(
 end
 
 function is_sw_schedule_event(
-    dict::DictHandledType,
+    dict::Dict{Int64,Bool},
     id::Int64,
     n_p::Int64,
     n_q::Int64,
@@ -248,7 +246,7 @@ end
 
 function SweepDist_compute_refine_mono(poly_a::PntSeq{N,T}, poly_b::PntSeq{N,T}) where {N,T}
     check_curves(poly_a, poly_b, "SweepDist_compute_refine_mono"; min_vertices = 2)
-    ell = fp_geom_length(poly_a) + fp_geom_length(poly_b)
+    ell = geom_length(poly_a) + geom_length(poly_b)
 
     P = poly_a
     Q = poly_b

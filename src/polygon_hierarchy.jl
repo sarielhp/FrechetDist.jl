@@ -46,7 +46,7 @@ threads. (`ph_init( P, lock )` is accepted as well.)
 function ph_init(P::PntSeq{D,T}; lock::ReentrantLock = ReentrantLock()) where {D,T}
     check_curve(P, "ph_init", "the curve")
     ph = PH.hierarchy_init(P, frechet_measure; lock)
-    ph.len = fp_geom_length(P)
+    ph.len = geom_length(P)
 
     return ph
 end

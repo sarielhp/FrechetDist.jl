@@ -7,8 +7,6 @@
 # A library to compute various versions of the Frechet distance.
 #-------------------------------------------------------------
 
-const DictVERType = Dict{Int64,Int64};
-#DictHandledType = Dict{Int64, Bool};
 
 
 """
@@ -50,10 +48,7 @@ end
     return ((id & 0x1) != 0)
 end
 
-#DictVERType = Dict{Int64, TreeVertex};
-#HeapVERType = BinaryMinHeap{TreeVertex};
 
-const HeapVerticesType = BinaryMinHeap{Tuple{Float64,Int64}};
 
 
 #@with_kw
@@ -62,9 +57,8 @@ mutable struct FRContext{N,T}
     Q::PntSeq{N,T}
     p_offs::Vector{Float64}
     q_offs::Vector{Float64}
-    #    handled::DictHandledType;
-    dict::DictVERType
-    heapAlt::HeapVerticesType
+    dict::Dict{Int64,Int64}
+    heapAlt::BinaryMinHeap{Tuple{Float64,Int64}}
     f_offsets::Bool
     n_p::Int64 #0
     n_q::Int64 #0
@@ -73,9 +67,8 @@ mutable struct FRContext{N,T}
 end
 
 function FR_Context(P::PntSeq{N,T}, Q::PntSeq{N,T}) where {N,T}
-    #    d_h = DictHandledType();
-    d_ver = DictVERType()
-    h = HeapVerticesType()
+    d_ver = Dict{Int64,Int64}()
+    h = BinaryMinHeap{Tuple{Float64,Int64}}()
     return FRContext(
         P,
         Q,
@@ -194,7 +187,7 @@ end
 
 
 @inline function is_schedule_event(
-    dict::DictVERType,
+    dict::Dict{Int64,Int64},
     id::Int64,
     n_p::Int64,
     n_q::Int64,
@@ -239,7 +232,7 @@ function f_r_extract_solution_basic(
     P::PntSeq{N,T},
     Q::PntSeq{N,T},
     end_event_id::Int64,
-    dict::DictVERType,
+    dict::Dict{Int64,Int64},
 ) where {N,T}
     #############################################################3
     # Extracting the solution
@@ -281,7 +274,7 @@ function f_r_extract_solution(
     P::PntSeq{N,T},
     Q::PntSeq{N,T},
     end_event_id::Int64,
-    dict::DictVERType,
+    dict::Dict{Int64,Int64},
     c::FRContext{N,T},
 ) where {N,T}
     #############################################################3

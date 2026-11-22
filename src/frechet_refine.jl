@@ -28,8 +28,8 @@ function discrete_frechet_sample(
     f_lopt::Bool = true,
 ) where {N,T}
     #    polya,polyb = example_4()
-    lena = fp_geom_length(polya)
-    lenb = fp_geom_length(polyb)
+    lena = geom_length(polya)
+    lenb = geom_length(polyb)
 
     #    n::Int64 = 100;
     delta = (lena + lenb) / n

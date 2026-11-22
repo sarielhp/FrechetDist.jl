@@ -340,8 +340,8 @@ function frechet_c_compute(
 
     ratio_2 = m_rough.ratio
 
-    len_a = fp_geom_length(P)
-    len_b = fp_geom_length(Q)
+    len_a = geom_length(P)
+    len_b = geom_length(Q)
 
     approx = min(1.0 + (len_a + len_b) / (100.0 * m_rough.leash), 1.1)
 

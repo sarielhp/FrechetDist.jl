@@ -8,7 +8,7 @@ beginning of the curve. Here, distance means the total distance of the
 subcurve from the start point, to the current point.
 """
 function extract_param_inner(P::PntSeq{N,T}, V::Vector{EventPoint{N,T}}) where {N,T}
-    lens::Vector{Float64} = fp_prefix_lengths(P)
+    lens::Vector{Float64} = prefix_lengths(P)
     out = Vector{Float64}()
     check_times(V)
 
@@ -291,8 +291,8 @@ function event_sequences_extract(prm::PntSeq2F, P::PntSeq{N,T}, Q::PntSeq{N,T}) 
     len_q = cardin(Q)
     len_p = cardin(P)
 
-    lp::Vector{Float64} = fp_prefix_lengths(P)
-    lq::Vector{Float64} = fp_prefix_lengths(Q)
+    lp::Vector{Float64} = prefix_lengths(P)
+    lq::Vector{Float64} = prefix_lengths(Q)
 
     for i = 1:(cardin(prm)-1)
         #        println( "before?? A" );

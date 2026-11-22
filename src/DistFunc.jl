@@ -209,8 +209,8 @@ function SweepDist_segs_p(
     v_start = q_a - p_a
     v_end = q_b - p_b
 
-    if fp_dist(v_start, v_end) < 0.0000001 * fp_norm(v_start)
-        return len_edge_p * fp_norm(v_start)
+    if fp_dist(v_start, v_end) < 0.0000001 * norm(v_start)
+        return len_edge_p * norm(v_start)
     end
 
     diff::Point{D,T} = v_end - v_start

@@ -6,11 +6,10 @@ module FrechetDist
 using Parameters
 using LinearAlgebra
 using DataStructures
-using Printf
 
 using StaticArrays
 using BasicCompGeometry
-import BasicCompGeometry: cardin, push_distinct!, split_edges
+import BasicCompGeometry: cardin, push_distinct!, split_edges, prefix_lengths
 using BasicCompGeometry.ReadWrite
 
 include("fp_geometry.jl")
@@ -35,10 +34,9 @@ include("validate.jl")
 
 
 #-- Types -----------------------------------------------------
-export Morphing, FPointType, EventPoint#, PointType
+export Morphing, FPointType, EventPoint
 export Morphing2F
 
-#export  FrechetCExtraInfo;
 
 # Morphing stuff
 export Morphing_monotonize, Morphing_empty, Morphing_verify_valid

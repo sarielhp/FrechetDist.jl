@@ -8,10 +8,7 @@ const FD = FrechetDist
 include(joinpath(@__DIR__, "agreement.jl"))
 
 @testset "Type aliases are constants" begin
-    for name in
-        (:DictVERType, :HeapVerticesType, :DictVerticesType, :DictHandledType, :Morphing2F)
-        @test isconst(FD, name)
-    end
+    @test isconst(FD, :Morphing2F)
 end
 
 @testset "Morphing validation looks at every coordinate" begin

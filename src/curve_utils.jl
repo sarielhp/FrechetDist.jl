@@ -89,7 +89,7 @@ end
 # n is roughly the number of vertices one gets
 ############################################################################
 function Polygon_sample_uniformly(P::PntSeq{D,T}, n::Int64) where {D,T}
-    len = fp_geom_length(P)
+    len = geom_length(P)
     delta = len / (n-1)
 
     new_P = PntSeq{D,T}()
@@ -98,7 +98,7 @@ function Polygon_sample_uniformly(P::PntSeq{D,T}, n::Int64) where {D,T}
     for i = 1:(cardin(P)-1)
         s = Segment{D,T}(P[i], P[i+1])
 
-        ns::Int64 = floor(Int64, fp_geom_length(s) / delta)
+        ns::Int64 = floor(Int64, fp_dist(P[i], P[i+1]) / delta)
         for j = 1:ns
             push_distinct!(new_P, fp_at(s, j / (ns + 1)))
         end
