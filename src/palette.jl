@@ -16,8 +16,10 @@ const PH = BasicCompGeometry.PntSeqHierarchy
 
 The palette of `P`, as a vector with one entry per vertex.
 """
-frechet_palette(P::PntSeq{N,T}) where {N,T} =
-    PH.palette(P, frechet_width_approx).err::Vector{T}
+function frechet_palette(P::PntSeq{N,T}) where {N,T}
+    check_coordinate_type(P, "frechet_palette")
+    return PH.palette(P, frechet_width_approx).err::Vector{T}
+end
 
 """
     frechet_palette_approx
@@ -31,12 +33,13 @@ the nubmer of vertices of Q, but the approximation might be of low
 quality.
 
 """
-function frechet_palette_approx(P::PntSeq{N,T}, plt::Vector{T}, w::T) where {N,T}
+function frechet_palette_approx(P::PntSeq{N,T}, plt::Vector{T}, w::Real) where {N,T}
     check_palette(P, plt, "frechet_palette_approx")
     return PH.palette_extract(P, plt, w)
 end
 
 function check_palette(P::PntSeq, plt::Vector, who::AbstractString)
+    check_coordinate_type(P, who)
     length(plt) == cardin(P) || throw(
         ArgumentError(
             "$who: the palette has $(length(plt)) entries; the curve has $(cardin(P)) vertices",

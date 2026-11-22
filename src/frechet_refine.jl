@@ -12,6 +12,8 @@ function frechet_c_mono_approx_subcurve(
     p_indices::Vector{Int64},
 ) where {N,T}
 
+    check_coordinate_type(P, "frechet_c_mono_approx_subcurve", "P")
+    check_coordinate_type(Q, "frechet_c_mono_approx_subcurve", "Q")
     cardin(Q) == length(p_indices) || throw(
         ArgumentError(
             "frechet_c_mono_approx_subcurve: Q has $(cardin(Q)) vertices but " *

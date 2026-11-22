@@ -204,6 +204,8 @@ end
 Returns an empty morhping (i.e., a constructor).
 """
 function Morphing_empty(P::PntSeq{N,T}, Q::PntSeq{N,T}) where {N,T}
+    check_coordinate_type(P, "Morphing_empty", "P")
+    check_coordinate_type(Q, "Morphing_empty", "Q")
     pes = Vector{EventPoint{N,T}}()
     qes = Vector{EventPoint{N,T}}()
     r::Float64 = -1
@@ -470,7 +472,7 @@ function polygons_get_loc_at_time(
     P::PntSeq{D,T},
     Q::PntSeq{D,T},
     times::Vector{T},
-    t::T,
+    t::Real,
 ) where {D,T}
     (t <= 0.0) && return first(P), first(Q)
     (t >= 1.0) && return last(P), last(Q)

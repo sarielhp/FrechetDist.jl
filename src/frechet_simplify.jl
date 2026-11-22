@@ -41,9 +41,10 @@ function find_frechet_prefix(P::PntSeq{D,T}, i::Int64, j::Int64, w::T) where {D,
     return find_frechet_prefix_inner(P, i, i, j, w)
 end
 
-function frechet_simplify_to_width(P::PntSeq{D,T}, w::T) where {D,T}
+function frechet_simplify_to_width(P::PntSeq{D,T}, w_in::Real) where {D,T}
     check_curve(P, "frechet_simplify_to_width", "the curve"; min_vertices = 0)
-    check_nonnegative(w, "frechet_simplify_to_width", "w")
+    check_nonnegative(w_in, "frechet_simplify_to_width", "w")
+    w = T(w_in)
     pout = PntSeq{D,T}()
     pindices = Vector{Int64}()
 
@@ -142,9 +143,10 @@ function exp_search_width_prefix(P::PntSeq{N,T}, start::Int64, w::Float64) where
 end
 
 
-function frechet_simplify_w_exp(P::PntSeq{D,T}, w::T) where {D,T}
+function frechet_simplify_w_exp(P::PntSeq{D,T}, w_in::Real) where {D,T}
     check_curve(P, "frechet_simplify_w_exp", "the curve"; min_vertices = 0)
-    check_nonnegative(w, "frechet_simplify_w_exp", "w")
+    check_nonnegative(w_in, "frechet_simplify_w_exp", "w")
+    w = T(w_in)
     pout = PntSeq{D,T}()
     pindices = Vector{Int64}()
 

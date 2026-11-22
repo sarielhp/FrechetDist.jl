@@ -384,7 +384,7 @@ end
 
 #global fever_comp_count = 0;
 
-function FEVER_compute_range(P::PntSeq{N,T}, Q::PntSeq{N,T}, upper_bound::T) where {N,T}
+function FEVER_compute_range(P::PntSeq{N,T}, Q::PntSeq{N,T}, upper_bound::Real) where {N,T}
     check_curves(P, Q, "FEVER_compute_range"; min_vertices = 2)
     check_quadratic_size(cardin(P), cardin(Q), 33, "FEVER_compute_range")
     check_nonnegative(upper_bound, "FEVER_compute_range", "upper_bound")

@@ -60,6 +60,46 @@ end
         end
     end
 
+    @testset "Element types of single-curve entry points" begin
+        # Only Float64 coordinates are supported; others get an ArgumentError, not a
+        # MethodError or InexactError from deep inside.
+        coords = ((0, 0), (1, 1), (2, 0), (3, 1))
+        for T in (Float32, Int)
+            P = PntSeq([Point{2,T}(c...) for c in coords])
+            calls = (
+                () -> FD.frechet_width_approx(P),
+                () -> FD.frechet_offsets(P, [1, 2, 4]),
+                () -> FD.frechet_palette(P),
+                () -> FD.frechet_palette_approx(P, T[0, 0, 0, 0], oneunit(T)),
+                () -> FD.frechet_simplify_to_width(P, oneunit(T)),
+                () -> FD.frechet_simplify_w_exp(P, oneunit(T)),
+                () -> FD.frechet_c_mono_approx_subcurve(P, P, collect(1:4)),
+                () -> FD.frechet_ve_r_compute_range(P, P, oneunit(T)),
+                () -> FD.FEVER_compute_range(P, P, oneunit(T)),
+                () -> FD.Morphing_empty(P, P),
+            )
+            for f in calls
+                @test outcome((_, _) -> f(), nothing, nothing) == :ArgumentError
+            end
+        end
+    end
+
+    @testset "Widths and bounds accept any real number" begin
+        P = mk([(0.0, 0.0), (1.0, 0.3), (2.0, 0.0), (3.0, 0.4), (4.0, 0.0)])
+        # PntSeq has no ==; compare the points and the remaining results.
+        same(a, b) = a[1].pnts == b[1].pnts && a[2:end] == b[2:end]
+        @test same(FD.frechet_simplify_to_width(P, 1), FD.frechet_simplify_to_width(P, 1.0))
+        @test same(FD.frechet_simplify_w_exp(P, 1), FD.frechet_simplify_w_exp(P, 1.0))
+        @test FD.frechet_ve_r_compute_range(P, three, 10) ==
+              FD.frechet_ve_r_compute_range(P, three, 10.0)
+        @test FD.FEVER_compute_range(P, three, 10) == FD.FEVER_compute_range(P, three, 10.0)
+        plt = FD.frechet_palette(P)
+        @test same(
+            FD.frechet_palette_approx(P, plt, 1),
+            FD.frechet_palette_approx(P, plt, 1.0),
+        )
+    end
+
     @testset "Parameters" begin
         # An integer accuracy is fine; the accuracy must exceed 1 and be finite.
         @test FD.frechet_c_approx(two, three, 2).leash > 0

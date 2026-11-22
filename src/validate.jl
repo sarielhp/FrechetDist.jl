@@ -40,8 +40,7 @@ function check_curve(
     name::AbstractString;
     min_vertices::Int = 2,
 ) where {D,T}
-    T === Float64 ||
-        throw(ArgumentError("$who: the coordinates of $name must be Float64 (got $T)"))
+    check_coordinate_type(P, who, name)
     n = cardin(P)
     n >= min_vertices || throw(
         ArgumentError("$who: $name has $n vertices; at least $min_vertices are required"),
@@ -55,6 +54,23 @@ function check_curve(
             ),
         )
     end
+    return nothing
+end
+
+"""
+    check_coordinate_type( P, who, name = "the curve" )
+
+Throws an `ArgumentError` mentioning `who` unless the coordinates of `P` are `Float64`.
+Constant time: for entry points called once per edge, where `check_curve` would be
+quadratic overall.
+"""
+function check_coordinate_type(
+    ::PntSeq{D,T},
+    who::AbstractString,
+    name::AbstractString = "the curve",
+) where {D,T}
+    T === Float64 ||
+        throw(ArgumentError("$who: the coordinates of $name must be Float64 (got $T)"))
     return nothing
 end
 
