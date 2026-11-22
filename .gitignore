@@ -39,3 +39,8 @@ data_old
 # Julia --track-allocation output
 *.jl.*.mem
 /examples/Manifest.toml
+
+# Editor autosave and lock files
+\#*#
+.#*
+*~
