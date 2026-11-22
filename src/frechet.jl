@@ -171,7 +171,6 @@ function ve_event_value(c::FRContext{N,T}, id::Int64) where {N,T}
         d = fp_dist_point_segment(c.P[i], Q[j], Q[j+1])
         if c.f_offsets
             #            if  ( c.q_offs[ j ] > 0 )
-            #                println( "Larger than 0!" );
             #            end
             #--------------------------------------------------------------
             # Old code: Bug?
@@ -219,13 +218,6 @@ function f_r_create_event(
 
     #seg = Segment( R[ i ], R[ i + 1 ] );
     #p = fp_nn_point( seg, qr );
-    #=
-    if  ( any( isnan, p ) )
-        println( seg );
-        println( qr );
-        @assert( false );
-    end
-    =#
 
     #t::Float64 = fp_convex_coef( seg, p );
 
@@ -245,7 +237,6 @@ function f_r_create_event(
         t = 1.0
         p = R[i+1]
     end
-    #        println( "TTT= ", t );
 
     @assert(! any(isnan, p))
     return EventPoint(p, Int64(i), PT_ON_EDGE, t, 0.0)

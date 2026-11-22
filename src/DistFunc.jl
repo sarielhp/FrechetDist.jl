@@ -136,7 +136,6 @@ function DistFunc_verify_integral(a, b, c, x)
         delta = delta / 2.0
     end
     print("f (", x, "): ", v, "        ")
-    #    println( "F'(", x,"): ", diff  );
     println("f - F' ", v - diff)
 end
 
@@ -235,8 +234,6 @@ function SweepDist_segs_p(
     #ymax::Float64 = integral( f, len_edge_p );
     #ymin::Float64 = integral( f, 0.0 );
     #vl::Float64 = ymax - ymin;
-    #println( "ymin: ", ymin );
-    #println( "ymax: ", ymax );
 
     isnan(vl) && error("SweepDist_segs_p: the integral of the leash length is NaN")
 

@@ -87,69 +87,9 @@ end
 end
 
 @inline function ID_get_max(e::EIDCalc)
-    #println( e.nP, e.nQ );
     return ID_get(e, e.nP - 1, false, e.nQ - 1, true) + 4
 end
 
-function ID_tester(nP::Int64, nQ::Int64)
-    e = ID_init(nP, nQ)
-    v = Vector{Int64}()
-
-    mx = ID_get_max(e)
-    push!(v, ID_get(e, 1, true, 1, true))
-    push!(v, ID_get(e, nP, true, nQ, true))
-
-    for i = 1:(nP-1)
-        for j = 1:(nQ-1)
-            id = ID_get(e, i, false, j, true)
-            push!(v, ID_get(e, i, false, j, true))
-            if (ID_status(id) == 0)
-                println("i: ", i)
-                println("j: ", j)
-                println("id: ", id)
-                println("id status: ", ID_status(id))
-
-                @assert(ID_status(id) == 1)
-            end
-            fc = FeverCoords(0, false, 0, false)
-            ID_get_fields(e, last(v), fc)
-            @assert(i == fc.i)
-            @assert(j == fc.j)
-            @assert(fc.i_is_vert == false)
-            @assert(fc.j_is_vert == true)
-
-            push!(v, ID_get(e, i, true, j, false))
-            if (ID_status(last(v)) == 1)
-                println("i: ", i)
-                println("j: ", j)
-                println("id: ", last(v))
-                println("id status: ", ID_status(last(v)))
-
-                @assert(ID_status(last(v)) == 0)
-            end
-            ID_get_fields(e, last(v), fc)
-            @assert(i == fc.i)
-            @assert(j == fc.j)
-            @assert(fc.i_is_vert == true)
-            @assert(fc.j_is_vert == false)
-        end
-    end
-
-    sort!(v)
-    @assert(1 <= v[1] <= mx)
-    for i = 2:length(v)
-        @assert(1 <= v[i] <= mx)
-        if v[i-1] == v[i]
-            println("ERROR!")
-            @assert(v[i-1] != v[i])
-        end
-    end
-    #println( "nP: ", nP, " nQ: ", nQ, "LB: ", nP * nQ * 2, " vs. ", length( v ), "  mx: ", mx );
-
-    # DEBUG
-    #println( "Test passed" );
-    return 0
-end
 
 mutable struct EventsOrder{T} <: Base.Order.Ordering
     values::Vector{T}
@@ -300,20 +240,6 @@ end
 end
 
 
-function try_extract_sol_ids(
-    P::PntSeq{N,T},
-    Q::PntSeq{N,T},
-    prevArr::Vector{Int64},
-)::Bool where {N,T}
-    curr = ID_END
-    while (curr != ID_START)
-        curr = prevArr[curr]
-        if (curr <= 0)
-            return false
-        end
-    end
-    return true
-end
 
 function fever_extract_sol_ids(
     P::PntSeq{N,T},
@@ -322,14 +248,6 @@ function fever_extract_sol_ids(
 ) where {N,T}
     out_arr = Vector{Int64}()
 
-    #=
-    if   ( ! try_extract_sol_ids( P, Q, prevArr ) )
-        println( P );
-        println( Q );
-        println( prevArr );
-        f_debug = true;
-    end
-    =#
 
     curr = ID_END
     while (curr != ID_START)
@@ -471,16 +389,8 @@ function FEVER_compute_range(P::PntSeq{N,T}, Q::PntSeq{N,T}, upper_bound::T) whe
     check_quadratic_size(cardin(P), cardin(Q), 33, "FEVER_compute_range")
     check_nonnegative(upper_bound, "FEVER_compute_range", "upper_bound")
     #global fever_comp_count += 1;
-    #println( fever_comp_count );
 
-    #=
-    if  ( fever_comp_count == 41619 )
-        println( "Bug starts here..." );
-        f_debug = true;
-    end
-    =#
 
-    #println( "\n\n\n\n\n" );
     c::FEVERContext{N,T} = FEVER_Context(P, Q)
     fc = FeverCoords(0, false, 0, false)
 
@@ -537,17 +447,12 @@ function FEVER_compute_range(P::PntSeq{N,T}, Q::PntSeq{N,T}, upper_bound::T) whe
         return m.leash, m_mono.leash
     end
 
-    #println( "Upper bound: ", upper_bound );
-    #println( "ITERS: ", iters );
     @assert(f_reached_end)
 
-    #println( "extract..." );
     out_arr = fever_extract_sol_ids(P, Q, c.prev)
 
-    #println( "Compute leash..." );
     l_min, l_max = fever_comp_leash(c, P, Q, out_arr)
 
-    #println( "\n\n\n\n" );
     return l_min, l_max
 end
 

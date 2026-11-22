@@ -138,7 +138,6 @@ function Morphing_get_max_edges_err(m::Morphing{D,T}) where {D,T}
         )
         ld = fp_dist_segment_segment(P[i], P[i+1], Q[j], Q[j+1])
         delta = d - ld
-        #println( "delta : ", delta, " (", i, ", ", j, ")" );
         if (delta > mx)
             mx = delta
             io, jo = i, j
@@ -381,10 +380,6 @@ function Morphing_as_polygons(m::Morphing{N,T}) where {N,T}
     for i in eachindex(m.pes)
         push!(P, m.pes[i].p)
         push!(Q, m.qes[i].p)
-        d = fp_dist(m.pes[i].p, m.qes[i].p)
-        #=if  ( d > leash )
-            leash = max( leash, d );
-        end=#
     end
 
     return P, Q
@@ -662,7 +657,6 @@ function Morphing_combine(u::Morphing{N,T}, v::Morphing{N,T}) where {N,T}
     (cardin(u_prm) > 1 && cardin(v_prm) > 1) ||
         throw(ArgumentError("Morphing_combine: both morphings need at least two events"))
 
-    #println( "b5678" );
     prm = parameterization_combine(v_prm, u_prm)
 
     pes, qes = event_sequences_extract(prm, u.P, v.Q)
@@ -705,8 +699,6 @@ end
 function morphing_profile(m::Morphing{D,T}, n::Int64) where {D,T}
 
     PB, QB, times = Morphing_as_polygons_w_times(m)
-    #println( times );
-    #println( length( times ) );
     lP = geom_length(PB)
     X = range(0, lP, length = n)
 

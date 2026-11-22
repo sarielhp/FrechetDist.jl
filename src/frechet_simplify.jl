@@ -28,7 +28,6 @@ function find_frechet_prefix_inner(
 
     # No reason to waste time?
     if (j - mid) <= ((j - strt) ÷ 10)
-        #println( "FLOGI" );
         return mid
     end
 
@@ -63,7 +62,6 @@ function frechet_simplify_to_width(P::PntSeq{D,T}, w::T) where {D,T}
     card = cardin(P)
     while true
         next_ind = find_frechet_prefix(P, curr_ind, card, w)
-        #println( "next_ind: ", next_ind );
         @assert(next_ind > curr_ind)
         push!(pindices, next_ind)
         push!(pout, P[next_ind])

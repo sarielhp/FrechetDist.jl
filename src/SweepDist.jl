@@ -31,16 +31,6 @@ function TreeVertex(_id::Int64)
     return TreeVertex(_id, 0.0, -1)
 end
 
-function Base.isless(v::TreeVertex, u::TreeVertex)
-    return v.val < u.val
-end
-
-###########################################################
-# TODO: Seems unnecessary?
-###########################################################
-function Base.hash(v::TreeVertex, h::UInt)
-    return hash(v.id, hash(:TreeVertex, h))
-end
 
 
 
@@ -100,8 +90,6 @@ function SW_get_event_value(
     prev_val::Float64,
     c::SDContext{N,T},
 ) where {N,T}
-    ev = TreeVertex(_id)
-
     o_p, o_q = get_event_points(c, _prev_id)
     n_p, n_q = get_event_points(c, _id)
 
@@ -255,8 +243,6 @@ function SweepDist_compute_refine_mono(poly_a::PntSeq{N,T}, poly_b::PntSeq{N,T})
     P = poly_a
     Q = poly_b
 
-    #println( "*** P :", cardin( P ) );
-    #println( "*** Q :", cardin( Q ) );
 
     local m_new
     while true
@@ -268,7 +254,6 @@ function SweepDist_compute_refine_mono(poly_a::PntSeq{N,T}, poly_b::PntSeq{N,T})
         m_new = Morphing_monotonize(m)
         rate = m_new.monotone_err / ell
 
-        #println( "Rate: ", rate );
         if (rate < 0.01)
             break
         end
@@ -279,7 +264,6 @@ function SweepDist_compute_refine_mono(poly_a::PntSeq{N,T}, poly_b::PntSeq{N,T})
         Q = poly_b_2
     end
 
-    #println( "Returning from SweepDist_compute_refine_mono" );
     return m_new
 end
 

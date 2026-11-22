@@ -126,7 +126,6 @@ function frechet_c_approx(
                 m = frechet_mono_via_refinement(poly_a, poly_b)[1]
                 m.ratio = 1.0
                 m.lower_bound = m.leash
-                #                exit( -1 ); # DDDD
                 return m
             end
 
@@ -160,24 +159,11 @@ function frechet_c_approx(
 end
 
 
-function count_below_zero(arr)
-    count = 0
-    for x in arr
-        if x <= 0.0
-            count = count + 1
-        end
-    end
-    return count
-end
 
 
 function Polygon_simplify_radii_ext(P::PntSeq{N,T}, r::Vector{T}) where {N,T}
-    f_exact::Bool = false
-    #f_debug  &&  println( "#P :", cardin( P ) );
-    #f_debug  &&  println( "#r :", length( r ) );
 
     PS, p_indices = Polygon_simplify_radii(P, r)
-    #println( "@!@! |PS|: ", cardin( PS ) );
     @assert(length(p_indices) == cardin(PS))
     if (cardin(PS) <= (cardin(P) / 2))
         @assert(cardin(PS) == length(p_indices))
@@ -188,7 +174,6 @@ function Polygon_simplify_radii_ext(P::PntSeq{N,T}, r::Vector{T}) where {N,T}
     for i = 1:cardin(P)
         push!(p_indices, i)
     end
-    #println( "______________________________" );
     @assert(cardin(P) == length(p_indices))
     return P, p_indices, true
 end
@@ -265,7 +250,6 @@ function simplify_morphing_sensitive(m::Morphing{D,T}, factor::Float64) where {D
     propogate_mins(pz, 1)
     propogate_mins(qz, 1)
 
-    #println( pz );
 
     PS, p_indices, f_PS_exact = Polygon_simplify_radii_ext(m.P, pz)
     QS, q_indices, f_QS_exact = Polygon_simplify_radii_ext(m.Q, qz)
@@ -404,7 +388,6 @@ function frechet_c_compute(
 
         # BUG FIX: Used the mono computation instead of the subcurve code,
         # which is much faster...
-        #println( "_#PS: ", cardin( PS ) );
         m_a, offsets_a = frechet_c_mono_approx_subcurve(P, PS, p_indices)
         mmu = Morphing_combine(m_a, m_mid)
         m_b, offsets_b = frechet_c_mono_approx_subcurve(Q, QS, q_indices)

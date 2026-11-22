@@ -19,7 +19,6 @@ function extract_param_inner(P::PntSeq{N,T}, V::Vector{EventPoint{N,T}}) where {
             push!(out, lens[ev.i])
             continue
         end
-        #println( "ev.t: ", ev.t, "  i: ", i,"  len(V): ", length( V )  );
         curr = lens[ev.i]
         next = lens[min(n, ev.i + 1)]
         push!(out, curr + ev.t * (next - curr))
@@ -260,7 +259,6 @@ function get_point(
         t = 1.0
     end
 
-    #    println( "inside... 3" );
     if (t == 0)
         return P[i], 0.00
     end
@@ -268,7 +266,6 @@ function get_point(
         return P[i+1], 1.0
     end
     p = fp_convex_comb(P[i], P[i+1], t)
-    #    println( "inside... 4" );
     return p, t
 end
 
@@ -295,7 +292,6 @@ function event_sequences_extract(prm::PntSeq2F, P::PntSeq{N,T}, Q::PntSeq{N,T}) 
     lq::Vector{Float64} = prefix_lengths(Q)
 
     for i = 1:(cardin(prm)-1)
-        #        println( "before?? A" );
         curr = prm[i]
         p_loc = curr[1]
 
@@ -313,20 +309,14 @@ function event_sequences_extract(prm::PntSeq2F, P::PntSeq{N,T}, Q::PntSeq{N,T}) 
         #t_p::Float64;
         pcurr, t_p = get_point(P, lp, i_p, p_loc)
         @assert(0 <= t_p && t_p <= 1.0)
-        #@assert( ! isNaN(pcurr) );
-        #        println( "get_point Q ..." );
         #get_point( Q, lq, i_q, curr[ 2 ] );
-        #        println( "get_point Q!!!!!!!!!! ..." );
         qcurr, t_q = get_point(Q, lq, i_q, curr[2])
-        #@assert( ! isNaN( qcurr ) );
 
         (0.0 <= t_q <= 1.0) ||
             error("event_sequences_extract: the parameter t_q = $t_q is outside [0, 1]")
-        #        println( "here? " );
 
         push!(pes, curve_event(pcurr, i_p, t_p, len_p, T))
         push!(qes, curve_event(qcurr, i_q, t_q, len_q, T))
-        #       println( "here? B" );
     end
 
     @assert(!any(isnan, last(P)))
@@ -335,26 +325,6 @@ function event_sequences_extract(prm::PntSeq2F, P::PntSeq{N,T}, Q::PntSeq{N,T}) 
     push!(pes, EventPoint(deepcopy(last(P)), cardin(P), PT_VERTEX, 0.0, 0.0))
     push!(qes, EventPoint(deepcopy(last(Q)), cardin(Q), PT_VERTEX, 0.0, 0.0))
 
-    #=
-    println( "@@@@@@@@@@@@@@@@@@@@222" );
-    println( pes );
-    println( "@@@@@@@@@@@@@@@@@@@@222" );
-    println( qes );
-    =#
-    #=
-    for  i in 1:length( qes )
-        if ( ( pes[ i ].type == PT_ON_EDGE ) &&
-            ( qes[ i ].type != PT_ON_EDGE ) )
-            println( "double edge event?" );
-            println( "i:", i );
-            println( "qes[ i ].t:", qes[ i ].t );
-            println( "pes[ i ].t:", pes[ i ].t );
-            println( length( qes ) );
-        end
-        @assert( ( pes[ i ].type != PT_ON_EDGE )
-                 ||  ( qes[ i ].type != PT_ON_EDGE ) );
-    end
-    =#
 
     return pes, qes
 end
@@ -373,34 +343,11 @@ function Morphing_from_prm(prm::PntSeq2F, P::PntSeq{N,T}, Q::PntSeq{N,T}) where 
 end
 
 
-function compute_offsets(
-    P::PntSeq{N,T},
-    pes::Vector{EventPoint{N,T}},
-    qes::Vector{EventPoint{N,T}},
-) where {N,T}
-    offs = zeros(Float64, cardin(P))
-
-    for i in eachindex(pes)
-        ev = pes[i]
-        evx = qes[i]
-        r = fp_dist(ev.p, evx.p)
-        offs[ev.i] = max(offs[ev.i], r)
-    end
-
-    return offs
-end
 
 """
     Morphing_extract_offsets
 """
 function Morphing_extract_offsets(m::Morphing)
-    p_offs = Vector{Float64}()
-    q_offs = Vector{Float64}()
-
-
-    p_offs = compute_offsets(m.P, m.pes, m.qes)
-    q_offs = compute_offsets(m.Q, m.qes, m.pes)
-    # P event sequence
-
-    return p_offs, q_offs
+    # The largest leash at each vertex: the same as Morphing_extract_vertex_radii.
+    return Morphing_extract_vertex_radii(m)
 end

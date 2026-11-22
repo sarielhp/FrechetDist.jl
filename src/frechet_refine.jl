@@ -1,56 +1,3 @@
-#####################################################################
-"""
-    discrete_frechet_sample
-
-Computes the discrete Frechet distance between the two curves.by
-sampling them
-
-It first sapmles the two curves rougly uniformly. n is supposed to
-be the nubmer of vertices, by the optput might be a sample that is
-slightly bigger, as the code tries to ensure the vertices are being
-picked.
-
-# Arguments
-
-- `n`: number of vertices to add when "refining" the two curves. The
-  number of vertices computed might be larger (but hopefully not much
-  larger).
-
-- f_lopt = true: Use standard discrete Frechet or the retractable
-  version.
-
-"""
-#####################################################################
-function discrete_frechet_sample(
-    polya::PntSeq{N,T},
-    polyb::PntSeq{N,T},
-    n::Int64,
-    f_lopt::Bool = true,
-) where {N,T}
-    #    polya,polyb = example_4()
-    lena = geom_length(polya)
-    lenb = geom_length(polyb)
-
-    #    n::Int64 = 100;
-    delta = (lena + lenb) / n
-
-    na::Int64 = ceil(lena / delta) + 2
-    nb::Int64 = ceil(lenb / delta) + 2
-
-    qa = Polygon_sample_uniformly(polya, na)
-    qb = Polygon_sample_uniformly(polyb, nb)
-
-    if (f_lopt)
-        morph = frechet_d_r_compute(qa, qb)
-    else
-        morph = frechet_d_compute(qa, qb)
-    end
-    #    output_morphing( morph, filename, polyb );
-
-    return morph
-end
-
-
 """
     frechet_c_mono_approx_subcurve
 
@@ -395,22 +342,13 @@ function frechet_mono_via_refinement_delta(
 
     P = Pa
     Q = Qa
-    #println( "ROUNDS\n" );
     local m, mm
     count::Int64 = 0
     for count = 0:64
-        #println( count, "  ", length( P ), "  ", length( Q ) );
         #( count > 0 )  &&  println( "FVER round: ", count );
 
         #@time m_old = frechet_ve_r_compute( P, Q )
         m = FEVER_compute(P, Q)
-        #=
-        println( "---" );
-
-        if  ( ! fp_equal( m_old.leash, m.leash ) )
-            @assert( m_old.leash == m.leash );
-        end
-        =#
 
         mm = Morphing_monotonize(m)
 
@@ -425,8 +363,6 @@ function frechet_mono_via_refinement_delta(
         end
 
         ((mm.leash - m.leash) <= delta) && break
-        #println( count, ": X GAP: ", gap, "   res: ", res );
-        #println( count, ":   res: ", res );
 
         #times::Int64 = 4;# min( round(Int64,
         #   (mm.leash - m.leash) / delta ), 7 );;
@@ -434,8 +370,6 @@ function frechet_mono_via_refinement_delta(
         poly_a_2 = extract_refined_polygon(P, m.pes, res, delta/11)
         poly_b_2 = extract_refined_polygon(Q, m.qes, res, delta/11)
 
-        #        println( "P len: ", length( P ) );
-        #println( "P_a_2 len: ", length( poly_a_2 ) );
 
         P = poly_a_2
         Q = poly_b_2

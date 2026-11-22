@@ -25,7 +25,6 @@ function d_frechet_extract_solution(
     i = n_p
     j = n_q
 
-    #println( "Extract solution?" );
     up::Int64 = n_p + n_q + 1
     peout = Vector{EventPoint{D,T}}(undef, up)
     qeout = Vector{EventPoint{D,T}}(undef, up)
@@ -278,9 +277,6 @@ function DTW_d_compute(P::PntSeq{D,T}, Q::PntSeq{D,T}) where {D,T}
         i, j = ele[1]
         value = ele[2]
 
-        #println( "  VALUE   : ", value );
-        #println( "  dp[", i, ", ", j, "] : ", dp[ i, j ] );
-        #println( pq );
 
         dequeue!(pq)
         if handled[i, j]
