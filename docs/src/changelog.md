@@ -1,8 +1,9 @@
 # Change log
     What had changed...
 
-Unreleased
-==========
+v3.1.0 Release Notes
+====================
+(November 22, 2026)
 
 Fixed (results change, see `docs/review-2026-11.md`):
 * `Morphing_combine` on long curves: breakpoints on the middle curve were merged when within a relative 1e-6 of their arc-length position, 2 units at position 1e6, giving leashes up to 159 times too large. `fp_equal` now uses 1e-12 (M15). (`frechet_c_compute` also combines morphings; its results were correct in the cases tested.)
@@ -25,6 +26,7 @@ Documentation:
 
 Other:
 * One search loop each for VE and FEVER (`ve_search!`, `fever_search!`).
+* The docs build uses Documenter 1.20 (was pinned at 1.4.1 by a stale `docs/Manifest.toml` that also held an absolute path to the package).
 * The example shell scripts keep temporary files under `${TMPDIR:-/tmp}/$USER/FrechetDist/`.
 
 v3.0.0 Release Notes
