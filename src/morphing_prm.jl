@@ -231,6 +231,22 @@ function parameterization_combine(f::PntSeq2F, g::PntSeq2F)::PntSeq2F
     return parameterization_monotonize!(out)
 end
 
+# The vertex (or the edge starting at it) of the position `loc` along a curve with
+# prefix lengths `l`, searching forward from vertex `i`. Repeated vertices share a
+# position; the search moves past such a vertex only once it has had an event
+# (`used`), so that each of them gets one. Without repeated vertices this is the
+# last vertex at or before `loc`.
+function advance_vertex(l::Vector{Float64}, i::Int64, used::Bool, loc::Float64)
+    # exact: the prefix lengths of repeated vertices are equal, and an event at a
+    # vertex has exactly its prefix length as position (extract_param_inner).
+    while (i < length(l)) &&
+          ((l[i+1] < loc) || ((l[i+1] == loc) && ((l[i] < l[i+1]) || used)))
+        i = i + 1
+        used = false
+    end
+    return i
+end
+
 """
     get_point
 
@@ -251,6 +267,8 @@ function get_point(
         return last(P), 1.0
     end
     edge_len = lens[i+1] - lens[i]
+    # exact: a repeated vertex adds exactly 0.0 to the prefix length.
+    (edge_len == 0.0) && return P[i], 0.0
     t = (pos - lens[i]) / edge_len
 
     if (0 > t > -0.00000001)
@@ -293,20 +311,21 @@ function event_sequences_extract(prm::PntSeq2F, P::PntSeq{N,T}, Q::PntSeq{N,T}) 
     lp::Vector{Float64} = prefix_lengths(P)
     lq::Vector{Float64} = prefix_lengths(Q)
 
+    used_p = used_q = false  # whether vertex i_p (i_q) already has an event
     for i in 1:(cardin(prm)-1)
         curr = prm[i]
         p_loc = curr[1]
 
-        while (i_p < length(lp)) && (p_loc >= lp[i_p+1])
-            i_p = i_p + 1
-        end
+        next_p = advance_vertex(lp, i_p, used_p, p_loc)
+        used_p = used_p && (next_p == i_p)
+        i_p = next_p
         (lp[i_p] <= p_loc) || error(
             "event_sequences_extract: parameter $p_loc precedes the vertex position " *
             "$(lp[i_p]) (vertex $i_p of $(length(lp)))",
         )
-        while (i_q < length(lq)) && (curr[2] >= lq[i_q+1])
-            i_q = i_q + 1
-        end
+        next_q = advance_vertex(lq, i_q, used_q, curr[2])
+        used_q = used_q && (next_q == i_q)
+        i_q = next_q
 
         #t_p::Float64;
         pcurr, t_p = get_point(P, lp, i_p, p_loc)
@@ -319,6 +338,7 @@ function event_sequences_extract(prm::PntSeq2F, P::PntSeq{N,T}, Q::PntSeq{N,T}) 
 
         push!(pes, curve_event(pcurr, i_p, t_p, len_p, T))
         push!(qes, curve_event(qcurr, i_q, t_q, len_q, T))
+        used_p = used_q = true
     end
 
     @assert(!any(isnan, last(P)))

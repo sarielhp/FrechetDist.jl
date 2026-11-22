@@ -109,6 +109,39 @@ end
     @test checked == 80
 end
 
+@testset "Morphing_from_prm gives repeated vertices an event each (M13)" begin
+    P = mkc([(0.0, 0.0), (0.0, 0.0), (1.0, 0.0), (1.0, 0.0), (2.0, 0.0)])
+    Q = mkc([(0.0, 1.0), (2.0, 1.0)])
+    m = FD.Morphing_monotonize(FD.frechet_ve_r_compute(P, Q))
+    m2 = FD.Morphing_from_prm(FD.Morphing_extract_prm(m), P, Q)
+    @test [e.i for e in m2.pes] == [1, 2, 2, 3, 4, 5]
+    @test FD.Morphing_extract_vertex_radii(m2)[1] == ones(5)
+
+    # Random walks with repeated vertices: the rebuilt morphing is valid, keeps the
+    # leash, and every vertex of both curves has an event.
+    bad = 0
+    for seed in 1:100
+        rng = MersenneTwister(seed)
+        w(n) = [point(x...) for x in eachcol(cumsum(randn(rng, 2, n), dims = 2))]
+        a, b = w(rand(rng, 3:10)), w(rand(rng, 3:10))
+        for v in (a, b), _ in 1:2
+            k = rand(rng, eachindex(v))
+            insert!(v, k, v[k])
+        end
+        A, B = PntSeq(a), PntSeq(b)
+        m = FD.Morphing_monotonize(FD.frechet_ve_r_compute(A, B))
+        r = outcome(() -> FD.Morphing_from_prm(FD.Morphing_extract_prm(m), A, B))
+        ok =
+            !(r isa Exception) &&
+            outcome(() -> FD.Morphing_verify_valid(r)) === nothing &&
+            isapprox(r.leash, m.leash; rtol = 1e-9) &&
+            Set(e.i for e in r.pes) == Set(1:length(a)) &&
+            Set(e.i for e in r.qes) == Set(1:length(b))
+        ok || (bad += 1)
+    end
+    @test bad == 0
+end
+
 @testset "DTW and sweep distance report their objective in sol_value" begin
     rng = MersenneTwister(5)
     A = PntSeq([point(x...) for x in eachcol(cumsum(randn(rng, 2, 30), dims = 2))])
