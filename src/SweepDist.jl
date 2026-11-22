@@ -51,7 +51,7 @@ end
     vertices::Dict{Int64,TreeVertex}
     handled::Dict{Int64,Bool}
     prev_map::Dict{Int64,Int64}
-    pq::PriorityQueue{Int64,Float64}
+    pq::PriorityQueue{Int64,Float64,Base.Order.ForwardOrdering}
     n_p::Int64 = 0
     n_q::Int64 = 0
 end

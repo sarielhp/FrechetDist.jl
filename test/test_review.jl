@@ -174,3 +174,9 @@ end
     end
     @test mism == 0
 end
+
+@testset "Search contexts have concrete field types" begin
+    for T in (FD.SDContext{2,Float64}, FD.FRContext{2,Float64})
+        @test all(isconcretetype, fieldtypes(T))
+    end
+end
