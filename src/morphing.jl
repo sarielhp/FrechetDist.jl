@@ -400,47 +400,27 @@ end
 
 
 """
-    Morphing_as_polygons_w_times
+    Morphing_as_polygons_w_times( m )
 
-    Returns time for each pair of vertices in the morphing, between 0 and 1.
+The morphing as two polygons with one vertex per step (`Morphing_as_polygons`),
+and a time in [0, 1] for each step: the distance the two points have travelled
+together so far, divided by the total. Returns `(P, Q, t)`. A step where neither
+point moves takes no time, so times can repeat. If nothing moves at all, the times
+are spread evenly.
 """
 function Morphing_as_polygons_w_times(m::Morphing{N,T}) where {N,T}
     P, Q = Morphing_as_polygons(m)
-    t = Vector{Float64}()
-
-    len = geom_length(P) + geom_length(Q)
-    if len == 0.0
-        # Nothing moves: spread the events uniformly so that every time in [0, 1]
-        # falls between two of them.
+    travelled = zeros(length(P))
+    for i in 1:(length(P)-1)
+        travelled[i+1] = travelled[i] + fp_dist(P[i], P[i+1]) + fp_dist(Q[i], Q[i+1])
+    end
+    total = last(travelled)
+    if total == 0.0  # exact: nothing moves
+        # Every time in [0, 1] must fall between two events.
         return P, Q, collect(range(0.0, 1.0, length = length(P)))
     end
-    c_z::Int64 = 0
-    min_delta::Float64 = len
-    for i in 1:(length(P)-1)
-        delta = (fp_dist(P[i], P[i+1]) + fp_dist(Q[i], Q[i+1]))
-        if (delta == 0.0)  # exact: a step where neither curve moves
-            c_z = c_z + 1
-            continue
-        end
-        min_delta = min(min_delta, delta)
-    end
-    fake_delta = min_delta/8.0
-    len = len + fake_delta * c_z
-
-    push!(t, 0.0)
-    for i in 1:(length(P)-1)
-        delta = (fp_dist(P[i], P[i+1]) + fp_dist(Q[i], Q[i+1]))
-        if (delta == 0.0)  # exact: a step where neither curve moves
-            delta = fake_delta
-        end
-        next_t = min(last(t) + (delta / len), 1.0)
-        push!(t, next_t)
-    end
-    if last(t) != 1.0  # exact: rounding can leave the last time just below 1
-        pop!(t)
-        push!(t, 1.0)
-    end
-    return P, Q, t
+    # Nondecreasing, and the last time is total / total == 1.0 exactly.
+    return P, Q, travelled ./ total
 end
 
 

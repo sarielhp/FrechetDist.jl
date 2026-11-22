@@ -78,20 +78,6 @@ function leash_after_travel(PB, QB, s)
     return BasicCompGeometry.dist(last(PB), last(QB))
 end
 
-# The time parametrization gives each step where neither point moves a duration of
-# (smallest positive step) / 8, which X does not count. Such a step shifts X against
-# the distance travelled by at most that much, and the leash is 1-Lipschitz in the
-# distance travelled, so this bounds the error.
-function zero_step_slack(PB, QB)
-    steps = [
-        BasicCompGeometry.dist(PB[i], PB[i+1]) + BasicCompGeometry.dist(QB[i], QB[i+1])
-        for i in 1:(length(PB)-1)
-    ]
-    pos = filter(>(0.0), steps)
-    isempty(pos) && return 0.0
-    return count(iszero, steps) * minimum(pos) / 8
-end
-
 @testset "morphing_profile matches its documentation" begin
     checked = 0
     for seed in 1:40
@@ -112,7 +98,7 @@ end
             @test first(X) == 0.0 && last(X) ≈ L
             @test all(k -> X[k+1] - X[k] ≈ L / (n - 1), 1:(n-1))
             # Y[k] is the leash once the points have travelled X[k].
-            slack = zero_step_slack(PB, QB) + 1.0e-9 * L
+            slack = 1.0e-9 * L
             @test all(k -> abs(Y[k] - leash_after_travel(PB, QB, X[k])) <= slack, 1:n)
             @test Y[1] ≈ BasicCompGeometry.dist(first(PB), first(QB))
             @test Y[end] ≈ BasicCompGeometry.dist(last(PB), last(QB))
