@@ -45,9 +45,82 @@ mkc(coords) = PntSeq([point(c...) for c in coords])
     C = mkc([(1.0, 1.0), (1.0, 1.0)])
     X, Y = FD.morphing_profile(FD.frechet_ve_r_compute(C, C), 5)
     @test all(iszero, Y)
+
+    # X is the distance both points travel, matching the sampled times (M16):
+    # here Q zig-zags 32 units while P waits at its start.
+    P16 = mkc([(0.0, 0.0), (10.0, 0.0)])
+    Q16 = mkc([(0.0, 1.0), (0.0, 9.0), (0.0, 1.0), (0.0, 9.0), (0.0, 1.0), (10.0, 1.0)])
+    m16 = FD.frechet_c_compute(P16, Q16)
+    PB, QB = FD.Morphing_as_polygons(m16)
+    X16, _ = FD.morphing_profile(m16, 5)
+    @test last(X16) ≈ BasicCompGeometry.geom_length(PB) + BasicCompGeometry.geom_length(QB)
+    @test last(X16) > 50.0
+
     m = FD.frechet_ve_r_compute(P, Q)
     @test outcome(() -> FD.Morphing_sample_uniformly(m, 1)) isa ArgumentError
     @test size(FD.Morphing_sample_uniformly(m, 3)) == (3, 4)
+end
+
+# Independent oracle for morphing_profile: the leash once the two points of the
+# matched polygons PB, QB have travelled `s` together, found by walking the steps.
+function leash_after_travel(PB, QB, s)
+    acc = 0.0
+    for i in 1:(length(PB)-1)
+        d = BasicCompGeometry.dist(PB[i], PB[i+1]) + BasicCompGeometry.dist(QB[i], QB[i+1])
+        if d > 0 && acc + d >= s
+            f = clamp((s - acc) / d, 0.0, 1.0)
+            p = PB[i] + f * (PB[i+1] - PB[i])
+            q = QB[i] + f * (QB[i+1] - QB[i])
+            return BasicCompGeometry.dist(p, q)
+        end
+        acc += d
+    end
+    return BasicCompGeometry.dist(last(PB), last(QB))
+end
+
+# The time parametrization gives each step where neither point moves a duration of
+# (smallest positive step) / 8, which X does not count. Such a step shifts X against
+# the distance travelled by at most that much, and the leash is 1-Lipschitz in the
+# distance travelled, so this bounds the error.
+function zero_step_slack(PB, QB)
+    steps = [
+        BasicCompGeometry.dist(PB[i], PB[i+1]) + BasicCompGeometry.dist(QB[i], QB[i+1])
+        for i in 1:(length(PB)-1)
+    ]
+    pos = filter(>(0.0), steps)
+    isempty(pos) && return 0.0
+    return count(iszero, steps) * minimum(pos) / 8
+end
+
+@testset "morphing_profile matches its documentation" begin
+    checked = 0
+    for seed in 1:40
+        rng = MersenneTwister(seed)
+        A = PntSeq([point(x...) for x in eachcol(cumsum(randn(rng, 2, 12), dims = 2))])
+        B = PntSeq([point(x...) for x in eachcol(cumsum(randn(rng, 2, 9), dims = 2))])
+        if seed % 4 == 0  # repeated vertices give steps where neither point moves
+            B = PntSeq(vcat(B.pnts[1:3], B.pnts[3:3], B.pnts[3:end]))
+        end
+        # frechet_ve_r_compute may move backwards, so PB can be longer than A.
+        for m in (FD.frechet_c_compute(A, B), FD.frechet_ve_r_compute(A, B))
+            n = 101
+            X, Y = FD.morphing_profile(m, n)
+            PB, QB = FD.Morphing_as_polygons(m)
+            L = BasicCompGeometry.geom_length(PB) + BasicCompGeometry.geom_length(QB)
+            # X runs evenly from 0 to the distance the two points travel.
+            @test length(X) == length(Y) == n
+            @test first(X) == 0.0 && last(X) ≈ L
+            @test all(k -> X[k+1] - X[k] ≈ L / (n - 1), 1:(n-1))
+            # Y[k] is the leash once the points have travelled X[k].
+            slack = zero_step_slack(PB, QB) + 1.0e-9 * L
+            @test all(k -> abs(Y[k] - leash_after_travel(PB, QB, X[k])) <= slack, 1:n)
+            @test Y[1] ≈ BasicCompGeometry.dist(first(PB), first(QB))
+            @test Y[end] ≈ BasicCompGeometry.dist(last(PB), last(QB))
+            @test maximum(Y) <= m.leash * (1 + 1.0e-12)
+            checked += 1
+        end
+    end
+    @test checked == 80
 end
 
 @testset "DTW and sweep distance report their objective in sol_value" begin

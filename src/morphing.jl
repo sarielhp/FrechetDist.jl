@@ -762,20 +762,22 @@ end
     morphing_profile( m, n )
 
 The leash length along the morphing, at `n` samples. Returns `(X, Y)`: `X` runs
-evenly from 0 to the length of `P`, and `Y[k]` is the leash length at the time
-`X[k] / length(P)` of `Morphing_as_polygons_w_times`. These times weigh the arc
-length of both curves, so `X` is only an approximate position along `P`.
+evenly from 0 to the total distance `L` that the two points travel (the lengths of
+the two polygons of `Morphing_as_polygons`), and `Y[k]` is the leash length once the
+points have travelled `X[k]` together: at the time `(k-1)/(n-1)` (`= X[k] / L`) of
+`Morphing_as_polygons_w_times`.
 """
 function morphing_profile(m::Morphing{D,T}, n::Int64) where {D,T}
 
     PB, QB, times = Morphing_as_polygons_w_times(m)
-    lP = geom_length(PB)
-    X = range(0, lP, length = n)
+    # The times of Morphing_as_polygons_w_times measure the distance both points travel.
+    len = geom_length(PB) + geom_length(QB)
+    X = range(0, len, length = n)
 
     Y = Vector{Float64}()
-    for (k, x) in enumerate(X)
-        # A zero-length P gives x / lP = NaN; sample the times uniformly instead.
-        pos = (lP == 0.0) ? (n == 1 ? 0.0 : (k - 1) / (n - 1)) : x / lP
+    for k in 1:n
+        # The time of X[k], computed directly: X[k] / len rounds, and is NaN for len = 0.
+        pos = (n == 1) ? 0.0 : (k - 1) / (n - 1)
         p, q = polygons_get_loc_at_time(PB, QB, times, pos)
         push!(Y, fp_dist(p, q))
     end
