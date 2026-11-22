@@ -144,12 +144,16 @@ Coefficient `d(seg.p, p) / |seg|`, or 0 for a degenerate segment.
     return fp_dist(s.p, qr) / len
 end
 
+"Squared relative threshold below which `fp_dist_point_segment` reports zero."
+const FP_ZERO_SQ = (16 * eps(Float64))^2
+
 """
     fp_dist_point_segment( qr, s_p, s_q )
 
 Distance from `qr` to the segment `s_p`-`s_q`, computed from the quadratic
 `a t^2 + b t + c` without constructing the nearest point. Values below
-`1e-20 max(a, c)` (squared, relative to the scale of the inputs) are reported as zero.
+`FP_ZERO_SQ max(a, c)` (squared rounding noise relative to the scale of the inputs)
+are reported as zero.
 """
 @inline function fp_dist_point_segment(
     qr::Point{D,T},
@@ -185,7 +189,10 @@ Distance from `qr` to the segment `s_p`-`s_q`, computed from the quadratic
             end
         end
     end
-    if (val <= 1e-20 * max(a, c))
+    # Report rounding noise as zero. The threshold is relative to the squared scale,
+    # so it must be squared rounding noise ((16 eps)^2, about 1e-29), not 1e-20: that
+    # zeroed every distance below 1e-10 of the segment length.
+    if (val <= FP_ZERO_SQ * max(a, c))
         return 0.0
     end
     return sqrt(val)

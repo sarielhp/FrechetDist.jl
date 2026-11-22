@@ -254,3 +254,27 @@ end
     qr = point(1.0e6 + 2.0^-10, 2.0^-10)   # exactly representable
     @test FD.fp_dist_point_segment(qr, s_p, s_q) ≈ sqrt(2.0) * 2.0^-10 rtol = 1e-12
 end
+
+@testset "Distances far below the segment length are not snapped to zero" begin
+    for L in (1.0e8, 1.0e10, 1.0e12)
+        P = mkc([(0.0, 0.0), (L / 2, 0.5), (L, 0.0)])
+        Q = mkc([(0.0, 0.0), (L, 0.0)])
+        @test FD.fp_dist_point_segment(P[2], Q[1], Q[2]) ≈ 0.5
+        lo, hi = FD.frechet_ve_r_compute_range(P, Q, 10.0)
+        @test hi >= 0.5 * (1 - 1e-9)
+        lo, hi = FD.FEVER_compute_range(P, Q, 10.0)
+        @test hi >= 0.5 * (1 - 1e-9)
+    end
+    # Points on a segment still give exactly zero.
+    rng = MersenneTwister(2)
+    nonzero = 0
+    for _ = 1:10_000
+        sc = 10.0^rand(rng, -6:8)
+        a, b =
+            point(randn(rng) * sc, randn(rng) * sc), point(randn(rng) * sc, randn(rng) * sc)
+        t = rand(rng, 0:16) / 16                        # exact on-segment points
+        p = a + t * (b - a)
+        FD.fp_dist_point_segment(p, a, b) == 0.0 || (nonzero += 1)
+    end
+    @test nonzero == 0
+end
