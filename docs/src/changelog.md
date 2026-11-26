@@ -1,6 +1,18 @@
 # Change log
     What had changed...
 
+v3.1.0 Release Notes
+====================
+(November 26, 2026)
+
+Added:
+* Curves with `Vector` points of run-time length (`GPntSeq{AnyDim,Float64,Vector{Float64}}`, BasicCompGeometry 0.7): every algorithm runs on them (the polygon hierarchy, `ph_init`, takes static points only), compiling once for every dimension; above about D = 128 they are faster than static points, which take seconds to minutes to compile at D = 1000 to 6000. Matrix curves (`MatVecPntSeq`) and mixed point types are converted on entry. Results agree with static points up to rounding.
+
+Changed:
+* `Morphing{N,T,PT}`, `EventPoint{N,T,PT}` and the search contexts take the point type as a third parameter; `Morphing2F` is `Morphing{2,Float64,Point2F}`. Code using `Morphing{N,T}` still dispatches, but a field or array declared `Morphing{2,Float64}` is now abstractly typed.
+* Static curves: same results bit for bit, same speed and compile time.
+* Requires BasicCompGeometry 0.7 and DataStructures 0.19 (was 0.5.1/0.6 and 0.18); the priority queues use the 0.19 calls (`push!`, `popfirst!`, `first`) instead of the deprecated `enqueue!`, `dequeue!` and `peek`. Same results bit for bit.
+
 v3.0.1 Release Notes
 ====================
 (November 22, 2026)

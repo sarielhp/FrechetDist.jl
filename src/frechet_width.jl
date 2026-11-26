@@ -19,7 +19,10 @@ closest points of earlier vertices lie at most δ further along, so the greedy
 point is within 2δ of the vertex. On random curves the ratio reaches 1.99.
 
 """
-function frechet_width_approx(P::PntSeq{N,T}, rng::UnitRange{Int64} = 0:0)::T where {N,T}
+function frechet_width_approx(
+    P::GPntSeq{N,T,PT},
+    rng::UnitRange{Int64} = 0:0,
+)::T where {N,T,PT<:AbstractVector{T}}
     check_coordinate_type(P, "frechet_width_approx")
     card = cardin(P)
     if (card <= 2)
@@ -40,7 +43,7 @@ function frechet_width_approx(P::PntSeq{N,T}, rng::UnitRange{Int64} = 0:0)::T wh
     return sqrt(width_leash_sq(P, rng, Inf))
 end
 
-@inline width_check_finite(p::Point, rng::UnitRange{Int64}) =
+@inline width_check_finite(p::AbstractVector, rng::UnitRange{Int64}) =
     all(isfinite, p) || width_nonfinite(rng)
 
 @noinline width_nonfinite(rng::UnitRange{Int64}) = throw(
@@ -50,7 +53,11 @@ end
 # The squared greedy width of P[rng] against its spine (rng has at least 3 vertices).
 # Stops early once sqrt of the running maximum exceeds `w`: the maximum only grows and
 # sqrt is monotone, so the comparison with `w` is decided at that point.
-function width_leash_sq(P::PntSeq{N,T}, rng::UnitRange{Int64}, w::Float64) where {N,T}
+function width_leash_sq(
+    P::GPntSeq{N,T,PT},
+    rng::UnitRange{Int64},
+    w::Float64,
+) where {N,T,PT<:AbstractVector{T}}
     s_p = P[first(rng)]
     s_q = P[last(rng)]
 
@@ -63,7 +70,7 @@ function width_leash_sq(P::PntSeq{N,T}, rng::UnitRange{Int64}, w::Float64) where
     width_check_finite(s_p, rng)
     width_check_finite(s_q, rng)
     t::Float64 = 0
-    curr::Point{N,T} = s_p
+    curr::PT = s_p
     leash::Float64 = 0
     for i in (first(rng)+1):(last(rng)-1)
         width_check_finite(P[i], rng)
@@ -85,10 +92,10 @@ Whether `frechet_width_approx(P, rng) > w`, computed with the same arithmetic bu
 stopping as soon as the answer is known.
 """
 function frechet_width_exceeds(
-    P::PntSeq{N,T},
+    P::GPntSeq{N,T,PT},
     rng::UnitRange{Int64},
     w::Float64,
-) where {N,T}
+) where {N,T,PT<:AbstractVector{T}}
     (cardin(P) <= 2 || length(rng) <= 2) && return zero(T) > w
     return sqrt(width_leash_sq(P, rng, w)) > w
 end
@@ -105,7 +112,10 @@ every edge `p_indices[i] p_indices[i+1]` of the subcurve, a fast upper estimate
 of `P` it replaces: one value per edge.
 
 """
-function frechet_offsets(P::PntSeq{N,T}, p_indices::Vector{Int64}) where {N,T}
+function frechet_offsets(
+    P::GPntSeq{N,T,PT},
+    p_indices::Vector{Int64},
+) where {N,T,PT<:AbstractVector{T}}
     check_coordinate_type(P, "frechet_offsets")
     check_indices(p_indices, cardin(P), "frechet_offsets")
     offs = Vector{Float64}()

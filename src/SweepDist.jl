@@ -104,9 +104,9 @@ end
 end
 
 
-struct SDContext{N,T}
-    P::PntSeq{N,T}
-    Q::PntSeq{N,T}
+struct SDContext{N,T,PT<:AbstractVector{T}}
+    P::GPntSeq{N,T,PT}
+    Q::GPntSeq{N,T,PT}
     store::SweepStore
     prev_map::PrevMap
     pq::PriorityQueue{Int64,Float64,Base.Order.ForwardOrdering}
@@ -114,7 +114,7 @@ struct SDContext{N,T}
     n_q::Int64
 end
 
-function SDContext(P::PntSeq{N,T}, Q::PntSeq{N,T}) where {N,T}
+function SDContext(P::GPntSeq{N,T,PT}, Q::GPntSeq{N,T,PT}) where {N,T,PT<:AbstractVector{T}}
     n_p, n_q = cardin(P), cardin(Q)
     return SDContext(
         P,
@@ -128,7 +128,7 @@ function SDContext(P::PntSeq{N,T}, Q::PntSeq{N,T}) where {N,T}
 end
 
 
-function get_event_points(c::SDContext{N,T}, id::Int64) where {N,T}
+function get_event_points(c::SDContext{N,T,PT}, id::Int64) where {N,T,PT<:AbstractVector{T}}
     P = c.P
     Q = c.Q
     i = EID_i(id)
@@ -156,8 +156,8 @@ function SW_get_event_value(
     _id::Int64,
     _prev_id::Int64,
     prev_val::Float64,
-    c::SDContext{N,T},
-) where {N,T}
+    c::SDContext{N,T,PT},
+) where {N,T,PT<:AbstractVector{T}}
     o_p, o_q = get_event_points(c, _prev_id)
     n_p, n_q = get_event_points(c, _id)
 
@@ -165,7 +165,10 @@ function SW_get_event_value(
 end
 
 
-function is_sw_schedule_event(c::SDContext{N,T}, id::Int64)::Bool where {N,T}
+function is_sw_schedule_event(
+    c::SDContext{N,T,PT},
+    id::Int64,
+)::Bool where {N,T,PT<:AbstractVector{T}}
     n_p, n_q = c.n_p, c.n_q
     if (EID_i(id) > n_p) || (EID_j(id) > n_q)
         return false
@@ -180,7 +183,11 @@ function is_sw_schedule_event(c::SDContext{N,T}, id::Int64)::Bool where {N,T}
 end
 
 
-function SW_schedule_event!(c::SDContext{N,T}, id::Int64, id_prev::Int64) where {N,T}
+function SW_schedule_event!(
+    c::SDContext{N,T,PT},
+    id::Int64,
+    id_prev::Int64,
+) where {N,T,PT<:AbstractVector{T}}
     if ! is_sw_schedule_event(c, id)
         return
     end
@@ -194,7 +201,7 @@ function SW_schedule_event!(c::SDContext{N,T}, id::Int64, id_prev::Int64) where 
     if haskey(c.pq, id)
         delete!(c.pq, id)
     end
-    enqueue!(c.pq, id, new_val)
+    push!(c.pq, id => new_val)
     return nothing
 end
 
@@ -208,22 +215,25 @@ A morphing between `P` and `Q` minimizing the approximate sweep price (the sum o
 vertex-edge events. The minimum price is returned in `m.sol_value`; `m.leash` is
 the longest leash of that morphing. The morphing need not be monotone.
 """
-function SweepDist_compute(P::PntSeq{N,T}, Q::PntSeq{N,T}) where {N,T}
+function SweepDist_compute(
+    P::GPntSeq{N,T,PT},
+    Q::GPntSeq{N,T,PT},
+) where {N,T,PT<:AbstractVector{T}}
     check_curves(P, Q, "SweepDist_compute"; min_vertices = 2)
-    c::SDContext{N,T} = SDContext(P, Q)
+    c::SDContext{N,T,PT} = SDContext(P, Q)
 
     start_id = EID(1, true, 1, true)
 
     id_end = EID(c.n_p, true, c.n_q, true)
     st = c.store
     sw_set!(st, start_id, 0.0, start_id)
-    enqueue!(c.pq, start_id, 0.0)
+    push!(c.pq, start_id => 0.0)
 
     end_val = 0.0
     iters = 0
     pq = c.pq
     while ! isempty(pq)
-        id = dequeue!(pq)
+        id = first(popfirst!(pq))
 
         if sw_handled(st, id)
             continue
@@ -259,7 +269,7 @@ function SweepDist_compute(P::PntSeq{N,T}, Q::PntSeq{N,T}) where {N,T}
 
     pes, qes = f_r_extract_solution_basic(P, Q, id_end, c.prev_map)
 
-    morph::Morphing{N,T} = Morphing_init(P, Q, pes, qes)
+    morph::Morphing{N,T,PT} = Morphing_init(P, Q, pes, qes)
     morph.iters = iters
     morph.sol_value = end_val
 
@@ -278,7 +288,10 @@ their total length, refines both curves along the morphing and runs it again.
 Returns the monotone (or monotonized) morphing, whose curves can be refinements of
 `P` and `Q`. Throws an error after `MAX_REFINEMENT_ROUNDS` rounds.
 """
-function SweepDist_compute_refine_mono(poly_a::PntSeq{N,T}, poly_b::PntSeq{N,T}) where {N,T}
+function SweepDist_compute_refine_mono(
+    poly_a::GPntSeq{N,T,PT},
+    poly_b::GPntSeq{N,T,PT},
+) where {N,T,PT<:AbstractVector{T}}
     check_curves(poly_a, poly_b, "SweepDist_compute_refine_mono"; min_vertices = 2)
     ell = geom_length(poly_a) + geom_length(poly_b)
 
@@ -322,12 +335,12 @@ the two curves have more than `max_vertices` vertices together. Every morphing i
 checked with `Morphing_verify_valid`. Returns `nothing`.
 """
 function SweepDist_compute_split!(
-    out::Vector{Morphing{N,T}},
-    poly_a::PntSeq{N,T},
-    poly_b::PntSeq{N,T},
+    out::Vector{Morphing{N,T,PT}},
+    poly_a::GPntSeq{N,T,PT},
+    poly_b::GPntSeq{N,T,PT},
     iters::Int64,
     max_vertices::Int64 = 1000000,
-) where {N,T}
+) where {N,T,PT<:AbstractVector{T}}
     check_curves(poly_a, poly_b, "SweepDist_compute_split!"; min_vertices = 2)
 
     m = SweepDist_compute_refine_mono(poly_a, poly_b)
@@ -359,7 +372,10 @@ and Q. The current implementation is naive, and very similar to the
 discrete Frechet calculation.
 
 """
-function SweepDist_lb_compute(P::PntSeq{D,T}, Q::PntSeq{D,T}) where {D,T}
+function SweepDist_lb_compute(
+    P::GPntSeq{D,T,PT},
+    Q::GPntSeq{D,T,PT},
+) where {D,T,PT<:AbstractVector{T}}
     check_curves(P, Q, "SweepDist_lb_compute"; min_vertices = 2)
 
     pq = PriorityQueue{Tuple{Int64,Int64},Float64}()
@@ -375,7 +391,12 @@ function SweepDist_lb_compute(P::PntSeq{D,T}, Q::PntSeq{D,T}) where {D,T}
     # edge_lb: for the grid edge (i, j) -> (i+1, j), the minimum of the distance
     # between the edge PA[i] PA[i+1] and the edges PB[j-1] PB[j] and PB[j] PB[j+1]
     # of the two adjacent cells: a lower bound on the leash along that edge.
-    function edge_lb(PA::PntSeq{D,T}, i, PB::PntSeq{D,T}, j) where {D,T}
+    function edge_lb(
+        PA::GPntSeq{D,T,PT},
+        i,
+        PB::GPntSeq{D,T,PT},
+        j,
+    ) where {D,T,PT<:AbstractVector{T}}
         lb::Float64 = typemax(Float64)
         if i == cardin(PA)
             return 0.0
@@ -392,11 +413,11 @@ function SweepDist_lb_compute(P::PntSeq{D,T}, Q::PntSeq{D,T}) where {D,T}
     end
 
     function edge_v(
-        PA::PntSeq{D,T},
+        PA::GPntSeq{D,T,PT},
         i::Int64,
-        PB::PntSeq{D,T},
+        PB::GPntSeq{D,T,PT},
         j::Int64,
-    )::Float64 where {D,T}
+    )::Float64 where {D,T,PT<:AbstractVector{T}}
         if (i == cardin(PA))
             return 0.0
         end
@@ -418,17 +439,17 @@ function SweepDist_lb_compute(P::PntSeq{D,T}, Q::PntSeq{D,T}) where {D,T}
     end
 
     dp[1, 1] = 0.0
-    enqueue!(pq, (1, 1), dp[1, 1])
+    push!(pq, (1, 1) => dp[1, 1])
 
     iters::Int64 = 0
     while ! isempty(pq)
         iters = iters + 1
 
-        ele = peek(pq)
+        ele = first(pq)  # the minimum (DataStructures 0.19)
         i::Int64, j::Int64 = ele[1]
         value = ele[2]
 
-        dequeue!(pq)
+        popfirst!(pq)
         if handled[i, j]
             continue
         end

@@ -16,18 +16,18 @@ distance.
 
 """
 function d_frechet_extract_solution(
-    P::PntSeq{D,T},
+    P::GPntSeq{D,T,PT},
     Q,
     dp_dec_i,
     n_p,
     n_q,
-)::Morphing{D,T} where {D,T}
+)::Morphing{D,T,PT} where {D,T,PT<:AbstractVector{T}}
     i = n_p
     j = n_q
 
     up::Int64 = n_p + n_q + 1
-    peout = Vector{EventPoint{D,T}}(undef, up)
-    qeout = Vector{EventPoint{D,T}}(undef, up)
+    peout = Vector{EventPoint{D,T,PT}}(undef, up)
+    qeout = Vector{EventPoint{D,T,PT}}(undef, up)
 
     pos::Int64 = 0
     while ((i != 1) || (j != 1))
@@ -90,9 +90,9 @@ end
 function frechet_d_compute_inner!(
     dp::Array{Float64,2},
     dp_dec_i,
-    P::PntSeq{D,T},
-    Q::PntSeq{D,T},
-) where {D,T}
+    P::GPntSeq{D,T,PT},
+    Q::GPntSeq{D,T,PT},
+) where {D,T,PT<:AbstractVector{T}}
     d::Float64 = 0
     jp::Int64 = 0
     ip::Int64 = 0
@@ -132,7 +132,10 @@ so the result can exceed the textbook discrete Fréchet distance, which allows
 both indices to advance together. `m.leash` is the distance.
 
 """
-function frechet_d_compute(P::PntSeq{D,T}, Q::PntSeq{D,T}) where {D,T}
+function frechet_d_compute(
+    P::GPntSeq{D,T,PT},
+    Q::GPntSeq{D,T,PT},
+) where {D,T,PT<:AbstractVector{T}}
     check_curves(P, Q, "frechet_d_compute"; min_vertices = 1)
     check_quadratic_size(cardin(P), cardin(Q), 8.5, "frechet_d_compute")
     n_p::Int64 = cardin(P)
@@ -166,7 +169,10 @@ tables. This does not seem to matter, but it might be worth fixing in
 future versions.
 
 """
-function frechet_d_r_compute(P::PntSeq{D,T}, Q::PntSeq{D,T}) where {D,T}
+function frechet_d_r_compute(
+    P::GPntSeq{D,T,PT},
+    Q::GPntSeq{D,T,PT},
+) where {D,T,PT<:AbstractVector{T}}
     check_curves(P, Q, "frechet_d_r_compute"; min_vertices = 1)
     check_quadratic_size(cardin(P), cardin(Q), 8.5, "frechet_d_r_compute")
     n_p = cardin(P)
@@ -260,7 +266,10 @@ end
     a step along `Q` is preferred to an equally cheap step along `P`.
 
 """
-function DTW_d_compute(P::PntSeq{D,T}, Q::PntSeq{D,T}) where {D,T}
+function DTW_d_compute(
+    P::GPntSeq{D,T,PT},
+    Q::GPntSeq{D,T,PT},
+) where {D,T,PT<:AbstractVector{T}}
     check_curves(P, Q, "DTW_d_compute"; min_vertices = 1)
     # Only the direction bits are quadratic (1/8 byte per cell).
     check_quadratic_size(cardin(P), cardin(Q), 0.125, "DTW_d_compute")
@@ -314,11 +323,11 @@ of its curve, so it can have up to that many more points.
      false: Use the standard discrete Frechet version.
 """
 function frechet_d_r_compute_sample(
-    polya::PntSeq{D,T},
-    polyb::PntSeq{D,T},
+    polya::GPntSeq{D,T,PT},
+    polyb::GPntSeq{D,T,PT},
     n::Int64,
     f_lopt::Bool = true,
-) where {D,T}
+) where {D,T,PT<:AbstractVector{T}}
     check_curves(polya, polyb, "frechet_d_r_compute_sample"; min_vertices = 1)
     n >= 1 ||
         throw(ArgumentError("frechet_d_r_compute_sample: n must be at least 1 (got $n)"))

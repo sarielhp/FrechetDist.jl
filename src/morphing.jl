@@ -24,7 +24,7 @@ The kind of an `EventPoint`: `PT_VERTEX` (at a vertex of the curve) or `PT_ON_ED
 end
 
 """
-    EventPoint{N,T}
+    EventPoint{N,T,PT}
 
 One end of a step of a `Morphing`: a location on a curve. `p` is the point; `i` is
 the vertex (`type == PT_VERTEX`) or the first vertex of the edge (`type ==
@@ -33,22 +33,45 @@ vertex `i + 1`; `penalty` is the vertex offset charged to the event by computati
 with offsets (`frechet_ve_r_compute_ext`), 0 otherwise. `EventPoint(p, i, type, t)`
 sets the penalty to 0.
 """
-struct EventPoint{N,T}
-    p::Point{N,T}
+struct EventPoint{N,T,PT<:AbstractVector{T}}
+    p::PT
     i::Int64
     type::FPointType
     t::Float64
     penalty::Float64
 end
 
-function EventPoint(_p::Point{N,T}, _i::Int64, _type::FPointType, _t::Float64) where {N,T}
+# N is not determined by the fields (only PT is), so it is computed from PT.
+function EventPoint(
+    _p::PT,
+    _i::Int64,
+    _type::FPointType,
+    _t::Float64,
+    _penalty::Float64,
+) where {T,PT<:AbstractVector{T}}
+    return EventPoint{point_dim(PT),T,PT}(_p, _i, _type, _t, _penalty)
+end
+
+function EventPoint(
+    _p::PT,
+    _i::Int64,
+    _type::FPointType,
+    _t::Float64,
+) where {T,PT<:AbstractVector{T}}
     return EventPoint(_p, _i, _type, _t, 0.0)
 end
 
-function ev_update_p_t(ev::EventPoint{N,T}, p::Point{N,T}, t::Float64) where {N,T}
+function ev_update_p_t(
+    ev::EventPoint{N,T,PT},
+    p::PT,
+    t::Float64,
+) where {N,T,PT<:AbstractVector{T}}
     return EventPoint(p, ev.i, ev.type, t, ev.penalty)
 end
-function ev_update_penalty(ev::EventPoint{N,T}, penalty) where {N,T}
+function ev_update_penalty(
+    ev::EventPoint{N,T,PT},
+    penalty,
+) where {N,T,PT<:AbstractVector{T}}
     return EventPoint(ev.p, ev.i, ev.type, ev.t, penalty)
 end
 # leash = maximum length of an edge in the encoded matching.
@@ -66,11 +89,11 @@ algorithm does not compute stay at their defaults (`ratio`, `lower_bound`,
 `monotone_err`, `sol_value`).
 
 """
-@with_kw mutable struct Morphing{N,T}
-    P::PntSeq{N,T}
-    Q::PntSeq{N,T}
-    pes::Vector{EventPoint{N,T}} # P event sequence
-    qes::Vector{EventPoint{N,T}} # Q event sequence
+@with_kw mutable struct Morphing{N,T,PT<:AbstractVector{T}}
+    P::GPntSeq{N,T,PT}
+    Q::GPntSeq{N,T,PT}
+    pes::Vector{EventPoint{N,T,PT}} # P event sequence
+    qes::Vector{EventPoint{N,T,PT}} # Q event sequence
     leash::Float64
     #    leash_offsets::Float64
     iters::Int64
@@ -85,11 +108,11 @@ algorithm does not compute stay at their defaults (`ratio`, `lower_bound`,
 end
 
 function Morphing_init(
-    P::PntSeq{N,T},
-    Q::PntSeq{N,T},
-    pes::Vector{EventPoint{N,T}},
-    qes::Vector{EventPoint{N,T}},
-) where {N,T}
+    P::GPntSeq{N,T,PT},
+    Q::GPntSeq{N,T,PT},
+    pes::Vector{EventPoint{N,T,PT}},
+    qes::Vector{EventPoint{N,T,PT}},
+) where {N,T,PT<:AbstractVector{T}}
 
     @assert(length(pes) == length(qes))
     m = Morphing(
@@ -120,7 +143,7 @@ edges `P[i] P[i+1]` and `Q[j] Q[j+1]`, the error is the largest distance between
 their endpoints minus the distance between the two segments. Returns `(i, j, err)`
 for the largest error, or `(-1, -1, 0.0)` when no step has a positive one.
 """
-function Morphing_get_max_edges_err(m::Morphing{D,T}) where {D,T}
+function Morphing_get_max_edges_err(m::Morphing{D,T,PT}) where {D,T,PT<:AbstractVector{T}}
     mx::Float64 = 0.0
 
     io = jo = -1
@@ -164,10 +187,10 @@ end
 ####################################################
 
 function extract_vertex_leash(
-    P::PntSeq{N,T},
-    pes::Vector{EventPoint{N,T}},
-    qes::Vector{EventPoint{N,T}},
-) where {N,T}
+    P::GPntSeq{N,T,PT},
+    pes::Vector{EventPoint{N,T,PT}},
+    qes::Vector{EventPoint{N,T,PT}},
+) where {N,T,PT<:AbstractVector{T}}
     P_len = cardin(P)
     len = length(pes)
     vl = zeros(Float64, P_len)
@@ -194,14 +217,16 @@ end
     local Frechet distance for each vertex (and implicitly the
     attached edge).
 """
-function Morphing_extract_vertex_radii(m::Morphing{N,T}) where {N,T}
+function Morphing_extract_vertex_radii(
+    m::Morphing{N,T,PT},
+) where {N,T,PT<:AbstractVector{T}}
     pl = extract_vertex_leash(m.P, m.pes, m.qes)
     ql = extract_vertex_leash(m.Q, m.qes, m.pes)
     return pl, ql
 end
 
 
-function Morphing_swap_sides!(m::Morphing{N,T}) where {N,T}
+function Morphing_swap_sides!(m::Morphing{N,T,PT}) where {N,T,PT<:AbstractVector{T}}
     m.P, m.Q = m.Q, m.P
     #    swap!( m.P, m.Q );
     #swap!( m.pes, m.qes );
@@ -213,11 +238,14 @@ end
 
 Returns an empty morphing (i.e., a constructor).
 """
-function Morphing_empty(P::PntSeq{N,T}, Q::PntSeq{N,T}) where {N,T}
+function Morphing_empty(
+    P::GPntSeq{N,T,PT},
+    Q::GPntSeq{N,T,PT},
+) where {N,T,PT<:AbstractVector{T}}
     check_coordinate_type(P, "Morphing_empty", "P")
     check_coordinate_type(Q, "Morphing_empty", "Q")
-    pes = Vector{EventPoint{N,T}}()
-    qes = Vector{EventPoint{N,T}}()
+    pes = Vector{EventPoint{N,T,PT}}()
+    qes = Vector{EventPoint{N,T,PT}}()
     r::Float64 = -1
     return Morphing(P, Q, pes, qes, r, 0, 0.0, 0.0, 0.0, false, false, 0.0)
 end
@@ -228,7 +256,9 @@ end
 # matching on each curve are sorted, in the same order as the
 # matching.
 ##################################################################
-function events_seq_is_monotone(s::Vector{EventPoint{N,T}}) where {N,T}
+function events_seq_is_monotone(
+    s::Vector{EventPoint{N,T,PT}},
+) where {N,T,PT<:AbstractVector{T}}
 
     len = length(s)
     i::Int64 = 1
@@ -262,8 +292,11 @@ end
 # Make the matching (which might be potentially not monotone) into a monotone
 # one.
 ##############################################################################
-function events_seq_make_monotone(P::PntSeq{N,T}, s::Vector{EventPoint{N,T}}) where {N,T}
-    ns = Vector{EventPoint{N,T}}()
+function events_seq_make_monotone(
+    P::GPntSeq{N,T,PT},
+    s::Vector{EventPoint{N,T,PT}},
+) where {N,T,PT<:AbstractVector{T}}
+    ns = Vector{EventPoint{N,T,PT}}()
 
     len = length(s)
     i::Int64 = 1
@@ -315,11 +348,11 @@ end
 # events_seq_make_monotone), without building the monotone matching.
 ##############################################################################
 function events_seq_get_monotone_leash(
-    P::PntSeq{N,T},
-    s::Vector{EventPoint{N,T}},
-    s_alt::Vector{EventPoint{N,T}},
+    P::GPntSeq{N,T,PT},
+    s::Vector{EventPoint{N,T,PT}},
+    s_alt::Vector{EventPoint{N,T,PT}},
     leash::T,
-) where {N,T}
+) where {N,T,PT<:AbstractVector{T}}
 
     len = length(s)
     i::Int64 = 1
@@ -357,7 +390,7 @@ function events_seq_get_monotone_leash(
 end
 
 
-function Morphing_recompute_leash!(m::Morphing{N,T}) where {N,T}
+function Morphing_recompute_leash!(m::Morphing{N,T,PT}) where {N,T,PT<:AbstractVector{T}}
     @assert(length(m.pes) == length(m.qes))
     r = 0.0
     for i in eachindex(m.pes)
@@ -383,9 +416,9 @@ polygons whose edges are directly matched.  The output polygons P
 and Q will definitely have repeated points.
 
 """
-function Morphing_as_polygons(m::Morphing{N,T}) where {N,T}
-    P = PntSeq{N,T}()
-    Q = PntSeq{N,T}()
+function Morphing_as_polygons(m::Morphing{N,T,PT}) where {N,T,PT<:AbstractVector{T}}
+    P = GPntSeq{N,T,PT}()
+    Q = GPntSeq{N,T,PT}()
 
     Morphing_verify_valid(m)
 
@@ -408,7 +441,7 @@ together so far, divided by the total. Returns `(P, Q, t)`. A step where neither
 point moves takes no time, so times can repeat. If nothing moves at all, the times
 are spread evenly.
 """
-function Morphing_as_polygons_w_times(m::Morphing{N,T}) where {N,T}
+function Morphing_as_polygons_w_times(m::Morphing{N,T,PT}) where {N,T,PT<:AbstractVector{T}}
     P, Q = Morphing_as_polygons(m)
     travelled = zeros(length(P))
     for i in 1:(length(P)-1)
@@ -433,7 +466,7 @@ and a time in [0, 1] for each vertex, the distance travelled along `P` so far
 divided by the total. Steps where `P` does not move take no time, so times can
 repeat; a constant `P` gets all times 0.
 """
-function Morphing_as_function_w_times(m::Morphing{N,T}) where {N,T}
+function Morphing_as_function_w_times(m::Morphing{N,T,PT}) where {N,T,PT<:AbstractVector{T}}
     P, Q = Morphing_as_polygons(m)
     travelled = zeros(length(P))
     for i in 1:(length(P)-1)
@@ -456,11 +489,11 @@ between the two vertices whose times bracket `t`. Returns `(p, q)`. Times outsid
 [0, 1] give the first or the last pair.
 """
 function polygons_get_loc_at_time(
-    P::PntSeq{D,T},
-    Q::PntSeq{D,T},
+    P::GPntSeq{D,T,PT},
+    Q::GPntSeq{D,T,PT},
     times::Vector{T},
     t::Real,
-) where {D,T}
+) where {D,T,PT<:AbstractVector{T}}
     (t <= 0.0) && return first(P), first(Q)
     (t >= 1.0) && return last(P), last(Q)
 
@@ -485,23 +518,27 @@ Samples the morphing at `n >= 2` evenly spaced times in [0, 1] (the times of
 `Morphing_as_polygons_w_times`). Returns an `n × 2N` matrix: row `k` holds the point
 on `P` (columns `1:N`) and the matching point on `Q` (columns `N+1:2N`).
 """
-function Morphing_sample_uniformly(m::Morphing{N,T}, n::Int64) where {N,T}
+function Morphing_sample_uniformly(
+    m::Morphing{N,T,PT},
+    n::Int64,
+) where {N,T,PT<:AbstractVector{T}}
     n >= 2 ||
         throw(ArgumentError("Morphing_sample_uniformly: need at least 2 samples (got $n)"))
     P, Q, times = Morphing_as_polygons_w_times(m)
 
-    out = zeros(n, 2*N)
+    d = dim(m.P)
+    out = zeros(n, 2*d)
     for i in 0:(n-1)
         t = i/(n-1)
         p, q = polygons_get_loc_at_time(P, Q, times, t)
-        out[i+1, 1:N] .= p
-        out[i+1, (N+1):(2N)] .= q
+        out[i+1, 1:d] .= p
+        out[i+1, (d+1):(2d)] .= q
     end
 
     return out
 end
 
-function Morphing_is_monotone(m::Morphing{N,T}) where {N,T}
+function Morphing_is_monotone(m::Morphing{N,T,PT}) where {N,T,PT<:AbstractVector{T}}
     if m.f_is_monotone_init
         return m.f_is_monotone
     end
@@ -525,7 +562,7 @@ The result may share memory with `m`: if `m` is already monotone, it is returned
 itself, not a copy; otherwise the result refers to the same curves `m.P` and
 `m.Q`. Use `deepcopy` before changing either.
 """
-function Morphing_monotonize(m::Morphing{N,T}) where {N,T}
+function Morphing_monotonize(m::Morphing{N,T,PT}) where {N,T,PT<:AbstractVector{T}}
     if Morphing_is_monotone(m)
         return m  # aliased, by design: see the docstring
     end
@@ -550,7 +587,7 @@ end
 The leash of `Morphing_monotonize(m)`, computed without building the monotone
 morphing; `m.leash` when `m` is already monotone.
 """
-function Morphing_monotone_leash(m::Morphing{N,T}) where {N,T}
+function Morphing_monotone_leash(m::Morphing{N,T,PT}) where {N,T,PT<:AbstractVector{T}}
     if Morphing_is_monotone(m)
         return m.leash # deepcopy( m );
     end
@@ -567,7 +604,7 @@ end
 ##########################################################################
 
 
-function check_times(V::Vector{EventPoint{N,T}}) where {N,T}
+function check_times(V::Vector{EventPoint{N,T,PT}}) where {N,T,PT<:AbstractVector{T}}
     for ev in V
         if (ev.t < 0.0) || (ev.t > 1.0)
             throw(ArgumentError("morphing event time $(ev.t) is outside [0, 1]"))
@@ -575,7 +612,7 @@ function check_times(V::Vector{EventPoint{N,T}}) where {N,T}
     end
 end
 
-function check_no_nan(V::Vector{EventPoint{N,T}}) where {N,T}
+function check_no_nan(V::Vector{EventPoint{N,T,PT}}) where {N,T,PT<:AbstractVector{T}}
     for ev in V
         any(isnan, ev.p) &&
             throw(ArgumentError("morphing event has a NaN coordinate: $(ev.p)"))
@@ -584,7 +621,7 @@ end
 
 
 "Whether `p` and `q` agree up to a rounding tolerance relative to the coordinates."
-function event_close(p::Point{N,T}, q::Point{N,T}) where {N,T}
+function event_close(p::PT, q::PT) where {T,PT<:AbstractVector{T}}
     scale = max(maximum(abs, p), maximum(abs, q))
     return fp_dist(p, q) <= 1.0e-9 * (1.0 + scale)
 end
@@ -596,7 +633,11 @@ Throws an `ArgumentError` unless the event sequence `V` runs from the first to t
 last vertex of the curve `C`, every index is a vertex (or, for an edge event, the
 start of an edge) of `C`, and every location agrees with its index and coefficient.
 """
-function check_events(C::PntSeq{N,T}, V::Vector{EventPoint{N,T}}, name) where {N,T}
+function check_events(
+    C::GPntSeq{N,T,PT},
+    V::Vector{EventPoint{N,T,PT}},
+    name,
+) where {N,T,PT<:AbstractVector{T}}
     n = cardin(C)
     isempty(V) && throw(ArgumentError("morphing: the $name event sequence is empty"))
     (event_close(first(V).p, C[1]) && event_close(last(V).p, C[n])) || throw(
@@ -628,7 +669,7 @@ a coefficient in [0, 1], no NaN, an index within its curve, and a location that 
 with its index and coefficient. Monotonicity is not required (see
 `Morphing_is_monotone`).
 """
-function Morphing_verify_valid(m::Morphing{N,T}) where {N,T}
+function Morphing_verify_valid(m::Morphing{N,T,PT}) where {N,T,PT<:AbstractVector{T}}
     length(m.pes) == length(m.qes) || throw(
         ArgumentError("morphing: $(length(m.pes)) events on P but $(length(m.qes)) on Q"),
     )
@@ -659,7 +700,10 @@ v(u(⋅)): γ → ξ, from `u.P` to `v.Q`. The middle curves `u.Q` and `v.P` mus
 have the same length (they are normally the same curve).
 
 """
-function Morphing_combine(u::Morphing{N,T}, v::Morphing{N,T}) where {N,T}
+function Morphing_combine(
+    u::Morphing{N,T,PT},
+    v::Morphing{N,T,PT},
+) where {N,T,PT<:AbstractVector{T}}
     u_prm = Morphing_extract_prm(u)
     v_prm = Morphing_extract_prm(v)
 
@@ -682,7 +726,9 @@ A fast estimate of `Morphing_SweepDist_price(m)`: for every step of the morphing
 the two segment lengths times the average of the leash lengths at the step's ends
 (`fp_match_price`), summed.
 """
-function Morphing_SweepDist_approx_price(m::Morphing{N,T}) where {N,T}
+function Morphing_SweepDist_approx_price(
+    m::Morphing{N,T,PT},
+) where {N,T,PT<:AbstractVector{T}}
     P, Q = Morphing_as_polygons(m)
 
     @assert(length(P) == length(Q))
@@ -703,7 +749,7 @@ The sweep price of the morphing `m`: the sum, over its steps, of the sweep dista
 between the two matched segments (`SweepDist_segs`). Throws an `ArgumentError` if
 `m` is not valid (`Morphing_verify_valid`).
 """
-function Morphing_SweepDist_price(m::Morphing{N,T}) where {N,T}
+function Morphing_SweepDist_price(m::Morphing{N,T,PT}) where {N,T,PT<:AbstractVector{T}}
     Morphing_verify_valid(m)
 
     P, Q = Morphing_as_polygons(m)
@@ -728,7 +774,7 @@ the two polygons of `Morphing_as_polygons`), and `Y[k]` is the leash length once
 points have travelled `X[k]` together: at the time `(k-1)/(n-1)` (`= X[k] / L`) of
 `Morphing_as_polygons_w_times`.
 """
-function morphing_profile(m::Morphing{D,T}, n::Int64) where {D,T}
+function morphing_profile(m::Morphing{D,T,PT}, n::Int64) where {D,T,PT<:AbstractVector{T}}
 
     PB, QB, times = Morphing_as_polygons_w_times(m)
     # The times of Morphing_as_polygons_w_times measure the distance both points travel.
@@ -746,7 +792,7 @@ function morphing_profile(m::Morphing{D,T}, n::Int64) where {D,T}
 end
 
 
-const Morphing2F = Morphing{2,Float64};
+const Morphing2F = Morphing{2,Float64,Point2F};
 
 #
 # End of file

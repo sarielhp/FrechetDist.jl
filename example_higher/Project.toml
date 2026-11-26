@@ -1,0 +1,9 @@
+# Dependencies of the higher-dimensional examples. The scripts activate this directory
+# through `using QuickEnv # local`; FrechetDist resolves to the working tree.
+[deps]
+BasicCompGeometry = "0c31748f-8c26-4873-98d7-afbf071564da"
+FrechetDist = "04d82aa0-596e-49d4-9e15-129fccfbf66a"
+Printf = "de0858da-6303-5e67-8744-51eddeeeb8d7"
+
+[sources]
+FrechetDist = {path = ".."}

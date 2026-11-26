@@ -98,9 +98,9 @@ function lt(o::EventsOrder, a::Int64, b::Int64)
     return isless(o.values[a], o.values[b])
 end
 
-struct FEVERContext{N,T}
-    P::PntSeq{N,T}
-    Q::PntSeq{N,T}
+struct FEVERContext{N,T,PT<:AbstractVector{T}}
+    P::GPntSeq{N,T,PT}
+    Q::GPntSeq{N,T,PT}
 
     eid::EIDCalc
     # Indexed by event id, allocated without initialization: only the entries that
@@ -126,10 +126,10 @@ end
 
 # `upper_bound` (if given) prunes events above it.
 function FEVER_Context(
-    P::PntSeq{N,T},
-    Q::PntSeq{N,T};
+    P::GPntSeq{N,T,PT},
+    Q::GPntSeq{N,T,PT};
     upper_bound::Union{Nothing,Real} = nothing,
-) where {N,T}
+) where {N,T,PT<:AbstractVector{T}}
 
     @assert((cardin(P) > 1) && (cardin(Q) > 1))
 
@@ -172,10 +172,10 @@ end
 
 
 @inline function fever_is_schedule_event(
-    c::FEVERContext{N,T},
+    c::FEVERContext{N,T,PT},
     id::Int64,
     cell::FeverCell,
-)::Bool where {N,T}
+)::Bool where {N,T,PT<:AbstractVector{T}}
     (; i, i_is_vert, j, j_is_vert) = cell
     if ((id > length(c.prev)) || c.reached[id])
         return false
@@ -201,10 +201,10 @@ end
 
 
 @inline function fever_event_value(
-    c::FEVERContext{N,T},
+    c::FEVERContext{N,T,PT},
     cell::FeverCell,
     id::Int64,
-) where {N,T}
+) where {N,T,PT<:AbstractVector{T}}
     (; i, i_is_vert, j, j_is_vert) = cell
 
     if c.known[id]
@@ -236,10 +236,10 @@ end
 
 
 @inline function fever_schedule_event!(
-    c::FEVERContext{N,T},
+    c::FEVERContext{N,T,PT},
     cell::FeverCell,
     prev_id::Int64,
-) where {N,T}
+) where {N,T,PT<:AbstractVector{T}}
     id = ID_get(c.eid, cell.i, cell.i_is_vert, cell.j, cell.j_is_vert)
     if ! fever_is_schedule_event(c, id, cell)
         return
@@ -258,10 +258,10 @@ end
 
 
 function fever_extract_sol_ids(
-    P::PntSeq{N,T},
-    Q::PntSeq{N,T},
+    P::GPntSeq{N,T,PT},
+    Q::GPntSeq{N,T,PT},
     prevArr::Vector{Int64},
-) where {N,T}
+) where {N,T,PT<:AbstractVector{T}}
     out_arr = Vector{Int64}()
 
 
@@ -303,11 +303,11 @@ end
 
 
 function fever_comp_leash(
-    c::FEVERContext{N,T},
-    P::PntSeq{N,T},
-    Q::PntSeq{N,T},
+    c::FEVERContext{N,T,PT},
+    P::GPntSeq{N,T,PT},
+    Q::GPntSeq{N,T,PT},
     arr::Vector{Int64},
-) where {N,T}
+) where {N,T,PT<:AbstractVector{T}}
     curr::Int64 = 1
     len::Int64 = length(arr)
     l_max::T = 0.0
@@ -360,13 +360,13 @@ end
 
 
 function fever_extract_morphing(
-    c::FEVERContext{N,T},
-    P::PntSeq{N,T},
-    Q::PntSeq{N,T},
+    c::FEVERContext{N,T,PT},
+    P::GPntSeq{N,T,PT},
+    Q::GPntSeq{N,T,PT},
     arr::Vector{Int64},
-) where {N,T}
-    pes = Vector{EventPoint{N,T}}()
-    qes = Vector{EventPoint{N,T}}()
+) where {N,T,PT<:AbstractVector{T}}
+    pes = Vector{EventPoint{N,T,PT}}()
+    qes = Vector{EventPoint{N,T,PT}}()
     curr::Int64 = 1
     len::Int64 = length(arr)
     l_max::T = 0.0
@@ -390,7 +390,7 @@ function fever_extract_morphing(
         curr = curr + 1
     end
 
-    morph::Morphing{N,T} = Morphing_init(P, Q, pes, qes)
+    morph::Morphing{N,T,PT} = Morphing_init(P, Q, pes, qes)
     morph.iters = len
 
     return morph
@@ -404,7 +404,7 @@ end
 # Afterwards `c.prev` holds the predecessor of every event reached. Returns whether
 # the search reached the final cell, which it always does unless the context's upper
 # bound pruned it.
-function fever_search!(c::FEVERContext{N,T}) where {N,T}
+function fever_search!(c::FEVERContext{N,T,PT}) where {N,T,PT<:AbstractVector{T}}
     fc = FeverCoords(0, false, 0, false)
     n_pm::Int64 = c.n_p - 1
     n_qm::Int64 = c.n_q - 1
@@ -453,12 +453,16 @@ leash of its monotonized morphing, an upper bound on the Frechet distance.
 `upper_bound` prunes the search; if the pruned search does not reach the end, the
 range is computed without it.
 """
-function FEVER_compute_range(P::PntSeq{N,T}, Q::PntSeq{N,T}, upper_bound::Real) where {N,T}
+function FEVER_compute_range(
+    P::GPntSeq{N,T,PT},
+    Q::GPntSeq{N,T,PT},
+    upper_bound::Real,
+) where {N,T,PT<:AbstractVector{T}}
     check_curves(P, Q, "FEVER_compute_range"; min_vertices = 2)
     check_quadratic_size(cardin(P), cardin(Q), 33, "FEVER_compute_range")
     check_nonnegative(upper_bound, "FEVER_compute_range", "upper_bound")
 
-    c::FEVERContext{N,T} = FEVER_Context(P, Q; upper_bound)
+    c::FEVERContext{N,T,PT} = FEVER_Context(P, Q; upper_bound)
     if !fever_search!(c)
         m = FEVER_compute(P, Q)
         m_mono = Morphing_monotonize(m)
@@ -483,11 +487,14 @@ quadratic space to perform lookups. This seems wasteful, but works
 reasonably well for small curves (say of size at most 200).
 
 """
-function FEVER_compute(P::PntSeq{N,T}, Q::PntSeq{N,T}) where {N,T}
+function FEVER_compute(
+    P::GPntSeq{N,T,PT},
+    Q::GPntSeq{N,T,PT},
+) where {N,T,PT<:AbstractVector{T}}
     check_curves(P, Q, "FEVER_compute"; min_vertices = 2)
     check_quadratic_size(cardin(P), cardin(Q), 33, "FEVER_compute")
 
-    c::FEVERContext{N,T} = FEVER_Context(P, Q)
+    c::FEVERContext{N,T,PT} = FEVER_Context(P, Q)
     fever_search!(c)  # without an upper bound it always reaches the end
     out_arr = fever_extract_sol_ids(P, Q, c.prev)
 

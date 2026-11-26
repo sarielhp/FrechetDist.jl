@@ -47,3 +47,8 @@ data_old
 
 # Claude Code agent worktrees
 /.claude/worktrees/
+
+# Higher-dimensional examples: downloaded motion capture, results, resolved manifest
+/example_higher/data/
+/example_higher/output/
+/example_higher/Manifest.toml

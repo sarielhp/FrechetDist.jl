@@ -118,9 +118,9 @@ end
 "A predecessor map: the VE search uses a `PrevMap`, the sweep search a `Dict`."
 const PrevLookup = Union{Dict{Int64,Int64},PrevMap}
 
-struct FRContext{N,T}
-    P::PntSeq{N,T}
-    Q::PntSeq{N,T}
+struct FRContext{N,T,PT<:AbstractVector{T}}
+    P::GPntSeq{N,T,PT}
+    Q::GPntSeq{N,T,PT}
     p_offs::Vector{Float64}
     q_offs::Vector{Float64}
     dict::PrevMap
@@ -135,11 +135,11 @@ end
 # The search context. `upper_bound` (if given) prunes events above it; `offsets`
 # (if given) is the pair (p_offs, q_offs) of per-vertex offsets.
 function FR_Context(
-    P::PntSeq{N,T},
-    Q::PntSeq{N,T};
+    P::GPntSeq{N,T,PT},
+    Q::GPntSeq{N,T,PT};
     upper_bound::Union{Nothing,Real} = nothing,
     offsets::Union{Nothing,Tuple{Vector{Float64},Vector{Float64}}} = nothing,
-) where {N,T}
+) where {N,T,PT<:AbstractVector{T}}
     d_ver = PrevMap(Int64(cardin(P)), Int64(cardin(Q)))
     h = BinaryMinHeap{Tuple{Float64,Int64}}()
     p_offs, q_offs = something(offsets, (Vector{Float64}(), Vector{Float64}()))
@@ -159,7 +159,7 @@ function FR_Context(
 end
 
 
-function ve_event_value(c::FRContext{N,T}, id::Int64) where {N,T}
+function ve_event_value(c::FRContext{N,T,PT}, id::Int64) where {N,T,PT<:AbstractVector{T}}
     P = c.P
     Q = c.Q
     i = EID_i(id)
@@ -211,17 +211,17 @@ end
 end
 
 function f_r_create_event(
-    R::PntSeq{N,T},
+    R::GPntSeq{N,T,PT},
     i::Integer,
     is_vert::Bool,
-    qr::Point{N,T},
-) where {N,T}
+    qr::PT,
+) where {N,T,PT<:AbstractVector{T}}
     if (is_vert)
         ev = EventPoint(R[i], Int64(i), PT_VERTEX, 0.0, 0.0)
         return ev
     end
 
-    p::Point{N,T}, t::T = fp_nn_point_ext(R[i], R[i+1], qr)
+    p::PT, t::T = fp_nn_point_ext(R[i], R[i+1], qr)
 
 
     #seg = Segment( R[ i ], R[ i + 1 ] );
@@ -276,10 +276,10 @@ end
 end
 
 @inline function f_r_schedule_event!(
-    c::FRContext{N,T},
+    c::FRContext{N,T,PT},
     id::Int64,
     prev_id::Int64,
-) where {N,T}
+) where {N,T,PT<:AbstractVector{T}}
     if ! is_schedule_event(c.dict, id, c.n_p, c.n_q)
         return
     end
@@ -294,18 +294,18 @@ end
 
 
 function f_r_extract_solution_basic(
-    P::PntSeq{N,T},
-    Q::PntSeq{N,T},
+    P::GPntSeq{N,T,PT},
+    Q::GPntSeq{N,T,PT},
     end_event_id::Int64,
     dict::PrevLookup,
-) where {N,T}
+) where {N,T,PT<:AbstractVector{T}}
     #############################################################3
     # Extracting the solution
     #
     # The final event is always the same - final vertex of P versus
     # final vertex of Q.
-    pes = Vector{EventPoint{N,T}}()
-    qes = Vector{EventPoint{N,T}}()
+    pes = Vector{EventPoint{N,T,PT}}()
+    qes = Vector{EventPoint{N,T,PT}}()
 
     idx = end_event_id
     pex::EventPoint = f_r_create_event(P, EID_i(idx), EID_i_is_vert(idx), Q[EID_j(idx)])
@@ -336,19 +336,19 @@ function f_r_extract_solution_basic(
 end
 
 function f_r_extract_solution(
-    P::PntSeq{N,T},
-    Q::PntSeq{N,T},
+    P::GPntSeq{N,T,PT},
+    Q::GPntSeq{N,T,PT},
     end_event_id::Int64,
     dict::PrevLookup,
-    c::FRContext{N,T},
-) where {N,T}
+    c::FRContext{N,T,PT},
+) where {N,T,PT<:AbstractVector{T}}
     #############################################################3
     # Extracting the solution
     #
     # The final event is always the same - final vertex of P versus
     # final vertex of Q.
-    pes = Vector{EventPoint{N,T}}()
-    qes = Vector{EventPoint{N,T}}()
+    pes = Vector{EventPoint{N,T,PT}}()
+    qes = Vector{EventPoint{N,T,PT}}()
 
     idx = end_event_id
     pex::EventPoint = f_r_create_event(P, EID_i(idx), EID_i_is_vert(idx), Q[EID_j(idx)])
@@ -404,12 +404,12 @@ end
 
 
 function f_r_extract_solution_ids(
-    P::PntSeq{N,T},
-    Q::PntSeq{N,T},
+    P::GPntSeq{N,T,PT},
+    Q::GPntSeq{N,T,PT},
     end_event_id::Int64,
     start_event_id::Int64,
     dict,
-) where {N,T}
+) where {N,T,PT<:AbstractVector{T}}
     out_arr = Vector{Int64}()
 
     push!(out_arr, end_event_id)
@@ -441,11 +441,11 @@ end
 """
 @inline function max_leash(
     bounds::Tuple{T,T},
-    s_a::Point{N,T},
-    s_b::Point{N,T},
-    P::PntSeq{N,T},
+    s_a::PT,
+    s_b::PT,
+    P::GPntSeq{N,T,PT},
     idx::UnitRange{Int64},
-) where {N,T}
+) where {N,T,PT<:AbstractVector{T}}
     l_min, l_max = bounds
     #seg = Segment( s_a, s_b );
     len_seg_sq::Float64 = fp_dist_sq(s_a, s_b)
@@ -488,9 +488,9 @@ function leash_vertex_run(
     bounds::Tuple{T,T},
     arr::Vector{Int64},
     curr::Int64,
-    V::PntSeq{N,T},
-    S::PntSeq{N,T},
-) where {N,T}
+    V::GPntSeq{N,T,PT},
+    S::GPntSeq{N,T,PT},
+) where {N,T,PT<:AbstractVector{T}}
     l_min, l_max = bounds
     vert_is_i = EID_i_is_vert(arr[curr])
     low = curr
@@ -516,10 +516,10 @@ end
 
 
 function compute_leash_from_arr(
-    P::PntSeq{N,T},
-    Q::PntSeq{N,T},
+    P::GPntSeq{N,T,PT},
+    Q::GPntSeq{N,T,PT},
     arr::Vector{Int64},
-) where {N,T}
+) where {N,T,PT<:AbstractVector{T}}
     curr::Int64 = 1
     len::Int64 = length(arr)
     l_max::T = 0.0
@@ -551,7 +551,11 @@ end
 # Afterwards `c.dict` holds the predecessor of every event reached; `end_id` is among
 # them unless the context's upper bound pruned the search first. Returns the number
 # of events popped.
-function ve_search!(c::FRContext{N,T}, start_id::Int64, end_id::Int64) where {N,T}
+function ve_search!(
+    c::FRContext{N,T,PT},
+    start_id::Int64,
+    end_id::Int64,
+) where {N,T,PT<:AbstractVector{T}}
     f_r_schedule_event!(c, start_id, start_id)
     iters = 0
     heapAlt = c.heapAlt
@@ -594,13 +598,13 @@ end
 
 """
 function frechet_ve_r_compute_range(
-    P::PntSeq{N,T},
-    Q::PntSeq{N,T},
+    P::GPntSeq{N,T,PT},
+    Q::GPntSeq{N,T,PT},
     upper_bound::Real,
-) where {N,T}
+) where {N,T,PT<:AbstractVector{T}}
     check_curves(P, Q, "frechet_ve_r_compute_range"; min_vertices = 2)
     check_nonnegative(upper_bound, "frechet_ve_r_compute_range", "upper_bound")
-    c::FRContext{N,T} = FR_Context(P, Q; upper_bound)
+    c::FRContext{N,T,PT} = FR_Context(P, Q; upper_bound)
 
     start_id = EID(1, true, 1, true)
     end_id = EID(c.n_p, true, c.n_q, true)
@@ -640,12 +644,12 @@ the edge's two ends. `frechet_c_compute` uses this to certify a lower bound.
 Without `f_use_offsets` the two vectors are ignored.
 """
 function frechet_ve_r_compute_ext(
-    P::PntSeq{N,T},
-    Q::PntSeq{N,T},
+    P::GPntSeq{N,T,PT},
+    Q::GPntSeq{N,T,PT},
     p_offs::Vector{Float64},
     q_offs::Vector{Float64},
     f_use_offsets::Bool = false,
-) where {N,T}
+) where {N,T,PT<:AbstractVector{T}}
     check_curves(P, Q, "frechet_ve_r_compute_ext"; min_vertices = 2)
     if f_use_offsets && (length(p_offs) != cardin(P) || length(q_offs) != cardin(Q))
         throw(
@@ -666,7 +670,7 @@ function frechet_ve_r_compute_ext(
 
     pes, qes = f_r_extract_solution(P, Q, end_id, c.dict, c)
 
-    morph::Morphing{N,T} = Morphing_init(P, Q, pes, qes)
+    morph::Morphing{N,T,PT} = Morphing_init(P, Q, pes, qes)
     morph.iters = iters
 
     return morph
@@ -681,7 +685,10 @@ distance. Returns a `Morphing` whose leash (`m.leash`) is that distance; the
 morphing may move backwards along the curves. `Morphing_monotonize` turns it into a
 monotone morphing, whose leash is an upper bound on the Frechet distance.
 """
-function frechet_ve_r_compute(P::PntSeq{N,T}, Q::PntSeq{N,T}) where {N,T}
+function frechet_ve_r_compute(
+    P::GPntSeq{N,T,PT},
+    Q::GPntSeq{N,T,PT},
+) where {N,T,PT<:AbstractVector{T}}
     check_curves(P, Q, "frechet_ve_r_compute"; min_vertices = 2)
     return frechet_ve_r_compute_ext(P, Q, Vector{Float64}(), Vector{Float64}(), false)
 end

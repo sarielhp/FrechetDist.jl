@@ -67,18 +67,45 @@ function SweepDist_segs_p(
     return L * ra * sqrt_quad_integral(-t0, 1.0 - t0, h / ra)
 end
 
+# Points of run-time length: the same quantities, accumulated in one pass without
+# temporaries (vs = q_a - p_a, w = (q_b - p_b) - vs).
+function SweepDist_segs_p(
+    p_a::AbstractVector{T},
+    p_b::AbstractVector{T},
+    q_a::AbstractVector{T},
+    q_b::AbstractVector{T},
+) where {T}
+    L = fp_dist(p_a, p_b)
+    L == 0.0 && return 0.0
+    n = vec_length(p_a, q_a, q_b)
+    a = vw = vv = zero(T)
+    # In bounds: the points have n coordinates (vec_length; fp_dist checked p_b).
+    @inbounds @simd for i in 1:n
+        vs = q_a[i] - p_a[i]
+        w = (q_b[i] - p_b[i]) - vs
+        a += w * w
+        vw += vs * w
+        vv += vs * vs
+    end
+    a == 0.0 && return L * sqrt(vv)
+    t0 = -vw / a
+    h2 = zero(T)
+    # In bounds: as above.
+    @inbounds @simd for i in 1:n
+        vs = q_a[i] - p_a[i]
+        h2 += (vs + t0 * ((q_b[i] - p_b[i]) - vs))^2
+    end
+    ra = sqrt(a)
+    return L * ra * sqrt_quad_integral(-t0, 1.0 - t0, sqrt(h2) / ra)
+end
+
 """
     SweepDist_segs( p_a, p_b, q_a, q_b )
 
 The sweep distance (continuous dynamic time warping) between the segments
 ``p_a p_b`` and ``q_a q_b``: the sum of the two oriented integrals of the distance.
 """
-function SweepDist_segs(
-    p_a::Point{D,T},
-    p_b::Point{D,T},
-    q_a::Point{D,T},
-    q_b::Point{D,T},
-) where {D,T}
+function SweepDist_segs(p_a::PT, p_b::PT, q_a::PT, q_b::PT) where {T,PT<:AbstractVector{T}}
     lp = SweepDist_segs_p(p_a, p_b, q_a, q_b)
     lq = SweepDist_segs_p(q_a, q_b, p_a, p_b)
 

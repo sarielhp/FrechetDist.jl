@@ -306,10 +306,11 @@ end
 
 @testset "fp_dist_segment_segment: no allocation, agrees with the LAPACK solve" begin
     a, b, c, d = point(0.0, 0.0), point(1.0, 0.2), point(0.3, 1.0), point(0.5, -1.0)
-    FD.fp_dist_segment_segment(a, b, c, d)
+    # Measured in a specialized function: at top level Julia 1.10 boxes the result.
+    seg_seg(a, b, c, d) = @allocated FD.fp_dist_segment_segment(a, b, c, d)
+    seg_seg(a, b, c, d)
     # Coverage counters allocate (CI runs the tests with coverage on).
-    @test (@allocated FD.fp_dist_segment_segment(a, b, c, d)) == 0 skip =
-        Base.JLOptions().code_coverage != 0
+    @test seg_seg(a, b, c, d) == 0 skip = Base.JLOptions().code_coverage != 0
 
     ref =
         isdefined(FD, :fp_dist_segment_segment_lapack) ? FD.fp_dist_segment_segment_lapack :
@@ -337,7 +338,7 @@ end
 end
 
 @testset "Search contexts have concrete field types" begin
-    for T in (FD.SDContext{2,Float64}, FD.FRContext{2,Float64})
+    for T in (FD.SDContext{2,Float64,Point2F}, FD.FRContext{2,Float64,Point2F})
         @test all(isconcretetype, fieldtypes(T))
     end
 end

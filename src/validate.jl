@@ -35,12 +35,13 @@ coordinates, between `min_vertices` and `MAX_VERTICES` vertices, and all
 coordinates finite with magnitude at most `MAX_COORDINATE`.
 """
 function check_curve(
-    P::PntSeq{D,T},
+    P::GPntSeq{D,T,PT},
     who::AbstractString,
     name::AbstractString;
     min_vertices::Int = 2,
-) where {D,T}
+) where {D,T,PT<:AbstractVector{T}}
     check_coordinate_type(P, who, name)
+    check_point_lengths(P, who, name)
     n = cardin(P)
     n >= min_vertices || throw(
         ArgumentError("$who: $name has $n vertices; at least $min_vertices are required"),
@@ -65,18 +66,57 @@ Constant time: for entry points called once per edge, where `check_curve` would 
 quadratic overall.
 """
 function check_coordinate_type(
-    ::PntSeq{D,T},
+    ::GPntSeq{D,T,PT},
     who::AbstractString,
     name::AbstractString = "the curve",
-) where {D,T}
+) where {D,T,PT<:AbstractVector{T}}
     T === Float64 ||
         throw(ArgumentError("$who: the coordinates of $name must be Float64 (got $T)"))
+    # The kernels create static points from static ones and `Vector`s from the rest,
+    # and push them into the curve, so only these two point types work.
+    (PT === Point{D,T} || PT === Vector{T}) || throw(
+        ArgumentError(
+            "$who: $name has points of type $PT; use Point{D,$T} (static) or " *
+            "Vector{$T} points, or a MatVecPntSeq, which is converted",
+        ),
+    )
+    # Events and morphings take their dimension parameter from the point type.
+    point_dim(PT) === D || throw(
+        ArgumentError(
+            "$who: $name has dimension parameter $D but points of type $PT; for " *
+            "points of run-time length use GPntSeq{AnyDim,$T,$PT}(P.pnts), which " *
+            "shares the points",
+        ),
+    )
     return nothing
 end
 
-function check_curves(P::PntSeq, Q::PntSeq, who::AbstractString; min_vertices::Int = 2)
+"Throws unless all points of `P` have the same number of coordinates."
+check_point_lengths(
+    ::GPntSeq{D,T,PT},
+    ::AbstractString,
+    ::AbstractString,
+) where {D,T,PT<:StaticVector} = nothing
+function check_point_lengths(P::GPntSeq, who::AbstractString, name::AbstractString)
+    isempty(P.pnts) && return nothing
+    d = length(first(P.pnts))
+    for p in P.pnts
+        length(p) == d || throw(
+            ArgumentError("$who: $name has points with $d and $(length(p)) coordinates"),
+        )
+    end
+    return nothing
+end
+
+function check_curves(P::GPntSeq, Q::GPntSeq, who::AbstractString; min_vertices::Int = 2)
     check_curve(P, who, "the first curve"; min_vertices)
     check_curve(Q, who, "the second curve"; min_vertices)
+    # Equal by type for static points; checked here for points of run-time length.
+    (isempty(P) || isempty(Q) || dim(P) == dim(Q)) || throw(
+        ArgumentError(
+            "$who: the two curves must have the same dimension (got $(dim(P)) and $(dim(Q)))",
+        ),
+    )
     return nothing
 end
 
@@ -160,9 +200,43 @@ function check_indices(indices::Vector{Int64}, n::Int, who::AbstractString)
     return nothing
 end
 
-# Curves of different dimension or coordinate type do not match the typed methods;
-# the error says so instead of reporting a MethodError listing every method. Matching
-# curves with wrong further arguments give a plain MethodError.
+"Whether the points of `P` are static vectors (their length is part of the type)."
+static_points(P::AbsPntSeq) = eltype(P.pnts) <: StaticVector
+
+"`P` with static points, as a `PntSeq` (a copy unless it is one already)."
+static_curve(P::GPntSeq) = P
+static_curve(P::AbsPntSeq{D,T}) where {D,T} = PntSeq{D,T}(collect(P.pnts))
+
+"`P` with `Vector` points of run-time length (a copy of the coordinates unless it is one already)."
+vector_curve(P::GPntSeq{AnyDim,T,Vector{T}}) where {T} = P
+vector_curve(P::AbsPntSeq{D,T}) where {D,T} =
+    GPntSeq{AnyDim,T,Vector{T}}([Vector{T}(p) for p in P.pnts])
+
+"""
+    common_curves( P, Q )
+
+`P` and `Q` as two curves of one type that the algorithms take, or `nothing` when the
+coordinate types differ or the points are static of different dimensions. Static
+points stay static. Otherwise (a `MatVecPntSeq`, a matrix column view, or static and
+`Vector` points mixed) both are copied into `GPntSeq{AnyDim,T,Vector{T}}`.
+"""
+function common_curves(P::AbsPntSeq{D1,T}, Q::AbsPntSeq{D2,T}) where {D1,D2,T}
+    if static_points(P) && static_points(Q)
+        D1 == D2 || return nothing
+        return static_curve(P), static_curve(Q)
+    end
+    return vector_curve(P), vector_curve(Q)
+end
+common_curves(::AbsPntSeq, ::AbsPntSeq) = nothing
+
+"`P` as a curve of a type the algorithms take (see `common_curves`)."
+single_curve(P::AbsPntSeq) = static_points(P) ? static_curve(P) : vector_curve(P)
+
+# Curves of other representations (a `MatVecPntSeq`, mixed point types) are converted
+# once, at the entry, by `common_curves`. Curves of different dimension or coordinate
+# type do not match the typed methods; the error says so instead of reporting a
+# MethodError listing every method. Curves of a type the algorithms take, with wrong
+# further arguments, give a plain MethodError.
 for f in (
     :frechet_c_compute,
     :frechet_c_approx,
@@ -176,13 +250,14 @@ for f in (
     :frechet_mono_via_refinement,
     :frechet_dist_upper_bound,
 )
-    @eval function $f(
-        P::PntSeq{D1,T1},
-        Q::PntSeq{D2,T2},
-        args...;
-        kwargs...,
-    ) where {D1,T1,D2,T2}
-        (D1 == D2 && T1 === T2) && throw(MethodError($f, (P, Q, args...)))
+    @eval function $f(P::AbsPntSeq, Q::AbsPntSeq, args...; kwargs...)
+        C = common_curves(P, Q)
+        if C !== nothing
+            # Converted curves are of one type the algorithms take, so a second pass
+            # here (wrong further arguments) ends with the MethodError.
+            typeof(C) === typeof((P, Q)) && throw(MethodError($f, (P, Q, args...)))
+            return $f(C[1], C[2], args...; kwargs...)
+        end
         throw(
             ArgumentError(
                 $(string(f)) *
@@ -190,5 +265,19 @@ for f in (
                 "(got $(typeof(P)) and $(typeof(Q)))",
             ),
         )
+    end
+end
+
+# Single-curve entries: other representations are converted as above.
+for f in (
+    :frechet_simplify_to_width,
+    :frechet_simplify_to_cardin,
+    :frechet_simplify_w_exp,
+    :frechet_width_approx,
+)
+    @eval function $f(P::AbsPntSeq, args...; kwargs...)
+        C = single_curve(P)
+        C === P && throw(MethodError($f, (P, args...)))
+        return $f(C, args...; kwargs...)
     end
 end

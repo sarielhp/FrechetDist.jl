@@ -7,14 +7,17 @@ the ith number is the distance of the ith point in sequence from the
 beginning of the curve. Here, distance means the total distance of the
 subcurve from the start point, to the current point.
 """
-function extract_param_inner(P::PntSeq{N,T}, V::Vector{EventPoint{N,T}}) where {N,T}
+function extract_param_inner(
+    P::GPntSeq{N,T,PT},
+    V::Vector{EventPoint{N,T,PT}},
+) where {N,T,PT<:AbstractVector{T}}
     lens::Vector{Float64} = prefix_lengths(P)
     out = Vector{Float64}()
     check_times(V)
 
     n = cardin(P)
     for i in eachindex(V)
-        ev::EventPoint{N,T} = V[i]
+        ev::EventPoint{N,T,PT} = V[i]
         if ev.type == PT_VERTEX
             push!(out, lens[ev.i])
             continue
@@ -38,11 +41,13 @@ end
     lengths of the two given polygons of P and Q, respectively.
 
 """
-function Morphing_extract_prm(m::Morphing{N,T})::PntSeq2F where {N,T}
-    P::PntSeq{N,T} = m.P
-    Q::PntSeq{N,T} = m.Q
-    peout::Vector{EventPoint{N,T}} = m.pes
-    qeout::Vector{EventPoint{N,T}} = m.qes
+function Morphing_extract_prm(
+    m::Morphing{N,T,PT},
+)::PntSeq2F where {N,T,PT<:AbstractVector{T}}
+    P::GPntSeq{N,T,PT} = m.P
+    Q::GPntSeq{N,T,PT} = m.Q
+    peout::Vector{EventPoint{N,T,PT}} = m.pes
+    qeout::Vector{EventPoint{N,T,PT}} = m.qes
 
     check_times(m.pes)
 
@@ -64,11 +69,11 @@ end
 
 
 function eval_pl_func_on_dim(
-    p::Point{N,T},
-    q::Point{N,T},
+    p::PT,
+    q::PT,
     val::Float64,
     d::Int64,
-) where {N,T}
+) where {T,PT<:AbstractVector{T}}
     @assert(p[d] <= q[d])
     t = (val - p[d]) / (q[d] - p[d])
 
@@ -257,11 +262,11 @@ edges of P.
 
 """
 function get_point(
-    P::PntSeq{N,T},
+    P::GPntSeq{N,T,PT},
     lens::Vector{Float64},
     i::Int64,
     pos::Float64,
-) where {N,T}
+) where {N,T,PT<:AbstractVector{T}}
 
     if (i == length(lens))
         return last(P), 1.0
@@ -289,21 +294,31 @@ function get_point(
 end
 
 # Event at point pt, at parameter t along edge idx of a curve with n vertices.
-function curve_event(pt::Point{N,T}, idx::Int64, t::Real, n::Int64, ::Type{T}) where {N,T}
+function curve_event(
+    pt::PT,
+    idx::Int64,
+    t::Real,
+    n::Int64,
+    ::Type{T},
+) where {T,PT<:AbstractVector{T}}
     # exact: vertices carry t = 0 (or t = 1 at the last vertex) exactly.
     if (t == 0.0) || ((t == 1.0) && (idx == n))
-        return EventPoint(deepcopy(pt), idx, PT_VERTEX, 0.0, 0.0)
+        return EventPoint(pt, idx, PT_VERTEX, 0.0, 0.0)
     end
-    return EventPoint(deepcopy(pt), idx, PT_ON_EDGE, T(t), 0.0)
+    return EventPoint(pt, idx, PT_ON_EDGE, T(t), 0.0)
 end
 
 
-function event_sequences_extract(prm::PntSeq2F, P::PntSeq{N,T}, Q::PntSeq{N,T}) where {N,T}
+function event_sequences_extract(
+    prm::PntSeq2F,
+    P::GPntSeq{N,T,PT},
+    Q::GPntSeq{N,T,PT},
+) where {N,T,PT<:AbstractVector{T}}
 
     i_p::Int64 = 1
     i_q::Int64 = 1
-    pes = Vector{EventPoint{N,T}}() # P event sequence
-    qes = Vector{EventPoint{N,T}}() # Q event sequence
+    pes = Vector{EventPoint{N,T,PT}}() # P event sequence
+    qes = Vector{EventPoint{N,T,PT}}() # Q event sequence
 
     len_q = cardin(Q)
     len_p = cardin(P)
@@ -344,8 +359,8 @@ function event_sequences_extract(prm::PntSeq2F, P::PntSeq{N,T}, Q::PntSeq{N,T}) 
     @assert(!any(isnan, last(P)))
     @assert(!any(isnan, last(Q)))
 
-    push!(pes, EventPoint(deepcopy(last(P)), cardin(P), PT_VERTEX, 0.0, 0.0))
-    push!(qes, EventPoint(deepcopy(last(Q)), cardin(Q), PT_VERTEX, 0.0, 0.0))
+    push!(pes, EventPoint(last(P), cardin(P), PT_VERTEX, 0.0, 0.0))
+    push!(qes, EventPoint(last(Q), cardin(Q), PT_VERTEX, 0.0, 0.0))
 
 
     return pes, qes
@@ -359,7 +374,11 @@ end
     and Q.
 
 """
-function Morphing_from_prm(prm::PntSeq2F, P::PntSeq{N,T}, Q::PntSeq{N,T}) where {N,T}
+function Morphing_from_prm(
+    prm::PntSeq2F,
+    P::GPntSeq{N,T,PT},
+    Q::GPntSeq{N,T,PT},
+) where {N,T,PT<:AbstractVector{T}}
     pes, qes = event_sequences_extract(prm, P, Q)
     return Morphing_init(P, Q, pes, qes)
 end

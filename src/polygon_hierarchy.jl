@@ -48,7 +48,8 @@ end
     ph_init( P; lock = ReentrantLock() )
 
 A polygon hierarchy of `P`. The lock guards the hierarchy when it is shared between
-threads. (`ph_init( P, lock )` is accepted as well.)
+threads. (`ph_init( P, lock )` is accepted as well.) `P` must have static points: the
+hierarchy (`BasicCompGeometry.PntSeqHierarchy`) stores `PntSeq`s.
 """
 function ph_init(P::PntSeq{D,T}; lock::ReentrantLock = ReentrantLock()) where {D,T}
     check_curve(P, "ph_init", "the curve")

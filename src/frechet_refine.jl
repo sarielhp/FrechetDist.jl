@@ -7,10 +7,10 @@ Q[ i ] = P[ p_indices[ i ]].
 
 """
 function frechet_c_mono_approx_subcurve(
-    P::PntSeq{N,T},
-    Q::PntSeq{N,T},
+    P::GPntSeq{N,T,PT},
+    Q::GPntSeq{N,T,PT},
     p_indices::Vector{Int64},
-) where {N,T}
+) where {N,T,PT<:AbstractVector{T}}
 
     # The loop below visits every vertex of P, so checking them all costs nothing more.
     check_curve(P, "frechet_c_mono_approx_subcurve", "P"; min_vertices = 1)
@@ -29,8 +29,8 @@ function frechet_c_mono_approx_subcurve(
     )
     offsets = zeros(T, length(p_indices))
 
-    pes = Vector{EventPoint{N,T}}()
-    qes = Vector{EventPoint{N,T}}()
+    pes = Vector{EventPoint{N,T,PT}}()
+    qes = Vector{EventPoint{N,T,PT}}()
 
     for i in eachindexButLast(p_indices)
         pind = p_indices[i]
@@ -40,15 +40,15 @@ function frechet_c_mono_approx_subcurve(
 
         max_d::Float64 = 0
         max_t::Float64 = 0
-        seg = Segment(Q[i], Q[i+1])
+        s_p, s_q = Q[i], Q[i+1]
         for j in (pind+1):(pind_next-1)
             p = P[j]
-            q = fp_nn_point(seg, p)
-            new_t = fp_convex_coef(seg, q)
+            q = fp_nn_point(s_p, s_q, p)
+            new_t = fp_convex_coef(s_p, s_q, q)
             if (new_t >= max_t)
                 max_t = new_t
             else # new_t < max_t
-                q = fp_at(seg, max_t)
+                q = fp_convex_comb(s_p, s_q, max_t)
             end
             max_d = max(max_d, fp_dist(P[j], q))
             push!(pes, EventPoint(P[j], j, PT_VERTEX, 0.0, 0.0))
@@ -101,17 +101,17 @@ end
 
 
 """
-    add_points_along_seg!( pout, times, seg, n_mid_points = 1 )
+    add_points_along_seg!( pout, times, s_p, s_q, n_mid_points = 1 )
 
 # Arguments
 
-seg: t[1], t[2], .... , t[end]
+s_p, s_q: the segment; t[1], t[2], .... , t[end]
 
      t[...]: Time stamps for points on the segment (all between 0 and 1)
 
 # Details
 
-Add points along seg at time stamps specified by t, and add points in
+Add points along the segment s_p s_q at time stamps specified by t, and add points in
 the middle between them (i.e., refining segment). These new points are
 added to the output polygon pout. `times` is sorted and deduplicated in place.
 
@@ -122,11 +122,12 @@ Output:
      Sorted( t[1]/2, t[1], (t[1]+t[2])/2, t[2],...)
 """
 function add_points_along_seg!(
-    pout::PntSeq{N,T},
+    pout::GPntSeq{N,T,PT},
     times::Vector{Float64},
-    seg::Segment{N,T},
+    s_p::PT,
+    s_q::PT,
     n_mid_points::Int64 = 1,
-) where {N,T}
+) where {N,T,PT<:AbstractVector{T}}
     sort!(times)
     unique!(times)
 
@@ -152,7 +153,7 @@ function add_points_along_seg!(
             continue
         end
         prev = tm
-        push_distinct!(pout, fp_at(seg, tm))
+        push_distinct!(pout, fp_convex_comb(s_p, s_q, tm))
     end
 end
 
@@ -174,7 +175,10 @@ end
 
 ################################################################
 # Last index of the run s[i:j] of events lying on the same edge as s[i].
-function edge_run_end(s::Vector{EventPoint{N,T}}, i::Int64) where {N,T}
+function edge_run_end(
+    s::Vector{EventPoint{N,T,PT}},
+    i::Int64,
+) where {N,T,PT<:AbstractVector{T}}
     len = length(s)
     j = i
     loc = s[i].i
@@ -186,7 +190,11 @@ end
 
 
 # Time stamps of s[i:j] along the edge, with consecutive repeats removed.
-function run_distinct_times(s::Vector{EventPoint{N,T}}, i::Int64, j::Int64) where {N,T}
+function run_distinct_times(
+    s::Vector{EventPoint{N,T,PT}},
+    i::Int64,
+    j::Int64,
+) where {N,T,PT<:AbstractVector{T}}
     times = Vector{Float64}()
     push!(times, s[i].t)
     for k in (i+1):j
@@ -220,12 +228,12 @@ end
            1..3, instead of `points_to_add`.
 """
 function extract_refined_polygon(
-    poly::PntSeq{N,T},
-    s::Vector{EventPoint{N,T}},
+    poly::GPntSeq{N,T,PT},
+    s::Vector{EventPoint{N,T,PT}},
     points_to_add::Int64 = 1,
     delta::Float64 = 0.0,
-) where {N,T}
-    pout = PntSeq{N,T}()
+) where {N,T,PT<:AbstractVector{T}}
+    pout = GPntSeq{N,T,PT}()
 
     len = length(s)
     push!(pout, s[1].p)
@@ -254,8 +262,7 @@ function extract_refined_polygon(
                 # Clamp before rounding: lnx / delta can exceed typemax(Int64).
                 n_times = round(Int64, clamp(lnx / delta, 1.0, 3.0))
             end
-            seg = Segment(poly[loc], poly[loc+1])
-            add_points_along_seg!(pout, times, seg, n_times)
+            add_points_along_seg!(pout, times, poly[loc], poly[loc+1], n_times)
         end
         i = j + 1
     end
@@ -271,7 +278,11 @@ Refines `P` and `Q` along the morphing `m`: each curve gets the points where `m`
 events lie on its edges, and points between them (`extract_refined_polygon`).
 Returns the two refined curves.
 """
-function frechet_refinement(P::PntSeq{N,T}, Q::PntSeq{N,T}, m::Morphing{N,T}) where {N,T}
+function frechet_refinement(
+    P::GPntSeq{N,T,PT},
+    Q::GPntSeq{N,T,PT},
+    m::Morphing{N,T,PT},
+) where {N,T,PT<:AbstractVector{T}}
     poly_a_2 = extract_refined_polygon(P, m.pes, 1)
     poly_b_2 = extract_refined_polygon(Q, m.qes, 1)
 
@@ -287,20 +298,20 @@ end
 `out`. Returns the same 4-tuple `(m, f, P, Q)`.
 """
 function frechet_mono_via_refinement_ext!(
-    out::Vector{Morphing{N,T}},
-    Pa::PntSeq{N,T},
-    Qa::PntSeq{N,T},
+    out::Vector{Morphing{N,T,PT}},
+    Pa::GPntSeq{N,T,PT},
+    Qa::GPntSeq{N,T,PT},
     f_snapshots::Bool,
     approx::Real = 1.00001,
-) where {N,T}
+) where {N,T,PT<:AbstractVector{T}}
     check_curves(Pa, Qa, "frechet_mono_via_refinement_ext!"; min_vertices = 2)
     approx = check_approx(approx, "frechet_mono_via_refinement_ext!"; exceed_one = false)
     if (approx <= 1.0)
         approx = 1.0000001
     end
 
-    mm::Morphing{N,T} = Morphing_empty(Pa, Qa)
-    m::Morphing{N,T} = Morphing_empty(Pa, Qa)
+    mm::Morphing{N,T,PT} = Morphing_empty(Pa, Qa)
+    m::Morphing{N,T,PT} = Morphing_empty(Pa, Qa)
     f_exact::Bool = false
     f_refinement::Bool = false
     P = Pa
@@ -362,11 +373,11 @@ with every round, so `delta = 0` may never be met); check
 mapped back to the original curves.
 """
 function frechet_mono_via_refinement_delta(
-    Pa::PntSeq{N,T},
-    Qa::PntSeq{N,T},
+    Pa::GPntSeq{N,T,PT},
+    Qa::GPntSeq{N,T,PT},
     delta::Float64,
     f_fix_prm::Bool = false,
-) where {N,T}
+) where {N,T,PT<:AbstractVector{T}}
     check_curves(Pa, Qa, "frechet_mono_via_refinement_delta"; min_vertices = 2)
     check_nonnegative(delta, "frechet_mono_via_refinement_delta", "delta")
 
@@ -434,12 +445,12 @@ Returns a 4-tuple  ( m, f, P, Q ):
 
 """
 function frechet_mono_via_refinement(
-    Pa::PntSeq{N,T},
-    Qa::PntSeq{N,T},
+    Pa::GPntSeq{N,T,PT},
+    Qa::GPntSeq{N,T,PT},
     approx::Real = 1.00001,
-) where {N,T}
+) where {N,T,PT<:AbstractVector{T}}
     check_curves(Pa, Qa, "frechet_mono_via_refinement"; min_vertices = 2)
     approx = check_approx(approx, "frechet_mono_via_refinement"; exceed_one = false)
-    ot::Vector{Morphing{N,T}} = Vector{Morphing{N,T}}()
+    ot::Vector{Morphing{N,T,PT}} = Vector{Morphing{N,T,PT}}()
     return frechet_mono_via_refinement_ext!(ot, Pa, Qa, false, approx)
 end

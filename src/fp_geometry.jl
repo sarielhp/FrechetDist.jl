@@ -11,6 +11,15 @@
 # exactly at t = 0 and t = 1, `fp_dist_point_segment` guards against
 # cancellation and reports tiny values as zero, and `fp_dist_segment_segment`
 # uses a rank test.
+#
+# The kernels take static points (`Point{D,T}`, an `SVector`), whose loops the compiler
+# unrolls for each D. That is fastest up to D = 16. From D = 128 on, plain loops over
+# `Vector` points run 2-4.5 times faster and compile once for all D, while the static
+# code takes seconds to compile at D = 1000 and minutes at D = 6000. Creating a point
+# (`fp_convex_comb`) is the exception: as a `Vector` it allocates, which keeps static
+# points ahead up to D = 512. Measured by example_higher/point_types.jl; see
+# example_higher/README.md. The loop versions for `Vector` points are in
+# fp_geometry_vec.jl.
 
 @inline function fp_dot(p::Point{D,T}, q::Point{D,T}) where {D,T}
     s = zero(T)
@@ -59,8 +68,6 @@ length, which distorts long edges.
 
     return Point{D,T}(o)
 end
-
-@inline fp_at(seg::Segment{D,T}, t::Float64) where {D,T} = fp_convex_comb(seg.p, seg.q, t);
 
 """
     fp_nn_point_ext_ext
@@ -133,19 +140,22 @@ Nearest point on the segment `s_p`-`s_q` to the query point `qr`.
 
     return fp_convex_comb(s_p, s_q, t)
 end
-@inline fp_nn_point(s::Segment{D,T}, qr::Point{D,T}) where {D,T} = fp_nn_point(s.p, s.q, qr);
 
 """
-    fp_convex_coef( seg, p )
+    fp_convex_coef( s_p, s_q, qr )
 
-Coefficient `d(seg.p, p) / |seg|`, or 0 for a degenerate segment.
+Coefficient `d(s_p, qr) / |s_p s_q|`, or 0 for a degenerate segment.
 """
-@inline function fp_convex_coef(s::Segment{D,T}, qr::Point{D,T}) where {D,T}
-    len = fp_dist(s.p, s.q)
+@inline function fp_convex_coef(
+    s_p::AbstractVector{T},
+    s_q::AbstractVector{T},
+    qr::AbstractVector{T},
+) where {T}
+    len = fp_dist(s_p, s_q)
     if len == 0.0  # exact: a zero-length segment; avoids 0 / 0
         return 0.0
     end
-    return fp_dist(s.p, qr) / len
+    return fp_dist(s_p, qr) / len
 end
 
 "Squared relative threshold below which `fp_dist_point_segment` reports zero."
@@ -331,11 +341,11 @@ end
 The price of matching the edge p_a-p_b to the edge q_a-q_b.
 """
 function fp_match_price(
-    p_a::Point{N,T},
-    p_b::Point{N,T},
-    q_a::Point{N,T},
-    q_b::Point{N,T},
-) where {N,T}
+    p_a::AbstractVector{T},
+    p_b::AbstractVector{T},
+    q_a::AbstractVector{T},
+    q_b::AbstractVector{T},
+) where {T}
     l_avg = (fp_dist(p_a, q_a) + fp_dist(p_b, q_b)) / 2.0
 
     return (fp_dist(p_a, p_b) + fp_dist(q_a, q_b)) * l_avg

@@ -9,7 +9,10 @@ real approximation of the Frechet distance, and should not be used
 otherwise.
 
 """
-function frechet_dist_upper_bound(poly_a::PntSeq{N,T}, poly_b::PntSeq{N,T}) where {N,T}
+function frechet_dist_upper_bound(
+    poly_a::GPntSeq{N,T,PT},
+    poly_b::GPntSeq{N,T,PT},
+) where {N,T,PT<:AbstractVector{T}}
     check_curves(poly_a, poly_b, "frechet_dist_upper_bound"; min_vertices = 2)
     w_a = frechet_width_approx(poly_a)
     w_b = frechet_width_approx(poly_b)
@@ -25,7 +28,10 @@ Computes the VE-retractable Frechet distance, and then monotonizes it. No
 guarantee on the quality of the distance this realizes.
 
 """
-function frechet_ve_r_mono_compute(poly_a::PntSeq{D,T}, poly_b::PntSeq{D,T}) where {D,T}
+function frechet_ve_r_mono_compute(
+    poly_a::GPntSeq{D,T,PT},
+    poly_b::GPntSeq{D,T,PT},
+) where {D,T,PT<:AbstractVector{T}}
     m = frechet_ve_r_compute(poly_a, poly_b)
     mm = Morphing_monotonize(m)
 
@@ -37,10 +43,10 @@ end
 # between the originals, given the simplification morphisms m_p (poly_a to P) and
 # m_q (poly_b to Q). Also returns the total simplification error.
 function combine_via_simplified(
-    m_p::Morphing{N,T},
-    m::Morphing{N,T},
-    m_q::Morphing{N,T},
-) where {N,T}
+    m_p::Morphing{N,T,PT},
+    m::Morphing{N,T,PT},
+    m_q::Morphing{N,T,PT},
+) where {N,T,PT<:AbstractVector{T}}
     Morphing_swap_sides!(m_q)
 
     # m = m_p * mm * m_q
@@ -94,10 +100,10 @@ while ret.leash is an upper bound.
 
 """
 function frechet_c_approx(
-    poly_a::PntSeq{N,T},
-    poly_b::PntSeq{N,T},
+    poly_a::GPntSeq{N,T,PT},
+    poly_b::GPntSeq{N,T,PT},
     approx::Real,
-)::Morphing{N,T} where {N,T}
+)::Morphing{N,T,PT} where {N,T,PT<:AbstractVector{T}}
     check_curves(poly_a, poly_b, "frechet_c_approx"; min_vertices = 2)
     approx = check_approx(approx, "frechet_c_approx")
 
@@ -111,8 +117,8 @@ function frechet_c_approx(
     # r: Radius of simplification allowed
     r::Float64 = d/(approx + 4.0) #max( d/4, d * min( approx, 1.0 ) );
 
-    P::PntSeq{N,T} = poly_a
-    Q::PntSeq{N,T} = poly_b
+    P::GPntSeq{N,T,PT} = poly_a
+    Q::GPntSeq{N,T,PT} = poly_b
 
     p_indices = Vector{Int64}()
     q_indices = Vector{Int64}()
@@ -164,7 +170,10 @@ end
 
 
 
-function Polygon_simplify_radii_ext(P::PntSeq{N,T}, r::Vector{T}) where {N,T}
+function Polygon_simplify_radii_ext(
+    P::GPntSeq{N,T,PT},
+    r::Vector{T},
+) where {N,T,PT<:AbstractVector{T}}
 
     PS, p_indices = Polygon_simplify_radii(P, r)
     @assert(length(p_indices) == cardin(PS))
@@ -203,7 +212,10 @@ function eq(a::Float64, b::Float64, tolerance::Float64)::Bool
 end
 
 
-function get_refinement_map(PSR::PntSeq{N,T}, PS::PntSeq{N,T}) where {N,T}
+function get_refinement_map(
+    PSR::GPntSeq{N,T,PT},
+    PS::GPntSeq{N,T,PT},
+) where {N,T,PT<:AbstractVector{T}}
     @assert(cardin(PSR) >= cardin(PS))
 
     len = cardin(PSR)
@@ -241,7 +253,10 @@ up to `(m.lower_bound - r) / factor`, where `r` is the leash length at the verte
 vertices without slack, and their neighbours, stay. Returns the simplified curves
 `(PS, QS)`. `factor` must be positive.
 """
-function simplify_morphing_sensitive(m::Morphing{D,T}, factor::Float64) where {D,T}
+function simplify_morphing_sensitive(
+    m::Morphing{D,T,PT},
+    factor::Float64,
+) where {D,T,PT<:AbstractVector{T}}
     (isfinite(factor) && factor > 0.0) || throw(
         ArgumentError(
             "simplify_morphing_sensitive: factor must be finite and positive (got $factor)",
@@ -287,10 +302,10 @@ end
 # indices of the simplification's vertices in the curve). Also returns the two
 # simplification morphings and their offsets.
 function stitch_simplified(
-    m_mid::Morphing{N,T},
-    p_side::Tuple{PntSeq{N,T},PntSeq{N,T},Vector{Int64}},
-    q_side::Tuple{PntSeq{N,T},PntSeq{N,T},Vector{Int64}},
-) where {N,T}
+    m_mid::Morphing{N,T,PT},
+    p_side::Tuple{GPntSeq{N,T,PT},GPntSeq{N,T,PT},Vector{Int64}},
+    q_side::Tuple{GPntSeq{N,T,PT},GPntSeq{N,T,PT},Vector{Int64}},
+) where {N,T,PT<:AbstractVector{T}}
     P, PS, p_indices = p_side
     Q, QS, q_indices = q_side
     m_a, offsets_a = frechet_c_mono_approx_subcurve(P, PS, p_indices)
@@ -306,9 +321,9 @@ end
 # over to the refinement. The refined curves must be used here, so that the distance
 # is a monotone one.
 function offsets_lower_bound(
-    p_side::Tuple{PntSeq{N,T},PntSeq{N,T},Vector{Float64}},
-    q_side::Tuple{PntSeq{N,T},PntSeq{N,T},Vector{Float64}},
-) where {N,T}
+    p_side::Tuple{GPntSeq{N,T,PT},GPntSeq{N,T,PT},Vector{Float64}},
+    q_side::Tuple{GPntSeq{N,T,PT},GPntSeq{N,T,PT},Vector{Float64}},
+) where {N,T,PT<:AbstractVector{T}}
     PSR, PS, offsets_a = p_side
     QSR, QS, offsets_b = q_side
     PS_offs = offsets_copy_map(get_refinement_map(PSR, PS), offsets_a)
@@ -367,11 +382,11 @@ VE-retractable distance.
 
 """
 function frechet_c_compute(
-    P::PntSeq{N,T},
-    Q::PntSeq{N,T},
+    P::GPntSeq{N,T,PT},
+    Q::GPntSeq{N,T,PT},
     f_accept_approx::Bool = true,
     tolerance::Real = 0.00001,
-) where {N,T}
+) where {N,T,PT<:AbstractVector{T}}
     check_curves(P, Q, "frechet_c_compute"; min_vertices = 2)
     tolerance = check_tolerance(tolerance, "frechet_c_compute")
 

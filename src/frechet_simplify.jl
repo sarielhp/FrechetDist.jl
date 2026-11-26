@@ -5,12 +5,12 @@
 
 
 function find_frechet_prefix_inner(
-    P::PntSeq{D,T},
+    P::GPntSeq{D,T,PT},
     strt::Int64,
     i::Int64,
     j::Int64,
     w::T,
-) where {D,T}
+) where {D,T,PT<:AbstractVector{T}}
     if (i >= j) || ((strt + 1) == j)
         return j # the width is zero, nothing to do.
     end
@@ -36,7 +36,12 @@ function find_frechet_prefix_inner(
     return find_frechet_prefix_inner(P, strt, mid, j, w)
 end
 
-function find_frechet_prefix(P::PntSeq{D,T}, i::Int64, j::Int64, w::T) where {D,T}
+function find_frechet_prefix(
+    P::GPntSeq{D,T,PT},
+    i::Int64,
+    j::Int64,
+    w::T,
+) where {D,T,PT<:AbstractVector{T}}
     if !frechet_width_exceeds(P, i:j, w)
         return j
     end
@@ -51,11 +56,14 @@ repeatedly jumps to a far vertex such that the part of `P` it skips stays within
 width `w` of the shortcut (by binary search with `frechet_width_exceeds`). Returns
 the simplification and the indices of its vertices in `P`.
 """
-function frechet_simplify_to_width(P::PntSeq{D,T}, w_in::Real) where {D,T}
+function frechet_simplify_to_width(
+    P::GPntSeq{D,T,PT},
+    w_in::Real,
+) where {D,T,PT<:AbstractVector{T}}
     check_curve(P, "frechet_simplify_to_width", "the curve"; min_vertices = 0)
     check_nonnegative(w_in, "frechet_simplify_to_width", "w")
     w = T(w_in)
-    pout = PntSeq{D,T}()
+    pout = GPntSeq{D,T,PT}()
     pindices = Vector{Int64}()
 
     len = cardin(P)
@@ -97,12 +105,15 @@ When the simplification found is exact (Frechet distance zero, for example for a
 straight track), no curve with more vertices exists at that accuracy, and it is
 returned even if it has fewer than `sz + 2` vertices.
 """
-function frechet_simplify_to_cardin(P::PntSeq{D,T}, sz::Int64) where {D,T}
+function frechet_simplify_to_cardin(
+    P::GPntSeq{D,T,PT},
+    sz::Int64,
+) where {D,T,PT<:AbstractVector{T}}
     check_curve(P, "frechet_simplify_to_cardin", "the curve")
     sz >= 0 || throw(
         ArgumentError("frechet_simplify_to_cardin: sz must be non-negative (got $sz)"),
     )
-    pout = PntSeq{D,T}()
+    pout = GPntSeq{D,T,PT}()
     pindices = Vector{Int64}()
 
     if sz <= 2
@@ -138,7 +149,11 @@ end
 
 
 
-function exp_search_width_prefix(P::PntSeq{N,T}, start::Int64, w::Float64) where {N,T}
+function exp_search_width_prefix(
+    P::GPntSeq{N,T,PT},
+    start::Int64,
+    w::Float64,
+) where {N,T,PT<:AbstractVector{T}}
     len = cardin(P)
     hi::Int64 = min(start + 2, len)
 
@@ -159,11 +174,14 @@ end
 so the cost of a jump depends on its length rather than on the rest of `P`. Faster
 when the simplification keeps many vertices; it may choose different vertices.
 """
-function frechet_simplify_w_exp(P::PntSeq{D,T}, w_in::Real) where {D,T}
+function frechet_simplify_w_exp(
+    P::GPntSeq{D,T,PT},
+    w_in::Real,
+) where {D,T,PT<:AbstractVector{T}}
     check_curve(P, "frechet_simplify_w_exp", "the curve"; min_vertices = 0)
     check_nonnegative(w_in, "frechet_simplify_w_exp", "w")
     w = T(w_in)
-    pout = PntSeq{D,T}()
+    pout = GPntSeq{D,T,PT}()
     pindices = Vector{Int64}()
 
     card = cardin(P)

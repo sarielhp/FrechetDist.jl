@@ -1,0 +1,44 @@
+# CMU Graphics Lab Motion Capture Database trials (http://mocap.cs.cmu.edu/).
+# One trial per line: <subject>_<trial> <activity>. The activity is our coarse class
+# of the database's own description, which follows in the comment.
+02_01 walk   # walk
+02_02 walk   # walk
+02_03 run    # run/jog
+02_04 jump   # jump, balance
+07_01 walk   # walk
+07_02 walk   # walk
+07_03 walk   # walk
+07_06 walk   # walk
+07_07 walk   # walk
+07_08 walk   # walk
+09_01 run    # run
+09_02 run    # run
+09_03 run    # run
+09_04 run    # run
+09_05 run    # run
+09_06 run    # run
+16_01 jump   # jump
+16_02 jump   # jump
+16_05 jump   # forward jump
+16_06 jump   # forward jump
+16_07 jump   # forward jump
+16_15 walk   # walk
+16_16 walk   # walk
+16_21 walk   # walk
+16_22 walk   # walk
+16_35 run    # run/jog
+16_36 run    # run/jog
+16_45 run    # run/jog
+16_46 run    # run/jog
+35_01 walk   # walk
+35_02 walk   # walk
+35_03 walk   # walk
+35_04 walk   # walk
+35_05 walk   # walk
+35_06 walk   # walk
+35_17 run    # run/jog
+35_18 run    # run/jog
+35_19 run    # run/jog
+35_20 run    # run/jog
+35_21 run    # run/jog
+35_22 run    # run/jog

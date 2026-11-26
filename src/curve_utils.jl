@@ -11,8 +11,8 @@ cheapest and simplest simplification algorithm. Works for all measures.
 Returns the simplification and the indices of the vertices kept (both empty
 for an empty curve).
 """
-function Polygon_simplify_ext(P::PntSeq{D,T}, r::T) where {D,T}
-    pout = PntSeq{D,T}()
+function Polygon_simplify_ext(P::GPntSeq{D,T,PT}, r::T) where {D,T,PT<:AbstractVector{T}}
+    pout = GPntSeq{D,T,PT}()
     pindices = Vector{Int64}()
 
     len = cardin(P)
@@ -49,11 +49,14 @@ end
 # What we do here is conservative and simple. It should be enough
 # as a first try.
 ####################################################################
-function Polygon_simplify_radii(P::PntSeq{D,T}, r::Vector{T}) where {D,T}
+function Polygon_simplify_radii(
+    P::GPntSeq{D,T,PT},
+    r::Vector{T},
+) where {D,T,PT<:AbstractVector{T}}
     @assert(cardin(P) == length(r))
 
     pindices = Vector{Int64}()
-    pout = PntSeq{D,T}()
+    pout = GPntSeq{D,T,PT}()
 
     len = cardin(P)
     if (len == 0)
@@ -92,21 +95,22 @@ end
 # Returns a polygon where the points are sampled uniformly along the polygon
 # n is roughly the number of vertices one gets
 ############################################################################
-function Polygon_sample_uniformly(P::PntSeq{D,T}, n::Int64) where {D,T}
+function Polygon_sample_uniformly(
+    P::GPntSeq{D,T,PT},
+    n::Int64,
+) where {D,T,PT<:AbstractVector{T}}
     len = geom_length(P)
     # A curve of length zero is a single point (and delta below would be 0).
-    len == 0.0 && return PntSeq{D,T}([first(P)])
+    len == 0.0 && return GPntSeq{D,T,PT}([first(P)])
     delta = len / (n-1)
 
-    new_P = PntSeq{D,T}()
+    new_P = GPntSeq{D,T,PT}()
     push_distinct!(new_P, first(P))
 
     for i in 1:(cardin(P)-1)
-        s = Segment{D,T}(P[i], P[i+1])
-
         ns::Int64 = floor(Int64, fp_dist(P[i], P[i+1]) / delta)
         for j in 1:ns
-            push_distinct!(new_P, fp_at(s, j / (ns + 1)))
+            push_distinct!(new_P, fp_convex_comb(P[i], P[i+1], j / (ns + 1)))
         end
         push_distinct!(new_P, P[i+1])
     end
@@ -121,8 +125,8 @@ The curve `P` without consecutive repeated vertices. Returns `P` itself when the
 are none, or when fewer than two distinct vertices would remain (a curve needs two
 vertices).
 """
-function remove_consecutive_duplicates(P::PntSeq{D,T}) where {D,T}
-    Q = PntSeq{D,T}()
+function remove_consecutive_duplicates(P::GPntSeq{D,T,PT}) where {D,T,PT<:AbstractVector{T}}
+    Q = GPntSeq{D,T,PT}()
     for p in P
         push_distinct!(Q, p)
     end
@@ -135,8 +139,8 @@ end
 
 The curve made of the first and last vertex of `P`.
 """
-function spine(P::PntSeq{D,T}) where {D,T}
-    pout = PntSeq{D,T}()
+function spine(P::GPntSeq{D,T,PT}) where {D,T,PT<:AbstractVector{T}}
+    pout = GPntSeq{D,T,PT}()
     if (cardin(P) <= 0)
         return pout
     end
@@ -160,3 +164,13 @@ function read_file(filename, dchar = ",")
     end
     return P
 end
+
+"""
+    point_dim(PT)
+
+The dimension parameter `N` of event points and morphings with points of type `PT`:
+the length of a static vector, or `AnyDim` for points whose length is known only at
+run time.
+"""
+point_dim(::Type{<:StaticVector{N}}) where {N} = N
+point_dim(::Type{<:AbstractVector}) = AnyDim
