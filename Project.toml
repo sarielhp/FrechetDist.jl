@@ -1,6 +1,6 @@
 name = "FrechetDist"
 uuid = "04d82aa0-596e-49d4-9e15-129fccfbf66a"
-version = "3.0.1"
+version = "3.1.0"
 authors = ["Sariel Har-Peled <sariel@gmail.com> and contributors"]
 
 [deps]
