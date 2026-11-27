@@ -274,6 +274,12 @@ function get_point(
     edge_len = lens[i+1] - lens[i]
     # exact: a repeated vertex adds exactly 0.0 to the prefix length.
     (edge_len == 0.0) && return P[i], 0.0
+    # A position at a vertex up to the rounding of the prefix sums is that vertex, not a
+    # point a few ulps inside the edge: otherwise consecutive events would lie on two
+    # edges with no event at the vertex between them.
+    slack = 4 * length(lens) * eps(lens[end])
+    (abs(pos - lens[i]) <= slack) && return P[i], 0.0
+    (abs(lens[i+1] - pos) <= slack) && return P[i+1], 1.0
     t = (pos - lens[i]) / edge_len
 
     if (0 > t > -0.00000001)
@@ -305,6 +311,8 @@ function curve_event(
     if (t == 0.0) || ((t == 1.0) && (idx == n))
         return EventPoint(pt, idx, PT_VERTEX, 0.0, 0.0)
     end
+    # The end of edge idx is vertex idx + 1.
+    (t == 1.0) && return EventPoint(pt, idx + 1, PT_VERTEX, 0.0, 0.0)
     return EventPoint(pt, idx, PT_ON_EDGE, T(t), 0.0)
 end
 
