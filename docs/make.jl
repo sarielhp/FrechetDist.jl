@@ -9,6 +9,8 @@ makedocs(
     modules = [FrechetDist],
     pages = [
         "Home" => "index.md",
+        "installation.md",
+        "quickstart.md",
         "cg.md",
         "frechet_discrete.md",
         "morphing.md",
