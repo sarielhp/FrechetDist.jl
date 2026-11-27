@@ -9,9 +9,10 @@ curves in three datasets. The scripts are in `example_higher/` of the repository
 **In short:**
 
 - **Faster.** On one thread, FrechetDist's exact algorithm takes 6.8 s for the 91
-  traffic pairs (Fred: 110 s) and 41 s for the 66 video pairs (Fred: 688 s). On all
-  16 hardware threads of the machine it takes 1.3 s and 4.8 s, and 160 s for the 15
-  hydraulic pairs (Fred: 6.3 hours): **85, 143 and 142 times faster than Fred**.
+  traffic pairs (Fred: 110 s), 41 s for the 66 video pairs (Fred: 688 s), and 24
+  minutes for the 15 hydraulic pairs (Fred: 6.3 hours): 16 to 17 times faster than
+  Fred. On all 16 hardware threads of the machine it takes 1.3 s, 4.8 s and 160 s:
+  **85, 143 and 142 times faster than Fred**.
 - **Correct where Fred is not.** Fred returns a distance that is too low for 22 of
   the 172 pairs, by up to 3%, although it was asked for 10⁻⁹ relative accuracy. No
   matching of the two curves achieves the distance it returns. FrechetDist's results
@@ -19,7 +20,8 @@ curves in three datasets. The scripts are in `example_higher/` of the repository
 - **Exact.** `frechet_c_compute_exact` has no tolerance: it returns the exact distance
   (a critical value of Alt and Godau, computed in floating point). `frechet_c_compute`
   returns the leash of an actual matching, with a certified lower bound, to a chosen
-  tolerance; at the default 10⁻⁵ it is faster still.
+  tolerance; at the default 10⁻⁵ it takes 7.0 s and 24.7 s for the traffic and video
+  sets, 9 and 14 times faster than Fred at the same tolerance.
 
 ## The datasets
 
@@ -97,13 +99,32 @@ exact distance.
 |---|---:|---:|---:|---:|---:|
 | Traffic, ℝ^963, 91 pairs | 110.2 s | 26.9 s | 6.8 s | 1.3 s | 16× / 85× |
 | Video, ℝ^19200, 66 pairs | 688.0 s | 54.1 s | 41.4 s | 4.8 s | 17× / 143× |
-| Hydraulic, ℝ^6000, 15 pairs | 22 706 s (6.3 h) | 228.6 s | – | 159.9 s | – / 142× |
+| Hydraulic, ℝ^6000, 15 pairs | 22 706 s (6.3 h) | 228.6 s | 1416 s | 159.9 s | 16× / 142× |
 
 | Set | Fred: wrong | Fred: worst | `frechet_c_compute`: worst |
 |---|---:|---:|---:|
 | Traffic | 7 of 91 | −3.0% | +9.9·10⁻¹⁰ |
 | Video | 13 of 66 | −1.5% | +9.9·10⁻¹⁰ |
 | Hydraulic | 2 of 15 | −0.21% | −9.5·10⁻¹⁴ |
+
+### Practical accuracy: 10⁻⁵
+
+The package's default tolerance for `frechet_c_compute`, and Fred at 10⁻³ percent.
+(Fred was not run at this tolerance on the hydraulic curves: about 3 hours.)
+
+| Set | Fred | `frechet_c_compute` | exact, 1 thread | exact, 16 threads | Speed-up over Fred (`frechet_c_compute` / exact, 16 threads) |
+|---|---:|---:|---:|---:|---:|
+| Traffic, ℝ^963, 91 pairs | 60.4 s | 7.0 s | 6.8 s | 1.3 s | 8.6× / 46× |
+| Video, ℝ^19200, 66 pairs | 350.1 s | 24.7 s | 41.4 s | 4.8 s | 14× / 73× |
+| Hydraulic, ℝ^6000, 15 pairs | – | 227.5 s | 1416 s | 159.9 s | – |
+
+- **`frechet_c_compute` keeps its tolerance:** every result is within 10⁻⁵ of the
+  exact distance (worst +8.7·10⁻⁶), and never below it.
+- **Fred does not:** the same 7 traffic and 13 video pairs as at 10⁻⁹ are too low by
+  more than 10⁻⁵, by up to 3%.
+- **The hydraulic curves** take `frechet_c_compute` the same time at both
+  tolerances (227.5 s and 228.6 s), and at both its results agree with the exact
+  distances to 10⁻¹³.
 
 ### Notes
 
@@ -114,8 +135,10 @@ exact distance.
   with `example_higher/check_frechet.jl`, a textbook Alt–Godau decision procedure
   written from scratch (no shared code), to 5·10⁻¹⁴ relative. On the hydraulic set,
   `frechet_c_compute` and `frechet_c_compute_exact` agree to 10⁻¹³.
-- **Per pair.** On the hydraulic curves the exact algorithm takes 5.5–14.6 s per pair
-  on 16 threads, where Fred takes 18–37 minutes.
+- **Per pair.** On the hydraulic curves the exact algorithm takes 55–114 s per pair on
+  one thread and 5.5–14.6 s on 16 threads, where Fred takes 18–37 minutes. With
+  2205 vertices per curve, tabulating the vertex–segment distances (O(nmd)) is most
+  of the work; it is the part that runs on all threads.
 - **The paper's experiment.** Meintrup, Munteanu and Rohde report "roughly three
   hours" for their sequential Alt–Godau implementation on the hydraulic curves, and
   about 30 s with random projections and CUDA on Nvidia K40 GPUs. Their hardware and
