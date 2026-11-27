@@ -6,11 +6,17 @@ using Documenter
 
 makedocs(
     sitename = "FrechetDist.jl",
+    format = Documenter.HTML(;
+        prettyurls = get(ENV, "CI", nothing) == "true",
+        footer = "[FrechetDist.jl on GitHub](https://github.com/sarielhp/FrechetDist.jl). " *
+                 "Powered by [Documenter.jl](https://github.com/JuliaDocs/Documenter.jl).",
+    ),
     modules = [FrechetDist],
     pages = [
         "Home" => "index.md",
         "installation.md",
         "quickstart.md",
+        "algorithms.md",
         "cg.md",
         "frechet_discrete.md",
         "morphing.md",

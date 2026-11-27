@@ -64,3 +64,10 @@ julia examples/generate_examples.jl
 ## For a minimal example...
 
 See the `test/` subdirectory.
+
+## High-dimensional curves
+
+`example_higher/` holds the high-dimensional experiments: freeway traffic (ℝ^963),
+video (ℝ^19200) and hydraulic sensor (ℝ^6000) curves, the scripts that run
+FrechetDist and Fred on them, and an independent checker. See [Reproducing the
+results](@ref).

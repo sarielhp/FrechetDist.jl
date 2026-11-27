@@ -1,9 +1,20 @@
 # FrechetDist.jl
-*Compute the Fréchet distance between curves.*
-## Package Features
-- Provides algorithm for computing the discrete, VE, regular Frechet
-  distance between polygonal curves. Supports also the retractable
-  version.
+
+*The Fréchet distance between polygonal curves in Euclidean space, in Julia.*
+
+**Source code: [github.com/sarielhp/FrechetDist.jl](https://github.com/sarielhp/FrechetDist.jl)**
+
+FrechetDist computes the Fréchet distance between curves in low dimensions (the
+plane, 3D) and in high dimensions (thousands of coordinates). Approximating the
+distance is very fast, and `frechet_c_compute` gets it to any chosen tolerance with a
+matching that realizes it. The exact distance, `frechet_c_compute_exact`, takes
+quadratic time and memory in the number of vertices; on high-dimensional curves it is
+still 85 to 143 times faster than Fred (see [High-dimensional curves: comparison with
+Fred](@ref)).
+
+- [Installation](installation.md) and [Quick start](quickstart.md)
+- [Implemented algorithms](algorithms.md): every function, grouped by problem
+- [Examples](examples.md) and the [changelog](changelog.md)
 
 ## Point types and high dimensions
 

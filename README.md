@@ -4,153 +4,57 @@
 [![Coverage](https://codecov.io/gh/sarielhp/FrechetDist.jl/branch/main/graph/badge.svg)](https://codecov.io/gh/sarielhp/FrechetDist.jl)
 [![Docs](https://img.shields.io/badge/docs-dev-blue.svg)](https://sarielhp.github.io/FrechetDist.jl/dev/)
 
-**High-dimensional curves, fast and exact.** FrechetDist handles curves in any
-dimension (with `Vector` points, compiled once for all dimensions). On real data in
-ℝ^963 (freeway traffic), ℝ^6000 (hydraulic sensors) and ℝ^19200 (video), its exact
-continuous Fréchet distance computes all pairs of each set in 1.3 s, 160 s and 4.8 s:
-85 to 143 times faster than [Fred](https://pypi.org/project/Fred-Frechet/), which
-also returns distances up to 3% too low for 22 of the 172 pairs. See [High-dimensional
-curves: comparison with Fred](https://sarielhp.github.io/FrechetDist.jl/dev/high_dimensional/)
-([source](docs/src/high_dimensional.md)).
-
-FrechetDist is a Julia library for the [Fréchet
+FrechetDist is a Julia library for computing the [Fréchet
 distance](https://en.wikipedia.org/wiki/Fr%C3%A9chet_distance) between polygonal
-curves, and for the related problems around it: discrete and retractable variants,
-dynamic time warping, the sweep distance, curve simplification, and the matchings
-(*morphings*) that realize these distances.
+curves in Euclidean space, in low dimensions (the plane, 3D) and in high dimensions
+(thousands of coordinates). Informally, the Fréchet distance is the shortest leash that
+lets a person and a dog walk along the two curves from start to end, both moving only
+forward.
 
-Informally, the Fréchet distance is the person–dog distance. A person walks along one
-curve and a dog along the other, each moving forward only, connected by a leash; the
-distance is the shortest leash that allows them to get from start to end. For an
-animation of such a synchronized walk, see
-[here](https://www.youtube.com/watch?v=j5pPVC-mw_I).
+**Performance.** Approximating the distance is very fast, and `frechet_c_compute` gets
+it to any chosen tolerance (10⁻⁵ by default) together with a matching that realizes it.
+The exact distance, `frechet_c_compute_exact`, is not as fast: it takes quadratic time
+and memory in the number of vertices. On high-dimensional curves it is still much faster
+than the alternatives (below).
 
-- [Documentation](https://sarielhp.github.io/FrechetDist.jl/dev/)
-- [Visual examples of output](https://sarielhp.org/p/24/frechet_ve/examples/)
-- [Changelog](docs/src/changelog.md)
+**Website: <https://sarielhp.github.io/FrechetDist.jl/dev/>**
 
-## Getting started
+## Features
 
-- [Installation](docs/src/installation.md): the package, threads, running from the source.
-- [Quick start](docs/src/quickstart.md): first examples in the plane and in high
-  dimensions, and which function to use for what.
+- **Continuous Fréchet distance:** exact (no tolerance), to a chosen tolerance with
+  the matching and a certified lower bound, approximate within any factor, and the exact
+  decision procedure (is the distance at most r?).
+- **High-dimensional curves, fast and exact.** On real data in ℝ^963 (freeway traffic),
+  ℝ^6000 (hydraulic sensors) and ℝ^19200 (video), the exact distance of all pairs of
+  each set takes 1.3 s, 160 s and 4.8 s: 85 to 143 times faster than
+  [Fred](https://pypi.org/project/Fred-Frechet/), which also returns distances up to 3%
+  too low for 22 of the 172 pairs.
+- **Any dimension:** static points for low dimensions, `Vector` points (compiled once
+  for all dimensions) for high ones.
+- **Variants:** the discrete Fréchet distance, retractable versions (which minimize the
+  leash at every moment), the VE-Fréchet distance, dynamic time warping, and the sweep
+  distance (continuous dynamic time warping).
+- **Simplification:** curves with fewer vertices within a given Fréchet distance,
+  palettes and hierarchies of simplifications.
+- **Morphings:** the matchings that realize the distances, which can be monotonized,
+  composed, sampled in time and animated.
 
-## Implemented algorithms
+## Documentation
 
-Each function below has a docstring with the details (`?frechet_c_compute` in the
-REPL) and an entry in the [documentation](https://sarielhp.github.io/FrechetDist.jl/dev/).
-Here n and m are the numbers of vertices of the two curves, N the larger of them, and
-d the dimension.
+- [Installation](https://sarielhp.github.io/FrechetDist.jl/dev/installation/)
+- [Quick start](https://sarielhp.github.io/FrechetDist.jl/dev/quickstart/): first
+  examples, and which function to use for what
+- [Implemented algorithms](https://sarielhp.github.io/FrechetDist.jl/dev/algorithms/):
+  every function, grouped by problem
+- [High-dimensional curves: comparison with Fred](https://sarielhp.github.io/FrechetDist.jl/dev/high_dimensional/)
+- [Examples](https://sarielhp.github.io/FrechetDist.jl/dev/examples/), and
+  [visual examples of output](https://sarielhp.org/p/24/frechet_ve/examples/)
+- [Changelog](https://sarielhp.github.io/FrechetDist.jl/dev/changelog/)
 
-### Continuous Fréchet distance
-
-| Function | What it computes |
-|---|---|
-| `frechet_c_compute_exact(P, Q)` | **The exact distance**, with no tolerance: the randomized algorithm of Har-Peled and Raichel, [*The Fréchet distance revisited and extended*](https://arxiv.org/abs/1202.5610) (Section 6). The distance is the smallest critical value of Alt and Godau (vertex–vertex, vertex–segment and monotonicity events) that the decision procedure accepts. A random sample of 4N² critical values, binary searched with the decider, leaves an interval with O(N log N) critical values with high probability; a kinetic sweep over a balanced search tree lists them, and a second binary search finds the distance. O(nmd) time to tabulate vertex–segment distances (on all threads), then O(nm) per decision. The result does not depend on the random choices or the number of threads. Returns a `Float64`. |
-| `frechet_c_decide_exact(P, Q, r)` | **The decision procedure**: is the distance at most `r`? The free-space reachability test of Alt and Godau, O(nmd) time and O(m) memory. |
-| `frechet_c_compute(P, Q, f_accept_approx = true, tol = 1e-5)` | **The distance to a relative tolerance, with a matching.** Simplifies both curves at a scale set by a rough approximation, computes the VE-retractable distance of the simplifications (a certified lower bound, using vertex offsets) and a monotone matching (an upper bound), and refines until the two agree to `tol`. Returns a monotone `Morphing`: `m.leash` is the leash of an actual matching, so never below the distance, and `m.lower_bound` is certified. Usually the fastest way to the distance on large curves. |
-| `frechet_c_approx(P, Q, approx)` | **An approximation** within a factor `approx` (which may be larger than 2, for a rough one). Returns a monotone morphing with `m.leash ≤ approx · distance` and the certified lower bound `m.lower_bound`. |
-| `frechet_mono_via_refinement(P, Q, approx)` | The monotone distance by refinement alone: computes the VE-retractable morphing, monotonizes it, and adds vertices along the morphing until the monotone leash is within `approx` of the VE-retractable distance. No simplification, so slow on huge curves. |
-| `frechet_mono_via_refinement_ext!(out, P, Q, f_snapshots, approx)` | The same, recording the morphing of every refinement round (for animations). |
-| `frechet_mono_via_refinement_delta(P, Q, delta, f_fix_prm)` | The same with an additive gap `delta`; optionally maps the morphing back to the original curves. |
-| `frechet_refinement(P, Q, m)` | Refines both curves along a morphing: adds the points where its events lie on the edges. |
-| `frechet_dist_upper_bound(P, Q)` | A rough, fast upper bound, used as a starting point by the algorithms above. |
-
-### VE-retractable Fréchet distance
-
-The VE-Fréchet distance considers only vertex–edge events; its *retractable* version
-lets the walk move backwards and minimizes the leash at every moment, not only the
-largest one. It is a lower bound on the Fréchet distance, and monotonizing its morphing
-gives an upper bound. These are the building blocks of `frechet_c_compute` and
-`frechet_c_approx`.
-
-| Function | What it computes |
-|---|---|
-| `frechet_ve_r_compute(P, Q)` | The VE-retractable distance and its (possibly non-monotone) morphing, by a Dijkstra-like search over vertex–edge events. |
-| `frechet_ve_r_compute_ext(P, Q, p_offs, q_offs, f_use_offsets)` | The same with per-vertex offsets subtracted from the event distances: used to certify lower bounds for simplified curves. |
-| `frechet_ve_r_compute_range(P, Q)` | A range `(lo, hi)`: the VE-retractable distance and the leash of its monotonized morphing, a lower and an upper bound on the Fréchet distance. |
-| `FEVER_compute(P, Q)`, `FEVER_compute_range(P, Q, upper_bound)` | The same distance and range with quadratic-space lookup tables instead of hashing: faster for small curves (up to about 200 vertices). |
-| `frechet_c_mono_approx_subcurve(P, Q, p_indices)` | The distance between a curve and a subcurve given by vertex indices (as produced by simplification). |
-
-### Discrete Fréchet distance and dynamic time warping
-
-| Function | What it computes |
-|---|---|
-| `frechet_d_compute(P, Q)` | The discrete Fréchet distance of the two vertex sequences, by dynamic programming, O(nm). Couplings advance one index at a time (no diagonal steps), so the result can exceed the textbook discrete distance. |
-| `frechet_d_r_compute(P, Q)` | The retractable discrete Fréchet distance: a Prim/Dijkstra search that minimizes the bottleneck leash at every moment, not only the largest one. |
-| `frechet_d_r_compute_sample(P, Q, n, f_lopt = true)` | The continuous distance approximated discretely: samples about `n` points on the two curves (in proportion to their lengths, plus all vertices) and computes the retractable (or, with `f_lopt = false`, the standard) discrete distance. |
-| `DTW_d_compute(P, Q)` | Dynamic time warping: the minimum, over discrete couplings, of the sum of the leash lengths, by dynamic programming, O(nm). The price is `m.sol_value`. |
-
-### Sweep distance (continuous dynamic time warping)
-
-The sweep distance of two curves is the smallest integral of the leash length over a
-morphing between them.
-
-| Function | What it computes |
-|---|---|
-| `SweepDist_compute(P, Q)` | A morphing minimizing the approximate sweep price, by a Dijkstra search over vertex–edge events (not necessarily monotone). |
-| `SweepDist_compute_refine_mono(P, Q)` | A monotone morphing for the sweep distance: refines the curves along the morphing and recomputes until monotonizing it costs less than 1% of the curves' length. |
-| `SweepDist_compute_split!(out, P, Q, iters)` | Morphings at increasing resolution, splitting every edge at its midpoint in each round. |
-| `SweepDist_lb_compute(P, Q)` | A lower bound on the sweep distance. |
-| `Morphing_SweepDist_price(m)`, `Morphing_SweepDist_approx_price(m)` | The sweep price of a given morphing, exactly and as a fast estimate. |
-
-### Simplification
-
-| Function | What it computes |
-|---|---|
-| `frechet_simplify_to_width(P, w)` | Greedy simplification with Fréchet error about `w`: repeatedly jumps to the farthest vertex whose shortcut stays within width `w` (binary search). Returns the curve and the indices of the kept vertices. |
-| `frechet_simplify_w_exp(P, w)` | The same with an exponential search before each binary search, so a jump costs time proportional to its length. Faster when many vertices are kept. |
-| `frechet_simplify_to_cardin(P, sz)` | A simplification with at least about `sz` vertices, by decreasing the allowed error. |
-| `simplify_morphing_sensitive(m, factor)` | Simplifies both curves of a morphing where it has slack, keeping the vertices that determine the leash. |
-| `frechet_width_approx(P, rng)` | A 2-approximation of the Fréchet distance between a subcurve `P[i:j]` and the segment `P[i] P[j]`, by a greedy monotone matching. |
-| `frechet_offsets(P, p_indices)` | For every edge of a subcurve, a fast upper estimate of its distance to the part of `P` it replaces. |
-| `frechet_palette(P)`, `frechet_palette_level(P, plt, level)`, `frechet_palette_approx(P, plt, w)` | A palette: a per-vertex encoding of a whole sequence of simplifications at decreasing widths, from which a simplification of any width, or of a given level, is read off in time proportional to its size. |
-| `PolygonHierarchy`, `ph_init`, `ph_compute_hierarchy`, `ph_approx`, `ph_push!`, `ph_print` | A thread-safe hierarchy of cached simplifications of a curve, from which an approximation of any accuracy is extracted. |
-
-### Morphings
-
-Most functions return a `Morphing`: the matched event points on the two curves (`pes`,
-`qes`, of type `EventPoint`), the leash, and, where the algorithm computes them, a
-certified lower bound, the approximation ratio and a price.
-
-| Function | What it does |
-|---|---|
-| `Morphing_monotonize(m)`, `Morphing_monotone_leash(m)` | Turns a morphing into a monotone one (never going back), or computes its leash without building it. |
-| `Morphing_combine(u, v)` | The composition of two morphings, from `u.P` to `v.Q`. |
-| `Morphing_verify_valid(m)`, `Morphing_empty` | Structural validation; an empty morphing. |
-| `Morphing_as_polygons(m)`, `Morphing_extract_prm(m)` | The morphing as two polygons whose edges are matched directly, or as a parameterization: a monotone piecewise-linear curve in the plane. |
-| `Morphing_as_function_w_times(m)`, `polygons_get_loc_at_time`, `Morphing_sample_uniformly(m, n)`, `morphing_profile(m, n)` | The morphing as a function of time: the two locations at any time, uniform samples, and the leash length along the walk. |
-| `Morphing_extract_vertex_radii(m)`, `Morphing_extract_offsets(m)`, `Morphing_get_max_edges_err(m)` | Per-vertex leash bounds and the loosest pair of matched edges, used to guide refinement and simplification. |
-
-## Curves and point types
-
-Curves are `BasicCompGeometry` point sequences; every algorithm takes either kind:
-
-| Curve | Points | Use |
-|---|---|---|
-| `PntSeq{D,Float64}` | static `Point{D,Float64}` | low dimensions (fastest up to D = 16) |
-| `GPntSeq{AnyDim,Float64,Vector{Float64}}` | `Vector{Float64}` | high dimensions (faster from D = 128; compiled once for every D) |
-| `MatVecPntSeq(M)` | the columns of a matrix | copied once into `Vector` points |
-
-Both curves of a call must have the same dimension. Results with `Vector` points agree
-with static points up to rounding. See the
-[documentation](https://sarielhp.github.io/FrechetDist.jl/dev/) for the details.
-
-## Examples
-
-- `examples/generate_examples.jl` generates the [visual examples](https://sarielhp.org/p/24/frechet_ve/examples/):
-  morphings, animations and comparisons of the distances on 2D curves
-  (`julia examples/generate_examples.jl`; output in `output/01/`, `output/02/`, …).
-  `docs/src/examples.md` describes how to download the test data and run the query
-  benchmarks.
-- `example_higher/` holds the high-dimensional experiments: the traffic, video and
-  hydraulic curves, the scripts that run FrechetDist and Fred on them, and an
-  independent checker. See [Reproducing the
-  results](https://sarielhp.github.io/FrechetDist.jl/dev/high_dimensional/#Reproducing-the-results).
+The sources of these pages are in [`docs/src/`](docs/src/).
 
 ## Research project
 
-This software was written as part of a research project involving
-Sariel Har-Peled, Benjamin Raichel, and Eliot Robson. A paper
-describing the algorithms/ideas used in this package is upcoming, and
-a link would be posted once it is available.
+This software was written as part of a research project involving Sariel Har-Peled,
+Benjamin Raichel, and Eliot Robson. A paper describing the algorithms and ideas used in
+this package is upcoming, and a link will be posted once it is available.
