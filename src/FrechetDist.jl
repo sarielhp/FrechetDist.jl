@@ -8,7 +8,10 @@ using BasicCompGeometry: Point, Point2F
 using BasicCompGeometry: cardin, dim, geom_length, point, point_max, prefix_lengths
 using BasicCompGeometry: push_distinct!, split_edges
 using BasicCompGeometry.ReadWrite: ReadWrite, read_plt
-using DataStructures: DataStructures, BinaryHeap, BinaryMinHeap, PriorityQueue
+using DataStructures: DataStructures, BinaryHeap, BinaryMinHeap, PriorityQueue, SortedSet
+using DataStructures: SetSemiToken, advance, beforestartsemitoken, deref, pastendsemitoken
+using DataStructures: push_return_semitoken!, regress
+using Random: Random, AbstractRNG
 using LinearAlgebra: LinearAlgebra, lq, norm, qr, rank
 using Parameters: Parameters, @with_kw
 using StaticArrays: StaticArrays, MVector, StaticVector
@@ -26,6 +29,8 @@ include("frechet.jl")
 include("frechet_width.jl")
 include("frechet_refine.jl")
 include("frechet_c.jl")
+include("frechet_decide.jl")
+include("frechet_exact.jl")
 include("frechet_simplify.jl")
 include("SweepDist.jl")
 include("utils.jl")
@@ -93,6 +98,8 @@ export frechet_simplify_w_exp
 export frechet_c_approx
 
 export frechet_c_compute
+export frechet_c_decide_exact
+export frechet_c_compute_exact
 
 export DTW_d_compute
 

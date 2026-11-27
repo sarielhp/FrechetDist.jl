@@ -152,13 +152,14 @@ end
 
 
 
+# `prev_pts`: the points of the event _prev_id (get_event_points).
 function SW_get_event_value(
     _id::Int64,
-    _prev_id::Int64,
+    prev_pts,
     prev_val::Float64,
     c::SDContext{N,T,PT},
 ) where {N,T,PT<:AbstractVector{T}}
-    o_p, o_q = get_event_points(c, _prev_id)
+    o_p, o_q = prev_pts
     n_p, n_q = get_event_points(c, _id)
 
     return prev_val + fp_match_price(o_p, n_p, o_q, n_q)
@@ -183,16 +184,17 @@ function is_sw_schedule_event(
 end
 
 
+# Schedules event id, reached from id_prev; `prev_pts` = get_event_points(c, id_prev).
 function SW_schedule_event!(
     c::SDContext{N,T,PT},
     id::Int64,
-    id_prev::Int64,
+    (id_prev, prev_pts),
 ) where {N,T,PT<:AbstractVector{T}}
     if ! is_sw_schedule_event(c, id)
         return
     end
     st = c.store
-    new_val = SW_get_event_value(id, id_prev, sw_val(st, id_prev), c)
+    new_val = SW_get_event_value(id, prev_pts, sw_val(st, id_prev), c)
     if sw_val_or_inf(st, id) < new_val
         return  # A better event is already scheduled.
     end
@@ -245,10 +247,11 @@ function SweepDist_compute(
 
         i = EID_i(id)
         j = EID_j(id)
+        from = (id, get_event_points(c, id))
 
         if id == start_id
-            SW_schedule_event!(c, EID(1, false, 1, true), id)
-            SW_schedule_event!(c, EID(1, true, 1, false), id)
+            SW_schedule_event!(c, EID(1, false, 1, true), from)
+            SW_schedule_event!(c, EID(1, true, 1, false), from)
             continue
         end
 
@@ -260,11 +263,11 @@ function SweepDist_compute(
 
         # Is it on the boundary of the final cell?
         if is_final_cell(id, c.n_p, c.n_q)
-            SW_schedule_event!(c, id_end, id)
+            SW_schedule_event!(c, id_end, from)
             continue
         end
-        SW_schedule_event!(c, EID(i+1, true, j, false), id)
-        SW_schedule_event!(c, EID(i, false, j+1, true), id)
+        SW_schedule_event!(c, EID(i+1, true, j, false), from)
+        SW_schedule_event!(c, EID(i, false, j+1, true), from)
     end
 
     pes, qes = f_r_extract_solution_basic(P, Q, id_end, c.prev_map)
@@ -388,42 +391,45 @@ function SweepDist_lb_compute(
     dp_dec_i = falses(n_p, n_q)
     handled = falses(n_p, n_q)
 
+    # Every segment-segment distance is needed by up to two cells in each argument
+    # order (the kernel is not symmetric bit for bit, so the orders are kept apart):
+    # computed once, on first use. seg_pq[i, j]: P_i P_i+1 against Q_j Q_j+1; seg_qp[j, i]
+    # the other way around. NaN: not computed yet.
+    seg_pq = fill(NaN, n_p, n_q)
+    seg_qp = fill(NaN, n_q, n_p)
+    len_p = [fp_dist(P[i], P[i+1]) for i in 1:(n_p-1)]
+    len_q = [fp_dist(Q[j], Q[j+1]) for j in 1:(n_q-1)]
+
+    function seg_dist(memo, PA, i, PB, j)
+        d = memo[i, j]
+        isnan(d) || return d
+        d = fp_dist_segment_segment(PA[i], PA[i+1], PB[j], PB[j+1])
+        memo[i, j] = d
+        return d
+    end
+
     # edge_lb: for the grid edge (i, j) -> (i+1, j), the minimum of the distance
     # between the edge PA[i] PA[i+1] and the edges PB[j-1] PB[j] and PB[j] PB[j+1]
     # of the two adjacent cells: a lower bound on the leash along that edge.
-    function edge_lb(
-        PA::GPntSeq{D,T,PT},
-        i,
-        PB::GPntSeq{D,T,PT},
-        j,
-    ) where {D,T,PT<:AbstractVector{T}}
+    function edge_lb(memo, PA, i, PB, j)
         lb::Float64 = typemax(Float64)
         if i == cardin(PA)
             return 0.0
         end
         if j > 1
-            d = fp_dist_segment_segment(PA[i], PA[i+1], PB[j-1], PB[j])
-            lb = min(lb, d)
+            lb = min(lb, seg_dist(memo, PA, i, PB, j - 1))
         end
         if j < cardin(PB)
-            d = fp_dist_segment_segment(PA[i], PA[i+1], PB[j], PB[j+1])
-            lb = min(lb, d)
+            lb = min(lb, seg_dist(memo, PA, i, PB, j))
         end
         return lb
     end
 
-    function edge_v(
-        PA::GPntSeq{D,T,PT},
-        i::Int64,
-        PB::GPntSeq{D,T,PT},
-        j::Int64,
-    )::Float64 where {D,T,PT<:AbstractVector{T}}
-        if (i == cardin(PA))
-            return 0.0
-        end
-        lb = edge_lb(PA, i, PB, j)
-        len = fp_dist(PA[i], PA[i+1])
-        return len * lb
+    # The price of the grid edge (i, j) -> (i+1, j): the length of PA[i] PA[i+1] times
+    # its edge_lb.
+    function edge_v(memo, lens, (PA, i), (PB, j))::Float64
+        (i == cardin(PA)) && return 0.0
+        return lens[i] * edge_lb(memo, PA, i, PB, j)
     end
 
 
@@ -462,10 +468,10 @@ function SweepDist_lb_compute(
 
         # Now we need to schedule the next two adjacent entries..
         if (i < n_p)
-            push_value(i, j, i + 1, j, value + edge_v(P, i, Q, j))
+            push_value(i, j, i + 1, j, value + edge_v(seg_pq, len_p, (P, i), (Q, j)))
         end
         if (j < n_q)
-            push_value(i, j, i, j+1, value + edge_v(Q, j, P, i))
+            push_value(i, j, i, j+1, value + edge_v(seg_qp, len_q, (Q, j), (P, i)))
         end
     end
 

@@ -304,7 +304,7 @@ function events_seq_make_monotone(
     while (i <= len)
         ep = s[i]
         if ep.type == PT_VERTEX
-            up = deepcopy(ep)
+            up = ep  # immutable; its point is never written to
             push!(ns, up)
             i = i + 1
             continue
@@ -314,7 +314,7 @@ function events_seq_make_monotone(
         loc = s[i].i
         t = s[i].t
         while ((j < len) && (s[j+1].type == PT_ON_EDGE) && (s[j+1].i == loc))
-            nep = deepcopy(s[j])
+            nep = s[j]
             t = max(t, nep.t)
             if (t > nep.t)
                 ell = fp_dist(P[nep.i], P[nep.i+1])
@@ -326,7 +326,7 @@ function events_seq_make_monotone(
             j = j + 1
         end
 
-        nep = deepcopy(s[j])
+        nep = s[j]
         if (t > nep.t)
             ell = fp_dist(P[nep.i], P[nep.i+1])
             delta = max(delta, (t - nep.t) * ell)

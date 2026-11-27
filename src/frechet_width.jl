@@ -85,6 +85,40 @@ function width_leash_sq(
     return leash
 end
 
+# width_leash_sq for Vector points, with the same results. The method above would
+# create the nearest point for every vertex (and s_vec once per call); here only its
+# coefficient is computed (`fp_nn_param`, the same products), and the point is made
+# when it moves forward, into one buffer for the whole call (the previous one is never
+# needed again, as t only grows). Static points keep the method above unchanged: its
+# sums are @fastmath, and any change around them can change how they round.
+function width_leash_sq(
+    P::GPntSeq{N,T,Vector{T}},
+    rng::UnitRange{Int64},
+    w::Float64,
+) where {N,T}
+    s_p = P[first(rng)]
+    s_q = P[last(rng)]
+    seg_len_sq = fp_dist_sq(s_p, s_q)
+    width_check_finite(s_p, rng)
+    width_check_finite(s_q, rng)
+    t::Float64 = 0
+    curr = s_p
+    buf = Vector{T}(undef, 0)  # allocated on first use
+    leash::Float64 = 0
+    for i in (first(rng)+1):(last(rng)-1)
+        width_check_finite(P[i], rng)
+        new_t = fp_nn_param(s_p, s_q, P[i], seg_len_sq)
+        if (new_t > t)
+            t = new_t
+            isempty(buf) && t < 1 && resize!(buf, length(s_p))
+            curr = t == 1 ? s_q : fp_convex_comb!(buf, s_p, s_q, t)
+        end
+        leash = max(leash, fp_dist_sq(curr, P[i]))
+        (sqrt(leash) > w) && return leash
+    end
+    return leash
+end
+
 """
     frechet_width_exceeds( P, rng, w )
 

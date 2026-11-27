@@ -10,7 +10,7 @@
 # Usage: julia example_higher/curves.jl SET [FIRST [LAST]]     (default curves 1 to 14)
 # The environment variable FRECHET_TOL sets the tolerance of frechet_c_compute (default
 # here 1e-9, comparable to the 1e-7 percent Fred is run with; the package default is
-# 1e-5).
+# 1e-5); fred_curves.py reads the same variable.
 using QuickEnv # local
 using FrechetDist
 using BasicCompGeometry: AnyDim, GPntSeq
@@ -21,6 +21,9 @@ const OUTPUT = joinpath(@__DIR__, "output")
 # Fred stops its search within 1e-7 percent, so both should agree to about 1e-8.
 const AGREEMENT = 1e-8
 const TOL = parse(Float64, get(ENV, "FRECHET_TOL", "1e-9"))
+# Results at another tolerance than the default go to files with it in their names
+# (`_tol1e-5` for FRECHET_TOL=1e-5), next to those at the default.
+const TOL_SUFFIX = TOL == 1e-9 ? "" : "_tol" * ENV["FRECHET_TOL"]
 
 const Curve = GPntSeq{AnyDim,Float64,Vector{Float64}}
 
@@ -150,7 +153,7 @@ function main(args)
     @printf("compiled in %.1f s\n", compile)
     names = [String(r.name) for r in rows]
     results = Base.invokelatest(pairwise, names, curves)
-    tag = "$(set)_$(first_k)-$(last_k)"
+    tag = "$(set)_$(first_k)-$(last_k)$TOL_SUFFIX"
     fred = read_fred(tag)
     report(results, fred)
     nearest_same_label(results, names, [r.label for r in rows])

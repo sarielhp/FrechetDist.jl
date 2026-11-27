@@ -201,7 +201,7 @@ function frechet_d_r_compute(
         j = coords[2]
         value = ele[1]
 
-        d = fp_dist(P[i], Q[j])
+        d = value  # the key it was pushed with: fp_dist(P[i], Q[j])
 
         ip = max(i - 1, 1)
         jp = max(j - 1, 1)

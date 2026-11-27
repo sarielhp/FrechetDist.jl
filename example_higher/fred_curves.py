@@ -6,7 +6,9 @@ Curves FIRST to LAST of data/curves/SET/index.csv (written by prepare_pems.rb or
 prepare_kth.rb; default 1 to 14). Each curve file holds dims x vertices Float64
 values, vertex after vertex. Writes example_higher/output/SET_FIRST-LAST_fred.csv,
 which curves.jl reads. Fred's binary search stops within `continuous_frechet_error`
-percent (set to 1e-7, as in fred_hydraulic.py); one thread.
+percent: 100 times the relative tolerance FRECHET_TOL (environment, default 1e-9, as
+for curves.jl; results at other tolerances go to files with _tolFRECHET_TOL in their
+names). One thread.
 
 Python, not Ruby: Fred has Python bindings only. Usage:
     python example_higher/fred_curves.py SET [FIRST [LAST]]
@@ -47,7 +49,11 @@ def main(args):
     first = int(args[1]) if len(args) > 1 else 1
     last = int(args[2]) if len(args) > 2 else min(14, len(index))
     rows = index[first - 1:last]
-    Fred.config.continuous_frechet_error = 1e-7
+    tol_env = os.environ.get("FRECHET_TOL", "1e-9")
+    tol = float(tol_env)
+    suffix = "" if tol == 1e-9 else f"_tol{tol_env}"
+    # Percent, rounded to the decimal value it stands for (1e-7, not 1.0000000000000001e-07).
+    Fred.config.continuous_frechet_error = float(f"{100 * tol:.15g}")
     Fred.config.number_threads = 1
     curves = [read_curve(name, r) for r in rows]
     print(f"Fred: {name} curves {first}-{last} in R^{curves[0].dimensions}")
@@ -59,7 +65,7 @@ def main(args):
         results.append((rows[i]["name"], rows[j]["name"], value, seconds))
     print(f"{len(results)} pairs: {sum(r[3] for r in results):.2f} s")
     os.makedirs(OUTPUT, exist_ok=True)
-    path = os.path.join(OUTPUT, f"{name}_{first}-{last}_fred.csv")
+    path = os.path.join(OUTPUT, f"{name}_{first}-{last}{suffix}_fred.csv")
     with open(path, "w", encoding="utf-8") as io:
         io.write("a,b,distance,seconds\n")
         for a, b, value, seconds in results:

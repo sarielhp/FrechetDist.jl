@@ -55,8 +55,12 @@ end
 ) where {T}
     (t == 0.0) && return p  # exact: the endpoints are returned unrounded (and shared)
     (t == 1.0) && return q  # exact, as above
-    n = vec_length(p, q)
-    o = Vector{T}(undef, n)
+    return fp_convex_comb!(Vector{T}(undef, vec_length(p, q)), p, q, t)
+end
+
+# fp_convex_comb(p, q, t) for 0 < t < 1, written into `o`.
+@inline function fp_convex_comb!(o::AbstractVector{T}, p, q, t::Float64) where {T}
+    n = vec_length(o, p, q)
     # In bounds: p, q and o have n coordinates.
     @inbounds @simd for i in 1:n
         o[i] = p[i] + (q[i] - p[i]) * t
@@ -115,6 +119,22 @@ end
     (t <= 0.0) && return s_p, zero(T)
     (t >= 1.0) && return s_q, one(T)
     return fp_convex_comb(s_p, s_q, t), t
+end
+
+# The coefficient of the nearest point of fp_nn_point_ext_ext (0 or 1 at the ends),
+# without creating the point or s_vec: the same products, (s_q - s_p)[i] formed in place.
+@inline function fp_nn_param(
+    s_p::AbstractVector{T},
+    s_q::AbstractVector{T},
+    qr::AbstractVector{T},
+    seg_len_sq::T,
+) where {T}
+    a = seg_len_sq
+    (a == 0.0) && return zero(T)  # exact: a zero-length segment
+    t = T(-2.0 * vec_dot_seg(s_p, s_q, qr) / (2.0 * a))
+    (t <= 0.0) && return zero(T)
+    (t >= 1.0) && return one(T)
+    return t
 end
 
 @inline function fp_nn_point_ext(

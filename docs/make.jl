@@ -16,6 +16,7 @@ makedocs(
         "sweep.md",
         "low_level.md",
         "examples.md",
+        "high_dimensional.md",
         "changelog.md",
     ],
     # An exported name missing from the manual fails the build; other problems warn.

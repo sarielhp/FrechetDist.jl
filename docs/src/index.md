@@ -15,6 +15,9 @@ Curves are `BasicCompGeometry` point sequences. Every algorithm takes either kin
 | `GPntSeq{AnyDim,Float64,Vector{Float64}}` | `Vector{Float64}` | high dimensions (faster from D = 128; compiles once for every D) |
 | `MatVecPntSeq(M)` | the columns of a matrix | converted on entry, see below |
 
+For timings on real curves in ℝ^963, ℝ^6000 and ℝ^19200, and a comparison with Fred,
+see [High-dimensional curves: comparison with Fred](@ref).
+
 Both curves of a call must have the same dimension and coordinate type (`Float64`).
 Results with `Vector` points agree with static points up to rounding, not bit for bit:
 a last-bit difference can select another optimal morphing, with the same leash.
@@ -40,6 +43,8 @@ typed.
 ```@docs 
 frechet_c_compute
 frechet_c_approx
+frechet_c_decide_exact
+frechet_c_compute_exact
 frechet_dist_upper_bound
 FrechetDist.frechet_width_approx
 ```

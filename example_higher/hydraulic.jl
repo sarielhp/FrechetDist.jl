@@ -35,6 +35,9 @@ const AGREEMENT = 1e-8
 # Tolerance of frechet_c_compute (package default 1e-5); env FRECHET_TOL. 1e-9 matches
 # the 1e-7 percent Fred is run with.
 const TOL = parse(Float64, get(ENV, "FRECHET_TOL", "1e-9"))
+# Results at another tolerance than the default go to files with it in their names
+# (`_tol1e-5` for FRECHET_TOL=1e-5), next to those at the default.
+const TOL_SUFFIX = TOL == 1e-9 ? "" : "_tol" * ENV["FRECHET_TOL"]
 
 """
     read_sensor(k, cycles, dims) -> Matrix{Float64}
@@ -68,7 +71,7 @@ to_curve(M::Matrix{Float64}) =
 
 # Fred's results for the same truncation, as (i, j) => (distance, seconds), if present.
 function read_fred(cycles::Int, dims::Int)
-    path = joinpath(OUTPUT, "hydraulic_fred_$(cycles)x$(dims).csv")
+    path = joinpath(OUTPUT, "hydraulic_fred_$(cycles)x$(dims)$TOL_SUFFIX.csv")
     isfile(path) || return nothing
     fred = Dict{Tuple{Int,Int},Tuple{Float64,Float64}}()
     for line in Iterators.drop(eachline(path), 1)
@@ -122,7 +125,7 @@ end
 
 function write_csv(results, cycles, dims)
     mkpath(OUTPUT)
-    path = joinpath(OUTPUT, "hydraulic_julia_$(cycles)x$(dims).csv")
+    path = joinpath(OUTPUT, "hydraulic_julia_$(cycles)x$(dims)$TOL_SUFFIX.csv")
     open(path, "w") do io
         println(io, "i,j,distance,seconds")
         for (i, j, d, s) in results

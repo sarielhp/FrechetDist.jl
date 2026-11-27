@@ -239,6 +239,8 @@ single_curve(P::AbsPntSeq) = static_points(P) ? static_curve(P) : vector_curve(P
 # further arguments, give a plain MethodError.
 for f in (
     :frechet_c_compute,
+    :frechet_c_decide_exact,
+    :frechet_c_compute_exact,
     :frechet_c_approx,
     :frechet_d_compute,
     :frechet_d_r_compute,

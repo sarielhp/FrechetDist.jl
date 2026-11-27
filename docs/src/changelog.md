@@ -1,6 +1,22 @@
 # Change log
     What had changed...
 
+v3.2.0 Release Notes
+====================
+(November 27, 2026)
+
+Added:
+* `frechet_c_compute_exact(P, Q)`: the exact continuous Fréchet distance, by the randomized search over the critical values of Alt and Godau from Har-Peled and Raichel, "The Fréchet distance revisited and extended" (Section 6): a random sample of critical values narrows the search to an interval, whose critical values a kinetic sweep lists (a balanced search tree, DataStructures' `SortedSet`, holds the order: O(log n) per event). Slow: O(n m d) once to tabulate the distances between vertices and segments (multithreaded, with the same result for any number of threads), then O(n m) per decision (O(log n) of them); no tolerance. The result does not depend on the random sample.
+* `frechet_c_decide_exact(P, Q, r)`: exact decision procedure for the continuous Fréchet distance (is d_F(P, Q) <= r?), the free-space reachability test of Alt and Godau (1995), in O(n m d) time and O(m) memory, with no tolerance. Static and `Vector` points.
+* Documentation: [High-dimensional curves: comparison with Fred](@ref), on real curves in ℝ^963, ℝ^6000 and ℝ^19200 (`example_higher/exact_curves.jl` computes the exact distances and the errors of the other methods against them).
+
+Changed (same results, bit for bit):
+* `SweepDist_lb_compute`: each segment-segment distance is computed once instead of up to four times (1.5x faster at D = 50, 1.9x at D = 1000).
+* `frechet_d_r_compute`: no second distance computation per cell (1.45x faster at D = 1000).
+* `SweepDist_compute`, `Morphing_monotonize`: fewer copies of points (25% less memory for `Vector` points).
+* `frechet_width_approx` and the simplifiers on `Vector` points: the nearest point on the spine is created only when it moves forward, into one buffer (no allocation per vertex; `frechet_simplify_to_cardin` 20% faster at D = 1000, with 60% less memory).
+* `example_higher/`: `FRECHET_TOL` also sets the tolerance of `fred_curves.py`; results at a tolerance other than 1e-9 go to files with it in their names.
+
 v3.1.0 Release Notes
 ====================
 (November 26, 2026)
