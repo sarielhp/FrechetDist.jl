@@ -1,23 +1,24 @@
 # The free-space decision of frechet_decide.jl, by a recursive decomposition of the
 # diagram into boxes. A box is a range of cells (segments of P) by a range of rows
-# (segments of Q); the bounding boxes of the two curve pieces classify it:
+# (segments of Q):
 #
-# - empty: the boxes are farther apart than r, so no point of the box is free;
-# - full: every point of one box is within r of every point of the other, so the whole
-#   box is free, and what is reachable on its top and right edges follows from where
-#   it is entered (the free space of the box is convex);
-# - mixed: it is split in two along its longer side, down to boxes of at most
-#   DECIDE_BLOCK x DECIDE_BLOCK cells, whose cells are visited one by one, as in
+# - a box that nothing enters is skipped (its exits are as empty as its entries);
+# - a box whose two curve pieces are within r of each other (every point of one within r
+#   of every point of the other, by their bounding boxes, or their sausages in
+#   frechet_decide_sausage.jl) is free, and what is reachable on its top and right edges
+#   follows from where it is entered (the free space of the box is convex);
+# - otherwise it is split in four, or in two across its longer side, down to boxes of at
+#   most DECIDE_BLOCK x DECIDE_BLOCK cells, whose cells are visited one by one, as in
 #   decide_column!.
 #
-# A box that nothing enters is skipped. Empty and full boxes take time proportional to
-# their perimeter, so large uniform parts of the free space cost little. The ranges are
-# those of a segment tree over the segments of each curve, whose nodes hold the bounding
-# boxes of their pieces.
+# (A box that is entered has a free point on its boundary, so it is never empty: there is
+# no test for boxes whose pieces are apart.) Free boxes take time proportional to their
+# perimeter, so large uniform parts of the free space cost little. The ranges are those
+# of a segment tree over the segments of each curve, whose nodes describe their pieces.
 #
-# The tests have a relative margin of 1e-9, so a box is classified only when the cell
-# by cell computation would give every free interval empty, or every one (0, 1), as
-# well: the answers are those of decide_free_space(::PointSpace, r_sq).
+# The test has a relative margin of 1e-9, so a box is free only when the cell by cell
+# computation would give every free interval (0, 1) as well: the answers are those of
+# decide_free_space(::PointSpace, r_sq).
 #
 # Throughout, `left[j]` holds the reachable part of the left edge of the first
 # unprocessed cell of row j, and `bot[i]` that of the bottom edge of the first
@@ -28,10 +29,6 @@
 """Largest side of the boxes of the free-space decision whose cells are visited one by one;
 also the number of segments of the bottom nodes of the trees (BoxTree, LazyBoxTree)."""
 const DECIDE_BLOCK = 8
-
-const BLOCK_MIXED = 0
-const BLOCK_EMPTY = 1
-const BLOCK_FULL = 2
 
 # A segment tree over the segments 1:ncell of a curve: its N bottom nodes (N a power of
 # two) are the runs of DECIDE_BLOCK consecutive segments, node 1 is all of them, the
@@ -137,46 +134,42 @@ tree_kind(::BoxTree) = BoxTree
 
 # The trees of p and q: given, or built.
 tree_pair(p, q, trees::Tuple) = trees
-tree_pair(p, q, ::Type{T}) where {T<:AbstractBoxTree} = (T(p), T(q))
+tree_pair(p, q, ::Type{T}) where {T<:PieceTree} = (T(p), T(q))
 
 # The number of cells a node of depth-index v spans (before clipping at the end).
-node_size(t::AbstractBoxTree, v::Int) = (t.N >> (63 - leading_zeros(v))) * DECIDE_BLOCK
+node_size(t::PieceTree, v::Int) = (t.N >> (63 - leading_zeros(v))) * DECIDE_BLOCK
 
 # Whether v is a bottom node (it has no children).
-is_bottom(t::AbstractBoxTree, v::Int) = v >= t.N
+is_bottom(t::PieceTree, v::Int) = v >= t.N
 
 # The cells of node v (possibly empty, past the end of the curve).
-function node_range(t::AbstractBoxTree, v::Int)::UnitRange{Int}
+function node_range(t::PieceTree, v::Int)::UnitRange{Int}
     h = 63 - leading_zeros(v)  # the depth of v
     size = (t.N >> h) * DECIDE_BLOCK
     first = (v - (1 << h)) * size + 1
     return first:min(first+size-1, t.ncell)
 end
 
-# Whether box (u, v) is empty, full or mixed for the squared radius r_sq: from the
-# smallest and largest squared distances between the bounding boxes of the two pieces.
-function box_class(
+# Whether every point of the piece of node u is within the radius of every point of the
+# piece of node v: by the largest squared distance between their bounding boxes.
+function pieces_within(
     tp::AbstractBoxTree,
     tq::AbstractBoxTree,
     u::Int,
     v::Int,
     r_sq::Float64,
-)::Int
+)::Bool
     node_box!(tp, u)
     node_box!(tq, v)
-    near = far = 0.0
+    far = 0.0
     A, B = tp.box, tq.box
     d = size(A, 1) >> 1
     # In bounds: u and v are nodes of their trees, whose matrices have the same rows.
     @inbounds for c in 1:d
-        gap = max(0.0, A[c, u] - B[d+c, v], B[c, v] - A[d+c, u])
         span = max(A[d+c, u] - B[c, v], B[d+c, v] - A[c, u])
-        near += gap * gap
         far += span * span
     end
-    near > r_sq * (1.0 + 1.0e-9) && return BLOCK_EMPTY
-    far * (1.0 + 1.0e-9) <= r_sq && return BLOCK_FULL
-    return BLOCK_MIXED
+    return far * (1.0 + 1.0e-9) <= r_sq
 end
 
 # One exit side of a full box, e[r]: its right edges (in `left`) or its top edges (in
@@ -263,11 +256,7 @@ function box_step!(left, bot, bs::BoxSweep, u::Int, v::Int)
     entered =
         any(i -> !free_is_empty(bot[i]), cols) || any(j -> !free_is_empty(left[j]), rows)
     entered || return nothing  # its exits are as empty as its entries
-    class = box_class(bs.tp, bs.tq, u, v, bs.sweep.r_sq)
-    if class == BLOCK_EMPTY
-        fill!(view(left, rows), FREE_EMPTY)
-        fill!(view(bot, cols), FREE_EMPTY)
-    elseif class == BLOCK_FULL
+    if pieces_within(bs.tp, bs.tq, u, v, bs.sweep.r_sq)
         full_box!(left, bot, rows, cols)
     elseif (length(cols) <= bs.leaf || is_bottom(bs.tp, u)) &&
            (length(rows) <= bs.leaf || is_bottom(bs.tq, v))
@@ -402,7 +391,7 @@ end
 # the tree, nearer child first, that skips the nodes whose box is farther than the radius
 # (with a margin), and decides on single segments by their free interval, as the sweep
 # does.
-function near_curve(x, q, t::AbstractBoxTree, r_sq::Float64, v::Int = 1)::Bool
+function near_curve(x, q, t::PieceTree, r_sq::Float64, v::Int = 1)::Bool
     rng = node_range(t, v)
     isempty(rng) && return false
     node_gap_sq(t, v, x) > r_sq * (1.0 + 1.0e-9) && return false
@@ -423,7 +412,7 @@ end
 
 # Whether some vertex of p, among a few spread along it (at offsets growing by a factor
 # 1.5 from either end), has no point of q within the radius; then d_F(P, Q) > r.
-function far_vertex(p, q, tq::AbstractBoxTree, r_sq::Float64)::Bool
+function far_vertex(p, q, tq::PieceTree, r_sq::Float64)::Bool
     n = length(p)
     step = 1
     while step < n

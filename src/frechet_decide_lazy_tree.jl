@@ -66,12 +66,14 @@ function fill_levels!(t::LazyBoxTree, v::Int, k::Int)
     return nothing
 end
 
-function tree_lens(t::LazyBoxTree)
-    lens, p = t.lens, t.p
+tree_lens(t::LazyBoxTree) = lazy_lens!(t.lens, t.p)
+
+# The prefix lengths of p in lens, computed on the first call (lens is empty until then).
+function lazy_lens!(lens::Vector{Float64}, p)
     isempty(lens) || return lens
-    resize!(lens, t.ncell + 1)
+    resize!(lens, length(p))
     lens[1] = 0.0
-    for c in 1:(t.ncell)
+    for c in 1:(length(p)-1)
         lens[c+1] = lens[c] + fp_dist(p[c], p[c+1])
     end
     return lens

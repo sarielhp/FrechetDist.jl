@@ -93,7 +93,10 @@ end
             (n - 1 > B && m - 1 > B) || continue
             (FD.within(s, 1, 1, r_sq) && FD.within(s, n, m, r_sq)) || continue
             want = FD.decide_free_space(s, r_sq)
-            mismatches += FD.decide_free_space_blocks(p.pnts, q.pnts, r_sq, B) != want
+            for T in (FD.LazyBoxTree, FD.BoxTree, FD.SausageTree)
+                mismatches +=
+                    FD.decide_free_space_blocks(p.pnts, q.pnts, r_sq, B, T) != want
+            end
         end
         mismatches += !frechet_c_decide_exact(p, q, d * (1 + 1e-9))
         mismatches += frechet_c_decide_exact(p, q, d * (1 - 1e-9))
@@ -105,14 +108,22 @@ end
         d = FD.frechet_c_compute_exact(static_seq(a), static_seq(b))
         for f in (1e-9, -1e-9, 0.01, -0.01)
             want = f > 0
-            mismatches +=
-                frechet_c_decide_exact(vector_seq(a), vector_seq(b), d * (1 + f)) != want
+            for T in (FD.LazyBoxTree, FD.SausageTree)
+                got = frechet_c_decide_exact(
+                    vector_seq(a),
+                    vector_seq(b),
+                    d * (1 + f);
+                    tree = T,
+                )
+                mismatches += got != want
+            end
         end
     end
     @test mismatches == 0
 end
 
-@testset "the greedy ball walk and the far-vertex test are never wrong" begin
+@testset "the greedy walks and the far-vertex test are never wrong" begin
+    # (the ball and sausage walks; the far-vertex test with box and sausage trees)
     FD = FrechetDist
     rng = MersenneTwister(1319)
     wrong = 0
@@ -122,10 +133,14 @@ end
         q = static_seq(walk(rng, D, rand(rng, 3:60))).pnts
         d = FD.frechet_c_compute_exact(PntSeq(p), PntSeq(q))
         tp, tq = FD.BoxTree(p), FD.BoxTree(q)
+        sp, sq = FD.SausageTree(p), FD.SausageTree(q)
         for f in (1e-6, -1e-6, 0.01, -0.01, 0.3, -0.3)
             r = d * (1 + f)
             wrong += FD.greedy_ball_walk(p, q, tp.lens, tq.lens, r) && f < 0
             far = FD.far_vertex(p, q, tq, r^2) || FD.far_vertex(q, p, tp, r^2)
+            far |= FD.far_vertex(p, q, sq, r^2) || FD.far_vertex(q, p, sp, r^2)
+            wrong += FD.greedy_sausage_walk(p, q, r) && f < 0
+            wrong += FD.greedy_sausage_walk(p, q, r, sp, sq) && f < 0
             wrong += far && f > 0
         end
     end
@@ -142,6 +157,7 @@ end
         b = static_seq(walk(rng, D, trial <= 3 ? 1 : rand(rng, 2:40)))
         A, B = FD.DecideCurve(a, FD.BoxTree), FD.DecideCurve(b, FD.BoxTree)
         LA, LB = FD.DecideCurve(a), FD.DecideCurve(b)
+        SA, SB = FD.DecideCurve(a, FD.SausageTree), FD.DecideCurve(b, FD.SausageTree)
         d =
             length(b) == 1 ? maximum(p -> sqrt(sum(abs2, p - b[1])), a) :
             frechet_c_compute(a, b).leash
@@ -150,6 +166,7 @@ end
             want = frechet_c_decide_exact(a, b, r)
             mismatches += frechet_c_decide_exact(A, B, r) != want
             mismatches += frechet_c_decide_exact(LA, LB, r) != want
+            mismatches += frechet_c_decide_exact(SA, SB, r) != want
         end
     end
     @test mismatches == 0
@@ -158,6 +175,15 @@ end
         FD.DecideCurve(static_seq([[0.0, 0.0], [1.0, 0.0]])),
         -1.0,
     )
+end
+
+@testset "the default tree follows the dimension" begin
+    FD = FrechetDist
+    rng = MersenneTwister(1317)
+    @test FD.default_tree(static_seq(walk(rng, 2, 5)).pnts) === FD.LazyBoxTree
+    @test FD.default_tree(vector_seq(walk(rng, 100, 5)).pnts) === FD.SausageTree
+    @test FD.DecideCurve(vector_seq(walk(rng, 100, 5))).tree isa FD.SausageTree
+    @test FD.DecideCurve(static_seq(walk(rng, 3, 5))).tree isa FD.LazyBoxTree
 end
 
 @testset "LazyBoxTree has the boxes and lengths of BoxTree" begin
@@ -172,6 +198,70 @@ end
             FD.node_box!(l, v)
             @test l.box[:, v] == t.box[:, v]
         end
+    end
+end
+
+@testset "the sausages of SausageTree contain their pieces" begin
+    FD = FrechetDist
+    rng = MersenneTwister(1319)
+    # the distance from x to the segment ab, in BigFloat
+    function seg_dist(x, a, b)
+        x, a, b = big.(x), big.(a), big.(b)
+        u = b .- a
+        L = sum(u .^ 2)
+        s = L > 0 ? clamp(sum((x .- a) .* u) / L, 0, 1) : big(0)
+        return sqrt(sum((x .- a .- s .* u) .^ 2))
+    end
+    line(rng, D, n) = (u = randn(rng, D); [t .* u .+ 1e-6 .* randn(rng, D) for t in 1:n])
+    for n in (1, 2, 3, 9, 17, 65, 300, 1000), D in (2, 7), gen in (walk, line)
+        p = vector_seq(gen(rng, D, n)).pnts
+        t = FD.SausageTree(p)
+        ok = true
+        for v in shuffle(rng, 1:(2*t.N-1))
+            FD.node_box!(t, v)
+            rng_v = FD.node_range(t, v)
+            isempty(rng_v) && (ok &= t.rad[1, v] < 0; continue)
+            a, b = p[first(rng_v)], p[last(rng_v)+1]
+            ok &=
+                all(c -> seg_dist(p[c], a, b) <= t.rad[1, v], first(rng_v):(last(rng_v)+1))
+        end
+        @test ok
+    end
+end
+
+@testset "the Fréchet radii of SausageTree bound the pieces" begin
+    FD = FrechetDist
+    rng = MersenneTwister(1321)
+    # back and forth over a segment (rho about 0, phi about its length)
+    function zigzag(rng, D, n)
+        u = randn(rng, D)
+        return [
+            (isodd(c ÷ 9) ? 9 - c % 9 : c % 9) .* u .+ 1e-6 .* randn(rng, D) for
+            c in 0:(n-1)
+        ]
+    end
+    line(rng, D, n) = (u = randn(rng, D); [t .* u .+ 1e-6 .* randn(rng, D) for t in 1:n])
+    # d_F(p[i:k], segment p[i] p[k]) <= phi, up to the tolerance of the oracle
+    covers(p, i, k, phi) = oracle_continuous(p[i:k], [p[i], p[k]]) * (1 - 1e-9) <= phi
+    for n in (9, 40, 70), D in (2, 7), gen in (walk, line, zigzag)
+        p = [Vector(x) for x in vector_seq(gen(rng, D, n)).pnts]
+        t = FD.SausageTree(p)
+        ok = true
+        for v in shuffle(rng, 1:(2*t.N-1))
+            FD.node_box!(t, v)
+            rng_v = FD.node_range(t, v)
+            isempty(rng_v) && continue
+            ok &= t.rad[1, v] <= t.rad[2, v]
+            ok &= covers(p, first(rng_v), last(rng_v) + 1, t.rad[2, v])
+        end
+        for _ in 1:20  # ranges that are not nodes, as the walk reads them
+            i, k = minmax(rand(rng, 1:n), rand(rng, 1:n))
+            i < k || continue
+            up, low = FD.frechet_bounds(t, i, k)
+            ok &= covers(p, i, k, up) && low <= FD.segment_frechet(p, i, k)
+            ok &= covers(p, i, k, FD.segment_frechet(p, i, k))
+        end
+        @test ok
     end
 end
 

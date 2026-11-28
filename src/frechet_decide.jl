@@ -167,8 +167,14 @@ function end_reached(left, band::UnitRange{Int}, top)::Bool
            (!free_is_empty(top) && top[2] == 1.0)
 end
 
+# The hierarchies of curve pieces of the free-space search: their bounding boxes (BoxTree
+# in frechet_decide_blocks.jl, LazyBoxTree in frechet_decide_lazy_tree.jl), or sausages
+# (SausageTree in frechet_decide_sausage.jl).
+abstract type PieceTree end
+abstract type AbstractBoxTree <: PieceTree end
+
 """
-    frechet_c_decide_exact(P, Q, r) -> Bool
+    frechet_c_decide_exact(P, Q, r; tree = nothing) -> Bool
 
 Exact decision procedure for the continuous Fréchet distance: is
 ``d_F(P, Q) \\le r``? It is the free-space reachability test of Alt and Godau (1995),
@@ -187,15 +193,23 @@ Most queries are settled sooner, by tests that are exact as well:
 - the endpoint distances, and an upper bound (the endpoint distance plus the widths of
   the curves);
 - greedy monotone walks through pairs of vertices, one step at a time or by adaptive
-  steps over pieces of the curves that lie in balls within `r` of each other (a
-  "yes");
+  steps over pieces of the curves that lie in balls within `r` of each other, and, in
+  dimension 6 and up, over pieces close (in the Fréchet distance) to segments whose
+  ends are within `r` (a "yes");
 - a vertex of one curve with no point of the other within `r`, found by a descent of a
-  tree of bounding boxes (a "no");
+  tree of the pieces of the curve (a "no");
 - decisions on simplifications of the curves, which settle the query when the
   simplified curves are far enough from `r`;
 - in the free-space search, a recursive decomposition of the diagram into boxes:
-  a box whose two curve pieces are all within `r` of each other, or all farther apart,
-  is settled through its boundary, and a box that nothing enters is skipped.
+  a box whose two curve pieces are all within `r` of each other is settled through its
+  boundary, and a box that nothing enters is skipped.
+
+The pieces of the curves are described by `tree`: `LazyBoxTree` (their bounding boxes,
+computed as the search needs them), `BoxTree` (the same, all computed first), or
+`SausageTree` (the segment between the ends of a piece, thickened to contain it: a
+description that needs only distances between points, so it does not grow with the
+dimension). The default, `nothing`, takes `LazyBoxTree` below dimension
+`SAUSAGE_TREE_DIM` (64) and `SausageTree` from it on (see `default_tree`).
 
 The answer is that of the plain sweep, up to rounding at the distance itself. The
 worst case, a query close to the distance between curves that wander within `r` of
@@ -216,7 +230,8 @@ frechet_c_decide_exact(P, Q, m.leash * (1 - 1e-6))    # false, unless m.leash is
 function frechet_c_decide_exact(
     P::GPntSeq{N,T,PT},
     Q::GPntSeq{N,T,PT},
-    r::Real,
+    r::Real;
+    tree::Union{Nothing,Type{<:PieceTree}} = nothing,
 )::Bool where {N,T,PT<:AbstractVector{T}}
     check_curves(P, Q, "frechet_c_decide_exact"; min_vertices = 1)
     check_nonnegative(r, "frechet_c_decide_exact", "the distance r")
@@ -230,15 +245,12 @@ function frechet_c_decide_exact(
        frechet_dist_upper_bound(P, Q) * (1 + 1e-12) <= r
         return true
     end
-    return decide_simplified(P, Q, Float64(r))
+    kind = tree === nothing ? default_tree(P.pnts) : tree
+    return decide_simplified(P, Q, Float64(r), kind)
 end
 
-# The hierarchies of bounding boxes of the free-space search: BoxTree
-# (frechet_decide_blocks.jl) and LazyBoxTree (frechet_decide_lazy_tree.jl).
-abstract type AbstractBoxTree end
-
 """
-    DecideCurve(P, Tree = LazyBoxTree)
+    DecideCurve(P, Tree = default_tree(P.pnts))
 
 A curve prepared for many calls of `frechet_c_decide_exact`: it is checked once, and
 its width (`frechet_width_approx`) and bounding box are stored, so that the O(1) filters
@@ -247,9 +259,11 @@ hierarchy of its pieces (for the free-space search) are computed when a decision
 needs them, and kept: most decisions need little or none of the hierarchy. Preparing
 takes O(n d) time, and the curve O(n d) memory.
 
-A DecideCurve with the default `Tree` is updated by the decisions that use it, so it must
-not be used by several threads at once. `Tree = BoxTree` computes everything when the
-curve is prepared; such a DecideCurve is never written to, and may be shared by threads.
+`Tree` is the description of the pieces (see `frechet_c_decide_exact`): by default
+`LazyBoxTree` below dimension `SAUSAGE_TREE_DIM` and `SausageTree` from it on. Both are
+updated by the decisions that use them, so such a DecideCurve must not be used by several
+threads at once. `Tree = BoxTree` computes everything when the curve is prepared; such a
+DecideCurve is never written to, and may be shared by threads.
 
 `frechet_c_decide_exact(A::DecideCurve, B::DecideCurve, r)` gives the same answer as
 `frechet_c_decide_exact(A.P, B.P, r)`.
@@ -262,10 +276,12 @@ struct DecideCurve{C<:GPntSeq,TR}
     tree::TR  # the tree of the segments of P, for the free-space search
 end
 
+DecideCurve(P::GPntSeq) = DecideCurve(P, default_tree(P.pnts))
+
 function DecideCurve(
     P::GPntSeq{N,T,PT},
-    ::Type{TR} = LazyBoxTree,
-) where {N,T,PT<:AbstractVector{T},TR<:AbstractBoxTree}
+    ::Type{TR},
+) where {N,T,PT<:AbstractVector{T},TR<:PieceTree}
     check_curve(P, "DecideCurve", "the curve"; min_vertices = 1)
     d = length(P[1])
     lo = fill(Inf, d)
@@ -320,7 +336,7 @@ end
 # d_F(P', Q') > r + 2w implies d_F(P, Q) > r. The margin on 2w covers the rounding of the
 # distances to the kept vertices. Rounds stop once a simplification keeps more than a
 # quarter of a curve; then the curves themselves are decided.
-# `trees` are the trees of P and Q (see AbstractBoxTree), or the kind of tree to build;
+# `trees` are the trees of P and Q (see PieceTree), or the kind of tree to build;
 # the simplifications get trees of the same kind.
 function decide_simplified(P, Q, r::Float64, trees = LazyBoxTree)::Bool
     p, q = P.pnts, Q.pnts
@@ -329,10 +345,14 @@ function decide_simplified(P, Q, r::Float64, trees = LazyBoxTree)::Bool
     if length(p) > 2 && length(q) > 2
         tp, tq = tree_pair(p, q, trees)
         # The greedy walks prove most "yes" answers; then a vertex with no point of the
-        # other curve within r proves many "no" answers.
+        # other curve within r proves many "no" answers; then, in higher dimensions, the
+        # walk by sausages, whose steps cost scans of the pieces, proves more "yes" answers.
         greedy_vertex_walk(p, q, r^2) && return true
         greedy_ball_walk(p, q, tree_lens(tp), tree_lens(tq), r) && return true
         (far_vertex(p, q, tq, r^2) || far_vertex(q, p, tp, r^2)) && return false
+        box_dim(p) >= SAUSAGE_WALK_DIM &&
+            greedy_sausage_walk(p, q, r, tp, tq) &&
+            return true
         trees = (tp, tq)
         walked = true
     end
