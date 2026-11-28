@@ -665,7 +665,7 @@ end
 
 
 """
-    frechet_c_compute_exact(P, Q; rng = Random.default_rng()) -> Float64
+    frechet_c_compute_exact(P, Q; rng = Random.default_rng(), method = :auto) -> Float64
 
 The exact continuous Fréchet distance between the curves `P` and `Q`, by the
 randomized algorithm of Har-Peled and Raichel ("The Fréchet distance revisited and
@@ -678,12 +678,28 @@ values. These are listed (the monotonicity values by a kinetic sweep along each
 segment, which keeps the points on the segment in a balanced search tree: O(log N) per
 event), sorted, and searched again.
 
-**Slow:** O(n m d) to tabulate, once, the distances between vertices and segments for
-curves in ℝ^d (on all of Julia's threads; the result does not depend on their number);
-then, from the tables, O(N² log N) to sample and sort, O(log N) decisions
-of O(n m) each, and O(n m log N) to list (with high probability). The tables take
-40 n m bytes and the sample 32 N² bytes. `frechet_c_compute` is usually much
-faster; this function is the reference it can be checked against, with no tolerance.
+When the sample would cost more than about 35 decisions on the curves themselves
+(N² ≥ 16 (n + m) d: long curves in low dimension), the interval comes instead from a
+bisection with the fast decision procedure (`frechet_c_decide_exact` on `DecideCurve`s)
+to a relative width of 1e-10; the critical values in it are computed from the
+coordinates, segment by segment, and searched. With `method = :auto` (the default) this
+is done without tables: the fast decision procedure also certifies the ends of the
+interval, searches the critical values, and checks that nothing well below the result
+is accepted; when a check fails, the tables are computed and the search is done on them.
+With `method = :tables`, every decision of the search is made on the tables by the plain
+cell by cell sweep, independent of the filters and the box search of the fast decision
+procedure: the reference to check the default against. The two give the same result,
+bit for bit, on all inputs tested.
+
+**Slow:** without tables, O((n + m) d) memory and, besides the decisions, O(n m d) time
+to compute the critical values near the distance (O(n m log N) when many points of a
+segment are close together). With the tables: O(n m d) to tabulate, once, the distances
+between vertices and segments (on all of Julia's threads; the result does not depend on
+their number); then O(N² log N) to sample and sort, O(log N) decisions of O(n m) each,
+and O(n m log N) to list (with high probability). The tables take 40 n m bytes and the
+sample (drawn only when the bisection does not settle it) 32 N² bytes.
+`frechet_c_compute` is usually much faster; this function is the reference it can be
+checked against, with no tolerance.
 
 The result is a critical value, computed in floating point, so exact up to its
 rounding. Randomness affects only the running time: every `rng` gives the same result,
@@ -698,13 +714,27 @@ function frechet_c_compute_exact(
     P::GPntSeq{N,T,PT},
     Q::GPntSeq{N,T,PT};
     rng::AbstractRNG = Random.default_rng(),
+    method::Symbol = :auto,
 )::Float64 where {N,T,PT<:AbstractVector{T}}
-    check_curves(P, Q, "frechet_c_compute_exact"; min_vertices = 1)
-    p = remove_consecutive_duplicates(P).pnts
-    q = remove_consecutive_duplicates(Q).pnts
-    # The tables take 40 n m bytes, the sample 32 N^2.
+    who = "frechet_c_compute_exact"
+    check_curves(P, Q, who; min_vertices = 1)
+    method in (:auto, :tables) ||
+        throw(ArgumentError("$who: method must be :auto or :tables (got :$method)"))
+    P, Q = remove_consecutive_duplicates(P), remove_consecutive_duplicates(Q)
+    if method == :auto && exact_bisects(P.pnts, Q.pnts)
+        x = exact_without_tables(P, Q)
+        x === nothing || return x
+    end
+    return exact_with_tables(P, Q, rng)
+end
+
+# The search on the tables of the two curves (no consecutive duplicates).
+function exact_with_tables(P, Q, rng::AbstractRNG)
+    p, q = P.pnts, Q.pnts
+    # The tables take 40 n m bytes; the sample, drawn only without the bisection, 32 N^2
+    # more (checked there).
     nmax = max(length(p), length(q))
-    check_quadratic_size(nmax, nmax, 72, "frechet_c_compute_exact")
+    check_quadratic_size(length(p), length(q), 40, "frechet_c_compute_exact")
     tables = exact_tables(p, q)
     d2 = tables.pq.d2
     lo = sqrt(max(d2[1, 1], d2[end, end]))
@@ -712,12 +742,49 @@ function frechet_c_compute_exact(
     (length(p) == 1 || length(q) == 1) && return hi
     ctx = (; tables, slack = EXACT_SLACK_ULPS)
     exact_accepts(ctx, lo) && return lo
+    # The sample costs O(N^2) after the tables, a decision on the curves O((n + m) d):
+    # bisect when the sample is the larger cost.
+    if exact_bisects(p, q)
+        x = exact_from_bisection(ctx, P, Q, lo, hi)
+        x === nothing || return x
+    end
+    check_quadratic_size(nmax, nmax, 72, "frechet_c_compute_exact")
     a, b = exact_bracket(ctx, exact_sample(rng, tables, lo, hi), lo, hi)
-    x = exact_search(ctx, a, b, false)
-    # Minimality: nothing well below x may be accepted, or the sweep missed a value.
-    if decide_free_space(tables, prevfloat(x, ctx.slack)^2)
+    return exact_minimal(ctx, a, exact_search(ctx, a, b, false))
+end
+
+# Minimality: nothing well below x may be accepted, or the sweep missed a value; then
+# the critical values in (a, x) are listed by brute force.
+function exact_minimal(ctx, a::Float64, x::Float64)
+    if decide_free_space(ctx.tables, prevfloat(x, ctx.slack)^2)
         Threads.atomic_add!(EXACT_FALLBACKS, 1)
         x = exact_search(ctx, a, x, true)
     end
     return x
+end
+
+# The relative width of the interval left by the bisection of exact_from_bisection.
+const EXACT_BISECT_RTOL = 1.0e-10
+
+# exact_from_bisection replaces the sample when N^2 >= EXACT_BISECT_FACTOR (n + m) d:
+# about 35 decisions on the curves against 4 N^2 draws from the tables (measured: the
+# bisection is faster on planar curves of 300 vertices and more, slower on curves of
+# 100 to 200 vertices in R^963 and R^19200).
+const EXACT_BISECT_FACTOR = 16
+
+# The search without the sample: a bisection with the fast decision procedure
+# (frechet_c_decide_exact on DecideCurves) narrows [lo, hi] to [a, b], b - a at most
+# EXACT_BISECT_RTOL a. The decider of the search (on the tables) must reject a and accept
+# b; then the critical values between a and `top`, b plus 16 times the slack in ulps
+# (the accepted critical value can lie some ulps above b), are listed and searched as
+# after the sample. The result is the smallest accepted critical value, as with the
+# sample: the values up to a are rejected, the decider being monotone. When a or b is not
+# certified, or no listed value is accepted, returns nothing, and the sample is drawn.
+function exact_from_bisection(ctx, P, Q, lo::Float64, hi::Float64)
+    a, b = exact_bisect(exact_decide_curves(P, Q)..., lo, hi)
+    (exact_accepts(ctx, a) || !exact_accepts(ctx, b)) && return nothing
+    S, top = narrow_candidates(P, Q, a, b, ctx.slack)
+    x = exact_bracket(ctx, S, a, top)[2]
+    x == top && return nothing
+    return exact_minimal(ctx, a, x)
 end

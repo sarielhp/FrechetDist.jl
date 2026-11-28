@@ -114,6 +114,29 @@ end
     @test frechet_c_compute_exact(M, N) == 1.0
 end
 
+@testset "frechet_c_compute_exact without tables agrees with the tables" begin
+    rng = MersenneTwister(1404)
+    differ = 0
+    fast = 0
+    for trial in 1:60
+        # Long enough for the path without tables (exact_bisects): random walks in R^1 to
+        # R^3, and planar curves on a small grid (coincidences, equal distances).
+        n, m = rand(rng, 80:160), rand(rng, 80:160)
+        D = mod1(trial, 4)
+        a, b =
+            D == 4 ? (grid(rng, 2, n), grid(rng, 2, m)) : (walk(rng, D, n), walk(rng, D, m))
+        P, Q = static_seq(a), static_seq(b)
+        d = frechet_c_compute_exact(P, Q)
+        differ += d !== frechet_c_compute_exact(P, Q; method = :tables)
+        U, V = FD.remove_consecutive_duplicates(P), FD.remove_consecutive_duplicates(Q)
+        fast += FD.exact_bisects(U.pnts, V.pnts) && FD.exact_without_tables(U, V) === d
+    end
+    @test differ == 0
+    @test fast >= 30  # the path without tables settles most of them itself
+    P = PntSeq([Point2F(0, 0), Point2F(1, 0)])
+    @test_throws ArgumentError frechet_c_compute_exact(P, P; method = :sample)
+end
+
 @testset "the brute-force fallback was never needed" begin
     @test FD.EXACT_FALLBACKS[] == 0
 end
