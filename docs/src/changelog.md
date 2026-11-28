@@ -1,6 +1,19 @@
 # Change log
     What had changed...
 
+v3.3.0 Release Notes
+====================
+(November 28, 2026)
+
+Added:
+* `frechet_c_compute_bisect(P, Q; rtol = 1e-10, atol = 0)`: the continuous Fréchet distance to within `max(atol, rtol d) / 2`, by bisection with `frechet_c_decide_exact` on prepared curves. The first decision is at the distance of the end points plus the tolerance, which settles the many pairs whose distance is that of their end points. On the benchmark of Conradi, van der Hoog and Rotenberg (8 sets of real curves, 1510 pairs), single-threaded: 2.0 s in total at `atol = 1e-10` against 14.0 s for the C++ code of Bringmann, Künnemann and Nusser and 49.9 s for CGAL at the same precision.
+* `frechet_c_compute_exact(P, Q; method = :auto)`: `method = :tables` makes every decision of the search on the tables, by the plain cell-by-cell sweep, as before.
+* `frechet_c_decide_exact(P, Q, r; tree)`: the description of the curve pieces in the free-space search, `LazyBoxTree`, `BoxTree` or the new `SausageTree` (a segment thickened to contain the piece: its tests need only distances between points, so it does not grow with the dimension). The default is `SausageTree` from dimension 64 on. `DecideCurve(P, Tree; width = false)` skips the width pass.
+
+Changed (same results, bit for bit):
+* `frechet_c_compute_exact`: for long curves in low dimension, a bisection with the fast decision procedure narrows the search to an interval of relative width 1e-10, whose critical values are computed from the coordinates, segment by segment, with the kinetic sweep only on segments where a point can enter, leave, or change order. By default the fast decision procedure then searches them, in O(n + m) memory, without the tables; when one of its checks fails, the tables are computed as before. On the benchmark above: 26.8 s in total, single-threaded, against 120 s before and at least 819 s for the exact C++ code of Conradi et al., faster on every pair. The memory check no longer refuses curves whose tables fit (it charged the random sample, now drawn only when the bisection does not settle the search).
+* `frechet_c_decide_exact`: in the box search of the free space, a box whose top and right edges are each free in one interval has its exits decided from its boundary (the pruning rules of Bringmann et al.), with runs of segments certainly empty or certainly free skipped by arc length. On the decider benchmark of `examples/cpp_compare`: 0.30 to 0.55 times the time of their C++ decider.
+
 v3.2.0 Release Notes
 ====================
 (November 27, 2026)
