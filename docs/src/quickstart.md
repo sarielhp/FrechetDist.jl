@@ -55,6 +55,7 @@ curves: comparison with Fred](high_dimensional.md).
 | You want | Use |
 |---|---|
 | The exact distance, as a number | `frechet_c_compute_exact` |
+| The distance to a given precision (default relative 1e-10), fast | `frechet_c_compute_bisect` |
 | The distance with a matching that realizes it, or a guaranteed tolerance | `frechet_c_compute` (default tolerance 1e-5) |
 | A quick estimate with guarantees | `frechet_c_approx` with `approx` = 1.1, 2, … |
 | Whether the distance is at most r | `frechet_c_decide_exact` |

@@ -281,4 +281,30 @@ end
     @test !frechet_c_decide_exact(M, N, 0.99)
 end
 
+@testset "frechet_c_compute_bisect is within its tolerance" begin
+    rng = MersenneTwister(2611)
+    bad = 0
+    for trial in 1:60
+        D = (2, 3)[mod1(trial, 2)]
+        step = (0.1, 1.0, 5.0)[mod1(trial, 3)]
+        p = static_seq([s .* step for s in walk(rng, D, rand(rng, 2:40))])
+        q = static_seq([s .* step for s in walk(rng, D, rand(rng, 2:40))])
+        e = frechet_c_compute_exact(p, q)
+        for (atol, rtol) in ((1e-10, 0.0), (0.0, 1e-12), (0.0, 1e-3))
+            b = frechet_c_compute_bisect(p, q; atol, rtol)
+            bad += abs(b - e) > max(atol, rtol * e) / 2 + 1e-13 * e
+        end
+    end
+    @test bad == 0
+    # The end points decide; a curve of one vertex.
+    P = PntSeq([Point2F(0, 0), Point2F(1, 0), Point2F(2, 0)])
+    Q = PntSeq([Point2F(0, 3), Point2F(2, 3)])
+    @test abs(frechet_c_compute_bisect(P, Q) - 3.0) <= 3e-10
+    O = PntSeq([Point2F(0, 0)])
+    @test frechet_c_compute_bisect(O, Q) == sqrt(13.0)
+    @test frechet_c_compute_bisect(P, O) == 2.0
+    @test_throws ArgumentError frechet_c_compute_bisect(P, Q; rtol = 0.0)
+    @test_throws ArgumentError frechet_c_compute_bisect(P, Q; atol = -1.0)
+end
+
 end

@@ -56,6 +56,7 @@ frechet_c_compute
 frechet_c_approx
 frechet_c_decide_exact
 frechet_c_compute_exact
+frechet_c_compute_bisect
 frechet_dist_upper_bound
 FrechetDist.frechet_width_approx
 ```

@@ -34,6 +34,7 @@ include("frechet_decide_blocks.jl")
 include("frechet_decide_lazy_tree.jl")
 include("frechet_decide_sausage.jl")
 include("frechet_exact.jl")
+include("frechet_bisect.jl")
 include("frechet_simplify.jl")
 include("SweepDist.jl")
 include("utils.jl")
@@ -103,6 +104,7 @@ export frechet_c_approx
 export frechet_c_compute
 export frechet_c_decide_exact
 export frechet_c_compute_exact
+export frechet_c_compute_bisect
 
 export DTW_d_compute
 

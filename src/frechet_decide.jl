@@ -265,6 +265,9 @@ updated by the decisions that use them, so such a DecideCurve must not be used b
 threads at once. `Tree = BoxTree` computes everything when the curve is prepared; such a
 DecideCurve is never written to, and may be shared by threads.
 
+`DecideCurve(P, Tree; width = false)` skips the width (an O(n) pass); the filter that
+uses it is then off.
+
 `frechet_c_decide_exact(A::DecideCurve, B::DecideCurve, r)` gives the same answer as
 `frechet_c_decide_exact(A.P, B.P, r)`.
 """
@@ -280,7 +283,8 @@ DecideCurve(P::GPntSeq) = DecideCurve(P, default_tree(P.pnts))
 
 function DecideCurve(
     P::GPntSeq{N,T,PT},
-    ::Type{TR},
+    ::Type{TR};
+    width::Bool = true,
 ) where {N,T,PT<:AbstractVector{T},TR<:PieceTree}
     check_curve(P, "DecideCurve", "the curve"; min_vertices = 1)
     d = length(P[1])
@@ -290,7 +294,7 @@ function DecideCurve(
         lo[c] = min(lo[c], x[c])
         hi[c] = max(hi[c], x[c])
     end
-    w = length(P) >= 2 ? Float64(frechet_width_approx(P)) : 0.0
+    w = !width ? Inf : length(P) >= 2 ? Float64(frechet_width_approx(P)) : 0.0
     return DecideCurve(P, w, lo, hi, TR(P.pnts))
 end
 
