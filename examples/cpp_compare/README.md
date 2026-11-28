@@ -57,7 +57,10 @@ of the curves themselves. The free space is searched by a recursive decompositio
 into boxes (in four when square, otherwise in two across the longer side): a box whose
 two curve pieces are all within `r` of each other (or all
 farther apart) is settled through its boundary, a box that nothing enters is skipped,
-and boxes of at most 8 x 8 cells are visited cell by cell. All the tests are exact, up
+a box of at most 256 columns and rows whose top and right edges are each free in one
+interval is often settled from its boundary alone (the pruning rules of the C++ code,
+with the free intervals found by skipping along the curves by arc length), and boxes of
+at most 8 x 8 cells are visited cell by cell. All the tests are exact, up
 to the rounding of the free intervals.
 
 Per group of query files, FrechetDist takes 0.3 to 1.0 times the time of the C++
@@ -88,8 +91,13 @@ boxes and prefix lengths untimed. On 40 random query files per dataset (all `k` 
 
 Most decisions are settled by the filters or near the root of the trees, so building
 on demand does 10% to 27% of the work of building every tree when the curves are read.
-FrechetDist is slower than the C++ code on the easier geolife files (`k` = 14, up to
-2.4 times on single files), where the free-space search itself costs more.
+These columns were measured before the boundary rules (above) were added to the box
+search. With them, on the same 40 files and with the same answers as the C++ code, the
+trees built on demand take 0.114 s (sigspatial), 0.117 s (characters) and 0.861 s
+(geolife): 0.44, 0.30 and 0.55 times the C++ code. FrechetDist is faster on 30, 39 and
+26 of the 40 files; it is slower on some of the easiest files (`l` = -1, far from the
+distance: up to 0.88 ms against 0.24 ms for 1000 queries), where the cost of its
+filters per query dominates.
 
 ## Setup
 

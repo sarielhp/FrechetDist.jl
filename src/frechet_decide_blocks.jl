@@ -7,6 +7,9 @@
 #   of every point of the other, by their bounding boxes, or their sausages in
 #   frechet_decide_sausage.jl) is free, and what is reachable on its top and right edges
 #   follows from where it is entered (the free space of the box is convex);
+# - a box of at most BOUNDARY_RULE_MAX columns and rows whose top and right edges are each
+#   free in one interval (or not at all) often has its exits decided by its boundary
+#   alone (boundary_exits!, the pruning rules of Bringmann, Künnemann and Nusser);
 # - otherwise it is split in four, or in two across its longer side, down to boxes of at
 #   most DECIDE_BLOCK x DECIDE_BLOCK cells, whose cells are visited one by one, as in
 #   decide_column!.
@@ -258,6 +261,9 @@ function box_step!(left, bot, bs::BoxSweep, u::Int, v::Int)
     entered || return nothing  # its exits are as empty as its entries
     if pieces_within(bs.tp, bs.tq, u, v, bs.sweep.r_sq)
         full_box!(left, bot, rows, cols)
+    elseif length(cols) + length(rows) <= BOUNDARY_RULE_MAX &&
+           boundary_exits!(left, bot, bs, cols, rows)
+        nothing  # the exits are written
     elseif (length(cols) <= bs.leaf || is_bottom(bs.tp, u)) &&
            (length(rows) <= bs.leaf || is_bottom(bs.tq, v))
         if vertices_within(bs.sweep, first(cols):(last(cols)+1), first(rows):(last(rows)+1))
@@ -269,6 +275,142 @@ function box_step!(left, bot, bs::BoxSweep, u::Int, v::Int)
         end
     else
         split_box!(left, bot, bs, u, v)
+    end
+    return nothing
+end
+
+# The exits of a box from its boundaries alone, as in the pruning rules of Bringmann,
+# Künnemann and Nusser ("Walking the dog fast in practice"). The free part of its top
+# edge (vertex q[j] against the segments `cols` of P) is often one interval. Then what is
+# reachable on it is all of it or nothing:
+#   - empty: nothing;
+#   - starting at the top-left corner of the box, reachable from the left: all of it,
+#     along the edge itself;
+#   - starting at x, with x reachable on the bottom edge and the vertical segment from
+#     there to the top free: all of it (nothing before x is free).
+# The vertical segment is checked with the free intervals of the cells it crosses (x in
+# the free interval of each of their top edges), so the result is what the cells would
+# give one by one: the reachable part of each top edge is then entered from below at a
+# point at most x, and contains x. The same for the right edge, by symmetry. Both exits are
+# decided before either is written (each reads the inputs of the other); when one is not
+# decided this way, the box is split. Returns whether the exits were written.
+function boundary_exits!(
+    left,
+    bot,
+    bs::BoxSweep,
+    cols::UnitRange{Int},
+    rows::UnitRange{Int},
+)
+    s, r_sq = bs.sweep.s, bs.sweep.r_sq
+    r = sqrt(r_sq)
+    j_top, i_right = last(rows) + 1, last(cols) + 1
+    top = (k -> free_q_on_p(s, j_top, k, r_sq))
+    right = (k -> free_p_on_q(s, i_right, k, r_sq))
+    run_t = free_run((s.q[j_top], s.p, tree_lens(bs.tp)), cols, r, top)
+    t = edge_exit(run_t, cols, left[last(rows)], bot)
+    t == EXIT_UNKNOWN && return false
+    if t == EXIT_LINE
+        x = run_t[3][1]
+        all(j -> in_interval(x, free_q_on_p(s, j + 1, run_t[1], r_sq)), rows) ||
+            return false
+    end
+    run_r = free_run((s.p[i_right], s.q, tree_lens(bs.tq)), rows, r, right)
+    u = edge_exit(run_r, rows, bot[last(cols)], left)
+    u == EXIT_UNKNOWN && return false
+    if u == EXIT_LINE
+        y = run_r[3][1]
+        all(i -> in_interval(y, free_p_on_q(s, i + 1, run_r[1], r_sq)), cols) ||
+            return false
+    end
+    write_run!(bot, cols, run_t)
+    write_run!(left, rows, run_r)
+    return true
+end
+
+const EXIT_ALL, EXIT_LINE, EXIT_UNKNOWN = 1, 2, 3
+
+# The largest box (its columns plus its rows) whose exits are tried from its boundaries.
+const BOUNDARY_RULE_MAX = 256
+
+@inline in_interval(x::Float64, iv::Tuple{Float64,Float64}) = iv[1] <= x <= iv[2]
+
+# The free part of the segments ks of the curve x (prefix lengths lens) for the point c,
+# when it is one run of consecutive segments: (k0, k1, e0, e1), its first and last
+# segments and their free intervals (`iv(k)`); k0 = 0 when it is empty, -1 when it is not
+# one run. Inside the run the free intervals are (0, 1) (both ends of the segment are
+# free). Runs of segments are skipped by arc length: from a vertex at distance D > r, the
+# segments within arc length D - r of it are empty; from one at distance D < r, those
+# within r - D are (0, 1). The margins, 1e-9 of D + r and of r, are far above the rounding
+# of free_interval, so the skipped segments are those it computes as empty or as (0, 1)
+# (both ends inside).
+function free_run(src, ks::UnitRange{Int}, r::Float64, iv::F) where {F}
+    st = (0, 0, FREE_EMPTY, FREE_EMPTY)
+    k, kend = first(ks), last(ks)
+    while k <= kend
+        inside = st[1] != 0 && st[2] == 0
+        kk = skip_known(src, k, kend, r, inside)
+        if kk > k
+            inside && (st = (st[1], 0, st[3], (0.0, 1.0)))
+            k = kk
+        else
+            st = run_step(st, k, iv(k))
+            st[1] < 0 && return st
+            k += 1
+        end
+    end
+    k0, k1, e0, e1 = st
+    return (k0, (k0 != 0 && k1 == 0) ? kend : k1, e0, e1)
+end
+
+# The first segment from k on (kend + 1 if none) that the arc lengths leave open, for the
+# point c against the curve x with prefix lengths lens: outside the run, the segments
+# before it are certainly empty; inside, certainly (0, 1) (see free_run).
+@inline function skip_known((c, x, lens), k::Int, kend::Int, r::Float64, inside::Bool)
+    # In bounds: k <= kend, a segment of x, so x[k] and lens[kk + 1] for kk <= kend exist.
+    D = @inbounds fp_dist(c, x[k])
+    # The margin grows with D outside: the rounding of a free interval grows with the
+    # distance of the point to the segment.
+    lim = inside ? r * (1.0 - 1.0e-9) - D : (D - r) - 1.0e-9 * (D + r)
+    kk = k
+    @inbounds while kk <= kend && lens[kk+1] - lens[k] < lim
+        kk += 1
+    end
+    return kk
+end
+
+# The state of free_run, (k0, k1, e0, e1), after segment k, of free interval e: k1 is set
+# when the run ends, and k0 = -1 when a second run starts or the run breaks at a vertex.
+@inline function run_step((k0, k1, e0, e1), k::Int, e::Tuple{Float64,Float64})
+    free_is_empty(e) && return (k0, (k0 != 0 && k1 == 0) ? k - 1 : k1, e0, e1)
+    k1 != 0 && return (-1, 0, e0, e1)
+    k0 == 0 && return (k, 0, e, e)
+    e1[2] < 1.0 && return (-1, 0, e0, e1)
+    return (k0, 0, e0, e)
+end
+
+# The exit of one edge of a box from its free run (free_run): EXIT_ALL when all of its
+# free part is reachable (or it has none), EXIT_LINE when it is if the segment across
+# the box from the start of the run is free, EXIT_UNKNOWN otherwise. `corner` is the
+# reachable part of the entry edge that ends at the first point of the edge (the left
+# edge of the top-left cell, for the top edge); `entry[k]` that of the opposite edge of
+# segment k.
+function edge_exit((k0, _, e0, _), ks::UnitRange{Int}, corner, entry)
+    k0 < 0 && return EXIT_UNKNOWN
+    k0 == 0 && return EXIT_ALL
+    x = e0[1]
+    if k0 == first(ks) && x == 0.0 && !free_is_empty(corner) && corner[2] == 1.0
+        return EXIT_ALL
+    end
+    en = entry[k0]
+    (!free_is_empty(en) && in_interval(x, en)) && return EXIT_LINE
+    return EXIT_UNKNOWN
+end
+
+# Writes the exits of one edge: its free run, all of it reachable.
+function write_run!(e, ks::UnitRange{Int}, (k0, k1, e0, e1))
+    for k in ks
+        e[k] =
+            (k < k0 || k > k1) ? FREE_EMPTY : (k == k0 ? e0 : (k == k1 ? e1 : (0.0, 1.0)))
     end
     return nothing
 end
