@@ -76,6 +76,105 @@ end
     @test !frechet_c_decide_exact(seq((0, 0), (1, 0)), seq((0, 0), (1, 3)), 2.9)
 end
 
+@testset "the block sweep agrees with the cell sweep" begin
+    FD = FrechetDist
+    rng = MersenneTwister(1307)
+    mismatches = 0
+    for trial in 1:40
+        D = (2, 3)[mod1(trial, 2)]
+        step = (0.1, 1.0, 5.0)[mod1(trial, 3)]
+        p = static_seq([s .* step for s in walk(rng, D, rand(rng, 10:70))])
+        q = static_seq([s .* step for s in walk(rng, D, rand(rng, 10:70))])
+        d = FD.frechet_c_compute_exact(p, q)
+        n, m = length(p), length(q)
+        for f in (1e-12, -1e-12, 1e-6, -1e-6, 0.1, -0.1), B in (2, 3, 8)
+            r_sq = (d * (1 + f))^2
+            s = FD.PointSpace(p.pnts, q.pnts)
+            (n - 1 > B && m - 1 > B) || continue
+            (FD.within(s, 1, 1, r_sq) && FD.within(s, n, m, r_sq)) || continue
+            want = FD.decide_free_space(s, r_sq)
+            mismatches += FD.decide_free_space_blocks(p.pnts, q.pnts, r_sq, B) != want
+        end
+        mismatches += !frechet_c_decide_exact(p, q, d * (1 + 1e-9))
+        mismatches += frechet_c_decide_exact(p, q, d * (1 - 1e-9))
+    end
+    # Vector points in ℝ^7, through the simplifications and the block sweep.
+    for trial in 1:10
+        a = walk(rng, 7, rand(rng, 20:60))
+        b = walk(rng, 7, rand(rng, 20:60))
+        d = FD.frechet_c_compute_exact(static_seq(a), static_seq(b))
+        for f in (1e-9, -1e-9, 0.01, -0.01)
+            want = f > 0
+            mismatches +=
+                frechet_c_decide_exact(vector_seq(a), vector_seq(b), d * (1 + f)) != want
+        end
+    end
+    @test mismatches == 0
+end
+
+@testset "the greedy ball walk and the far-vertex test are never wrong" begin
+    FD = FrechetDist
+    rng = MersenneTwister(1319)
+    wrong = 0
+    for trial in 1:60
+        D = (2, 3)[mod1(trial, 2)]
+        p = static_seq(walk(rng, D, rand(rng, 3:60))).pnts
+        q = static_seq(walk(rng, D, rand(rng, 3:60))).pnts
+        d = FD.frechet_c_compute_exact(PntSeq(p), PntSeq(q))
+        tp, tq = FD.BoxTree(p), FD.BoxTree(q)
+        for f in (1e-6, -1e-6, 0.01, -0.01, 0.3, -0.3)
+            r = d * (1 + f)
+            wrong += FD.greedy_ball_walk(p, q, tp.lens, tq.lens, r) && f < 0
+            far = FD.far_vertex(p, q, tq, r^2) || FD.far_vertex(q, p, tp, r^2)
+            wrong += far && f > 0
+        end
+    end
+    @test wrong == 0
+end
+
+@testset "prepared curves (DecideCurve) give the same answers" begin
+    FD = FrechetDist
+    rng = MersenneTwister(1311)
+    mismatches = 0
+    for trial in 1:30
+        D = (2, 3)[mod1(trial, 2)]
+        a = static_seq(walk(rng, D, rand(rng, 2:40)))
+        b = static_seq(walk(rng, D, trial <= 3 ? 1 : rand(rng, 2:40)))
+        A, B = FD.DecideCurve(a, FD.BoxTree), FD.DecideCurve(b, FD.BoxTree)
+        LA, LB = FD.DecideCurve(a), FD.DecideCurve(b)
+        d =
+            length(b) == 1 ? maximum(p -> sqrt(sum(abs2, p - b[1])), a) :
+            frechet_c_compute(a, b).leash
+        for f in (0.0, 1e-9, -1e-9, 0.1, -0.1, 10.0, -0.9)
+            r = d * (1 + f)
+            want = frechet_c_decide_exact(a, b, r)
+            mismatches += frechet_c_decide_exact(A, B, r) != want
+            mismatches += frechet_c_decide_exact(LA, LB, r) != want
+        end
+    end
+    @test mismatches == 0
+    @test_throws ArgumentError frechet_c_decide_exact(
+        FD.DecideCurve(static_seq([[0.0, 0.0], [1.0, 0.0]])),
+        FD.DecideCurve(static_seq([[0.0, 0.0], [1.0, 0.0]])),
+        -1.0,
+    )
+end
+
+@testset "LazyBoxTree has the boxes and lengths of BoxTree" begin
+    FD = FrechetDist
+    rng = MersenneTwister(1313)
+    for n in (1, 2, 3, 5, 17, 64, 65, 300, 1000), D in (2, 3)
+        p = static_seq(walk(rng, D, n)).pnts
+        t, l = FD.BoxTree(p), FD.LazyBoxTree(p)
+        @test FD.tree_lens(l) == t.lens
+        # Read in any order: the top part and the subtrees below it are built as needed.
+        for v in shuffle(rng, 1:(2*t.N-1))
+            FD.node_box!(l, v)
+            @test l.box[:, v] == t.box[:, v]
+        end
+    end
+end
+
 @testset "frechet_c_decide_exact input handling" begin
     P = PntSeq([Point2F(0, 0), Point2F(1, 0)])
     Q = PntSeq([Point2F(0, 1), Point2F(1, 1)])
